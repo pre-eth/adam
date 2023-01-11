@@ -118,50 +118,51 @@ Finally, left hand columns are swapped with right hand columns such that column
 ## III. AUGMENT
 
 This phase has 3 stages: **undulation**, **summation**, and **assimilation**. You can remember
-it with the handy acronym [**USA**](https://media.tenor.com/gH-6XZCn-5EAAAAC/homer-simpson-usa-homer.gif)!
+them with the handy acronym [**USA!**](https://media.tenor.com/gH-6XZCn-5EAAAAC/homer-simpson-usa-homer.gif)
 
 ### UNDULATION
 
 Consider this wave:
 
 
-Since our working unit is only integers, suppose we roughly approximate the parameters
-of this waveform and apply it to the buffer in the form of a compressive permutation.
+Since our working unit is only integers, suppose we roughly approximate the motion
+of this waveform and apply it to the buffer in the form of a compression permutation.
 
 This means that order must be changed and a certain subset of bits need to be selected. 
 
-So to satisfy these criteria, we will do 3 things:
+So to satisfy these criteria, we'll do 3 things:
 
 1.  Shift even columns up 2 elements, and odd columns down 2 elements
-2.  Simulate a waveform `W` with amplitude `A:=4` and wavelength `L:=4` using the
-    function `y = 4sin(4x)`, where `y` is the number of bits to shift left from `x` 
+2.  Simulate a waveform `W` with amplitude `A:=4` and wavelength `L:=4` by shifting `N`
+    bits from the elements that form the troughs of `W`, where `N:=ROW`
 3.  Repeat Step 1
 
-As the graphic shows, this function selectively compresses 64 of the elements. The
-wavelength can be fine tuned and the polarity can be inverted as well if desired.
+As the graphic shows, this function selectively compresses 64 of the 128 elements. An
+actual sin function was not used because, as you're probably aware, the elements are in
+a completely arbitrary order. Plus, converting to float and then back to int per value
+would be more overhead than desired, so using the sin function as mere inspiration for
+modeling precision seemed most appropriate.
 
 ### SUMMATION
 
-The summation stage begins with an expansive permutation. This is a simple 2 stage
-form of cytokinesis.
+The summation stage begins with an expansion permutation. This is a simple form of 
+columnar cytokinesis.
 
-We begin by returning to our initial configuration of 8 4x4 S-Boxes containing 16 
-64-bit integers each. The 1st, 4th, 12th, and 16th element are responsible for the 
-creation of 2 integers each, since they're used as addends in 2 separate operations:
+Groups of 4 columns each are summed in the following fashion to produce 32 new integers,
+or 4 *new* columns, which are used to fill in the remainder of the buffer: 
 
-
-This scheme is used to produce 80 new elements for 5 additional S-Boxes, which are
-stored in the rest of the buffer. The remaining 3 boxes are synthesized from the 5
-new ones, with the 5th box only producing 8 integers.
+Notice the interweaving of columns in a way that guarantees each integer is responsible 
+for at least the creation of 2 more.
 
 ### ASSIMILATION
 
 A longitudinal disruptive transposition is applied using alternating number sequences 
-for the initial set `(0,5,4,X,1,6,2,X)` and new set `(4,X,1,6,2,X,3,7)`. The `X`
-represents the indexes of elements that are replaced with empty bytes, and the two 
-passwords are derived from the firing order of the Lamborghini Huracán's 5.2L V10 
-engine. Here "password" is just the proper term; these are nothing-up-my-sleeve 
-sequences.
+`(0,5,4,1,1,6,2,2)` and `(4,4,1,6,2,3,3,7)` to the old and new set. The elements per 
+column are reordered accordingly, with duplicate indexes meaning just that - duplicate 
+elements. The passwords are derived from the firing order of the Lamborghini Huracán's
+5.2L V10 engine. Here *password* is just the proper term; these are nothing-up-my-
+sleeve sequences. After being transposed, the columns are stored contiguously in the
+buffer in blobs of 512 bits.
 
 The permutation logic of ISAAC64 is extended to 16 integers at a time, and used to
 thoroughly blend the original set and its offspring like so:
@@ -173,10 +174,10 @@ still have some work to do before it's ready to use.
 ## IV. MANGLE
 
 The last step makes use of the same quarter rounding functions used by the ChaCha
-derived BLAKE2b hash function. These are also designed to operate on 16 blocks of 
-64-bit integers.
+derived BLAKE2b hash function. These are designed to operate on 16 blocks of 
+64-bit integers, so they seamlessly integrate with ADAM's operations.
 
-2 rounds are applied per table, with the first one operating on columns and rows
+4 rounds are applied per table, with the first one operating on columns and rows
 like the original Salsa20 cipher, and the second operating vertically and diagonally
 like ChaCha20. And with that, the user now has a pool of 256 cryptographically 
 generated random numbers, which can be retrieved and used upon will! 
