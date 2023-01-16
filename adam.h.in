@@ -9,6 +9,7 @@ class ADAM : Command {
       PROGARGS = ARGS; 
       PROGHELP = ARGSHELP;
       PROGARGC = ARGCOUNT;
+      OPTSTR = "in:p:r:u:";
     };
 
     u8 exec(int argc, char** argv);
@@ -17,6 +18,14 @@ class ADAM : Command {
     enum Precision { U64 = 0, U32 = 32, U16 = 16, U8 = 8};
         
   private:
+    u8 matchOption(char opt, const char* val);
+
+    u8   precision{U64};
+    u8   results{1};
+    u8   rounds{1};
+    u8   undulation_cycle{0};
+    bool invert{false};
+
     const char* ARGS[ARGCOUNT] = {"i", "n", "p", "r", "u"};
     const char* ARGSHELP[ARGCOUNT] = {
       "Inverts the polarity of the compression permutation",
