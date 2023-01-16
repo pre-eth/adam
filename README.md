@@ -177,9 +177,9 @@ The last step makes use of the same quarter rounding functions used by the ChaCh
 derived BLAKE2b hash function. These are designed to operate on 16 blocks of 
 64-bit integers, so they seamlessly integrate with ADAM's operations.
 
-4 rounds are applied per table, with the first one operating on columns and rows
-like the original Salsa20 cipher, and the second operating vertically and diagonally
-like ChaCha20. And with that, the user now has a pool of 256 cryptographically 
+4 rounds are applied per table, with the first 2 rounds operating on columns and rows
+like the original Salsa20 cipher, and the second 2 rounds operating vertically and 
+diagonally like ChaCha20. And with that, the user now has a pool of 256 cryptographically 
 generated random numbers, which can be retrieved and used upon will! 
 
 Bit shifting is used to satisfy arbitrary precision needs from the user. The number

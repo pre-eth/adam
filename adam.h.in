@@ -1,0 +1,31 @@
+#include "cmd.h"
+
+#define ARGCOUNT 5
+
+class ADAM : Command {
+  public:
+    ADAM() : Command("@PROJECT_NAME@", "@PROJECT_DESCRIPTION@", 1, 4,
+    "v@PROJECT_VERSION@", NULL, NULL) {
+      PROGARGS = ARGS; 
+      PROGHELP = ARGSHELP;
+      PROGARGC = ARGCOUNT;
+    };
+
+    u8 exec(int argc, char** argv);
+    // Precision of random integers to generate, default is unsigned 64 bit ints.
+    // If a lower precision integer is requested, an entry from
+    enum Precision { U64 = 0, U32 = 32, U16 = 16, U8 = 8};
+        
+  private:
+    CSPRNG rng;
+    Precision p{U64};
+    u8 results{1};
+    const char* ARGS[ARGCOUNT] = {"y", "p", "r", "i", "n"};
+    const char* ARGSHELP[ARGCOUNT] = {
+      "Compression granularity, or the undulation period. Accepts DOUBLE or QUADRUPLE",
+      "Desired precision for returned integers. Accepts 8, 16, 32, and 64",
+      "Number of rounds to mangle buffer. Multiply by 4 to get true iteration count (ex. 2 rounds = 8 iterations)",
+      "Inverts the polarity of the compression permutation",
+      "Number of results to return (default 1, max 256)"
+    };
+};
