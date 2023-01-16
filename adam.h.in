@@ -17,15 +17,12 @@ class ADAM : Command {
     enum Precision { U64 = 0, U32 = 32, U16 = 16, U8 = 8};
         
   private:
-    CSPRNG rng;
-    Precision p{U64};
-    u8 results{1};
-    const char* ARGS[ARGCOUNT] = {"y", "p", "r", "i", "n"};
+    const char* ARGS[ARGCOUNT] = {"i", "n", "p", "r", "u"};
     const char* ARGSHELP[ARGCOUNT] = {
-      "Compression granularity, or the undulation period. Accepts DOUBLE or QUADRUPLE",
-      "Desired precision for returned integers. Accepts 8, 16, 32, and 64",
-      "Number of rounds to mangle buffer. Multiply by 4 to get true iteration count (ex. 2 rounds = 8 iterations)",
       "Inverts the polarity of the compression permutation",
-      "Number of results to return (default 1, max 256)"
+      "Number of results to return (default 1, max 256)",
+      "Desired size (8, 16, 32) of returned numbers if you need less precision than 64-bit",
+      "Number of rounds to mangle buffer. Multiply by 4 to get true iteration count (ex. 2 rounds = 8 iterations)",
+      "Compression granularity, or the undulation period. Accepts 2 (DOUBLE) or 4 (QUADRUPLE)",
     };
 };
