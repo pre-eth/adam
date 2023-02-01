@@ -19,7 +19,7 @@ class ADAM : Command, CSPRNG {
     enum Precision : u8 { U64 = 64, U32 = 32, U16 = 16, U8 = 8};
         
   private:
-    u8    matchOption(char opt, const char* val);
+    u8    match_option(char opt, const char* val);
     
     u64   alimit{UINT64_MAX};
     u8    results{1};

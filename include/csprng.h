@@ -16,8 +16,6 @@
 
     class CSPRNG {
         public:
-            enum Cycle { REGULAR, DOUBLE, QUADRUPLE };
-
             CSPRNG() {
                 generate();
             };

@@ -17,9 +17,9 @@
       
       int run(int argc, char** argv);
       virtual u8 exec(int argc, char** argv) = 0;
-      virtual u8 matchOption(char opt, const char* val) = 0;
+      virtual u8 match_option(char opt, const char* val) = 0;
             
-      u8 matchOpts(int argc, char** argv);
+      u8 match_opts(int argc, char** argv);
       u8 print_options(const char** opts, const char** help, u8 optc);
       
     private:
