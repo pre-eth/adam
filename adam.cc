@@ -1,39 +1,87 @@
 #include "adam.h"
 
+u8 print_binary(u64 num);
+
+#define STREAM64 print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get())+print_binary(get()); \
+
+u8 print_binary(u64 num) {
+    u8 size = log2(num) + 1;
+    char buffer[size];
+    char* b = &buffer[size];
+    *b = '\0';
+
+    do
+        *--b = (num & 0x01) + '0';
+    while (num >>= 1);
+
+    printf(b);
+
+    return size;
+}
+
 u8 ADAM::matchOption(char opt, const char* val) {
     switch(opt) {
         case 'i':
-            invert = true;
+            // for inverting polarity of undulation
+           flip = !flip;
         break;
         case 'n':
+            // number of results to print on screen after generating
             results = a_to_i(val, 1, 256);
-            if (results == INT32_MAX)
-                return err("Invalid number of results to return (0-256)");
         break;
         case 'p':
-            precision = a_to_i(val, 8, 32);
-            if (precision == INT32_MAX || precision != 8 || precision != 16 || precision != 32)
-                return err("Invalid precision value (must be 8, 16, or 32, default is 64)");
+            // precision of values to return 
+            precision = (u8) a_to_i(val, 8, 32);
+            if (precision != 8 || precision != 16 || precision != 32)
+                return puts("Invalid precision value (must be 8, 16, or 32, default is 64)");
         break;
         case 'r':
-            rounds = a_to_i(val);
-            if (rounds == INT32_MAX)
-                return err("Invalid number of rounds");
+            // how many rounds to mangle buffer, at least 7
+            rounds = (u8) a_to_i(val, 7, 20);
         break;
         case 'u':
-            undulation_cycle = a_to_i(val, 2, 4);
-            if (undulation_cycle == INT32_MAX || undulation_cycle != 2 || undulation_cycle != 4)
-                return err("Invalid undulation period (must be 2 or 4)");
+            // period of the undulation wave
+            cycle = (u8) a_to_i(val, 0, 2);
         break;
-        default:  return fmt_err("Invalid option \"%c\"", opt);
+        case 'b':
+            // stream bits
+            bit_stream = true;
+            results = 0;
+        break;
+        case 'a':
+            // stream 100 samples of 1000000 bits for testing
+            alimit = 100000000;
+            bit_stream = true;
+            results = 0;
+        break;
+        default:  return 1;
     }
     return 0;
 }
 
 u8 ADAM::exec(int argc, char** argv) {
-    if (Command::run(argc, argv))
-        return 1;
+    if (!Command::run(argc, argv))
+        return 0;
 
-    puts("RUNNING ADAM...");
-    CSPRNG rng(rounds, undulation_cycle >> 1, invert);
+    u64 i{0};
+
+    if (bit_stream) 
+        do {
+            i += STREAM64
+            i += STREAM64
+            i += STREAM64
+            i += STREAM64
+            generate();
+            i += STREAM64
+            i += STREAM64
+            i += STREAM64
+            i += STREAM64
+            generate();
+        } while (i < alimit);
+
+    do 
+        printf("%llu ", get());
+    while (++i < results);
+
+    return 0;
 }
