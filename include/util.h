@@ -27,6 +27,7 @@
         #define REG_STOREBITS   _mm512_store_si512
         #define REG_LOADUBITS   _mm512_loadu_si512
         #define REG_STOREUBITS  _mm512_storeu_si512
+        #define REG_LOAD64      _mm512_load_epi64
         #define REG_STORE64     _mm512_store_epi64
         #define REG_ADD32       _mm512_add_epi32
         #define REG_SUB32       _mm512_sub_epi32

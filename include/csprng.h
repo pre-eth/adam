@@ -10,7 +10,7 @@
     #define PARTITION       64              // Size of each table         
     #define TABLE_SIZE      16              // Size of the 8 4x4 64-bit blocks
 
-    #define ROUNDS          7               // Runs mangle for 4*ROUNDS iterations, configurable
+    #define ROUNDS          7               // Minimum acceptable value for mangle rounds
    
     alignas(16384) static u64 frt[FRUIT_SIZE];
 

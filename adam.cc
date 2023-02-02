@@ -19,7 +19,7 @@ u8 print_binary(u64 num) {
     return size;
 }
 
-u8 ADAM::matchOption(char opt, const char* val) {
+u8 ADAM::match_option(char opt, const char* val) {
     switch(opt) {
         case 'i':
             // for inverting polarity of undulation
@@ -60,7 +60,7 @@ u8 ADAM::matchOption(char opt, const char* val) {
 }
 
 u8 ADAM::exec(int argc, char** argv) {
-    if (!Command::run(argc, argv))
+    if (Command::run(argc, argv))
         return 0;
 
     u64 i{0};

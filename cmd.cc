@@ -4,7 +4,7 @@ u8 Command::print_options(const char** opts, const char** help, u8 optc) {
     u16 SHEIGHT, SWIDTH;
     getScreenDimensions(&SHEIGHT, &SWIDTH);
     SWIDTH = (SWIDTH >> 1) - 4;
-    printf("\e[%uC[OPTIONS]\n\n", SWIDTH);
+    printf("\e[%uC[OPTIONS]\n", SWIDTH);
     // subtract 1 because it is half of width for arg (ex. "-d")
     const u16 INDENT =  (SWIDTH / 16) - 1; 
     // space before help text aka offset from COL 1
@@ -39,19 +39,19 @@ int Command::run(int argc, char** argv) {
     // reject if ARGC isn't within range
     if (argc < ARG_MIN || (ARG_MAX && argc > ARG_MAX)) 
         return printf("Invalid number of arguments. Must satisfy %d <= n <= %d", ARG_MIN, ARG_MAX);
-    return matchOpts(argc, argv);
+    return match_opts(argc, argv);
 }
 
-u8 Command::matchOpts(int argc, char** argv) {
+u8 Command::match_opts(int argc, char** argv) {
     int opt;
     while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
         switch (opt) {
             case 'h':
-                return print_options(PROGARGS, PROGHELP, PROGARGC);
+                return !print_options(PROGARGS, PROGHELP, PROGARGC);
             case 'v':
                 return puts(VERSION);
             default:
-                if (matchOption(opt, optarg))
+                if (match_option(opt, optarg))
                     return printf("Invalid option \"%c\"", optopt);             
         }
     }
