@@ -168,24 +168,66 @@
 
         FAILURE is denoted by returning the min value
     */
-    static inline i32 a_to_i(const char* s, i32 min = 0, i32 max = INT32_MAX) {
-        i32 val{0}; 
+    static inline u64 a_to_u(const char* s, u64 min = 0, u64 max = UINT64_MAX) {
+        u64 val{0}; 
+        u8 len = strlen(s);
+//12115082318202757305
+//12115082309612822713
+        switch (len) { 
+            case 20:    val += 10000000000000000000LLU;
+            case 19:    val += (s[len-19] - '0') * 1000000000000000000LLU;
+            case 18:    val += (s[len-18] - '0') * 100000000000000000LLU;
+            case 17:    val += (s[len-17] - '0') * 10000000000000000LLU;
+            case 16:    val += (s[len-16] - '0') * 1000000000000000LLU;
+            case 15:    val += (s[len-15] - '0') * 100000000000000LLU;
+            case 14:    val += (s[len-14] - '0') * 10000000000000LLU;
+            case 13:    val += (s[len-13] - '0') * 1000000000000LLU;
+            case 12:    val += (s[len-12] - '0') * 100000000000LLU;
+            case 11:    val += (s[len-11] - '0') * 10000000000LLU;
+            case 10:    val += (s[len-10] - '0') * 1000000000LLU;
+            case  9:    val += (s[len- 9] - '0') * 100000000LLU;
+            case  8:    val += (s[len- 8] - '0') * 10000000LLU;
+            case  7:    val += (s[len- 7] - '0') * 1000000LLU;
+            case  6:    val += (s[len- 6] - '0') * 100000LLU;
+            case  5:    val += (s[len- 5] - '0') * 10000LLU;
+            case  4:    val += (s[len- 4] - '0') * 1000LLU;
+            case  3:    val += (s[len- 3] - '0') * 100LLU;
+            case  2:    val += (s[len- 2] - '0') * 10LLU;
+            case  1:    val += (s[len- 1] - '0');
+                break;
+            default:
+                return min;
+        }
+        return BITSET(val, min, (val < min || val > max));
+    }
+
+    static inline i64 a_to_i(const char* s, i64 min = 0, i64 max = INT64_MAX) {
+        i64 val{0}; 
         i8 sign{1};
         bool isSigned = (*s == '-');
-        BITSET(sign, -1, isSigned);
+        BITSET(sign, -1, isSigned); // s-= BITSET(sign, -1, (*s == '-'))
         s += isSigned;
         u8 len = strlen(s);
-        // handle up to 10 digits, assume we're 32-bit
         switch (len) { 
-            case 10:    val += (s[len-10] - '0') * 1000000000;
-            case  9:    val += (s[len- 9] - '0') * 100000000;
-            case  8:    val += (s[len- 8] - '0') * 10000000;
-            case  7:    val += (s[len- 7] - '0') * 1000000;
-            case  6:    val += (s[len- 6] - '0') * 100000;
-            case  5:    val += (s[len- 5] - '0') * 10000;
-            case  4:    val += (s[len- 4] - '0') * 1000;
-            case  3:    val += (s[len- 3] - '0') * 100;
-            case  2:    val += (s[len- 2] - '0') * 10;
+            case 20:    val += 10000000000000000000LL;
+            case 19:    val += (s[len-19] - '0') * 1000000000000000000LL;
+            case 18:    val += (s[len-18] - '0') * 100000000000000000LL;
+            case 17:    val += (s[len-17] - '0') * 10000000000000000LL;
+            case 16:    val += (s[len-16] - '0') * 1000000000000000LL;
+            case 15:    val += (s[len-15] - '0') * 100000000000000LL;
+            case 14:    val += (s[len-14] - '0') * 10000000000000LL;
+            case 13:    val += (s[len-13] - '0') * 1000000000000LL;
+            case 12:    val += (s[len-12] - '0') * 100000000000LL;
+            case 11:    val += (s[len-11] - '0') * 10000000000LL;
+            case 10:    val += (s[len-10] - '0') * 1000000000LL;
+            case  9:    val += (s[len- 9] - '0') * 100000000LL;
+            case  8:    val += (s[len- 8] - '0') * 10000000LL;
+            case  7:    val += (s[len- 7] - '0') * 1000000LL;
+            case  6:    val += (s[len- 6] - '0') * 100000LL;
+            case  5:    val += (s[len- 5] - '0') * 10000LL;
+            case  4:    val += (s[len- 4] - '0') * 1000LL;
+            case  3:    val += (s[len- 3] - '0') * 100LL;
+            case  2:    val += (s[len- 2] - '0') * 10LL;
             case  1:    val += (s[len- 1] - '0');
                 val *= sign;
                 break;
@@ -194,6 +236,7 @@
         }
         return BITSET(val, min, (val < min || val > max));
     }
+    
 
     static inline unsigned short trng16() {
         unsigned short val;
