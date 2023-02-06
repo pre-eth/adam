@@ -3,25 +3,22 @@
 u8 Command::print_options(const char** opts, const char** help, u8 optc) { 
     u16 SHEIGHT, SWIDTH;
     getScreenDimensions(&SHEIGHT, &SWIDTH);
-    SWIDTH = (SWIDTH >> 1) - 4;
-    printf("\e[%uC[OPTIONS]\n", SWIDTH);
+    u16 center = (SWIDTH >> 1) - 4;
+    printf("\e[%uC[OPTIONS]\n", center);
     // subtract 1 because it is half of width for arg (ex. "-d")
-    const u16 INDENT =  (SWIDTH / 16) - 1; 
-    // space before help text aka offset from COL 1
-    const u16 OFFSET = INDENT + 2;
+    const u16 INDENT =  (SWIDTH / 16); 
     // total indent for help descriptions if they have to go to next line
-    const u16 HELP_INDENT = OFFSET + OFFSET;
+    const u16 HELP_INDENT = INDENT + INDENT + 2;
     // max length for help description in COL 2 before it needs to wrap
     const u16 HELP_WIDTH = SWIDTH - HELP_INDENT;
-
-    printf("\e[%uC-h\e[%uCGet all available options\n", INDENT, OFFSET);
-    printf("\e[%uC-v\e[%uCVersion of this software\n", INDENT, OFFSET);
+    printf("\e[%dC-h\e[%dCGet all available options\n", INDENT, INDENT);
+    printf("\e[%dC-v\e[%dCVersion of this software\n", INDENT, INDENT);
     // reuse this val pointer and length int
     int length{0};
     // now the fun part - print the options and their help descriptions,
     for (u8 i{0}; i < optc; ++i) {
         // greater than 6 means we are in in PROGARGS territory, if itemc > 0
-        printf("\e[%uC-%c\e[%uC%.*s\n", INDENT, PROGARGS[i], OFFSET, HELP_WIDTH, PROGHELP[i]);
+        printf("\e[%uC-%s\e[%uC%.*s\n", INDENT, PROGARGS[i], INDENT, HELP_WIDTH, PROGHELP[i]);
         // now subtract length of description from max help width 
         // and see if there's leftovers
         length = strlen(PROGHELP[i]) - HELP_WIDTH;

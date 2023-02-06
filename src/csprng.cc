@@ -1,69 +1,69 @@
 #include "csprng.h"
 
 #define INIT_BUFFER(offset) \
-frt[offset]      = \
-frt[offset + 1]  = \
-frt[offset + 2]  = \
-frt[offset + 3]  = \
-frt[offset + 4]  = \
-frt[offset + 5]  = \
-frt[offset + 6]  = \
-frt[offset + 7]  = \
-frt[offset + 8]  = \
-frt[offset + 9]  = \
-frt[offset + 10] = \
-frt[offset + 11] = \
-frt[offset + 12] = \
-frt[offset + 13] = \
-frt[offset + 14] = \
-frt[offset + 15] = \
-frt[offset + 16] = \
-frt[offset + 17] = \
-frt[offset + 18] = \
-frt[offset + 19] = \
-frt[offset + 20] = \
-frt[offset + 21] = \
-frt[offset + 22] = \
-frt[offset + 23] = \
-frt[offset + 24] = \
-frt[offset + 25] = \
-frt[offset + 26] = \
-frt[offset + 27] = \
-frt[offset + 28] = \
-frt[offset + 29] = \
-frt[offset + 30] = \
-frt[offset + 31] = \
-frt[offset + 32] = \
-frt[offset + 33] = \
-frt[offset + 34] = \
-frt[offset + 35] = \
-frt[offset + 36] = \
-frt[offset + 37] = \
-frt[offset + 38] = \
-frt[offset + 39] = \
-frt[offset + 40] = \
-frt[offset + 41] = \
-frt[offset + 42] = \
-frt[offset + 43] = \
-frt[offset + 44] = \
-frt[offset + 45] = \
-frt[offset + 46] = \
-frt[offset + 47] = \
-frt[offset + 48] = \
-frt[offset + 49] = \
-frt[offset + 50] = \
-frt[offset + 51] = \
-frt[offset + 52] = \
-frt[offset + 53] = \
-frt[offset + 54] = \
-frt[offset + 55] = \
-frt[offset + 56] = \
-frt[offset + 57] = \
-frt[offset + 58] = \
-frt[offset + 59] = \
-frt[offset + 60] = \
-frt[offset + 61] = \
-frt[offset + 62] = \
+frt[offset]      = seed;\
+frt[offset + 1]  = seed;\
+frt[offset + 2]  = seed;\
+frt[offset + 3]  = seed;\
+frt[offset + 4]  = seed;\
+frt[offset + 5]  = seed;\
+frt[offset + 6]  = seed;\
+frt[offset + 7]  = seed;\
+frt[offset + 8]  = seed;\
+frt[offset + 9]  = seed;\
+frt[offset + 10] = seed;\
+frt[offset + 11] = seed;\
+frt[offset + 12] = seed;\
+frt[offset + 13] = seed;\
+frt[offset + 14] = seed;\
+frt[offset + 15] = seed;\
+frt[offset + 16] = seed;\
+frt[offset + 17] = seed;\
+frt[offset + 18] = seed;\
+frt[offset + 19] = seed;\
+frt[offset + 20] = seed;\
+frt[offset + 21] = seed;\
+frt[offset + 22] = seed;\
+frt[offset + 23] = seed;\
+frt[offset + 24] = seed;\
+frt[offset + 25] = seed;\
+frt[offset + 26] = seed;\
+frt[offset + 27] = seed;\
+frt[offset + 28] = seed;\
+frt[offset + 29] = seed;\
+frt[offset + 30] = seed;\
+frt[offset + 31] = seed;\
+frt[offset + 32] = seed;\
+frt[offset + 33] = seed;\
+frt[offset + 34] = seed;\
+frt[offset + 35] = seed;\
+frt[offset + 36] = seed;\
+frt[offset + 37] = seed;\
+frt[offset + 38] = seed;\
+frt[offset + 39] = seed;\
+frt[offset + 40] = seed;\
+frt[offset + 41] = seed;\
+frt[offset + 42] = seed;\
+frt[offset + 43] = seed;\
+frt[offset + 44] = seed;\
+frt[offset + 45] = seed;\
+frt[offset + 46] = seed;\
+frt[offset + 47] = seed;\
+frt[offset + 48] = seed;\
+frt[offset + 49] = seed;\
+frt[offset + 50] = seed;\
+frt[offset + 51] = seed;\
+frt[offset + 52] = seed;\
+frt[offset + 53] = seed;\
+frt[offset + 54] = seed;\
+frt[offset + 55] = seed;\
+frt[offset + 56] = seed;\
+frt[offset + 57] = seed;\
+frt[offset + 58] = seed;\
+frt[offset + 59] = seed;\
+frt[offset + 60] = seed;\
+frt[offset + 61] = seed;\
+frt[offset + 62] = seed;\
 frt[offset + 63] = seed; \
   
 #define ISAAC_MIX(a,b,c,d,e,f,g,h) \
@@ -77,10 +77,10 @@ g-=c; d^=f>>17; f+=g; \
 h-=d; e^=g<<14; g+=h; \
 
 #define ISAAC_BLEND(offset) \
- ISAAC_MIX(frt[offset],  frt[1 + offset],  frt[2 + offset],  frt[3 + offset],  frt[128 + offset], frt[129 + offset], frt[130 + offset], frt[131 + offset]) \
-  ISAAC_MIX(frt[4 + offset],  frt[5 + offset],  frt[6 + offset],  frt[7 + offset],  frt[132 + offset], frt[133 + offset], frt[134 + offset], frt[135 + offset]) \
-  ISAAC_MIX(frt[8 + offset],  frt[9 + offset],  frt[10 + offset], frt[11 + offset], frt[136 + offset], frt[137 + offset], frt[138 + offset], frt[139 + offset]) \
-  ISAAC_MIX(frt[12 + offset], frt[13 + offset], frt[14 + offset], frt[15 + offset], frt[140 + offset], frt[141 + offset], frt[142 + offset], frt[143 + offset]) 
+ISAAC_MIX(frt[offset],  frt[1 + offset],  frt[2 + offset],  frt[3 + offset],  frt[128 + offset], frt[129 + offset], frt[130 + offset], frt[131 + offset]) \
+ISAAC_MIX(frt[4 + offset],  frt[5 + offset],  frt[6 + offset],  frt[7 + offset],  frt[132 + offset], frt[133 + offset], frt[134 + offset], frt[135 + offset]) \
+ISAAC_MIX(frt[8 + offset],  frt[9 + offset],  frt[10 + offset], frt[11 + offset], frt[136 + offset], frt[137 + offset], frt[138 + offset], frt[139 + offset]) \
+ISAAC_MIX(frt[12 + offset], frt[13 + offset], frt[14 + offset], frt[15 + offset], frt[140 + offset], frt[141 + offset], frt[142 + offset], frt[143 + offset]) 
 
 #define ADAM_MIX(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) \
 frt[a]+=frt[m]; frt[f]^=frt[p]<<9;  frt[p]-=frt[a]; \
@@ -153,6 +153,39 @@ void CSPRNG::accumulate() {
   ISAAC_MIX(frt[132],frt[140],frt[176],frt[184],frt[68],frt[76],frt[112],frt[120])
 }
 
+void swap() {
+   // now swap alternating lower and upper columns from the "old" buffer and "new" buffer
+  SWAP(frt[64],  frt[192])  SWAP(frt[1],   frt[129])  SWAP(frt[66],  frt[194])
+  SWAP(frt[80],  frt[208])  SWAP(frt[17],  frt[145])  SWAP(frt[82],  frt[210])
+  SWAP(frt[96],  frt[224])  SWAP(frt[33],  frt[161])  SWAP(frt[98],  frt[226])
+  SWAP(frt[112], frt[240])  SWAP(frt[49],  frt[177])  SWAP(frt[114], frt[242])
+
+  SWAP(frt[3],   frt[131])  SWAP(frt[68],  frt[196])  SWAP(frt[5],   frt[133])
+  SWAP(frt[19],  frt[147])  SWAP(frt[84],  frt[212])  SWAP(frt[21],  frt[149])
+  SWAP(frt[35],  frt[163])  SWAP(frt[100], frt[228])  SWAP(frt[37],  frt[165])
+  SWAP(frt[51],  frt[179])  SWAP(frt[116], frt[244])  SWAP(frt[53],  frt[181])
+
+  SWAP(frt[70],  frt[198])  SWAP(frt[7],   frt[135])  SWAP(frt[72],  frt[200])
+  SWAP(frt[86],  frt[214])  SWAP(frt[23],  frt[151])  SWAP(frt[88],  frt[216])
+  SWAP(frt[102], frt[230])  SWAP(frt[39],  frt[167])  SWAP(frt[104], frt[232])
+  SWAP(frt[118], frt[246])  SWAP(frt[55],  frt[183])  SWAP(frt[120], frt[248])
+
+  SWAP(frt[9],   frt[137])  SWAP(frt[74],  frt[202])  SWAP(frt[11],  frt[139])
+  SWAP(frt[25],  frt[153])  SWAP(frt[90],  frt[218])  SWAP(frt[27],  frt[155])
+  SWAP(frt[41],  frt[169])  SWAP(frt[106], frt[234])  SWAP(frt[43],  frt[171])
+  SWAP(frt[57],  frt[185])  SWAP(frt[122], frt[250])  SWAP(frt[59],  frt[187])
+
+  SWAP(frt[76],  frt[204])  SWAP(frt[13],  frt[141])  SWAP(frt[78],  frt[206])
+  SWAP(frt[92],  frt[220])  SWAP(frt[29],  frt[157])  SWAP(frt[94],  frt[222])
+  SWAP(frt[108], frt[236])  SWAP(frt[45],  frt[173])  SWAP(frt[110], frt[238])
+  SWAP(frt[124], frt[252])  SWAP(frt[61],  frt[189])  SWAP(frt[126], frt[254])
+
+  SWAP(frt[15],  frt[143])   
+  SWAP(frt[31],  frt[159]) 
+  SWAP(frt[47],  frt[175])  
+  SWAP(frt[63],  frt[191])
+}
+
 void CSPRNG::diffuse() {
   // initialize GOLDEN RATIO values AND THEN MIX!
   alignas(64) static u64 gr[8] = {
@@ -217,47 +250,9 @@ void CSPRNG::diffuse() {
 
       ISAAC_MIX(gr[0], gr[1], gr[2], gr[3], gr[4], gr[5], gr[6], gr[7]) 
     }
+
+    swap();
   #endif
-
-  // now swap alternating lower and upper columns from the "old" buffer and "new" buffer
-  SWAP(frt[64],  frt[192])  SWAP(frt[1],   frt[129])  SWAP(frt[66],  frt[194])
-  SWAP(frt[80],  frt[208])  SWAP(frt[17],  frt[145])  SWAP(frt[82],  frt[210])
-  SWAP(frt[96],  frt[224])  SWAP(frt[33],  frt[161])  SWAP(frt[98],  frt[226])
-  SWAP(frt[112], frt[240])  SWAP(frt[49],  frt[177])  SWAP(frt[114], frt[242])
-
-  SWAP(frt[3],   frt[131])  SWAP(frt[68],  frt[196])  SWAP(frt[5],   frt[133])
-  SWAP(frt[19],  frt[147])  SWAP(frt[84],  frt[212])  SWAP(frt[21],  frt[149])
-  SWAP(frt[35],  frt[163])  SWAP(frt[100], frt[228])  SWAP(frt[37],  frt[165])
-  SWAP(frt[51],  frt[179])  SWAP(frt[116], frt[244])  SWAP(frt[53],  frt[181])
-
-  SWAP(frt[70],  frt[198])  SWAP(frt[7],   frt[135])  SWAP(frt[72],  frt[200])
-  SWAP(frt[86],  frt[214])  SWAP(frt[23],  frt[151])  SWAP(frt[88],  frt[216])
-  SWAP(frt[102], frt[230])  SWAP(frt[39],  frt[167])  SWAP(frt[104], frt[232])
-  SWAP(frt[118], frt[246])  SWAP(frt[55],  frt[183])  SWAP(frt[120], frt[248])
-
-  SWAP(frt[9],   frt[137])  SWAP(frt[74],  frt[202])  SWAP(frt[11],  frt[139])
-  SWAP(frt[25],  frt[153])  SWAP(frt[90],  frt[218])  SWAP(frt[27],  frt[155])
-  SWAP(frt[41],  frt[169])  SWAP(frt[106], frt[234])  SWAP(frt[43],  frt[171])
-  SWAP(frt[57],  frt[185])  SWAP(frt[122], frt[250])  SWAP(frt[59],  frt[187])
-
-  SWAP(frt[76],  frt[204])  SWAP(frt[13],  frt[141])  SWAP(frt[78],  frt[206])
-  SWAP(frt[92],  frt[220])  SWAP(frt[29],  frt[157])  SWAP(frt[94],  frt[222])
-  SWAP(frt[108], frt[236])  SWAP(frt[45],  frt[173])  SWAP(frt[110], frt[238])
-  SWAP(frt[124], frt[252])  SWAP(frt[61],  frt[189])  SWAP(frt[126], frt[254])
-
-  SWAP(frt[15],  frt[143])   
-  SWAP(frt[31],  frt[159]) 
-  SWAP(frt[47],  frt[175])  
-  SWAP(frt[63],  frt[191])
-
-  ISAAC_BLEND(0)
-  ISAAC_BLEND(16)
-  ISAAC_BLEND(32)
-  ISAAC_BLEND(48)
-  ISAAC_BLEND(64)
-  ISAAC_BLEND(80)
-  ISAAC_BLEND(96)
-  ISAAC_BLEND(112)
 }
 
 void CSPRNG::undulate() {
@@ -455,7 +450,7 @@ void CSPRNG::undulate() {
 
 void CSPRNG::augment() {
   undulate();
-
+  swap();
   // BLOCK 1                                // BLOCK 9
   ADAM_MIX(0,1,2,3, 16,17,18,19,            128,129,130,131,144,145,146,147);
   ADAM_MIX(32,33,34,35,48,49,50,51,         160,161,162,163,176,177,178,179);

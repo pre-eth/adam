@@ -31,8 +31,8 @@ class ADAM : Command, CSPRNG {
       "Inverts the polarity of the compression permutation",
       "Number of results to return (default 1, max 256)",
       "Desired size (8, 16, 32) of returned numbers if you need less precision than 64-bit",
-      "Dump all currently generated numbers, separated by spaces.",
-      "Just bits. Literally.",
+      "Dump all currently generated numbers, separated by spaces",
+      "Just bits. Literally. Optionally, you can provide a certain limit of N bits",
       "Assess a sample of 100000000 bits (100 MB)"
     };
 };

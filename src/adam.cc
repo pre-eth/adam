@@ -89,10 +89,8 @@ void ADAM::bit_stream() {
     u8 i{0};    
     do {
         generate();
-        while (i < FRUIT_SIZE && total > 0) {
-            total -= print_binary(get(i), &zeroes);
-            ++i;
-        }
+        while (i < FRUIT_SIZE && total > 0)
+            total -= print_binary(get(i++), &zeroes);
     } while (total > 0);    
 }
 
@@ -109,8 +107,6 @@ u8 ADAM::match_option(char opt, const char* val) {
         case 'p':
             // precision of values to return 
             precision = (u8) a_to_i(val, 8, 32);
-            if (precision != 8 || precision != 16 || precision != 32)
-                return puts("Invalid precision value (must be 8, 16, or 32, default is 64)");
         break;
         case 'd':
             results = 256;
