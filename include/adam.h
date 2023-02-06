@@ -35,6 +35,6 @@ class ADAM : Command, CSPRNG {
       "Dump all currently generated numbers, separated by spaces",
       "Just bits. Literally. Optionally, you can provide a certain limit of N bits",
       "Assess a sample of 100000000 bits (100 MB)",
-      "Set the seed (u64). If no argument is provided, outputs the seed that generated this particular set of numbers"
+      "Set the seed (u64). If no argument is provided, returns seed for current buffer"
     };
 };
