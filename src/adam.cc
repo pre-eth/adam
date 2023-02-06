@@ -1,5 +1,10 @@
 #include "adam.h"
 
+static inline u8 print_seed(u64 seed) {
+    printf("SEED: %llu\n", seed);
+    return 0;
+}
+
 static inline u8 print_binary(u64 num, u64* ctr) {
     static char buffer[64];
     char* b = &buffer[64];
@@ -34,18 +39,18 @@ u8 ADAM::match_option(char opt, const char* val) {
         break;
         case 'n':
             // number of results to print on screen after generating
-            results = a_to_i(val, 1, 256);
+            results = a_to_i(val, 1, 256) - 1;
         break;
         case 'p':
             // precision of values to return 
             precision = (u8) a_to_i(val, 8, 32);
         break;
         case 'd':
-            results = 256;
+            results = 255;
         break;
         case 'b':
             // stream bits
-            limit = val != NULL ? a_to_i(val, 64) : INT64_MAX - 1;
+            limit = val ? a_to_i(val, 64) : INT64_MAX - 1;
             bit_stream();
             printf("\n\nDumped %llu bits (%llu ZEROES, %llu ONES)\n", limit, zeroes, limit - zeroes);
         return 1;
@@ -54,6 +59,12 @@ u8 ADAM::match_option(char opt, const char* val) {
             limit = 100000000;
             bit_stream();
         return 1;
+        case 's':
+            if (val)
+                seed = a_to_u(val);
+
+            printf("SEED: %llu\n\n", seed);
+        break;
         default:  
             puts("Invalid option!");
         return 1;
@@ -70,7 +81,7 @@ u8 ADAM::exec(int argc, char** argv) {
     do {
         u64 num = get();
         printf("%llu ", num);
-    } while (--results);
+    } while (results-- > 0);
     
     putchar('\n');
     
