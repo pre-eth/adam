@@ -5,16 +5,16 @@
   █  ██    ██    ██   █  ██    █▀█▄▄▀██  
  ▄▀▀▀▀█▄   ██    ██  ▄▀▀▀▀█▄   █ ▀█▀ ██  
 ▄█▄  ▄██▄ ▄██▄▄▄█▀  ▄█▄  ▄██▄ ▄█▄ █ ▄██▄ 
-</p>
-
 v0.1.0
+
 
 A SIMD accelerated pseudo-random number generator inspired by the code of ISAAC, by Bob
 Jenkins. Added some of my own twists and turns to experiment. I did this just for fun and 
 learning, not to set any records or make anything groundbreaking. That being said, being able 
 to rightfully call this a CSPRNG is my chief goal.
 
-<p style="color:#e8334e;"><b>Use at your own risk</b></p>. Criticism and suggestions are welcome.
+<b>Use at your own risk</b>. Criticism and suggestions are welcome.
+</p>
 </pre>                                   
 
 You can read more information about ISAAC [here](http://burtleburtle.net/bob/rand/isaacafa.html).
