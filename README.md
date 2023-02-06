@@ -122,15 +122,13 @@ thoroughly blend the top and bottom halves. We now have a rudimentary buffer of 
 The last step makes use of the same quarter rounding functions used by the ChaCha
 derived BLAKE2b hash function. These are designed to operate on 16 blocks of 
 64-bit integers, so they seamlessly integrate with ADAM's operations. 2 rounds are 
-applied per S-Box on columns and diagonal groups of 4. 
+applied per 16 integer block on columns and diagonal groups of 4. 
 
 And with that, the user now has a pool of 256 cryptographically generated random 
 numbers, which can be retrieved and used upon will! 
 
 Bit shifting is used to satisfy arbitrary precision needs from the user. The number
-is updated after the right shift, so the original isn't retained. Once a number has
-been completely used, the buffer "regenerates" from the surrounding tables and fills
-in the location with a new value.
+is zeroed out after the right shift, so the original isn't retained. 
 
 # TESTS
 
