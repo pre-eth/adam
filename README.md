@@ -13,8 +13,7 @@ Jenkins. Added some of my own twists and turns to experiment. I did this just fo
 learning, not to set any records or make anything groundbreaking. That being said, being able 
 to rightfully call this a CSPRNG is my chief goal.
 
-<b>Use at your own risk</b>. Criticism and suggestions are welcome.</p>
-</pre>                                   
+<b>Use at your own risk</b>. Criticism and suggestions are welcome.</p></pre>                                   
 
 You can read more information about ISAAC [here](http://burtleburtle.net/bob/rand/isaacafa.html).
 
