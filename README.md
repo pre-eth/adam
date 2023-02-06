@@ -1,19 +1,19 @@
 <pre style="text-align:center;">
-<b style="color:#5821db">
+<p align="center" style="color:#5821db;">
     █     ▀██▀▀█▄       █     ▀██    ██▀ 
    ███     ██   ██     ███     ███  ███  
   █  ██    ██    ██   █  ██    █▀█▄▄▀██  
  ▄▀▀▀▀█▄   ██    ██  ▄▀▀▀▀█▄   █ ▀█▀ ██  
 ▄█▄  ▄██▄ ▄██▄▄▄█▀  ▄█▄  ▄██▄ ▄█▄ █ ▄██▄ 
-</b>                                      
+
 v0.1.0
+
 A SIMD accelerated pseudo-random number generator inspired by the code of ISAAC, by Bob
 Jenkins. Added some of my own twists and turns to experiment. I did this just for fun and 
 learning, not to set any records or make anything groundbreaking. That being said, being able 
 to rightfully call this a CSPRNG is my chief goal.
 
-<b style="color:#e8334e">Use at your own risk</b>. Criticism and suggestions are welcome.
-</pre>                                   
+<b>Use at your own risk</b>. Criticism and suggestions are welcome.</p></pre>                                   
 
 You can read more information about ISAAC [here](http://burtleburtle.net/bob/rand/isaacafa.html).
 
@@ -120,15 +120,13 @@ thoroughly blend the top and bottom halves. We now have a rudimentary buffer of 
 The last step makes use of the same quarter rounding functions used by the ChaCha
 derived BLAKE2b hash function. These are designed to operate on 16 blocks of 
 64-bit integers, so they seamlessly integrate with ADAM's operations. 2 rounds are 
-applied per S-Box on columns and diagonal groups of 4. 
+applied per 16 integer block on columns and diagonal groups of 4. 
 
 And with that, the user now has a pool of 256 cryptographically generated random 
 numbers, which can be retrieved and used upon will! 
 
 Bit shifting is used to satisfy arbitrary precision needs from the user. The number
-is updated after the right shift, so the original isn't retained. Once a number has
-been completely used, the buffer "regenerates" from the surrounding tables and fills
-in the location with a new value.
+is zeroed out after the right shift, so the original isn't retained. 
 
 # TESTS
 
