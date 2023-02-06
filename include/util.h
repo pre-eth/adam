@@ -171,6 +171,7 @@
     static inline u64 a_to_u(const char* s, u64 min = 0, u64 max = UINT64_MAX) {
         u64 val{0}; 
         u8 len = strlen(s);
+
         switch (len) { 
             case 20:    val += 10000000000000000000LLU;
             case 19:    val += (s[len-19] - '0') * 1000000000000000000LLU;
