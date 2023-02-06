@@ -52,7 +52,7 @@ u8 Command::match_opts(int argc, char** argv) {
                 return puts(VERSION);
             default:
                 if (match_option(opt, optarg))
-                    return printf("Invalid option \"%c\"", optopt);             
+                    return 1;             
         }
     }
     return 0;

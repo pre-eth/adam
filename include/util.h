@@ -52,6 +52,7 @@
         #define REG_ADD64       _mm256_add_epi64
         #define REG_SUB64       _mm256_sub_epi64
         #define REG_BLEND32     _mm256_blend_epi32
+        #define REG_SLLV64      _mm256_sllv_epi64 
         #define REG_SRLV64      _mm256_srlv_epi64
         #define REG_PERM2X128   _mm256_permute2x128_si256
         #define REG_PERM8X32    _mm256_permutevar8x32_epi32

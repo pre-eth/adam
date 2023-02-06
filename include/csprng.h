@@ -7,18 +7,13 @@
     #define SEED_SIZE       112             // (Adam's age of death - 1) / 8 - 4.       
                                             // ^ Also the # of u64's extracted from Genesis.       
     #define TAU_BLOCKS      512             // The size of the static TAU array
-    #define PARTITION       64              // Size of each table         
-    #define TABLE_SIZE      16              // Size of the 8 4x4 64-bit blocks
-
-    #define ROUNDS          7               // Minimum acceptable value for mangle rounds
-   
-    alignas(16384) static u64 frt[FRUIT_SIZE];
+  
+    alignas(1024) static u64 frt[FRUIT_SIZE];
 
     class CSPRNG {
         public:
-            CSPRNG() {
-                generate();
-            };
+            CSPRNG() {};
+            CSPRNG(u64 s) : seed(s) {}; 
 
             u64 get(u8 ind);
             u64 get() { return get(size - 1); };
@@ -30,11 +25,11 @@
 
             // size is updated as integers are removed (zeroed out)
             int size{FRUIT_SIZE};
-            u8 rounds{ROUNDS};
-            u8 cycle{0};
+            u8 rounds{7};
             u8 precision{64};
             bool flip{false};
             bool regen{false};
+            u64 seed{trng64()};            
 
         private:
             void accumulate();
@@ -43,8 +38,8 @@
             void mangle();
 
             // utility functions
-            void regenerate();
-            void augshift();
             void undulate();
+            void regenerate();
+
     };
 #endif

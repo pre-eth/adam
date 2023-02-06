@@ -1,7 +1,7 @@
 #include "cmd.h"
 #include "csprng.h"
 
-#define ARGCOUNT 7
+#define ARGCOUNT 6
 
 class ADAM : Command, CSPRNG {
   public:
@@ -10,7 +10,7 @@ class ADAM : Command, CSPRNG {
       PROGARGS = ARGS; 
       PROGHELP = ARGSHELP;
       PROGARGC = ARGCOUNT;
-      OPTSTR = ":hvin:p:r:u:ba";
+      OPTSTR = ":hvidn:p:u:b::a";
     };
 
     u8 exec(int argc, char** argv);
@@ -20,19 +20,19 @@ class ADAM : Command, CSPRNG {
         
   private:
     u8    match_option(char opt, const char* val);
-    
-    u64   alimit{UINT64_MAX};
+    void  bit_stream();
+  
     u8    results{1};
-    bool  bit_stream{false};
-
-    const char* ARGS[ARGCOUNT] = {"i", "n", "p", "r", "u", "b", "a"};
+    u64   zeroes{0};
+    u64   limit;
+    bool  stream{false};
+    const char* ARGS[ARGCOUNT] = {"i", "n", "p", "d", "b", "a"};
     const char* ARGSHELP[ARGCOUNT] = {
       "Inverts the polarity of the compression permutation",
       "Number of results to return (default 1, max 256)",
       "Desired size (8, 16, 32) of returned numbers if you need less precision than 64-bit",
-      "Number of rounds to mangle buffer (default is 7). Must satisfy 7 <= ROUNDS <= 20",
-      "Compression granularity, or the undulation period. Accepts 1 (DOUBLE) or 2 (ALTERNATE)",
+      "Dump all currently generated numbers, separated by spaces.",
       "Just bits. Literally.",
-      "Outputs a sample of 1000000 bits"
+      "Assess a sample of 100000000 bits (100 MB)"
     };
 };
