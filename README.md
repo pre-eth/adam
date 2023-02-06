@@ -1,12 +1,14 @@
 <pre style="text-align:center;">
-<b style="color:#5821db">
+<span style="color:#5821db">
     █     ▀██▀▀█▄       █     ▀██    ██▀ 
    ███     ██   ██     ███     ███  ███  
   █  ██    ██    ██   █  ██    █▀█▄▄▀██  
  ▄▀▀▀▀█▄   ██    ██  ▄▀▀▀▀█▄   █ ▀█▀ ██  
 ▄█▄  ▄██▄ ▄██▄▄▄█▀  ▄█▄  ▄██▄ ▄█▄ █ ▄██▄ 
-</b>                                      
+</span>
+
 v0.1.0
+
 A SIMD accelerated pseudo-random number generator inspired by the code of ISAAC, by Bob
 Jenkins. Added some of my own twists and turns to experiment. I did this just for fun and 
 learning, not to set any records or make anything groundbreaking. That being said, being able 
