@@ -62,8 +62,8 @@ u8 ADAM::match_option(char opt, const char* val) {
         case 's':
             if (val)
                 seed = a_to_u(val);
-
-            printf("SEED: %llu\n\n", seed);
+            else
+                printf("SEED: %llu\n\n", seed);
         break;
         default:  
             puts("Invalid option!");
