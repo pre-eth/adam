@@ -10,7 +10,7 @@ class ADAM : Command, CSPRNG {
       PROGARGS = ARGS; 
       PROGHELP = ARGSHELP;
       PROGARGC = ARGCOUNT;
-      OPTSTR = ":hvdln:p:u:b::as::";
+      OPTSTR = ":hvdln:p:u:a:b::s::";
     };
 
     u8 exec(int argc, char** argv);
@@ -27,6 +27,7 @@ class ADAM : Command, CSPRNG {
     u8    results{0}; 
     u64   zeroes{0};
     u64   limit;
+    FILE* fp{stdout};
     const char* ARGS[ARGCOUNT] = {"u", "n", "p", "d", "b", "a", "s", "l"};
     const char* ARGSHELP[ARGCOUNT] = {
       "Set the uniform distributor's bitwise right shift depth (default 3, max 8)",
@@ -34,7 +35,7 @@ class ADAM : Command, CSPRNG {
       "Desired size (8, 16, 32) of returned numbers if you need less precision than 64-bit",
       "Dump all currently generated numbers, separated by spaces",
       "Just bits. Literally. Optionally, you can provide a certain limit of N bits",
-      "Assess a sample of 100000000 bits (100 MB)",
+      "Assess a sample of 100000000 bits (100 MB) written to a filename you provide",
       "Set the seed (u64). If no argument is provided, returns seed for current buffer",
       "Live stream of continuously generated numbers"
     };

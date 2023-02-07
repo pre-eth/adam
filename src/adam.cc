@@ -1,18 +1,17 @@
 #include "adam.h"
 
-static inline u8 print_binary(u64 num, u64 *ctr) {
+static inline u8 print_binary(u64 num, u64 *ctr, FILE* fp) {
     char buffer[64];
     char *b = &buffer[64];
     *b = '\0';
 
     u8 size = log2(num) + 1;
-    while (num) {
+    do {
         *ctr += !(num & 0x01);
         *--b = (num & 0x01) + '0';
-        num >>= 1;
-    }
+    } while (num >>= 1);
 
-    fwrite(b, 1, size, stdout);
+    fwrite(b, 1, size, fp);
     return size;
 }
 
@@ -124,12 +123,15 @@ void ADAM::live_stream() {
 }
 
 void ADAM::bit_stream() {
-    u64 total{0};
+    i64 total{limit};
+    u64 num;
     do {
         generate();
-        while (total < limit)
-            total += print_binary(get(), &zeroes);
-    } while (total < limit);
+        num = get();
+        do {
+            total -= print_binary(num, &zeroes, fp);
+        } while (num = get());
+    } while (total > 0);
 }
 
 u8 ADAM::match_option(char opt, const char *val) {
@@ -140,15 +142,15 @@ u8 ADAM::match_option(char opt, const char *val) {
             seed = a_to_u(val, 1);
         else
             printf("SEED: %llu\n\n", seed);
-        break;
+    break;
     case 'u':
         // for inverting polarity of undulation
         undulation = (u8) a_to_u(val, 3, 8);
-        break;
+    break;
     case 'n':
         // number of results to print on screen after generating
         results = (u8) (a_to_u(val, 1, 256) - 1);
-        break;
+    break;
     case 'p':
         // precision of values to return
         precision = (u8) a_to_u(val, 8, 32);
@@ -156,27 +158,29 @@ u8 ADAM::match_option(char opt, const char *val) {
             puts("ERROR! Precision must be 8, 16, or 32");
             return 1;
         }
-        break;
+    break;
     case 'd':
         results = 255;
-        break;
+    break;
     case 'b':
         // stream bits
-        limit = val != NULL ? a_to_u(val, 500) : UINT64_MAX - 1;
+        limit = val != NULL ? a_to_i(val, 64) : INT64_MAX - 1;
         bit_stream();
         printf("\n\nDumped %llu bits (%llu ZEROES, %llu ONES)\n", limit, zeroes, limit - zeroes);
-        return 1;
+    return 1;
     case 'a':
         // stream 100 samples of 1000000 bits for testing
         limit = 100000000;
+        fp = fopen(val, "w+");
         bit_stream();
-        return 1;
+        fclose(fp);
+    return 1;
     case 'l':
         live_stream();
-        return 1;
+    return 1;
     default:
-        puts("Invalid option!");
-        return 1;
+        puts("Option is invalid or missing required argument");
+    return 1;
     }
     return 0;
 }
@@ -190,7 +194,7 @@ u8 ADAM::exec(int argc, char **argv) {
     do {
         u64 num = get();
         printf("%llu ", num);
-    } while (results-- > 0);
+    } while (--results > 0);
 
     putchar('\n');
 

@@ -1,5 +1,5 @@
 <pre style="text-align:center;">
-<p align="center" style="color:#5821db;">
+<p align="center">
     █     ▀██▀▀█▄       █     ▀██    ██▀ 
    ███     ██   ██     ███     ███  ███  
   █  ██    ██    ██   █  ██    █▀█▄▄▀██  
@@ -51,7 +51,7 @@ Or you can also provide the following options:
     -p      Desired size (8, 16, 32) of returned numbers if you need less precision than 64-bit
     -d      Dump all currently generated numbers, separated by spaces
     -b      Just bits. Literally. Optionally, you can provide a certain limit of N bits
-    -a      Assess a sample of 100000000 bits (100 MB)
+    -a      Assess a sample of 100000000 bits (100 MB) written to a filename you provide
     -s      Set the seed (u64). If no argument is provided, returns seed for current buffer
     -l      Live stream of continuously generated numbers
 
