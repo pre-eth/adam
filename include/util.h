@@ -35,7 +35,7 @@
         #define REG_SUB64       _mm512_sub_epi64
         #define REG_SRLV64      _mm512_srlv_epi64
         #define REG_MBLEND64    _mm512_mask_blend_epi64
-        #define REG_PERM64      _mm512_permutexvar_epi64
+        #define REG_PERM64      _mm512_permutex_epi64
         #define REG_ANDNOT      _mm512_andnot_epi64
     #else
         typedef __m256i         reg;
@@ -55,11 +55,12 @@
         #define REG_BLEND32     _mm256_blend_epi32
         #define REG_SLLV64      _mm256_sllv_epi64 
         #define REG_SRLV64      _mm256_srlv_epi64
-        #define REG_PERM2X128   _mm256_permute2x128_si256
-        #define REG_PERM8X32    _mm256_permutevar8x32_epi32
+        #define REG_PERM128     _mm256_permute2x128_si256
+        #define REG_PERM32      _mm256_permutevar8x32_epi32
+        #define REG_PERM64      _mm256_permute4x64_epi64 
         #define REG_EXT64       _mm256_extract_epi64
         #define REG_INS64       _mm256_insert_epi64
-        #define REG_ANDNOT      _mm256_andnot_si256 
+        #define REG_ANDNOT      _mm256_andnot_si256
     #endif
 
     // http://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2

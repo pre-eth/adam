@@ -46,7 +46,7 @@ frt[offset + 63] = seed;
   frt[h]+=frt[l]; frt[e]^=frt[o]>>14; frt[o]-=frt[h]; \
 
 // ChaCha rounding functions (64-bit versions adapted from BLAKE2b)
-#define ROTR(a,b) ((frt[a] >> b) | (frt[a] << (( (-b) & 63))))
+#define ROTR(a,b) frt[a] = ((frt[a] >> b) | (frt[a] << (( (-b) & 63))))
 #define QR(a,b,c,d) (	\
   frt[a] += frt[b], frt[d] ^= frt[a], ROTR(d, 32),	\
   frt[c] += frt[d], frt[b] ^= frt[c], ROTR(b, 24),	\
@@ -78,7 +78,6 @@ u8 CSPRNG::generate() {
 }
 
 void CSPRNG::accumulate() {
-  //printf("SEED: %llu\n", seed);
   INIT_BUFFER(0)
   INIT_BUFFER(64)
   INIT_BUFFER(128)
@@ -103,7 +102,6 @@ void CSPRNG::accumulate() {
   frt[7]  = frt[135] = frt[15] = frt[143] = frt[51]  = frt[179] = frt[59]  = frt[187] =
   frt[71] = frt[199] = frt[79] = frt[207] = frt[115] = frt[243] = frt[123] = frt[251] = 
   0x9e3779b97f4a7c13LLU;
-
 }
 
 void CSPRNG::diffuse() {

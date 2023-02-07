@@ -130,7 +130,7 @@ void ADAM::bit_stream() {
         num = get();
         do {
             total -= print_binary(num, &zeroes, fp);
-        } while (num = get());
+        } while (num = get() && total > 0);
     } while (total > 0);
 }
 
@@ -194,7 +194,7 @@ u8 ADAM::exec(int argc, char **argv) {
     do {
         u64 num = get();
         printf("%llu ", num);
-    } while (--results > 0);
+    } while (results-- > 0);
 
     putchar('\n');
 
