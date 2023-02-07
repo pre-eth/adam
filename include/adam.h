@@ -26,7 +26,7 @@ class ADAM : Command, CSPRNG {
     // Add one for real number of results, since we can't store 256 in u8
     u8    results{0}; 
     u64   zeroes{0};
-    i64   limit;
+    u64   limit;
     const char* ARGS[ARGCOUNT] = {"u", "n", "p", "d", "b", "a", "s", "l"};
     const char* ARGSHELP[ARGCOUNT] = {
       "Set the uniform distributor's bitwise right shift depth (default 3, max 8)",

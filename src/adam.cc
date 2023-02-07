@@ -124,12 +124,12 @@ void ADAM::live_stream() {
 }
 
 void ADAM::bit_stream() {
-    i64 total{limit};
+    u64 total{0};
     do {
         generate();
-        while (total > 0)
-            total -= print_binary(get(), &zeroes);
-    } while (total > 0);
+        while (total < limit)
+            total += print_binary(get(), &zeroes);
+    } while (total < limit);
 }
 
 u8 ADAM::match_option(char opt, const char *val) {
@@ -143,15 +143,15 @@ u8 ADAM::match_option(char opt, const char *val) {
         break;
     case 'u':
         // for inverting polarity of undulation
-        undulation = (u8) a_to_i(val, 3, 8);
+        undulation = (u8) a_to_u(val, 3, 8);
         break;
     case 'n':
         // number of results to print on screen after generating
-        results = (u8) (a_to_i(val, 1, 256) - 1);
+        results = (u8) (a_to_u(val, 1, 256) - 1);
         break;
     case 'p':
         // precision of values to return
-        precision = (u8) a_to_i(val, 8, 32);
+        precision = (u8) a_to_u(val, 8, 32);
         if (precision != 8 && precision != 16 && precision != 32) {
             puts("ERROR! Precision must be 8, 16, or 32");
             return 1;
@@ -162,7 +162,7 @@ u8 ADAM::match_option(char opt, const char *val) {
         break;
     case 'b':
         // stream bits
-        limit = val ? a_to_i(val, 64) : INT64_MAX - 1;
+        limit = val != NULL ? a_to_u(val, 500) : UINT64_MAX - 1;
         bit_stream();
         printf("\n\nDumped %llu bits (%llu ZEROES, %llu ONES)\n", limit, zeroes, limit - zeroes);
         return 1;

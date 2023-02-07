@@ -198,7 +198,7 @@ void CSPRNG::assimilate() {
     m2 = REG_LOADBITS((reg*) &frt[i+(8  >> FRUIT_FACTOR)]);
     m3 = REG_LOADBITS((reg*) &frt[i+(16 >> FRUIT_FACTOR)]);
     m4 = REG_LOADBITS((reg*) &frt[i+(24 >> FRUIT_FACTOR)]);
-
+    
     m1 = REG_ANDNOT(m1, mask);
     m2 = REG_ANDNOT(m2, mask);
     m3 = REG_ANDNOT(m3, mask);
