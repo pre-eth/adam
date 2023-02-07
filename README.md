@@ -53,7 +53,7 @@ Or you can also provide the following options:
     -b      Just bits. Literally. Optionally, you can provide a certain limit of N bits
     -a      Assess a sample of 100000000 bits (100 MB)
     -s      Set the seed (u64). If no argument is provided, returns seed for current buffer
-
+    -l      Live stream of continuously generated numbers
 
 # ALGORITHM
 
