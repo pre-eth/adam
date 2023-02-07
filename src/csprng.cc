@@ -46,12 +46,12 @@ frt[offset + 63] = seed;
   frt[h]+=frt[l]; frt[e]^=frt[o]>>14; frt[o]-=frt[h]; \
 
 // ChaCha rounding functions (64-bit versions adapted from BLAKE2b)
-#define ROTR(a,b) frt[a] = ((frt[a] >> b) | (frt[a] << (( (-b) & 63))))
+#define ROTR(a,b) frt[a] = ((frt[a] >> b) | (frt[a] << ((-b) & 63)))
 #define QR(a,b,c,d) (	\
-  frt[a] += frt[b], frt[d] ^= frt[a], ROTR(d, 32),	\
-  frt[c] += frt[d], frt[b] ^= frt[c], ROTR(b, 24),	\
-  frt[a] += frt[b], frt[d] ^= frt[a], ROTR(d, 16),	\
-  frt[c] += frt[d], frt[b] ^= frt[c], ROTR(b, 63)   \
+  frt[a] += frt[b], frt[d] ^= frt[a], ROTR(d, 32), \
+  frt[c] += frt[d], frt[b] ^= frt[c], ROTR(b, 24), \
+  frt[a] += frt[b], frt[d] ^= frt[a], ROTR(d, 16), \
+  frt[c] += frt[d], frt[b] ^= frt[c], ROTR(b, 63)  \
 )
 
 u64 CSPRNG::get(u8 ind) {

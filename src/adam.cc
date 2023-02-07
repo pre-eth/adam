@@ -127,10 +127,10 @@ void ADAM::bit_stream() {
     u64 num;
     do {
         generate();
-        num = get();
         do {
+            num = get();
             total -= print_binary(num, &zeroes, fp);
-        } while (num = get() && total > 0);
+        } while (num && total > 0);
     } while (total > 0);
 }
 
