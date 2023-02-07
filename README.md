@@ -46,7 +46,7 @@ Or you can also provide the following options:
 
     -h      Get all available options
     -v      Version of this software
-    -i      Inverts the polarity of the compression permutation
+    -u      Set the uniform distributor's bitwise right shift depth (default 3, max 8)
     -n      Number of results to return (default 1, max 256)
     -p      Desired size (8, 16, 32) of returned numbers if you need less precision than 64-bit
     -d      Dump all currently generated numbers, separated by spaces
@@ -59,18 +59,15 @@ Or you can also provide the following options:
 
 The name comes from the biblical figure Adam (a play on words since I 
 came up with this while studying the source of ISAAC64). It is also a 
-backronym like ISAAC that explains its process: 
-
-**A**CCUMULATE 
-**D**IFFUSE 
-**A**UGMENT 
-**M**ANGLE
+backronym like ISAAC that explains its process: **A**CCUMULATE, **D**IFFUSE 
+**A**SSIMILATE, and **M**ANGLE
 
 ## I. ACCUMULATE
 
-A true random seed is queried via RDRAND. This seed is used to initially
-fill the buffer, before a set of initialization vectors is permuted using
-the same mixing logic from ISAAC64, and then those vectors themselves are
+A seed can be set programmatically or on the command line. If no seed is 
+provided, a true random seed is queried via RDRAND. This seed is used to 
+initially fill the buffer, before a set of initialization vectors is permuted
+with the same mixing logic from ISAAC64, and then those vectors themselves are
 mixed into the buffer. Each vector is inserted twice - once in the top half,
 once in the bottom half.
 
@@ -81,40 +78,39 @@ The 8 IV's are derived from the following verse:
 (Which can also be considered a TL;DR for the whole algorithm in case you
 don't want to keep reading.)
 
+A set of 8 initial addends are set to the Golden Ratio (GR), per Bob's original 
+implementation. They are also inserted twice like above and distributed across
+the top and bottom half.
+
+The initial configuration of the buffer looks like this:
+
 ## II. DIFFUSE
 
-A set of 8 initial addends are set to the Golden Ratio, per Bob's original 
-implementation. Once they've been permuted themselves, this set of numbers is 
-summed with the `fruit` buffer, with an additional permutation applied to them 
-every 512 bits. These SIMD registers that store the results are written back in
-reverse order.
+First, we permute the IV's and GR values 4x each with the same mixing
+logic from ISAAC64. 4 rounds were chosen because that's the same amount of initial
+permutation Bob used.
+
+Once they've been permuted themselves, SIMD registers are used to sum different groups
+of contiguous bits, with an additional permutation applied to the IV and GR locations
+every iteration. These SIMD registers that store the results are written back to the
+`frt` buffer in reverse order.
 
 Alternating segments per column are swapped from the top and bottom halves of the
-buffer.
+buffer like so:
 
-## III. AUGMENT
+## III. ASSIMILATE
 
-This phase has 2 stages: **undulation** and **assimilation**. You can remember
-them with the handy acronym [**USA!**](https://media.tenor.com/gH-6XZCn-5EAAAAC/homer-simpson-usa-homer.gif)
+This phase begins by applying a compression permutation. More rigorously, this means
+that a certain subset of bits are selected AND order is changed. So bitwise manipulation
+is used for the first requirement and then results are written back in reverse order 
+like before for the second requirement:
 
-### UNDULATION
 
-Suppose we roughly approximate the motion of a square wave and apply it to the buffer 
-in the form of a compression permutation.
+The right shift parameter can be configured programmatically or on the command line.
 
-This means that order must be changed and a certain subset of bits need to be selected. 
-
-So to satisfy these criteria, we'll do 2 things:
-
-1.  Simulate a waveform `W` with amplitude `A:=8` and wavelength `L:=1` by shifting `N`
-    bits from the elements that form the peaks and troughs of `W`, where `1<=N<=8`
-2.  Repeat the swap from the previous phase
-
-### ASSIMILATION
-
-The permutation logic of ISAAC64 is extended to 16 integers at a time, and used to
+Then, the permutation logic of ISAAC64 is extended to 16 integers at a time, and used to
 thoroughly blend the top and bottom halves. We now have a rudimentary buffer of 256
-64-bit randomly generated integers, but we have some work left before we can use them.
+64-bit randomly generated integers, but we have some work left before we can use them:
 
 ## IV. MANGLE
 
@@ -126,8 +122,8 @@ applied per 16 integer block on columns and diagonal groups of 4.
 And with that, the user now has a pool of 256 cryptographically generated random 
 numbers, which can be retrieved and used upon will! 
 
-Bit shifting is used to satisfy arbitrary precision needs from the user. The number
-is zeroed out after the right shift, so the original isn't retained. 
+Bit shifting is used to satisfy arbitrary precision needs from the user. Each location
+is zeroed out after its value is retrieved, so the original isn't retained. 
 
 # TESTS
 

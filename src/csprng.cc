@@ -111,8 +111,49 @@ void CSPRNG::accumulate() {
 
 }
 
-void swap() {
-   // now swap alternating lower and upper columns from the "old" buffer and "new" buffer
+void CSPRNG::diffuse() {
+  // permute IV's with ISAAC mixing logic
+  ISAAC_MIX(frt[4],frt[12],frt[48],frt[56],frt[196],frt[204],frt[240],frt[248])
+  ISAAC_MIX(frt[132],frt[140],frt[176],frt[184],frt[68],frt[76],frt[112],frt[120])
+  ISAAC_MIX(frt[4],frt[12],frt[48],frt[56],frt[196],frt[204],frt[240],frt[248])
+  ISAAC_MIX(frt[132],frt[140],frt[176],frt[184],frt[68],frt[76],frt[112],frt[120])
+
+  // permute GR with ISAAC mixing logic
+  ISAAC_MIX(frt[7], frt[15], frt[51], frt[59], frt[199], frt[207], frt[243], frt[251]) 
+  ISAAC_MIX(frt[135], frt[143], frt[179], frt[187], frt[71], frt[79], frt[115], frt[123]) 
+  ISAAC_MIX(frt[7], frt[15], frt[51], frt[59], frt[199], frt[207], frt[243], frt[251])  
+  ISAAC_MIX(frt[135], frt[143], frt[179], frt[187], frt[71], frt[79], frt[115], frt[123]) 
+
+  reg m1, m2, m3, m4;
+  int i{0};
+  
+  // SIMD time baby!
+  do {
+    ISAAC_MIX(frt[4],frt[12],frt[48],frt[56],frt[196],frt[204],frt[240],frt[248])
+    ISAAC_MIX(frt[132],frt[140],frt[176],frt[184],frt[68],frt[76],frt[112],frt[120])
+    ISAAC_MIX(frt[7], frt[15], frt[51], frt[59], frt[199], frt[207], frt[243], frt[251]) 
+    ISAAC_MIX(frt[135], frt[143], frt[179], frt[187], frt[71], frt[79], frt[115], frt[123]) 
+
+    // load 1024 bits of integer data (2048 if AVX-512 is available)
+    m1 = REG_LOADBITS((reg*) &frt[i]); 
+    m2 = REG_LOADBITS((reg*) &frt[i+(8  >> FRUIT_FACTOR)]);
+    m3 = REG_LOADBITS((reg*) &frt[i+(16 >> FRUIT_FACTOR)]);
+    m4 = REG_LOADBITS((reg*) &frt[i+(24 >> FRUIT_FACTOR)]);
+    // add
+    m1 = REG_ADD64(m1, m3);
+    m2 = REG_ADD64(m2, m4);
+    m3 = REG_ADD64(m1, m4);
+    m4 = REG_ADD64(m2, m3);
+    // store mixed results (note the index flip)
+    REG_STOREBITS((reg*) &frt[i+(24 >> FRUIT_FACTOR)],  m1);
+    REG_STOREBITS((reg*) &frt[i+(16 >> FRUIT_FACTOR)],  m2);
+    REG_STOREBITS((reg*) &frt[i+(8  >> FRUIT_FACTOR)],  m3);
+    REG_STOREBITS((reg*) &frt[i],                       m4);
+
+    i += FRUIT_LOOP;
+  } while (i < FRUIT_SIZE);
+
+  // now swap alternating lower and upper columns from the "old" buffer and "new" buffer
   SWAP(frt[64],  frt[192])  SWAP(frt[1],   frt[129])  SWAP(frt[66],  frt[194])
   SWAP(frt[80],  frt[208])  SWAP(frt[17],  frt[145])  SWAP(frt[82],  frt[210])
   SWAP(frt[96],  frt[224])  SWAP(frt[33],  frt[161])  SWAP(frt[98],  frt[226])
@@ -144,47 +185,7 @@ void swap() {
   SWAP(frt[63],  frt[191])
 }
 
-void CSPRNG::diffuse() {
-  // permute IV's with ISAAC mixing logic
-  ISAAC_MIX(frt[4],frt[12],frt[48],frt[56],frt[196],frt[204],frt[240],frt[248])
-  ISAAC_MIX(frt[132],frt[140],frt[176],frt[184],frt[68],frt[76],frt[112],frt[120])
-  ISAAC_MIX(frt[4],frt[12],frt[48],frt[56],frt[196],frt[204],frt[240],frt[248])
-  ISAAC_MIX(frt[132],frt[140],frt[176],frt[184],frt[68],frt[76],frt[112],frt[120])
-
-  // permute GR with ISAAC mixing logic
-  ISAAC_MIX(frt[7], frt[15], frt[51], frt[59], frt[199], frt[207], frt[243], frt[251]) 
-  ISAAC_MIX(frt[135], frt[143], frt[179], frt[187], frt[71], frt[79], frt[115], frt[123]) 
-  ISAAC_MIX(frt[7], frt[15], frt[51], frt[59], frt[199], frt[207], frt[243], frt[251])  
-  ISAAC_MIX(frt[135], frt[143], frt[179], frt[187], frt[71], frt[79], frt[115], frt[123]) 
-
-  reg m1, m2, m3, m4;
-  int i{0};
-  
-  // SIMD time baby!
-  do {
-    // load 1024 bits of integer data (2048 if AVX-512 is available)
-    m1 = REG_LOADBITS((reg*) &frt[i]); 
-    m2 = REG_LOADBITS((reg*) &frt[i+(8  >> FRUIT_FACTOR)]);
-    m3 = REG_LOADBITS((reg*) &frt[i+(16 >> FRUIT_FACTOR)]);
-    m4 = REG_LOADBITS((reg*) &frt[i+(24 >> FRUIT_FACTOR)]);
-    // add
-    m1 = REG_ADD64(m1, m3);
-    m2 = REG_ADD64(m2, m4);
-    m3 = REG_ADD64(m1, m4);
-    m4 = REG_ADD64(m2, m3);
-    // store mixed results (note the index flip)
-    REG_STOREBITS((reg*) &frt[i+(24 >> FRUIT_FACTOR)],  m1);
-    REG_STOREBITS((reg*) &frt[i+(16 >> FRUIT_FACTOR)],  m2);
-    REG_STOREBITS((reg*) &frt[i+(8  >> FRUIT_FACTOR)],  m3);
-    REG_STOREBITS((reg*) &frt[i],                       m4);
-
-    i += FRUIT_LOOP;
-  } while (i < FRUIT_SIZE);
-
-  swap();
-}
-
-void CSPRNG::unif_dist() {
+void CSPRNG::assimilate() {
   // mask is -1 so inverted num stays the same
   const reg mask = REG_SET64(-1LLU);
   const reg srlv = REG_SET64(undulation);
@@ -217,10 +218,7 @@ void CSPRNG::unif_dist() {
 
     i += FRUIT_LOOP;
   } while (i < FRUIT_SIZE);
-}
 
-void CSPRNG::assimilate() {
-  unif_dist();
   // BLOCK 1                                // BLOCK 9
   ADAM_MIX(0,1,2,3, 16,17,18,19,            128,129,130,131,144,145,146,147);
   ADAM_MIX(32,33,34,35,48,49,50,51,         160,161,162,163,176,177,178,179);

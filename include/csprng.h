@@ -3,7 +3,8 @@
     #include "util.h"
 
     #define FRUIT_SIZE      256             // size of the fruit buffer
-    #define UNDULATION      3
+    #define UNDULATION      3               // default srlv parameter
+    
     #ifdef __AVX512F__
         #define FRUIT_LOOP      32
         #define FRUIT_FACTOR    0
@@ -46,7 +47,6 @@
             void mangle();
 
             // utility functions
-            void unif_dist();
             void regenerate();
 
     };
