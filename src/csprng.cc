@@ -67,39 +67,39 @@ frt[offset + 62] = seed;\
 frt[offset + 63] = seed; \
   
 #define ISAAC_MIX(a,b,c,d,e,f,g,h) \
-a-=e; f^=h>>9;  h+=a; \
-b-=f; g^=a<<9;  a+=b; \
-c-=g; h^=b>>23; b+=c; \
-d-=h; a^=c<<15; c+=d; \
-e-=a; b^=d>>14; d+=e; \
-f-=b; c^=e<<20; e+=f; \
-g-=c; d^=f>>17; f+=g; \
-h-=d; e^=g<<14; g+=h; \
+  a-=e; f^=h>>9;  h+=a; \
+  b-=f; g^=a<<9;  a+=b; \
+  c-=g; h^=b>>23; b+=c; \
+  d-=h; a^=c<<15; c+=d; \
+  e-=a; b^=d>>14; d+=e; \
+  f-=b; c^=e<<20; e+=f; \
+  g-=c; d^=f>>17; f+=g; \
+  h-=d; e^=g<<14; g+=h; \
 
 #define ISAAC_BLEND(offset) \
-ISAAC_MIX(frt[offset],  frt[1 + offset],  frt[2 + offset],  frt[3 + offset],  frt[128 + offset], frt[129 + offset], frt[130 + offset], frt[131 + offset]) \
-ISAAC_MIX(frt[4 + offset],  frt[5 + offset],  frt[6 + offset],  frt[7 + offset],  frt[132 + offset], frt[133 + offset], frt[134 + offset], frt[135 + offset]) \
-ISAAC_MIX(frt[8 + offset],  frt[9 + offset],  frt[10 + offset], frt[11 + offset], frt[136 + offset], frt[137 + offset], frt[138 + offset], frt[139 + offset]) \
-ISAAC_MIX(frt[12 + offset], frt[13 + offset], frt[14 + offset], frt[15 + offset], frt[140 + offset], frt[141 + offset], frt[142 + offset], frt[143 + offset]) 
+  ISAAC_MIX(frt[offset],  frt[1 + offset],  frt[2 + offset],  frt[3 + offset],  frt[128 + offset], frt[129 + offset], frt[130 + offset], frt[131 + offset]) \
+  ISAAC_MIX(frt[4 + offset],  frt[5 + offset],  frt[6 + offset],  frt[7 + offset],  frt[132 + offset], frt[133 + offset], frt[134 + offset], frt[135 + offset]) \
+  ISAAC_MIX(frt[8 + offset],  frt[9 + offset],  frt[10 + offset], frt[11 + offset], frt[136 + offset], frt[137 + offset], frt[138 + offset], frt[139 + offset]) \
+  ISAAC_MIX(frt[12 + offset], frt[13 + offset], frt[14 + offset], frt[15 + offset], frt[140 + offset], frt[141 + offset], frt[142 + offset], frt[143 + offset]) 
 
 #define ADAM_MIX(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) \
-frt[a]+=frt[m]; frt[f]^=frt[p]<<9;  frt[p]-=frt[a]; \
-frt[b]+=frt[n]; frt[g]^=frt[i]>>9;  frt[i]-=frt[b]; \
-frt[c]+=frt[o]; frt[h]^=frt[j]<<23; frt[j]-=frt[c]; \
-frt[d]+=frt[p]; frt[a]^=frt[k]>>15; frt[k]-=frt[d]; \
-frt[e]+=frt[i]; frt[b]^=frt[l]<<14; frt[l]-=frt[e]; \
-frt[f]+=frt[j]; frt[c]^=frt[m]>>20; frt[m]-=frt[f]; \
-frt[g]+=frt[k]; frt[d]^=frt[n]<<17; frt[n]-=frt[g]; \
-frt[h]+=frt[l]; frt[e]^=frt[o]>>14; frt[o]-=frt[h]; \
+  frt[a]+=frt[m]; frt[f]^=frt[p]<<9;  frt[p]-=frt[a]; \
+  frt[b]+=frt[n]; frt[g]^=frt[i]>>9;  frt[i]-=frt[b]; \
+  frt[c]+=frt[o]; frt[h]^=frt[j]<<23; frt[j]-=frt[c]; \
+  frt[d]+=frt[p]; frt[a]^=frt[k]>>15; frt[k]-=frt[d]; \
+  frt[e]+=frt[i]; frt[b]^=frt[l]<<14; frt[l]-=frt[e]; \
+  frt[f]+=frt[j]; frt[c]^=frt[m]>>20; frt[m]-=frt[f]; \
+  frt[g]+=frt[k]; frt[d]^=frt[n]<<17; frt[n]-=frt[g]; \
+  frt[h]+=frt[l]; frt[e]^=frt[o]>>14; frt[o]-=frt[h]; \
 
 // ChaCha rounding functions (64-bit versions adapted from BLAKE2b)
 #define ROTR(a,b) ((frt[a] >> b) | (frt[a] << (( (-b) & 63))))
 #define QR(a,b,c,d) (	\
-	frt[a] += frt[b], frt[d] ^= frt[a], ROTR(d, 32),	\
-	frt[c] += frt[d], frt[b] ^= frt[c], ROTR(b, 24),	\
-	frt[a] += frt[b], frt[d] ^= frt[a], ROTR(d, 16),	\
-	frt[c] += frt[d], frt[b] ^= frt[c], ROTR(b, 63)   \
-)
+    frt[a] += frt[b], frt[d] ^= frt[a], ROTR(d, 32),	\
+    frt[c] += frt[d], frt[b] ^= frt[c], ROTR(b, 24),	\
+    frt[a] += frt[b], frt[d] ^= frt[a], ROTR(d, 16),	\
+    frt[c] += frt[d], frt[b] ^= frt[c], ROTR(b, 63)   \
+  )
 
 u64 CSPRNG::get(u8 ind) {
   BITSET(ind, 0, size - 1 < 0); 
