@@ -10,7 +10,7 @@ class ADAM : Command, CSPRNG {
       PROGARGS = ARGS; 
       PROGHELP = ARGSHELP;
       PROGARGC = ARGCOUNT;
-      OPTSTR = ":hvidln:p:u:b::as::";
+      OPTSTR = ":hvdln:p:u:b::as::";
     };
 
     u8 exec(int argc, char** argv);
@@ -27,9 +27,9 @@ class ADAM : Command, CSPRNG {
     u8    results{0}; 
     u64   zeroes{0};
     i64   limit;
-    const char* ARGS[ARGCOUNT] = {"i", "n", "p", "d", "b", "a", "s", "l"};
+    const char* ARGS[ARGCOUNT] = {"u", "n", "p", "d", "b", "a", "s", "l"};
     const char* ARGSHELP[ARGCOUNT] = {
-      "Inverts the polarity of the compression permutation",
+      "Set the uniform distributor's bitwise right shift depth (default 3, max 8)",
       "Number of results to return (default 1, max 256)",
       "Desired size (8, 16, 32) of returned numbers if you need less precision than 64-bit",
       "Dump all currently generated numbers, separated by spaces",

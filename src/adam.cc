@@ -60,6 +60,7 @@ void ADAM::live_stream() {
 
     printf("\e[8;29;64t");
     setbuf(stdout, NULL);
+    
     char lines[40][100];
 
     do
@@ -140,17 +141,21 @@ u8 ADAM::match_option(char opt, const char *val) {
         else
             printf("SEED: %llu\n\n", seed);
         break;
-    case 'i':
+    case 'u':
         // for inverting polarity of undulation
-        flip = !flip;
+        undulation = (u8) a_to_i(val, 3, 8);
         break;
     case 'n':
         // number of results to print on screen after generating
-        results = a_to_i(val, 1, 256) - 1;
+        results = (u8) (a_to_i(val, 1, 256) - 1);
         break;
     case 'p':
         // precision of values to return
-        precision = (u8)a_to_i(val, 8, 32);
+        precision = (u8) a_to_i(val, 8, 32);
+        if (precision != 8 && precision != 16 && precision != 32) {
+            puts("ERROR! Precision must be 8, 16, or 32");
+            return 1;
+        }
         break;
     case 'd':
         results = 255;
