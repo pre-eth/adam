@@ -34,12 +34,7 @@ frt[offset + 63] = seed;
   g-=c; d^=f>>17; f+=g; \
   h-=d; e^=g<<14; g+=h; \
 
-#define ISAAC_BLEND(offset) \
-  ISAAC_MIX(frt[offset],      frt[1 + offset],  frt[2 + offset],  frt[3 + offset],  frt[128 + offset], frt[129 + offset], frt[130 + offset], frt[131 + offset]) \
-  ISAAC_MIX(frt[4 + offset],  frt[5 + offset],  frt[6 + offset],  frt[7 + offset],  frt[132 + offset], frt[133 + offset], frt[134 + offset], frt[135 + offset]) \
-  ISAAC_MIX(frt[8 + offset],  frt[9 + offset],  frt[10 + offset], frt[11 + offset], frt[136 + offset], frt[137 + offset], frt[138 + offset], frt[139 + offset]) \
-  ISAAC_MIX(frt[12 + offset], frt[13 + offset], frt[14 + offset], frt[15 + offset], frt[140 + offset], frt[141 + offset], frt[142 + offset], frt[143 + offset]) 
-
+// Inverted Frankenstein sequel monstrosity based on ISAAC_MIX
 #define ADAM_MIX(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) \
   frt[a]+=frt[m]; frt[f]^=frt[p]<<9;  frt[p]-=frt[a]; \
   frt[b]+=frt[n]; frt[g]^=frt[i]>>9;  frt[i]-=frt[b]; \
@@ -53,11 +48,11 @@ frt[offset + 63] = seed;
 // ChaCha rounding functions (64-bit versions adapted from BLAKE2b)
 #define ROTR(a,b) ((frt[a] >> b) | (frt[a] << (( (-b) & 63))))
 #define QR(a,b,c,d) (	\
-    frt[a] += frt[b], frt[d] ^= frt[a], ROTR(d, 32),	\
-    frt[c] += frt[d], frt[b] ^= frt[c], ROTR(b, 24),	\
-    frt[a] += frt[b], frt[d] ^= frt[a], ROTR(d, 16),	\
-    frt[c] += frt[d], frt[b] ^= frt[c], ROTR(b, 63)   \
-  )
+  frt[a] += frt[b], frt[d] ^= frt[a], ROTR(d, 32),	\
+  frt[c] += frt[d], frt[b] ^= frt[c], ROTR(b, 24),	\
+  frt[a] += frt[b], frt[d] ^= frt[a], ROTR(d, 16),	\
+  frt[c] += frt[d], frt[b] ^= frt[c], ROTR(b, 63)   \
+)
 
 u64 CSPRNG::get(u8 ind) {
   BITSET(ind, 0, size - 1 < 0); 
@@ -198,7 +193,7 @@ void CSPRNG::assimilate() {
     m2 = REG_LOADBITS((reg*) &frt[i+(8  >> FRUIT_FACTOR)]);
     m3 = REG_LOADBITS((reg*) &frt[i+(16 >> FRUIT_FACTOR)]);
     m4 = REG_LOADBITS((reg*) &frt[i+(24 >> FRUIT_FACTOR)]);
-    
+
     m1 = REG_ANDNOT(m1, mask);
     m2 = REG_ANDNOT(m2, mask);
     m3 = REG_ANDNOT(m3, mask);
