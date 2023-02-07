@@ -3,7 +3,15 @@
     #include "util.h"
 
     #define FRUIT_SIZE      256             // size of the fruit buffer
-  
+    #define UNDULATION      3
+    #ifdef __AVX512F__
+        #define FRUIT_LOOP      32
+        #define FRUIT_FACTOR    0
+    #else
+        #define FRUIT_LOOP      16
+        #define FRUIT_FACTOR    1
+    #endif
+
     alignas(2048) static u64 frt[FRUIT_SIZE];
 
     class CSPRNG {
@@ -27,18 +35,18 @@
             int size{FRUIT_SIZE};
             u8 rounds{7};
             u8 precision{64};
-            bool flip{false};
             bool regen{false};
-            u64 seed{trng64()};            
+            u64 seed{trng64()};
+            u8  undulation{UNDULATION};            
 
         private:
             void accumulate();
             void diffuse();
-            void augment();
+            void assimilate();
             void mangle();
 
             // utility functions
-            void undulate();
+            void unif_dist();
             void regenerate();
 
     };

@@ -1,70 +1,28 @@
 #include "csprng.h"
 
 #define INIT_BUFFER(offset) \
-frt[offset]      = seed;\
-frt[offset + 1]  = seed;\
-frt[offset + 2]  = seed;\
-frt[offset + 3]  = seed;\
-frt[offset + 4]  = seed;\
-frt[offset + 5]  = seed;\
-frt[offset + 6]  = seed;\
-frt[offset + 7]  = seed;\
-frt[offset + 8]  = seed;\
-frt[offset + 9]  = seed;\
-frt[offset + 10] = seed;\
-frt[offset + 11] = seed;\
-frt[offset + 12] = seed;\
-frt[offset + 13] = seed;\
-frt[offset + 14] = seed;\
-frt[offset + 15] = seed;\
-frt[offset + 16] = seed;\
-frt[offset + 17] = seed;\
-frt[offset + 18] = seed;\
-frt[offset + 19] = seed;\
-frt[offset + 20] = seed;\
-frt[offset + 21] = seed;\
-frt[offset + 22] = seed;\
-frt[offset + 23] = seed;\
-frt[offset + 24] = seed;\
-frt[offset + 25] = seed;\
-frt[offset + 26] = seed;\
-frt[offset + 27] = seed;\
-frt[offset + 28] = seed;\
-frt[offset + 29] = seed;\
-frt[offset + 30] = seed;\
-frt[offset + 31] = seed;\
-frt[offset + 32] = seed;\
-frt[offset + 33] = seed;\
-frt[offset + 34] = seed;\
-frt[offset + 35] = seed;\
-frt[offset + 36] = seed;\
-frt[offset + 37] = seed;\
-frt[offset + 38] = seed;\
-frt[offset + 39] = seed;\
-frt[offset + 40] = seed;\
-frt[offset + 41] = seed;\
-frt[offset + 42] = seed;\
-frt[offset + 43] = seed;\
-frt[offset + 44] = seed;\
-frt[offset + 45] = seed;\
-frt[offset + 46] = seed;\
-frt[offset + 47] = seed;\
-frt[offset + 48] = seed;\
-frt[offset + 49] = seed;\
-frt[offset + 50] = seed;\
-frt[offset + 51] = seed;\
-frt[offset + 52] = seed;\
-frt[offset + 53] = seed;\
-frt[offset + 54] = seed;\
-frt[offset + 55] = seed;\
-frt[offset + 56] = seed;\
-frt[offset + 57] = seed;\
-frt[offset + 58] = seed;\
-frt[offset + 59] = seed;\
-frt[offset + 60] = seed;\
-frt[offset + 61] = seed;\
-frt[offset + 62] = seed;\
-frt[offset + 63] = seed; \
+frt[offset]      = frt[offset + 1]  = frt[offset + 2]  = \
+frt[offset + 3]  = frt[offset + 4]  = frt[offset + 5]  = \
+frt[offset + 6]  = frt[offset + 7]  = frt[offset + 8]  = \
+frt[offset + 9]  = frt[offset + 10] = frt[offset + 11] = \
+frt[offset + 12] = frt[offset + 13] = frt[offset + 14] = \
+frt[offset + 15] = frt[offset + 16] = frt[offset + 17] = \
+frt[offset + 18] = frt[offset + 19] = frt[offset + 20] = \
+frt[offset + 21] = frt[offset + 22] = frt[offset + 23] = \
+frt[offset + 24] = frt[offset + 25] = frt[offset + 26] = \
+frt[offset + 27] = frt[offset + 28] = frt[offset + 29] = \
+frt[offset + 30] = frt[offset + 31] = frt[offset + 32] = \
+frt[offset + 33] = frt[offset + 34] = frt[offset + 35] = \
+frt[offset + 36] = frt[offset + 37] = frt[offset + 38] = \
+frt[offset + 39] = frt[offset + 40] = frt[offset + 41] = \
+frt[offset + 42] = frt[offset + 43] = frt[offset + 44] = \
+frt[offset + 45] = frt[offset + 46] = frt[offset + 47] = \
+frt[offset + 48] = frt[offset + 49] = frt[offset + 50] = \
+frt[offset + 51] = frt[offset + 52] = frt[offset + 53] = \
+frt[offset + 54] = frt[offset + 55] = frt[offset + 56] = \
+frt[offset + 57] = frt[offset + 58] = frt[offset + 59] = \
+frt[offset + 60] = frt[offset + 61] = frt[offset + 62] = \
+frt[offset + 63] = seed; 
   
 #define ISAAC_MIX(a,b,c,d,e,f,g,h) \
   a-=e; f^=h>>9;  h+=a; \
@@ -77,7 +35,7 @@ frt[offset + 63] = seed; \
   h-=d; e^=g<<14; g+=h; \
 
 #define ISAAC_BLEND(offset) \
-  ISAAC_MIX(frt[offset],  frt[1 + offset],  frt[2 + offset],  frt[3 + offset],  frt[128 + offset], frt[129 + offset], frt[130 + offset], frt[131 + offset]) \
+  ISAAC_MIX(frt[offset],      frt[1 + offset],  frt[2 + offset],  frt[3 + offset],  frt[128 + offset], frt[129 + offset], frt[130 + offset], frt[131 + offset]) \
   ISAAC_MIX(frt[4 + offset],  frt[5 + offset],  frt[6 + offset],  frt[7 + offset],  frt[132 + offset], frt[133 + offset], frt[134 + offset], frt[135 + offset]) \
   ISAAC_MIX(frt[8 + offset],  frt[9 + offset],  frt[10 + offset], frt[11 + offset], frt[136 + offset], frt[137 + offset], frt[138 + offset], frt[139 + offset]) \
   ISAAC_MIX(frt[12 + offset], frt[13 + offset], frt[14 + offset], frt[15 + offset], frt[140 + offset], frt[141 + offset], frt[142 + offset], frt[143 + offset]) 
@@ -112,7 +70,7 @@ u64 CSPRNG::get(u8 ind) {
 u8 CSPRNG::generate() {
   accumulate();
   diffuse();
-  augment();
+  assimilate();
   mangle();
   // mangle();
   // mangle();
@@ -145,12 +103,12 @@ void CSPRNG::accumulate() {
   frt[76]  = frt[204] = 0x7468652065617274LLU;
   frt[112] = frt[240] = 0x68202847656E6573LLU;
   frt[120] = frt[248] = 0x697320313A323829LLU;
-  
-  // permute with ISAAC mixing logic
-  ISAAC_MIX(frt[4],frt[12],frt[48],frt[56],frt[196],frt[204],frt[240],frt[248])
-  ISAAC_MIX(frt[132],frt[140],frt[176],frt[184],frt[68],frt[76],frt[112],frt[120])
-  ISAAC_MIX(frt[4],frt[12],frt[48],frt[56],frt[196],frt[204],frt[240],frt[248])
-  ISAAC_MIX(frt[132],frt[140],frt[176],frt[184],frt[68],frt[76],frt[112],frt[120])
+
+  // GOLDEN RATIO, per Bob's original implementation
+  frt[7]  = frt[135] = frt[15] = frt[143] = frt[51]  = frt[179] = frt[59]  = frt[187] =
+  frt[71] = frt[199] = frt[79] = frt[207] = frt[115] = frt[243] = frt[123] = frt[251] = 
+  0x9e3779b97f4a7c13LLU;
+
 }
 
 void swap() {
@@ -187,270 +145,82 @@ void swap() {
 }
 
 void CSPRNG::diffuse() {
-  // initialize GOLDEN RATIO values AND THEN MIX!
-  alignas(64) static u64 gr[8] = {
-    0x9e3779b97f4a7c13LLU,
-    0x9e3779b97f4a7c13LLU,
-    0x9e3779b97f4a7c13LLU,
-    0x9e3779b97f4a7c13LLU,
-    0x9e3779b97f4a7c13LLU,
-    0x9e3779b97f4a7c13LLU,
-    0x9e3779b97f4a7c13LLU,
-    0x9e3779b97f4a7c13LLU
-  };
+  // permute IV's with ISAAC mixing logic
+  ISAAC_MIX(frt[4],frt[12],frt[48],frt[56],frt[196],frt[204],frt[240],frt[248])
+  ISAAC_MIX(frt[132],frt[140],frt[176],frt[184],frt[68],frt[76],frt[112],frt[120])
+  ISAAC_MIX(frt[4],frt[12],frt[48],frt[56],frt[196],frt[204],frt[240],frt[248])
+  ISAAC_MIX(frt[132],frt[140],frt[176],frt[184],frt[68],frt[76],frt[112],frt[120])
 
-  ISAAC_MIX(gr[0], gr[1], gr[2], gr[3], gr[4], gr[5], gr[6], gr[7]) 
-  ISAAC_MIX(gr[0], gr[1], gr[2], gr[3], gr[4], gr[5], gr[6], gr[7]) 
-  ISAAC_MIX(gr[0], gr[1], gr[2], gr[3], gr[4], gr[5], gr[6], gr[7])  
-  ISAAC_MIX(gr[0], gr[1], gr[2], gr[3], gr[4], gr[5], gr[6], gr[7]) 
+  // permute GR with ISAAC mixing logic
+  ISAAC_MIX(frt[7], frt[15], frt[51], frt[59], frt[199], frt[207], frt[243], frt[251]) 
+  ISAAC_MIX(frt[135], frt[143], frt[179], frt[187], frt[71], frt[79], frt[115], frt[123]) 
+  ISAAC_MIX(frt[7], frt[15], frt[51], frt[59], frt[199], frt[207], frt[243], frt[251])  
+  ISAAC_MIX(frt[135], frt[143], frt[179], frt[187], frt[71], frt[79], frt[115], frt[123]) 
 
+  reg m1, m2, m3, m4;
+  int i{0};
+  
   // SIMD time baby!
-  #ifdef __AVX512F__
-    reg grm, m1, m2;
-    for (int i{0}; i < FRUIT_SIZE; i+=16) {
-      // mix GR
-      grm = REG_LOAD64((reg *) &gr[0]);
-      // load 1024 bits of integer data
-      m1 = REG_LOADBITS((reg*) &frt[i]); 
-      m2 = REG_LOADBITS((reg*) &frt[i+8]);
-      // apply the mix
-      m1 = REG_ADD64(m1, grm);
-      grm = m2 = REG_ADD64(m2, grm);
-      // store mixed results (note the index flip)
-      REG_STOREBITS((reg*) &frt[i+8], m1);
-      REG_STOREBITS((reg*) &frt[i+i], m2);
-      REG_STOREBITS((reg*) &gr[0], grm);
-      ISAAC_MIX(gr[0], gr[1], gr[2], gr[3], gr[4], gr[5], gr[6], gr[7]) 
-    }
-  #else
-    reg gr1, gr2, m1, m2, m3, m4;
-    int i{0};
-    for (; i < FRUIT_SIZE; i+=16) {
-      // mix GR
-      gr1 = REG_LOADBITS((reg *) &gr[0]);
-      gr2 = REG_LOADBITS((reg *) &gr[4]);
-      // load 1024 bits of integer data
-      m1 = REG_LOADBITS((reg*) &frt[i]); 
-      m2 = REG_LOADBITS((reg*) &frt[i+4]);
-      m3 = REG_LOADBITS((reg*) &frt[i+8]); 
-      m4 = REG_LOADBITS((reg*) &frt[i+12]);
-      // apply the mix
-      m1 = REG_ADD64(m1, gr1);
-      m2 = REG_ADD64(m2, gr2);
-      gr1 = m3 = REG_ADD64(m3, gr1);
-      gr2 = m4 = REG_ADD64(m4, gr2);
-      // store mixed results (note the index flip)
-      REG_STOREBITS((reg*) &frt[i+12], m1);
-      REG_STOREBITS((reg*) &frt[i+4], m2);
-      REG_STOREBITS((reg*) &frt[i+8], m3);
-      REG_STOREBITS((reg*) &frt[i], m4);
-      // store back mixed up ratio (notice inversion of placement)
-      REG_STOREBITS((reg* ) &gr[0], gr1);
-      REG_STOREBITS((reg* ) &gr[4], gr2);
+  do {
+    // load 1024 bits of integer data (2048 if AVX-512 is available)
+    m1 = REG_LOADBITS((reg*) &frt[i]); 
+    m2 = REG_LOADBITS((reg*) &frt[i+(8  >> FRUIT_FACTOR)]);
+    m3 = REG_LOADBITS((reg*) &frt[i+(16 >> FRUIT_FACTOR)]);
+    m4 = REG_LOADBITS((reg*) &frt[i+(24 >> FRUIT_FACTOR)]);
+    // add
+    m1 = REG_ADD64(m1, m3);
+    m2 = REG_ADD64(m2, m4);
+    m3 = REG_ADD64(m1, m4);
+    m4 = REG_ADD64(m2, m3);
+    // store mixed results (note the index flip)
+    REG_STOREBITS((reg*) &frt[i+(24 >> FRUIT_FACTOR)],  m1);
+    REG_STOREBITS((reg*) &frt[i+(16 >> FRUIT_FACTOR)],  m2);
+    REG_STOREBITS((reg*) &frt[i+(8  >> FRUIT_FACTOR)],  m3);
+    REG_STOREBITS((reg*) &frt[i],                       m4);
 
-      ISAAC_MIX(gr[0], gr[1], gr[2], gr[3], gr[4], gr[5], gr[6], gr[7]) 
-    }
+    i += FRUIT_LOOP;
+  } while (i < FRUIT_SIZE);
 
-    swap();
-  #endif
-}
-
-void CSPRNG::undulate() {
-  u8 invert = flip << 3;
-  // 512F IS INCOMPLETE IGNORE THIS PART FOR NOW
-  #ifdef __AVX512F__
-    static const reg shift_count = _mm512_setr_epi64(1,2,3,4,5,6,7,8);
-    reg r1  = REG_LOADBITS((reg *) &frt[0 + invert]);
-    reg r2  = REG_LOADBITS((reg *) &frt[24 - invert]);
-    reg r3  = REG_LOADBITS((reg *) &frt[32 + invert]);
-    reg r4  = REG_LOADBITS((reg *) &frt[56 - invert]);
-    reg r5  = REG_LOADBITS((reg *) &frt[128 + invert]);
-    reg r6  = REG_LOADBITS((reg *) &frt[152 - invert]);
-    reg r7  = REG_LOADBITS((reg *) &frt[160 + invert]);
-    reg r8  = REG_LOADBITS((reg *) &frt[184 - invert]);
-
-    r1 = REG_SRLV64(r1, shift_count);
-    r2 = REG_SLLV64(r2, shift_count);
-    r3 = REG_SRLV64(r3, shift_count);
-    r4 = REG_SLLV64(r4, shift_count);
-    r5 = REG_SRLV64(r5, shift_count);
-    r6 = REG_SLLV64(r6, shift_count);
-    r7 = REG_SRLV64(r7, shift_count);
-    r8 = REG_SLLV64(r8, shift_count);
-
-    REG_STOREBITS((reg *) &frt[0 + invert],  r1);
-    REG_STOREBITS((reg *) &frt[24 - invert],  r2);
-    REG_STOREBITS((reg *) &frt[32 + invert], r3);
-    REG_STOREBITS((reg *) &frt[56 - invert], r4);
-    REG_STOREBITS((reg *) &frt[128 + invert], r5);
-    REG_STOREBITS((reg *) &frt[152 + invert], r6);
-    REG_STOREBITS((reg *) &frt[160 - invert], r7);
-    REG_STOREBITS((reg *) &frt[184 - invert], r8);
-
-    r1  = REG_LOADBITS((reg *) &frt[64 + invert]);
-    r2  = REG_LOADBITS((reg *) &frt[88 - invert]);
-    r3  = REG_LOADBITS((reg *) &frt[96 + invert]);
-    r4  = REG_LOADBITS((reg *) &frt[120 - invert]);
-    r5  = REG_LOADBITS((reg *) &frt[192 + invert]);
-    r6  = REG_LOADBITS((reg *) &frt[216 - invert]);
-    r7  = REG_LOADBITS((reg *) &frt[224 + invert]);
-    r8  = REG_LOADBITS((reg *) &frt[248 - invert]);
-
-    r1 = REG_SRLV64(r1, shift_count);
-    r2 = REG_SLLV64(r2, shift_count);
-    r3 = REG_SRLV64(r3, shift_count);
-    r4 = REG_SLLV64(r4, shift_count);
-    r5 = REG_SRLV64(r5, shift_count);
-    r6 = REG_SLLV64(r6, shift_count);
-    r7 = REG_SRLV64(r7, shift_count);
-    r8 = REG_SLLV64(r8, shift_count);
-
-    REG_STOREBITS((reg *) &frt[64 + invert],  r1);
-    REG_STOREBITS((reg *) &frt[88 - invert],  r2);
-    REG_STOREBITS((reg *) &frt[96 + invert],  r3);
-    REG_STOREBITS((reg *) &frt[120 - invert], r4);
-    REG_STOREBITS((reg *) &frt[192 + invert], r5);
-    REG_STOREBITS((reg *) &frt[216 - invert], r6);
-    REG_STOREBITS((reg *) &frt[224 + invert], r7);
-    REG_STOREBITS((reg *) &frt[248 - invert], r8);
-
-
-  #else 
-    static const reg shift1 = REG_SETR64(1,2,3,4);
-    static const reg shift2 = REG_SETR64(5,6,7,8); 
-
-    // top half of original set (0-63)
-    reg r1  = REG_LOADBITS((reg *) &frt[0 + invert]);
-    reg r2  = REG_LOADBITS((reg *) &frt[4 + invert]);
-    reg r3  = REG_LOADBITS((reg *) &frt[24 - invert]);
-    reg r4  = REG_LOADBITS((reg *) &frt[28 - invert]);
-    reg r5  = REG_LOADBITS((reg *) &frt[32 + invert]);
-    reg r6  = REG_LOADBITS((reg *) &frt[36 + invert]);
-    reg r7  = REG_LOADBITS((reg *) &frt[56 - invert]);
-    reg r8  = REG_LOADBITS((reg *) &frt[60 - invert]);
-
-    // now apply compression (bit shave)
-
-    r1 = REG_SRLV64(r1, shift2);
-    r2 = REG_SRLV64(r2, shift1);
-
-    r3 = REG_SLLV64(r3, shift1);
-    r4 = REG_SLLV64(r4, shift2);
-
-    r5 = REG_SRLV64(r5, shift2);
-    r6 = REG_SRLV64(r6, shift1);
-
-    r7 = REG_SLLV64(r7, shift1);
-    r8 = REG_SLLV64(r8, shift2);
-
-    REG_STOREBITS((reg *) &frt[0 + invert],  r1);
-    REG_STOREBITS((reg *) &frt[4 + invert],  r2);
-    REG_STOREBITS((reg *) &frt[24 - invert], r3);
-    REG_STOREBITS((reg *) &frt[28 - invert], r4);
-    REG_STOREBITS((reg *) &frt[32 + invert], r5);
-    REG_STOREBITS((reg *) &frt[36 + invert], r6);
-    REG_STOREBITS((reg *) &frt[56 - invert], r7);
-    REG_STOREBITS((reg *) &frt[60 - invert], r8);
-
-    // top half of new set (128-191)
-    reg r9   = REG_LOADBITS((reg *) &frt[128 + invert]);
-    reg r10  = REG_LOADBITS((reg *) &frt[132 + invert]);
-    reg r11  = REG_LOADBITS((reg *) &frt[152 - invert]);
-    reg r12  = REG_LOADBITS((reg *) &frt[156 - invert]);
-    reg r13  = REG_LOADBITS((reg *) &frt[160 + invert]);
-    reg r14  = REG_LOADBITS((reg *) &frt[164 + invert]);
-    reg r15  = REG_LOADBITS((reg *) &frt[184 - invert]);
-    reg r16  = REG_LOADBITS((reg *) &frt[188 - invert]);
-
-    r9  = REG_SRLV64(r9,  shift2);
-    r10 = REG_SRLV64(r10, shift1);
-
-    r11 = REG_SLLV64(r11, shift1);
-    r12 = REG_SLLV64(r12, shift2);
-
-    r13 = REG_SRLV64(r13, shift2);
-    r14 = REG_SRLV64(r14, shift1);
-
-    r15 = REG_SLLV64(r15, shift1);
-    r16 = REG_SLLV64(r16, shift2);
-
-    REG_STOREBITS((reg *) &frt[128 + invert], r9);
-    REG_STOREBITS((reg *) &frt[132 + invert], r10);
-    REG_STOREBITS((reg *) &frt[152 - invert], r11);
-    REG_STOREBITS((reg *) &frt[156 - invert], r12);
-    REG_STOREBITS((reg *) &frt[160 + invert], r13);
-    REG_STOREBITS((reg *) &frt[164 + invert], r14);
-    REG_STOREBITS((reg *) &frt[184 - invert], r15);
-    REG_STOREBITS((reg *) &frt[188 - invert], r16);
-
-    // ONE MORE TIME
-    r1  = REG_LOADBITS((reg *) &frt[64 +  invert]);
-    r2  = REG_LOADBITS((reg *) &frt[68 +  invert]);
-    r3  = REG_LOADBITS((reg *) &frt[88 -  invert]);
-    r4  = REG_LOADBITS((reg *) &frt[92 -  invert]);
-    r5  = REG_LOADBITS((reg *) &frt[96 +  invert]);
-    r6  = REG_LOADBITS((reg *) &frt[100 + invert]);
-    r7  = REG_LOADBITS((reg *) &frt[120 - invert]);
-    r8  = REG_LOADBITS((reg *) &frt[124 - invert]);
-
-    r1 = REG_SRLV64(r1, shift2);
-    r2 = REG_SRLV64(r2, shift1);
-
-    r3 = REG_SLLV64(r3, shift1);
-    r4 = REG_SLLV64(r4, shift2);
-
-    r5 = REG_SRLV64(r5, shift2);
-    r6 = REG_SRLV64(r6, shift1);
-
-    r7 = REG_SLLV64(r7, shift1);
-    r8 = REG_SLLV64(r8, shift2);
-
-    REG_STOREBITS((reg *) &frt[64 +  invert],  r1);
-    REG_STOREBITS((reg *) &frt[68 +  invert],  r2);
-    REG_STOREBITS((reg *) &frt[88 -  invert], r3);
-    REG_STOREBITS((reg *) &frt[92 -  invert], r4);
-    REG_STOREBITS((reg *) &frt[96 +  invert], r5);
-    REG_STOREBITS((reg *) &frt[100 + invert], r6);
-    REG_STOREBITS((reg *) &frt[120 - invert], r7);
-    REG_STOREBITS((reg *) &frt[124 - invert], r8);
-
-    // top half of new set (128-191)
-    r9   = REG_LOADBITS((reg *) &frt[192 + invert]);
-    r10  = REG_LOADBITS((reg *) &frt[196 + invert]);
-    r11  = REG_LOADBITS((reg *) &frt[216 - invert]);
-    r12  = REG_LOADBITS((reg *) &frt[220 - invert]);
-    r13  = REG_LOADBITS((reg *) &frt[224 + invert]);
-    r14  = REG_LOADBITS((reg *) &frt[228 + invert]);
-    r15  = REG_LOADBITS((reg *) &frt[248 - invert]);
-    r16  = REG_LOADBITS((reg *) &frt[252 - invert]);
-
-    r9  = REG_SRLV64(r9,  shift2);
-    r10 = REG_SRLV64(r10, shift1);
-
-    r11 = REG_SLLV64(r11, shift1);
-    r12 = REG_SLLV64(r12, shift2);
-
-    r13 = REG_SRLV64(r13, shift2);
-    r14 = REG_SRLV64(r14, shift1);
-
-    r15 = REG_SLLV64(r15, shift1);
-    r16 = REG_SLLV64(r16, shift2);
-
-    REG_STOREBITS((reg *) &frt[192 + invert], r9);
-    REG_STOREBITS((reg *) &frt[196 + invert], r10);
-    REG_STOREBITS((reg *) &frt[216 - invert], r11);
-    REG_STOREBITS((reg *) &frt[220 - invert], r12);
-    REG_STOREBITS((reg *) &frt[224 + invert], r13);
-    REG_STOREBITS((reg *) &frt[228 + invert], r14);
-    REG_STOREBITS((reg *) &frt[248 - invert], r15);
-    REG_STOREBITS((reg *) &frt[252 - invert], r16); 
-
-  #endif
-}
-
-void CSPRNG::augment() {
-  undulate();
   swap();
+}
+
+void CSPRNG::unif_dist() {
+  // mask is -1 so inverted num stays the same
+  const reg mask = REG_SET64(-1LLU);
+  const reg srlv = REG_SET64(undulation);
+
+  reg m1, m2, m3, m4;
+  int i{0};
+
+  do {
+    m1 = REG_LOADBITS((reg*) &frt[i]); 
+    m2 = REG_LOADBITS((reg*) &frt[i+(8  >> FRUIT_FACTOR)]);
+    m3 = REG_LOADBITS((reg*) &frt[i+(16 >> FRUIT_FACTOR)]);
+    m4 = REG_LOADBITS((reg*) &frt[i+(24 >> FRUIT_FACTOR)]);
+
+    m1 = REG_ANDNOT(m1, mask);
+    m2 = REG_ANDNOT(m2, mask);
+    m3 = REG_ANDNOT(m3, mask);
+    m4 = REG_ANDNOT(m4, mask);
+    
+    // now right shift by undulation parameter
+    m1 = REG_SRLV64(m1, srlv);
+    m2 = REG_SRLV64(m2, srlv);
+    m3 = REG_SLLV64(m3, srlv);
+    m4 = REG_SLLV64(m4, srlv);
+
+    // note stored in reverse again - to change order
+    REG_STOREBITS((reg*) &frt[i+(24 >> FRUIT_FACTOR)],  m1);
+    REG_STOREBITS((reg*) &frt[i+(16 >> FRUIT_FACTOR)],  m2);
+    REG_STOREBITS((reg*) &frt[i+(8  >> FRUIT_FACTOR)],  m3);
+    REG_STOREBITS((reg*) &frt[i],                       m4);
+
+    i += FRUIT_LOOP;
+  } while (i < FRUIT_SIZE);
+}
+
+void CSPRNG::assimilate() {
+  unif_dist();
   // BLOCK 1                                // BLOCK 9
   ADAM_MIX(0,1,2,3, 16,17,18,19,            128,129,130,131,144,145,146,147);
   ADAM_MIX(32,33,34,35,48,49,50,51,         160,161,162,163,176,177,178,179);
