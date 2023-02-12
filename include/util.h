@@ -6,6 +6,7 @@
     #include <stdio.h>
     #include <stdint.h>
     #include <unistd.h>
+    
     #define u8   uint8_t
     #define u16  uint16_t
     #define u32  uint32_t
@@ -63,29 +64,14 @@
         #define REG_ANDNOT      _mm256_andnot_si256
     #endif
 
-    // http://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
-    #define ISPOW2(n) n && !(n & (n - 1))
-    #define COMPUTEPOW2(n) 1 << n
-
-    // http://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
-    #define FINDMIN(x, y) y + ((x - y) & ((x - y) >> (sizeof(int) * CHAR_BIT - 1)));
-    #define FINDMAX(x, y) x - ((x - y) & ((x - y) >> (sizeof(int) * CHAR_BIT - 1)));
-
     // http://graphics.stanford.edu/~seander/bithacks.html#SwappingValuesXOR
     #define SWAP(x, y) ((x) ^ (y)) && ((y) ^= (x) ^= (y), (x) ^= (y));
-
-    // http://graphics.stanford.edu/~seander/bithacks.html#ConditionalNegate
-    #define IFNEGATE(n, c) n = (n ^ -(c)) + (c);
 
     // http://graphics.stanford.edu/~seander/bithacks.html#ConditionalSetOrClearBitsWithoutBranching
     #define BITSETCLEAR(w, m, c) (w & ~m) | (-c & m)
 
     // above clears if false, this retains original value
     #define BITSET(w, m, c) w |= (-c & m)
-
-    // http://graphics.stanford.edu/~seander/bithacks.html#IntegerAbs
-    #define ABSMASK(i) const int m = i >> (sizeof(int) * 8) - 1
-    #define ABS(n, i) ABSMASK(i); n = (i + m) ^ m
 
     // http://graphics.stanford.edu/~seander/bithacks.html#IntegerLogLookup
     static inline u8 log2(u64 x) {
@@ -115,32 +101,6 @@
         return LogTable256[x];
     }
 
-    // https://stackoverflow.com/questions/25892665/performance-of-log10-function-returning-an-int
-    static inline u8 log10(u64 x) {                            
-        static const u8 guess[64] = {
-            0,  0,  0,  0,  1,  1,  1,  2,  2,  2,
-            3,  3,  3,  3,  4,  4,  4,  5,  5,  5,
-            6,  6,  6,  6,  7,  7,  7,  8,  8,  8,
-            9,  9,  9,  9,  10, 10, 10, 11, 11, 11,
-            12, 12, 12, 12, 13, 13, 13, 14, 14, 14,
-            15, 15, 15, 15, 16, 16, 16, 17, 17, 17,
-            18, 19, 19, 19
-        }; 
-        static const u64 tenToThe[20] = {
-            1, 10, 100, 1000, 10000, 100000, 
-            1000000, 10000000, 100000000, 1000000000,
-            10000000000, 100000000000, 1000000000000,
-            10000000000000, 100000000000000, 1000000000000000,
-            10000000000000000, 100000000000000000, 1000000000000000000,
-            10000000000000000000
-        };
-        IFNEGATE(x, x < 0)
-        u8 ln = log2(x);
-        // printf("LN IS %d\n", ln);
-        u8 digits = guess[ln];
-        return digits + (digits <= 20) << (x < tenToThe[digits - 1]);
-    }
-
     inline void getScreenDimensions(u16* h, u16* w) {
         struct winsize wsize;
         ioctl(0, TIOCGWINSZ, &wsize);
@@ -148,16 +108,6 @@
         *w =  wsize.ws_col;
     }
     
-    // adapted from https://stackoverflow.com/a/57112610/3772283
-    static inline u64 x_to_i(const char* hex_str) {
-        u64 res{0};
-        char c;
-        while (c = *hex_str++) {
-            char v = (c & 0xF) + (c >> 6) | ((c >> 3) & 0x8);
-            res = (res << 4) | (u64) v;
-        }
-        return res;
-    }
     /*  Adapted from https://tombarta.wordpress.com/2008/04/23/specializing-atoi/
         
         THIS IS FOR PARSING NUMERICAL ASCII USER INPUT
@@ -166,7 +116,7 @@
         - Negative numbers can show up, but positive numbers never have a leading + character.
         - Leading 0s never show up. 
         - Size of string/number is known beforehand
-        - Max size of string is 10 digits. User shouldn't need to supply ASCII 64-bit nums
+        - Max size of string is 20 digits.
         - Validation is performed by checking against the [min, max) range provided
 
         FAILURE is denoted by returning the min value
@@ -239,23 +189,6 @@
         return BITSET(val, min, (val < min || val > max));
     }
     
-
-    static inline unsigned short trng16() {
-        unsigned short val;
-        int c{0};
-        while (!c)
-            c = _rdrand16_step(&val);
-        return val;
-    }
-
-    static inline unsigned int trng32() {
-        unsigned int val;
-        int c{0};
-        while (!c)
-            c = _rdrand32_step(&val);
-        return val;
-    }
-
     static inline unsigned long long trng64() {
         unsigned long long val;
         int c{0};
@@ -263,9 +196,4 @@
             c =  _rdrand64_step(&val);
         return val;
     }
-
-    static inline long page_size() {
-        return sysconf(_SC_PAGESIZE);
-    }
-
 #endif
