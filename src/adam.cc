@@ -61,6 +61,8 @@ void ADAM::live_stream() {
     do
     {
         generate();
+        size = FRUIT_SIZE;
+        seed = trng64();
         snprintf(lines[0],  96, "%llu%llu%llu%llu%llu%llu", get(), get(), get(), get(), get(), get());
         snprintf(lines[1],  50, "%llu%llu%llu",             get(), get(), get());
         snprintf(lines[2],  39, "%llu%llu%llu",             get(), get(), get());
@@ -115,7 +117,6 @@ void ADAM::live_stream() {
         );
         sleep(1);
         fwrite("\e[2J\r", 1, 5, stdout);
-        seed = trng64();
     } while (1);
 }
 
