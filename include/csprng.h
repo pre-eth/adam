@@ -25,7 +25,7 @@
             }; 
 
             u64 get(u8 ind);
-            u64 get() { return size ? get(size - 1) : 0; };
+            u64 get() { return size > 0 ? get(size - 1) : 0; };
             u8 rerun() { return generate(); };
             void fill();
 

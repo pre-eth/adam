@@ -1,15 +1,12 @@
 #include "adam.h"
 
-static inline void print_binary(char* b, u64 num, u64* ctr, u64* total) {
+static inline void print_binary(char* b, u64 num, u64* ctr, u8 sz) {
     // increments counter by whatever binary digit is next
     // prints digits in reverse order to buffer
-    u8 size = log2(num) + 1;
-    *total -= size -= (size - *total) * (*total < 65); 
-
     do {
         *ctr += (49 - (*--b = (num & 0x01) + '0')); 
         num >>= 1;
-    } while (--size);
+    } while (--sz);
 }
 
 void ADAM::live_stream() {
@@ -124,18 +121,33 @@ void ADAM::live_stream() {
 
 void ADAM::bit_stream() {
     u64 total{limit};
-    char buffer[limit];
-    buffer[limit] = '\0';
+    char buffer[64];
+    buffer[64] = '\0';
+    u8 buf_size;
+    u64 num;
 
     do {
+        // generate new buffer of 256 64-bit ints
         generate();
+        // reset size
+        size = FRUIT_SIZE;
+        // get a new seed for next iteration
         seed = trng64();
-        do
-            print_binary(&buffer[total], get(), &zeroes, &total);
-        while (total && size);
+        do {
+            num = get();
+            // get a number's length in binary form
+            buf_size = log2(num) + 1;
+            // set the buf_size to the total if it's less than buf_size
+            // this is to avoid buffer overruns
+            // then subtract this number from the running total
+            total -= buf_size -= (buf_size - total) * (total < 65);
+            print_binary(&buffer[64], num, &zeroes, buf_size);
+            // do 64 - buf_size to get real starting index for this number
+            fwrite(&buffer[64-buf_size], 1, buf_size, fp);
+            // size here refers to the size of the rng buffer, which
+            // gets decremented for every call to get()
+        } while (total && size); 
     } while (total);
-
-    fwrite(&buffer, 1, limit, fp);
 }
 
 u8 ADAM::match_option(char opt, const char *val) {
