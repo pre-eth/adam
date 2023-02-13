@@ -1,18 +1,15 @@
 #include "adam.h"
 
-static inline u8 print_binary(u64 num, u64 *ctr, FILE* fp) {
-    char buffer[64];
-    char *b = &buffer[64];
-    *b = '\0';
-
+static inline void print_binary(char* b, u64 num, u64* ctr, u64* total) {
+    // increments counter by whatever binary digit is next
+    // prints digits in reverse order to buffer
     u8 size = log2(num) + 1;
-    do {
-        *ctr += !(num & 0x01);
-        *--b = (num & 0x01) + '0';
-    } while (num >>= 1);
+    *total -= size -= (size - *total) * (*total < 65); 
 
-    fwrite(b, 1, size, fp);
-    return size;
+    do {
+        *ctr += (49 - (*--b = (num & 0x01) + '0')); 
+        num >>= 1;
+    } while (--size);
 }
 
 void ADAM::live_stream() {
@@ -57,7 +54,9 @@ void ADAM::live_stream() {
         "%s\e[38;2;255;107;33m#&#\e[38;2;173;58;0m(\e[38;2;255;107;33m@@@@@\e[0m%s%s"
     };
 
+    // set window dimensions for live stream
     printf("\e[8;29;64t");
+    // no buffering
     setbuf(stdout, NULL);
     
     char lines[40][100];
@@ -119,68 +118,71 @@ void ADAM::live_stream() {
         );
         sleep(1);
         fwrite("\e[2J\r", 1, 5, stdout);
+        seed = trng64();
     } while (1);
 }
 
 void ADAM::bit_stream() {
-    i64 total{limit};
-    u64 num;
+    u64 total{limit};
+    char buffer[limit];
+    buffer[limit] = '\0';
+
     do {
         generate();
-        do {
-            num = get();
-            total -= print_binary(num, &zeroes, fp);
-        } while (num && total > 0);
-    } while (total > 0);
+        seed = trng64();
+        do
+            print_binary(&buffer[total], get(), &zeroes, &total);
+        while (total && size);
+    } while (total);
+
+    fwrite(&buffer, 1, limit, fp);
 }
 
 u8 ADAM::match_option(char opt, const char *val) {
     switch (opt)
     {
-    case 's':
-        if (val)
-            seed = a_to_u(val, 1);
-        else
-            printf("SEED: %llu\n\n", seed);
-    break;
-    case 'u':
-        // for inverting polarity of undulation
-        undulation = (u8) a_to_u(val, 3, 8);
-    break;
-    case 'n':
-        // number of results to print on screen after generating
-        results = (u8) (a_to_u(val, 1, 256) - 1);
-    break;
-    case 'p':
-        // precision of values to return
-        precision = (u8) a_to_u(val, 8, 32);
-        if (precision != 8 && precision != 16 && precision != 32) {
-            puts("ERROR! Precision must be 8, 16, or 32");
-            return 1;
-        }
-    break;
-    case 'd':
-        results = 255;
-    break;
-    case 'b':
-        // stream bits
-        limit = val != NULL ? a_to_i(val, 64) : INT64_MAX - 1;
-        bit_stream();
-        printf("\n\nDumped %llu bits (%llu ZEROES, %llu ONES)\n", limit, zeroes, limit - zeroes);
-    return 1;
-    case 'a':
-        // stream 100 samples of 1000000 bits for testing
-        limit = 100000000;
-        fp = fopen(val, "w+");
-        bit_stream();
-        fclose(fp);
-    return 1;
-    case 'l':
-        live_stream();
-    return 1;
-    default:
-        puts("Option is invalid or missing required argument");
-    return 1;
+        case 's':
+            if (val != NULL)
+                seed = a_to_u(val, 1);
+            else
+                printf("SEED: %llu\n\n", seed);
+        break;
+        case 'u':
+            // for inverting polarity of undulation
+            undulation = (u8) a_to_u(val, 3, 8);
+        break;
+        case 'n':
+            // number of results to print on screen after generating
+            results = (u8) (a_to_u(val, 1, 256) - 1);
+        break;
+        case 'p':
+            // precision of values to return
+            precision = (u8) a_to_u(val, 8, 32);
+            if (precision != 8 && precision != 16 && precision != 32) 
+                return puts("ERROR! Precision must be 8, 16, or 32");
+        break;
+        case 'd':
+            results = 255;
+        break;
+        case 'b':
+            // stream bits
+            limit = (val != NULL) ? a_to_u(val, 64) : UINT64_MAX - 1;
+            bit_stream();
+            printf("\n\nDumped %llu bits (%llu ZEROES, %llu ONES)\n", limit, zeroes, limit - zeroes);
+        return 1;
+        case 'a':
+            // stream 100 samples of 1000000 bits for testing
+            fp = fopen(val, "w+");
+            limit = 100000000;
+            bit_stream();
+            fclose(fp);
+        return 1;
+        case 'l':
+            live_stream();
+        return 1;
+        default:
+            puts("Option is invalid or missing required argument.");
+        return 1;
     }
     return 0;
 }
