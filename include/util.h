@@ -67,12 +67,6 @@
     // http://graphics.stanford.edu/~seander/bithacks.html#SwappingValuesXOR
     #define SWAP(x, y) ((x) ^ (y)) && ((y) ^= (x) ^= (y), (x) ^= (y));
 
-    // http://graphics.stanford.edu/~seander/bithacks.html#ConditionalSetOrClearBitsWithoutBranching
-    #define BITSETCLEAR(w, m, c) (w & ~m) | (-c & m)
-
-    // above clears if false, this retains original value
-    #define BITSET(w, m, c) w |= (-c & m)
-
     // http://graphics.stanford.edu/~seander/bithacks.html#IntegerLogLookup
     static inline u8 log2(u64 x) {
         static const char LogTable256[256] = {
@@ -150,14 +144,13 @@
             default:
                 return min;
         }
-        return BITSET(val, min, (val < min || val > max));
+        return (val < min || val > max) ? min : val;
     }
 
     static inline i64 a_to_i(const char* s, i64 min = 0, i64 max = INT64_MAX) {
         i64 val{0}; 
-        i8 sign{1};
         bool isSigned = (*s == '-');
-        BITSET(sign, -1, isSigned); // s-= BITSET(sign, -1, (*s == '-'))
+        i8 sign = 1 - (isSigned << 1);
         s += isSigned;
         u8 len = strlen(s);
         switch (len) { 
@@ -186,7 +179,7 @@
             default:
                 return min;
         }
-        return BITSET(val, min, (val < min || val > max));
+        return (val < min || val > max) ? min : val;
     }
     
     static inline unsigned long long trng64() {

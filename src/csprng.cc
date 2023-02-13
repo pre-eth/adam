@@ -22,8 +22,8 @@ frt[offset + 51] = frt[offset + 52] = frt[offset + 53] = \
 frt[offset + 54] = frt[offset + 55] = frt[offset + 56] = \
 frt[offset + 57] = frt[offset + 58] = frt[offset + 59] = \
 frt[offset + 60] = frt[offset + 61] = frt[offset + 62] = \
-frt[offset + 63] = seed; 
-  
+frt[offset + 63]  
+
 #define ISAAC_MIX(a,b,c,d,e,f,g,h) \
   a-=e; f^=h>>9;  h+=a; \
   b-=f; g^=a<<9;  a+=b; \
@@ -55,7 +55,6 @@ frt[offset + 63] = seed;
 )
 
 u64 CSPRNG::get(u8 ind) {
-  BITSET(ind, 0, size - 1 < 0); 
   u64 tmp = 0; 
   SWAP(tmp, frt[ind]); 
   --size; 
@@ -78,10 +77,8 @@ u8 CSPRNG::generate() {
 }
 
 void CSPRNG::accumulate() {
-  INIT_BUFFER(0)
-  INIT_BUFFER(64)
-  INIT_BUFFER(128)
-  INIT_BUFFER(192)
+  // INIT_BUFFER(0) = INIT_BUFFER(64) = 
+  // INIT_BUFFER(128) = INIT_BUFFER(192) = seed;
 
   /*  
     start by supplying the initialization vectors
@@ -89,14 +86,14 @@ void CSPRNG::accumulate() {
     "Be fruitful and multiply, and replenish the earth (Genesis 1:28)"
   */ 
  
-  frt[4]   = frt[132] = 0x4265206672756974LLU;
-  frt[12]  = frt[140] = 0x66756C20616E6420LLU;
-  frt[48]  = frt[176] = 0x6D756C7469706C79LLU;
-  frt[56]  = frt[184] = 0x2C20616E64207265LLU;
-  frt[68]  = frt[196] = 0x706C656E69736820LLU;
-  frt[76]  = frt[204] = 0x7468652065617274LLU;
-  frt[112] = frt[240] = 0x68202847656E6573LLU;
-  frt[120] = frt[248] = 0x697320313A323829LLU;
+  frt[4]   = frt[132] = 0x4265206672756974LLU ^ seed;
+  frt[12]  = frt[140] = 0x66756C20616E6420LLU ^ seed;
+  frt[48]  = frt[176] = 0x6D756C7469706C79LLU ^ seed;
+  frt[56]  = frt[184] = 0x2C20616E64207265LLU ^ seed;
+  frt[68]  = frt[196] = 0x706C656E69736820LLU ^ seed;
+  frt[76]  = frt[204] = 0x7468652065617274LLU ^ seed;
+  frt[112] = frt[240] = 0x68202847656E6573LLU ^ seed;
+  frt[120] = frt[248] = 0x697320313A323829LLU ^ seed;
 
   // GOLDEN RATIO, per Bob's original implementation
   frt[7]  = frt[135] = frt[15] = frt[143] = frt[51]  = frt[179] = frt[59]  = frt[187] =
@@ -122,11 +119,6 @@ void CSPRNG::diffuse() {
   
   // SIMD time baby!
   do {
-    ISAAC_MIX(frt[4],frt[12],frt[48],frt[56],frt[196],frt[204],frt[240],frt[248])
-    ISAAC_MIX(frt[132],frt[140],frt[176],frt[184],frt[68],frt[76],frt[112],frt[120])
-    ISAAC_MIX(frt[7], frt[15], frt[51], frt[59], frt[199], frt[207], frt[243], frt[251]) 
-    ISAAC_MIX(frt[135], frt[143], frt[179], frt[187], frt[71], frt[79], frt[115], frt[123]) 
-
     // load 1024 bits of integer data (2048 if AVX-512 is available)
     m1 = REG_LOADBITS((reg*) &frt[i]); 
     m2 = REG_LOADBITS((reg*) &frt[i+(8  >> FRUIT_FACTOR)]);
@@ -142,6 +134,11 @@ void CSPRNG::diffuse() {
     REG_STOREBITS((reg*) &frt[i+(16 >> FRUIT_FACTOR)],  m2);
     REG_STOREBITS((reg*) &frt[i+(8  >> FRUIT_FACTOR)],  m3);
     REG_STOREBITS((reg*) &frt[i],                       m4);
+
+    ISAAC_MIX(frt[4],frt[12],frt[48],frt[56],frt[196],frt[204],frt[240],frt[248])
+    ISAAC_MIX(frt[132],frt[140],frt[176],frt[184],frt[68],frt[76],frt[112],frt[120])
+    ISAAC_MIX(frt[7], frt[15], frt[51], frt[59], frt[199], frt[207], frt[243], frt[251]) 
+    ISAAC_MIX(frt[135], frt[143], frt[179], frt[187], frt[71], frt[79], frt[115], frt[123])
 
     i += FRUIT_LOOP;
   } while (i < FRUIT_SIZE);

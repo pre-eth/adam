@@ -13,7 +13,7 @@
         #define FRUIT_FACTOR    1
     #endif
 
-    alignas(2048) static u64 frt[FRUIT_SIZE];
+    alignas(2048) static u64 frt[FRUIT_SIZE] = {0};
 
     class CSPRNG {
         public:
@@ -25,7 +25,7 @@
             }; 
 
             u64 get(u8 ind);
-            u64 get() { return get(size - 1); };
+            u64 get() { return size ? get(size - 1) : 0; };
             u8 rerun() { return generate(); };
             void fill();
 
