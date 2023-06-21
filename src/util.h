@@ -10,23 +10,31 @@
   typedef               __UINT16_TYPE__ u16;
   typedef               __UINT32_TYPE__ u32;
   typedef               __UINT64_TYPE__ u64;
+  typedef               __uint128_t     u128;
+
+  #define ALIGN(x)      __attribute__ ((aligned (x)))
+  #define FORCE_INLINE	inline __attribute__((always_inline))
+  #define CLZ           __builtin_clz  
+  #define MEMCPY	      __builtin_memcpy
+  #define MEMMOVE	      __builtin_memmove
+  #define FLOOR         __builtin_floorf
 
   #define ACCUMULATE(seed, i)\
-    BINARY_SEQUENCE[0  + i] = 0  + seed,\
-    BINARY_SEQUENCE[1  + i] = 1  + seed,\
-    BINARY_SEQUENCE[2  + i] = 2  + seed,\
-    BINARY_SEQUENCE[3  + i] = 3  + seed,\
-    BINARY_SEQUENCE[4  + i] = 4  + seed,\
-    BINARY_SEQUENCE[5  + i] = 5  + seed,\
-    BINARY_SEQUENCE[6  + i] = 6  + seed,\
-    BINARY_SEQUENCE[7  + i] = 7  + seed,\
-    BINARY_SEQUENCE[8  + i] = 8  + seed,\
-    BINARY_SEQUENCE[9  + i] = 9  + seed,\
-    BINARY_SEQUENCE[10 + i] = 10 + seed,\
-    BINARY_SEQUENCE[11 + i] = 11 + seed,\
-    BINARY_SEQUENCE[12 + i] = 12 + seed,\
-    BINARY_SEQUENCE[13 + i] = 13 + seed,\
-    BINARY_SEQUENCE[14 + i] = 14 + seed,\
-    BINARY_SEQUENCE[15 + i] = 15 + seed
+    _ptr[0  + i] = 0  + seed,\
+    _ptr[1  + i] = 1  + seed,\
+    _ptr[2  + i] = 2  + seed,\
+    _ptr[3  + i] = 3  + seed,\
+    _ptr[4  + i] = 4  + seed,\
+    _ptr[5  + i] = 5  + seed,\
+    _ptr[6  + i] = 6  + seed,\
+    _ptr[7  + i] = 7  + seed,\
+    _ptr[8  + i] = 8  + seed,\
+    _ptr[9  + i] = 9  + seed,\
+    _ptr[10 + i] = 10 + seed,\
+    _ptr[11 + i] = 11 + seed,\
+    _ptr[12 + i] = 12 + seed,\
+    _ptr[13 + i] = 13 + seed,\
+    _ptr[14 + i] = 14 + seed,\
+    _ptr[15 + i] = 15 + seed
 
 #endif
