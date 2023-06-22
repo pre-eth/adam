@@ -6,11 +6,18 @@
 
  "Computing Mod with a Variable Lookup Table" by Mark A. Will & Ryan K. L. Ko 
   from the Cyber Security Lab at The University of Waikato, New Zealand
-*/ 
-FORCE_INLINE static mod_reduction() {
-  #define WIDTH(w) (32 - CLZ(w))
+
+  FORCE_INLINE static mod_reduction(u32 integer, u16 mod) {
+    const u8 mod_width = 32 - CLZ(mod);
+    const u8 int_width = 32 - CLZ(integer);
+    const u8 num = (u8) (int_width / mod_width);
+    
+    u8 n = num - 1;
+    while (n > 0) {
   
 }
+  }
+*/ 
 
 // Generates initial vector
 FORCE_INLINE static void accumulate(u8* restrict _ptr) {
