@@ -71,28 +71,42 @@ FORCE_INLINE static void accumulate(u32* restrict _ptr, u64 seed) {
   } while (++j < 8);
 }
 
-FORCE_INLINE static void diffuse(u8* restrict _ptr, float seed) {
-  /* 
-    According to the paper, the variable c is derived from: 
-      floor(log10(M)) + 3
-    Here M is the amount of bits in the buffer, which for ADAM is 
-    8192, and log10(8192) = 3.9, so c = floor(3.9) + 3 = 6. Then, 
-    BETA = pow(10, 6)
-  */
-  #define BETA          1000000 
+FORCE_INLINE static void diffuse(u32* restrict _ptr, float seed, u8 iter) {
+  u8 i = 0;
+  u8 j = 512;
 
-  float x = seed;
-  u16 s = SEQ_SIZE - 1;
-  u8 i, j;
+  float s = seed;
 
-  s = SEQ_SIZE - 1;
-  i = j = 0;
   do {
-    x = CHAOTIC_FN(x);
-    j = i + 1 + mod_reduction(FLOOR(x * BETA), s);
-    --s;
-    _ptr[i >> 3] |= (((_ptr[i >> 3] >> (i & 7)) & 1UL) ^ ((_ptr[j >> 3] >> (j & 7)) & 1UL)) << (i & 7);
-  } while (++i < BUF_SIZE - 2);
+    ISAAC_MIX(0  + i),
+    ISAAC_MIX(8  + i),
+    ISAAC_MIX(16 + i),
+    ISAAC_MIX(24 + i),
+    ISAAC_MIX(32 + i),
+    ISAAC_MIX(40 + i),
+    ISAAC_MIX(48 + i),
+    ISAAC_MIX(56 + i);
+    i += 64;
+  } while (i < (BUF_SIZE >> 1));
+
+  do {
+    ISAAC_MIX(0  + i),
+    ISAAC_MIX(8  + i),
+    ISAAC_MIX(16 + i),
+    ISAAC_MIX(24 + i),
+    ISAAC_MIX(32 + i),
+    ISAAC_MIX(40 + i),
+    ISAAC_MIX(48 + i),
+    ISAAC_MIX(56 + i);
+    j += 64;
+  } while (i < BUF_SIZE);
+
+  do s = chaotic_iter(_ptr, s, 0);
+  while (--iter > 0);
+
+  float* _fptr = &seed;
+  *_fptr = s;
+}
 }
 
 FORCE_INLINE void generate(u8* restrict _ptr, float seed) {
