@@ -14,8 +14,8 @@
     
     u8 n = num - 1;
     while (n > 0) {
-  
-}
+
+    }
   }
 */ 
 
@@ -33,7 +33,7 @@ FORCE_INLINE static float chaotic_iter(u32* restrict _ptr, float seed, u8 k) {
   u16 s = SEQ_SIZE - 1;
   u8 i, j;
   i = j = 0;
-  
+
   do {
     x = CHAOTIC_FN(x);
     j = i + 1 + ((u32) FLOOR(x * BETA) % s);
