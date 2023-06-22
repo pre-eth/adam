@@ -107,6 +107,24 @@ FORCE_INLINE static void diffuse(u32* restrict _ptr, float seed, u8 iter) {
   float* _fptr = &seed;
   *_fptr = s;
 }
+
+FORCE_INLINE u64 generate(u32* restrict _ptr, float chseed, u8 rounds) {
+  #define SEED64    _rdseed64_step
+   
+  const u8 iter = rounds / 3;
+
+  u8 res;
+  u64 seed;
+  while (!(res = SEED64(&seed))); 
+  
+  seed ^= (seed ^ (GOLDEN_RATIO ^ (seed >> 32)));
+
+  accumulate(_ptr, seed);
+  diffuse(_ptr, chseed, iter);
+  apply(_ptr, chseed, iter);
+  mix(_ptr);
+
+  return seed;
 }
 
 FORCE_INLINE void generate(u8* restrict _ptr, float seed) {
