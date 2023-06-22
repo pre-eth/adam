@@ -127,7 +127,11 @@ FORCE_INLINE u64 generate(u32* restrict _ptr, float chseed, u8 rounds) {
   return seed;
 }
 
-FORCE_INLINE void generate(u8* restrict _ptr, float seed) {
+FORCE_INLINE void sgenerate(u64 seed, u32* restrict _ptr, float chseed, u8 rounds) {
+  const u8 iter = rounds / 3;
+
   accumulate(_ptr);
-  diffuse(_ptr, seed);
+  diffuse(_ptr, chseed, iter);
+  apply(_ptr, chseed, iter);
+  mix(_ptr);
 }
