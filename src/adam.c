@@ -139,9 +139,10 @@ FORCE_INLINE u64 generate(u32* restrict _ptr, float chseed, u8 rounds) {
   
   seed ^= (seed ^ (GOLDEN_RATIO ^ (seed >> 32)));
 
+  float x = chseed;
   accumulate(_ptr, seed);
-  diffuse(_ptr, chseed, iter);
-  apply(_ptr, chseed, iter);
+  diffuse(_ptr, &x, iter);
+  apply(_ptr, x, iter);
   mix(_ptr);
 
   return seed;
@@ -150,8 +151,9 @@ FORCE_INLINE u64 generate(u32* restrict _ptr, float chseed, u8 rounds) {
 FORCE_INLINE void sgenerate(u64 seed, u32* restrict _ptr, float chseed, u8 rounds) {
   const u8 iter = rounds / 3;
 
+  float x = chseed;
   accumulate(_ptr);
-  diffuse(_ptr, chseed, iter);
-  apply(_ptr, chseed, iter);
+  diffuse(_ptr, &x, iter);
+  apply(_ptr, x, iter);
   mix(_ptr);
 }
