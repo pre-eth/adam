@@ -19,7 +19,7 @@
   }
 */ 
 
-FORCE_INLINE static float chaotic_iter(u32* restrict _ptr, float seed, u8 k) {
+FORCE_INLINE static float chaotic_iter(u32* restrict _ptr, float seed, u8 k, u8 factor) {
   /* 
     According to the paper, the variable c is derived from: 
       floor(log10(M)) + 3
@@ -34,19 +34,20 @@ FORCE_INLINE static float chaotic_iter(u32* restrict _ptr, float seed, u8 k) {
   u8 i, j;
   i = j = 0;
 
+  u8 m = (u8) 1 << factor;
+
   do {
     x = CHAOTIC_FN(x);
     j = i + 1 + ((u32) FLOOR(x * BETA) % s);
     --s;
-    _ptr[i >> 3] |= (((_ptr[i >> 3] >> ((i & 7) + k)) & 1UL) ^ ((_ptr[j >> 3] >> ((j & 7) + k)) & 1UL)) << ((i & 7) + k);
+    _ptr[i >> 3] |= ((_ptr[i >> 3] >> ((i & 7) + m) & 1UL)) ^ ((_ptr[j >> 3] >> ((i & 7) + m) & 1UL)) << ((i & 7) + k);
   } while (++i < BUF_SIZE - 2);
 
   return x;
 }
 
 FORCE_INLINE static void accumulate(u32* restrict _ptr, u64 seed) {
-  u8 i = 0;
-  u8 j = 4;
+  u8 i = 0, j = 4;
   
   do {
     ACCUMULATE(((seed + i) >> 56),  (i + 0)),
