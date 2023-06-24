@@ -145,8 +145,46 @@ FORCE_INLINE void apply(u32* restrict _ptr, float chseed, u8 iter) {
   } while (--i > 0);
 }
 
-  float* _fptr = &seed;
-  *_fptr = s;
+
+FORCE_INLINE void mix(u32* restrict _ptr) {
+  u16 i = 0, j = 512;
+
+  reg tmp1, tmp2, tmp3, tmp4;
+  do {
+    tmp1 = SIMD_SETR8(
+      SIMD_MASK_PREP(0, i),
+      SIMD_MASK_PREP(16, i)
+    );
+
+    tmp2 = SIMD_SETR8(
+      SIMD_XOR_PREP(0, i),
+      SIMD_XOR_PREP(16, i)
+    );
+
+    tmp1 = SIMD_XORBITS(tmp1, tmp2);
+    tmp2 = SIMD_LOADBITS((reg*) &_ptr[i]);
+    tmp2 = SIMD_ORBITS(tmp2, tmp1);
+
+    SIMD_STOREBITS((reg*) &_ptr[i], tmp2);
+  } while ((i += SIMD_INC) < (BUF_SIZE >> 1));
+
+  do {
+    tmp1 = SIMD_SETR8(
+      SIMD_MASK_PREP(0, j),
+      SIMD_MASK_PREP(16, j)
+    );
+    
+    tmp2 = SIMD_SETR8(
+      SIMD_XOR_PREP(0, j),
+      SIMD_XOR_PREP(16, j)
+    );
+
+    tmp1 = SIMD_XORBITS(tmp1, tmp2);
+    tmp2 = SIMD_LOADBITS((reg*) &_ptr[j]);
+    tmp2 = SIMD_ORBITS(tmp2, tmp1);
+
+    SIMD_STOREBITS((reg*) &_ptr[j], tmp2);
+  } while ((j += SIMD_INC) < BUF_SIZE);
 }
 
 FORCE_INLINE u64 generate(u32* restrict _ptr, float chseed, u8 rounds) {
