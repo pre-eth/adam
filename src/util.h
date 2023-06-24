@@ -37,4 +37,57 @@
     _ptr[14 + i] = 14 + seed,\
     _ptr[15 + i] = 15 + seed
 
+  #define SIMD_MASK_PREP(i, j) \
+    _ptr[0  + i + j] & 0xFF,\
+    _ptr[1  + i + j] & 0xFF,\
+    _ptr[2  + i + j] & 0xFF,\
+    _ptr[3  + i + j] & 0xFF,\
+    _ptr[4  + i + j] & 0xFF,\
+    _ptr[5  + i + j] & 0xFF,\
+    _ptr[6  + i + j] & 0xFF,\
+    _ptr[7  + i + j] & 0xFF,\
+    _ptr[8  + i + j] & 0xFF,\
+    _ptr[9  + i + j] & 0xFF,\
+    _ptr[10 + i + j] & 0xFF,\
+    _ptr[11 + i + j] & 0xFF,\
+    _ptr[12 + i + j] & 0xFF,\
+    _ptr[13 + i + j] & 0xFF,\
+    _ptr[14 + i + j] & 0xFF,\
+    _ptr[15 + i + j] & 0xFF    
+
+  #define SIMD_XOR_PREP(i, j) \
+    (_ptr[0  + i + j] & 0x00FF00) ^ (_ptr[0  + i + j] & 0xFF0000),\
+    (_ptr[1  + i + j] & 0x00FF00) ^ (_ptr[1  + i + j] & 0xFF0000),\
+    (_ptr[2  + i + j] & 0x00FF00) ^ (_ptr[2  + i + j] & 0xFF0000),\
+    (_ptr[3  + i + j] & 0x00FF00) ^ (_ptr[3  + i + j] & 0xFF0000),\
+    (_ptr[4  + i + j] & 0x00FF00) ^ (_ptr[4  + i + j] & 0xFF0000),\
+    (_ptr[5  + i + j] & 0x00FF00) ^ (_ptr[5  + i + j] & 0xFF0000),\
+    (_ptr[6  + i + j] & 0x00FF00) ^ (_ptr[6  + i + j] & 0xFF0000),\
+    (_ptr[7  + i + j] & 0x00FF00) ^ (_ptr[7  + i + j] & 0xFF0000),\
+    (_ptr[8  + i + j] & 0x00FF00) ^ (_ptr[8  + i + j] & 0xFF0000),\
+    (_ptr[9  + i + j] & 0x00FF00) ^ (_ptr[9  + i + j] & 0xFF0000),\
+    (_ptr[10 + i + j] & 0x00FF00) ^ (_ptr[10 + i + j] & 0xFF0000),\
+    (_ptr[11 + i + j] & 0x00FF00) ^ (_ptr[11 + i + j] & 0xFF0000),\
+    (_ptr[12 + i + j] & 0x00FF00) ^ (_ptr[12 + i + j] & 0xFF0000),\
+    (_ptr[13 + i + j] & 0x00FF00) ^ (_ptr[13 + i + j] & 0xFF0000),\
+    (_ptr[14 + i + j] & 0x00FF00) ^ (_ptr[14 + i + j] & 0xFF0000),\
+    (_ptr[15 + i + j] & 0x00FF00) ^ (_ptr[15 + i + j] & 0xFF0000)    
+
+  #ifdef __AVX512F__
+    typedef __m512i          reg;
+    #define SIMD_INC         64
+    #define SIMD_LOADBITS    _mm512_load_si512
+    #define SIMD_STOREBITS   _mm512_store_si512
+    #define SIMD_SETR8       _mm512_setr_epi8 
+    #define SIMD_XORBITS     _mm512_xor_si512
+    #define SIMD_ORBITS      _mm512_or_si512
+  #else
+    typedef __m256i          reg;
+    #define SIMD_INC         32
+    #define SIMD_LOADBITS    _mm256_load_si256
+    #define SIMD_STOREBITS   _mm256_store_si256
+    #define SIMD_SETR8       _mm256_setr_epi8 
+    #define SIMD_XORBITS     _mm256_xor_si256
+    #define SIMD_ORBITS      _mm256_or_si256
+  #endif
 #endif

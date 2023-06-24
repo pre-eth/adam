@@ -12,14 +12,13 @@
   */
   #define CHAOTIC_FN(x)   (3.9999F * x * (1 - x))
   
-  #define MAGNITUDE     10  
-  
   /* 
     Sizes of the buffer and bit vector for the binary sequence
     The buffer is of type [u32; 1024], but logically it is still
     [u8; 1024] - the values for the other chaotic maps are stored 
     in the different 8-bit slices of each u32 value
   */
+  #define MAGNITUDE     10  
   #define BUF_SIZE      (1UL << MAGNITUDE)     
   #define SEQ_SIZE      (BUF_SIZE << 3)
 
@@ -44,22 +43,22 @@
     _ptr[5 + i] -= _ptr[2 + i], _ptr[3 + i] ^= _ptr[5 + i] >> 17, _ptr[5 + i] += _ptr[5 + i], \
     _ptr[7 + i] -= _ptr[3 + i], _ptr[4 + i] ^= _ptr[5 + i] << 14, _ptr[5 + i] += _ptr[7 + i] \
 
-  // Returns seed at the end of iteration so it can be used to start another iteration
-  FORCE_INLINE static float chaotic_iter(u32* restrict _ptr, float seed, u8 k);
-
   /* Internal functions for the ADAM RNG */
+
+  // Returns seed at the end of iteration so it can be used to start another iteration
+  FORCE_INLINE static float chaotic_iter(u32* restrict _ptr, float seed, u8 k, u8 factor);
 
   // Produces initial vector
   FORCE_INLINE static void accumulate(u32* restrict _ptr, u64 seed);
 
   // Performs ISAAC mix logic on contents and creates the first chaotic map
-  FORCE_INLINE void diffuse(u32* restrict _ptr, float seed, u8 iter);
+  FORCE_INLINE static void diffuse(u32* restrict _ptr, float chseed, u8 iter);
 
   // Applies (ROUNDS / 3) iterations twice to create the next two chaotic maps
-  FORCE_INLINE void apply(u32* restrict _ptr, float seed, u8 iter);
+  FORCE_INLINE static void apply(u32* restrict _ptr, float chseed, u8 iter);
 
   // XOR's the three chaotic maps to create final output vector
-  FORCE_INLINE void mix(u32* restrict _ptr);
+  FORCE_INLINE static void mix(u32* restrict _ptr);
 
   /* User facing functions for the ADAM CLI */
 
