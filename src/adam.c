@@ -71,11 +71,11 @@ FORCE_INLINE static void accumulate(u32* restrict _ptr, u64 seed) {
   } while (++j < 8);
 }
 
-FORCE_INLINE static void diffuse(u32* restrict _ptr, float seed, u8 iter) {
-  u8 i = 0;
-  u8 j = 512;
+FORCE_INLINE static void diffuse(u32* restrict _ptr, float* chseed, u8 iter) {
+  #define SEED16    _rdseed16_step
+  #define POINT5    1056964608 // 0.5F aka 00111111000000000000000000000000
 
-  float s = seed;
+  u8 i = 0, j = 512;
 
   do {
     ISAAC_MIX(0  + i),
@@ -90,16 +90,36 @@ FORCE_INLINE static void diffuse(u32* restrict _ptr, float seed, u8 iter) {
   } while (i < (BUF_SIZE >> 1));
 
   do {
-    ISAAC_MIX(0  + i),
-    ISAAC_MIX(8  + i),
-    ISAAC_MIX(16 + i),
-    ISAAC_MIX(24 + i),
-    ISAAC_MIX(32 + i),
-    ISAAC_MIX(40 + i),
-    ISAAC_MIX(48 + i),
-    ISAAC_MIX(56 + i);
+    ISAAC_MIX(0  + j),
+    ISAAC_MIX(8  + j),
+    ISAAC_MIX(16 + j),
+    ISAAC_MIX(24 + j),
+    ISAAC_MIX(32 + j),
+    ISAAC_MIX(40 + j),
+    ISAAC_MIX(48 + j),
+    ISAAC_MIX(56 + j);
     j += 64;
-  } while (i < BUF_SIZE);
+  } while (j < BUF_SIZE);
+
+  u8 res;
+  u16 seed;
+  while (!(res = SEED16(&seed)));  
+  
+  u32 s;
+  MEMCPY(chseed, &s, sizeof(float));
+
+  s = (seed ^ s) % POINT5;
+
+  float x;
+  MEMCPY(&s, &x, sizeof(u32));
+
+  do {
+    chaotic_iter(_ptr, x, 0, 0);
+    x = FLOOR(x * DEFAULT_SEED * BETA) / BETA;
+  } while (--iter > 0);
+
+  *chseed = x;
+}
 
   do s = chaotic_iter(_ptr, s, 0);
   while (--iter > 0);
