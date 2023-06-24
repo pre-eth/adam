@@ -121,8 +121,29 @@ FORCE_INLINE static void diffuse(u32* restrict _ptr, float* chseed, u8 iter) {
   *chseed = x;
 }
 
-  do s = chaotic_iter(_ptr, s, 0);
-  while (--iter > 0);
+FORCE_INLINE void apply(u32* restrict _ptr, float chseed, u8 iter) {
+  u8 i = iter;
+
+  chaotic_iter(_ptr, chseed, 8, 0);
+  float x = FLOOR(chseed * DEFAULT_SEED * BETA) / BETA;
+  --i;
+
+  do {
+    chaotic_iter(_ptr, x, 8, 8);
+    x = FLOOR(x * DEFAULT_SEED * BETA) / BETA;
+  } while (--i > 0);
+
+  i = iter;
+
+  chaotic_iter(_ptr, x, 16, 8);
+  x = FLOOR(x * DEFAULT_SEED * BETA) / BETA;
+  --i;
+
+  do {
+    chaotic_iter(_ptr, x, 16, 16);
+    x = FLOOR(x * DEFAULT_SEED * BETA) / BETA;
+  } while (--i > 0);
+}
 
   float* _fptr = &seed;
   *_fptr = s;
