@@ -1,16 +1,13 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-  #include <sys/ioctl.h>
   #include <immintrin.h>
-  #include <stdio.h>
-  #include <getopt.h>
 
-  typedef               __UINT8_TYPE__  u8;
-  typedef               __UINT16_TYPE__ u16;
-  typedef               __UINT32_TYPE__ u32;
-  typedef               __UINT64_TYPE__ u64;
-  typedef               __uint128_t     u128;
+  typedef               __UINT8_TYPE__    u8;
+  typedef               __UINT16_TYPE__   u16;
+  typedef               __UINT32_TYPE__   u32;
+  typedef               __UINT64_TYPE__   u64;
+  typedef               __uint128_t       u128;
 
   #define ALIGN(x)      __attribute__ ((aligned (x)))
   #define FORCE_INLINE	inline __attribute__((always_inline))

@@ -212,7 +212,7 @@ FORCE_INLINE void sgenerate(u64 seed, u32* restrict _ptr, float chseed, u8 round
   const u8 iter = rounds / 3;
 
   float x = chseed;
-  accumulate(_ptr);
+  accumulate(_ptr, seed);
   diffuse(_ptr, &x, iter);
   apply(_ptr, x, iter);
   mix(_ptr);
