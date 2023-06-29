@@ -188,7 +188,7 @@ FORCE_INLINE void mix(u32* restrict _ptr) {
   } while ((j += SIMD_INC) < BUF_SIZE);
 }
 
-FORCE_INLINE u64 generate(u32* restrict _ptr, float chseed, u8 rounds) {
+FORCE_INLINE void generate(u32* restrict _ptr, float chseed, u8 rounds) {
   #define SEED64    _rdseed64_step
    
   const u8 iter = rounds / 3;
@@ -204,16 +204,5 @@ FORCE_INLINE u64 generate(u32* restrict _ptr, float chseed, u8 rounds) {
   diffuse(_ptr, &x, iter);
   apply(_ptr, x, iter);
   mix(_ptr);
-
-  return seed;
 }
 
-FORCE_INLINE void sgenerate(u64 seed, u32* restrict _ptr, float chseed, u8 rounds) {
-  const u8 iter = rounds / 3;
-
-  float x = chseed;
-  accumulate(_ptr, seed);
-  diffuse(_ptr, &x, iter);
-  apply(_ptr, x, iter);
-  mix(_ptr);
-}

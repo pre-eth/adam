@@ -62,9 +62,7 @@
 
   /* User facing functions for the ADAM CLI */
 
-  // Initiate RNG algorithm - returns the seed for the generated buffer
-  FORCE_INLINE u64 generate(u32* restrict _ptr, float seed, u8 rounds);
+  // Initiate RNG algorithm
+  FORCE_INLINE void generate(u32* restrict _ptr, float seed, u8 rounds);
 
-  // Initiate RNG algorithm with user provided uint64_t seed
-  FORCE_INLINE void sgenerate(u64 seed, u32* restrict _ptr, float chseed, u8 rounds);
 #endif
