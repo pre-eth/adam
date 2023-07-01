@@ -14,11 +14,11 @@
   
   /* 
     Sizes of the buffer and bit vector for the binary sequence
-    The buffer is of type [u32; 1024], but logically it is still
-    [u8; 1024] - the values for the other chaotic maps are stored 
+    The buffer is of type [u32; 2048], but logically it is still
+    [u8; 2048] - the values for the other chaotic maps are stored 
     in the different 8-bit slices of each u32 value
   */
-  #define MAGNITUDE     10  
+  #define MAGNITUDE     11  
   #define BUF_SIZE      (1UL << MAGNITUDE)     
   #define SEQ_SIZE      (BUF_SIZE << 3)
 
