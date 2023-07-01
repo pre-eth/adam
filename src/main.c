@@ -10,13 +10,14 @@ int main(int argc, char** argv) {
     return fputs("ERROR: Invalid number of arguments", stderr);
 
   float seed = DEFAULT_SEED;
-  u8 rounds = ROUNDS, results = 0, precision = 8;
+  u8 rounds = ROUNDS, precision = 8;
+  u16 results = 0;
 
   int opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
     switch (opt) {
       case 'h':
-        return help();
+        return !help();
       case 'v':
         return 
         putchar('v'),
@@ -50,7 +51,7 @@ int main(int argc, char** argv) {
   }
 
   // You can imagine this as a multidimensional 4D array of u8 with size 1024.
-  u32 buffer[BUF_SIZE] ALIGN(32);
+  u32 buffer[BUF_SIZE] ALIGN(SIMD_INC);
   
   u32* restrict buf_ptr = &buffer;
 

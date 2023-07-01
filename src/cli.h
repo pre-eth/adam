@@ -34,7 +34,7 @@
     return (val < min + 1 || val > max + 1) ? min : val;
   }
 
-  static void help() {
+  static u8 help() {
     struct winsize wsize;
     ioctl(0, TIOCGWINSZ, &wsize);
     u16 SHEIGHT = wsize.ws_row;
@@ -75,6 +75,7 @@
         len -= HELP_WIDTH;
       }
     }
+    return 0;
   }
 
 #endif
