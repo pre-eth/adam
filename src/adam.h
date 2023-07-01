@@ -23,7 +23,7 @@
   #define SEQ_SIZE      (BUF_SIZE << 3)
 
   // All seeds must be be at least 7 digits
-  #define DEFAULT_SEED   0.3456789F
+  #define DEFAULT_SEED   0.3456789
   
   // ROUNDS must satsify k = T / 3 where T % 3 = 0. 
   // k is the iterations per chaotic map. ADAM allows
@@ -43,26 +43,28 @@
     _ptr[5 + i] -= _ptr[2 + i], _ptr[3 + i] ^= _ptr[5 + i] >> 17, _ptr[5 + i] += _ptr[5 + i], \
     _ptr[7 + i] -= _ptr[3 + i], _ptr[4 + i] ^= _ptr[5 + i] << 14, _ptr[5 + i] += _ptr[7 + i] \
 
+
   /* Internal functions for the ADAM RNG */
 
   // Returns seed at the end of iteration so it can be used to start another iteration
-  FORCE_INLINE static float chaotic_iter(u32* restrict _ptr, float seed, u8 k, u8 factor);
+  FORCE_INLINE static double chaotic_iter(u32* restrict _ptr, double seed, u8 k, u8 factor);
 
   // Produces initial vector
   FORCE_INLINE static void accumulate(u32* restrict _ptr, u64 seed);
 
   // Performs ISAAC mix logic on contents and creates the first chaotic map
-  FORCE_INLINE static void diffuse(u32* restrict _ptr, float chseed, u8 iter);
+  FORCE_INLINE static void diffuse(u32* restrict _ptr, double* chseed, u8 iter);
 
   // Applies (ROUNDS / 3) iterations twice to create the next two chaotic maps
-  FORCE_INLINE static void apply(u32* restrict _ptr, float chseed, u8 iter);
+  FORCE_INLINE static void apply(u32* restrict _ptr, double chseed, u8 iter);
 
   // XOR's the three chaotic maps to create final output vector
   FORCE_INLINE static void mix(u32* restrict _ptr);
 
+
   /* User facing functions for the ADAM CLI */
 
   // Initiate RNG algorithm
-  FORCE_INLINE void generate(u32* restrict _ptr, float seed, u8 rounds);
+  FORCE_INLINE void generate(u32* restrict _ptr, double seed, u8 rounds);
 
 #endif

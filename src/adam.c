@@ -19,7 +19,7 @@
   }
 */ 
 
-FORCE_INLINE static float chaotic_iter(u32* restrict _ptr, float seed, u8 k, u8 factor) {
+FORCE_INLINE static double chaotic_iter(u32* restrict _ptr, double seed, u8 k, u8 factor) {
   /* 
     According to the paper, the variable c is derived from: 
       floor(log10(M)) + 3
@@ -29,7 +29,7 @@ FORCE_INLINE static float chaotic_iter(u32* restrict _ptr, float seed, u8 k, u8 
   */
   #define BETA          1000000 
 
-  float x = seed;
+  double x = seed;
   u16 s = SEQ_SIZE - 1;
   u8 i, j;
   i = j = 0;
@@ -72,7 +72,7 @@ FORCE_INLINE static void accumulate(u32* restrict _ptr, u64 seed) {
   } while (++j < 8);
 }
 
-FORCE_INLINE static void diffuse(u32* restrict _ptr, float* chseed, u8 iter) {
+FORCE_INLINE static void diffuse(u32* restrict _ptr, double* chseed, u8 iter) {
   #define SEED16    _rdseed16_step
   #define POINT5    1056964608 // 0.5F aka 00111111000000000000000000000000
 
@@ -106,46 +106,45 @@ FORCE_INLINE static void diffuse(u32* restrict _ptr, float* chseed, u8 iter) {
   u16 seed;
   while (!(res = SEED16(&seed)));  
   
-  u32 s;
-  MEMCPY(chseed, &s, sizeof(float));
+  u64 s;
+  MEMCPY(chseed, &s, sizeof(double));
 
   s = (seed ^ s) % POINT5;
 
-  float x;
-  MEMCPY(&s, &x, sizeof(u32));
+  double x;
+  MEMCPY(&s, &x, sizeof(u64));
 
   do {
-    chaotic_iter(_ptr, x, 0, 0);
+    x = chaotic_iter(_ptr, x, 0, 0);
     x = FLOOR(x * DEFAULT_SEED * BETA) / BETA;
   } while (--iter > 0);
 
   *chseed = x;
 }
 
-FORCE_INLINE void apply(u32* restrict _ptr, float chseed, u8 iter) {
+FORCE_INLINE void apply(u32* restrict _ptr, double chseed, u8 iter) {
   u8 i = iter;
 
-  chaotic_iter(_ptr, chseed, 8, 0);
-  float x = FLOOR(chseed * DEFAULT_SEED * BETA) / BETA;
+  double x = chaotic_iter(_ptr, chseed, 8, 0);
+  x = FLOOR(chseed * DEFAULT_SEED * BETA) / BETA;
   --i;
 
   do {
-    chaotic_iter(_ptr, x, 8, 8);
+    x = chaotic_iter(_ptr, x, 8, 8);
     x = FLOOR(x * DEFAULT_SEED * BETA) / BETA;
   } while (--i > 0);
 
   i = iter;
 
-  chaotic_iter(_ptr, x, 16, 8);
+  x = chaotic_iter(_ptr, x, 16, 8);
   x = FLOOR(x * DEFAULT_SEED * BETA) / BETA;
   --i;
 
   do {
-    chaotic_iter(_ptr, x, 16, 16);
+    x = chaotic_iter(_ptr, x, 16, 16);
     x = FLOOR(x * DEFAULT_SEED * BETA) / BETA;
   } while (--i > 0);
 }
-
 
 FORCE_INLINE void mix(u32* restrict _ptr) {
   u16 i = 0, j = 512;
@@ -188,7 +187,7 @@ FORCE_INLINE void mix(u32* restrict _ptr) {
   } while ((j += SIMD_INC) < BUF_SIZE);
 }
 
-FORCE_INLINE void generate(u32* restrict _ptr, float chseed, u8 rounds) {
+FORCE_INLINE void generate(u32* restrict _ptr, double chseed, u8 rounds) {
   #define SEED64    _rdseed64_step
    
   const u8 iter = rounds / 3;
@@ -199,7 +198,7 @@ FORCE_INLINE void generate(u32* restrict _ptr, float chseed, u8 rounds) {
   
   seed ^= (seed ^ (GOLDEN_RATIO ^ (seed >> 32)));
 
-  float x = chseed;
+  double x = chseed;
   accumulate(_ptr, seed);
   diffuse(_ptr, &x, iter);
   apply(_ptr, x, iter);
