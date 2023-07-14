@@ -22,13 +22,13 @@
   #define BUF_SIZE      (1UL << MAGNITUDE)     
   #define SEQ_SIZE      (BUF_SIZE << 3)
 
-  // All seeds must be be at least 7 digits
-  #define DEFAULT_SEED   0.3456789
+  // All seeds must be be at least 9 digits
+  #define DEFAULT_SEED   0.1234567
   
   // ROUNDS must satsify k = T / 3 where T % 3 = 0. 
   // k is the iterations per chaotic map. ADAM allows
   // any ROUNDS value r such that 6 <= r <= 24
-  #define ROUNDS        9
+  #define ROUNDS        18
 
   // Per Bob's original implementation
   #define GOLDEN_RATIO  0x9E3779B97F4A7C13UL
