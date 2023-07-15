@@ -10,7 +10,7 @@
     using a chaotic function to scramble the used positions. The 
     chaotic function is given by this logistic function
   */
-  #define CHAOTIC_FN(x)   (3.9999F * x * (1 - x))
+  #define CHAOTIC_FN(x)   (3.9999 * x * (1 - x))
   
   /* 
     Sizes of the buffer and bit vector for the binary sequence
@@ -25,9 +25,14 @@
   // All seeds must be be at least 9 digits
   #define DEFAULT_SEED   0.1234567
   
-  // ROUNDS must satsify k = T / 3 where T % 3 = 0. 
-  // k is the iterations per chaotic map. ADAM allows
-  // any ROUNDS value r such that 6 <= r <= 24
+  /* 
+    ROUNDS must satsify k = T / 3 where T % 3 = 0. 
+    k is the iterations per chaotic map. ADAM allows
+    any ROUNDS value r such that 6 <= r <= 24
+
+    ROUNDS must satisfy the condition pow((5 x pow(10, c- 1) - 1), 18) > pow(2, 128)
+    where c is the number of digits in the seed.
+  */
   #define ROUNDS        18
 
   // Per Bob's original implementation
