@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <getopt.h>
-#include <sys/ioctl.h>
-
 #include "adam.h"
 #include "cli.h"
 
@@ -9,7 +5,7 @@ int main(int argc, char** argv) {
   if (argc - 1 > ARG_MAX) 
     return fputs("ERROR: Invalid number of arguments", stderr);
 
-  float seed = DEFAULT_SEED;
+  double seed = DEFAULT_SEED;
   u8 rounds = ROUNDS, precision = 8;
   u16 results = 0;
 
@@ -19,20 +15,24 @@ int main(int argc, char** argv) {
       case 'h':
         return !help();
       case 'v':
-        return 
-        putchar('v'),
-        putchar('0' + MAJOR), putchar('.'),
-        putchar('0' + MINOR), putchar('.'),
-        putchar('0' + PATCH);  
+        return puts(VERSION);
       case 'l':
         return stream_live();
       case 'b':
         return stream_bits(__UINT64_MAX__);
+      case 'p':
+        u8 p = a_to_u(optarg, 8, 64);
+        // Adapted from http://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
+        if (p && !((p + 1) & p)) {
+          precision = p >> 3;
+          break;  
+        } 
+        return fputs("Precision must be either 8, 16, 32, or 64 bits", stderr);
       case 'd':
-        results = 255;
+        results = BUF_SIZE >> ((precision & 7) >> 1);
         break;
       case 'n':
-        results = a_to_u(optarg, 0, 255);
+        results = a_to_u(optarg, 1, BUF_SIZE);
         break;
       case 'r':
         rounds = a_to_u(optarg, 8, 26) + 1;
