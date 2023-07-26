@@ -68,17 +68,17 @@
     const char* ARGSHELP[ARG_COUNT] = {
       "Get all available options",
       "Version of this software",
-      "Generates a universally unique identifier (UUID). Optionally specify a number of UUID's to return (max 256)",
+      "Generates a universally unique identifier (UUID). Optionally specify a number of UUID's to generate (max 256)",
       "Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)",
       "Desired size (u8, u16, u32, u64) of returned numbers (default is u64)",
       "Dump the whole buffer",
       "Just bits. Literally. You can provide a certain limit of N bits",
       "Assess a sample of 1000000 bits (1 MB) written to a filename you provide. You can provide a multiplier within [1,256]",
-      "Set the seed. Only the mantissa needs to be provided (the part after the decimal). The final value should be between 0.0 <= x <= 0.5",
+      "Set the seed. Optionally, returns the seed for the generated buffer",
       "Live stream of continuously generated numbers"
     };
-    const u8 lengths[ARG_COUNT] = {25, 24, 107, 74, 69, 21, 63, 117, 132, 45};
-
+    const u8 lengths[ARG_COUNT] = {25, 24, 109, 74, 69, 21, 63, 117, 132, 45};
+    
     u8 len;
     for (int i = 0; i < ARG_COUNT; ++i) {
       printf("\e[%uC-%s\e[%uC%.*s\n", INDENT, ARGS[i], INDENT, HELP_WIDTH, ARGSHELP[i]);
