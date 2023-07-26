@@ -21,19 +21,20 @@
   #define MAGNITUDE     11  
   #define BUF_SIZE      (1UL << MAGNITUDE)     
   #define SEQ_SIZE      (BUF_SIZE << 3)
-
-  // All seeds must be be at least 9 digits
-  #define DEFAULT_SEED   0.1234567
-  
+ 
   /* 
-    ROUNDS must satsify k = T / 3 where T % 3 = 0. 
-    k is the iterations per chaotic map. ADAM allows
-    any ROUNDS value r such that 6 <= r <= 24
+    ROUNDS must satisfy k = T / 3 where T % 3 = 0. 
+    k is the iterations per chaotic map. 
 
-    ROUNDS must satisfy the condition pow((5 x pow(10, c- 1) - 1), 18) > pow(2, 128)
+    ROUNDS must satisfy the condition:
+      floor(128 / log2(5 x pow(10, c - 1) - 1)) + 1 > pow(2, 128)
     where c is the number of digits in the seed.
+
+    ADAM uses a strict ROUNDS value of 9 because it always uses the 
+    maximum double precision value of 15 when rounding the seeds that 
+    it generates. I'll let you check the math yourself to prove it :)
   */
-  #define ROUNDS        18
+  #define ROUNDS        9
 
   // Per Bob's original implementation
   #define GOLDEN_RATIO  0x9E3779B97F4A7C13UL
