@@ -73,8 +73,7 @@ FORCE_INLINE static void accumulate(u32* restrict _ptr, u64 seed) {
 }
 
 FORCE_INLINE static void diffuse(u32* restrict _ptr, double* chseed, u8 iter) {
-  #define SEED16    _rdseed16_step
-  #define POINT5    1056964608 // 0.5F aka 00111111000000000000000000000000
+  #define SEED16    _rdseed64_step
 
   u8 i = 0, j = 512;
 
@@ -187,18 +186,17 @@ FORCE_INLINE void mix(u32* restrict _ptr) {
   } while ((j += SIMD_INC) < BUF_SIZE);
 }
 
-FORCE_INLINE void generate(u32* restrict _ptr, double chseed, u8 rounds) {
-  #define SEED64    _rdseed64_step
-   
-  const u8 iter = rounds / 3;
+FORCE_INLINE void generate(u32* restrict _ptr) { 
+  const u8 iter = ROUNDS / 3;
 
   u8 res;
   u64 seed;
   while (!(res = SEED64(&seed))); 
-  
   seed ^= (seed ^ (GOLDEN_RATIO ^ (seed >> 32)));
 
-  double x = chseed;
+  while (!(res = SEED64(&seed))); 
+  double x = ((double) (seed / __UINT64_MAX__)) * 0.5;
+  
   accumulate(_ptr, seed);
   diffuse(_ptr, &x, iter);
   apply(_ptr, x, iter);

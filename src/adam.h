@@ -31,8 +31,8 @@
     where c is the number of digits in the seed.
 
     ADAM uses a strict ROUNDS value of 9 because it always uses the 
-    maximum double precision value of 15 when rounding the seeds that 
-    it generates. I'll let you check the math yourself to prove it :)
+    maximum double precision value of 15 with the seeds that it 
+    generates. I'll let you check the math yourself to prove it :)
   */
   #define ROUNDS        9
 
@@ -71,6 +71,6 @@
   /* User facing functions for the ADAM CLI */
 
   // Initiate RNG algorithm
-  FORCE_INLINE void generate(u32* restrict _ptr, double seed, u8 rounds);
+  FORCE_INLINE void generate(u32* restrict _ptr);
 
 #endif

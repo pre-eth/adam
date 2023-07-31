@@ -5,8 +5,7 @@ int main(int argc, char** argv) {
   if (argc - 1 > ARG_MAX) 
     return fputs("ERROR: Invalid number of arguments", stderr);
 
-  double seed = DEFAULT_SEED;
-  u8 rounds = ROUNDS, precision = 8;
+  u8 precision = 8;
   u16 results = 0;
 
   int opt;
@@ -34,19 +33,17 @@ int main(int argc, char** argv) {
       case 'n':
         results = a_to_u(optarg, 1, BUF_SIZE);
         break;
-      case 'r':
-        rounds = a_to_u(optarg, 8, 26) + 1;
-        break;
-      case 'p':
-        u8 p = a_to_u(optarg, 7, 63);
-        // Adapted from http://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
-        if (p && !((p + 1) & p)) {
-          precision = p >> 3;
-          break;  
-        } else
-          return fputs("Precision must be either 8, 16, 32, or 64 bits.", stderr);    
+      case 's':
+        puts("Enter a seed between 0.0 and 0.5");
+        if (optarg != NULL) {
+          scanf("%.15lf", &seed);
+          while (seed < 0.0 || seed > 0.5)
+            fputs("Seed value must satisfy range 0.0 < x < 0.5. Try again.", stderr);
+            scanf("%.15lf", &seed);
+          break;
+        }
       default:
-        return fputs("Option is invalid or missing required argument.", stderr);             
+        return fputs("ERROR: Option is invalid or missing required argument", stderr);             
     }
   }
 
@@ -55,7 +52,7 @@ int main(int argc, char** argv) {
   
   u32* restrict buf_ptr = &buffer;
 
-  generate(buf_ptr, seed, rounds);
+  generate(buf_ptr);
   
   u16 idx = 0;
 
