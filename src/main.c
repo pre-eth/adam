@@ -15,10 +15,10 @@ int main(int argc, char** argv) {
         return !help();
       case 'v':
         return puts(VERSION);
-      case 'l':
-        return stream_live();
-      case 'b':
-        return stream_bits(__UINT64_MAX__);
+      // case 'l':
+      //   return stream_live();
+      // case 'b':
+      //   return stream_bits(__UINT64_MAX__);
       case 'p':
         u8 p = a_to_u(optarg, 8, 64);
         // Adapted from http://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
@@ -33,15 +33,15 @@ int main(int argc, char** argv) {
       case 'n':
         results = a_to_u(optarg, 1, BUF_SIZE);
         break;
-      case 's':
-        puts("Enter a seed between 0.0 and 0.5");
-        if (optarg != NULL) {
-          scanf("%.15lf", &seed);
-          while (seed < 0.0 || seed > 0.5)
-            fputs("Seed value must satisfy range 0.0 < x < 0.5. Try again.", stderr);
-            scanf("%.15lf", &seed);
-          break;
-        }
+      // case 's':
+      //   puts("Enter a seed between 0.0 and 0.5");
+      //   if (optarg != NULL) {
+      //     scanf("%.15lf", &seed);
+      //     while (seed < 0.0 || seed > 0.5)
+      //       fputs("Seed value must satisfy range 0.0 < x < 0.5. Try again.", stderr);
+      //       scanf("%.15lf", &seed);
+      //     break;
+      //   }
       default:
         return fputs("ERROR: Option is invalid or missing required argument", stderr);             
     }
@@ -50,10 +50,12 @@ int main(int argc, char** argv) {
   // You can imagine this as a multidimensional 4D array of u8 with size 1024.
   u32 buffer[BUF_SIZE] ALIGN(SIMD_INC);
   
-  u32* restrict buf_ptr = &buffer;
+  u32* restrict buf_ptr = &buffer[0];
 
+  puts("Generating numbers...");
   generate(buf_ptr);
-  
+  puts("Done.");
+
   u16 idx = 0;
 
   u64 num;
@@ -64,24 +66,24 @@ int main(int argc, char** argv) {
         num  = buffer[idx] & 0xFF000000;
         break;
       case 2:
-        num  = ((buffer[idx] & 0xFF000000) << 8)
-             | (buffer[idx + 1] & 0xFF000000);
+        num  = ((u16) (buffer[idx] & 0xFF000000) << 8)
+             | ((u16) buffer[idx + 1] & 0xFF000000);
         break;
       case 4:
-        num  = ((buffer[idx] & 0xFF000000) << 24)
-             | ((buffer[idx + 1] & 0xFF000000) << 16)
-             | ((buffer[idx + 2] & 0xFF000000) << 8)
-             | (buffer[idx + 3] & 0xFF000000);
+        num  = ((u32) (buffer[idx] & 0xFF000000) << 24)
+             | ((u32) (buffer[idx + 1] & 0xFF000000) << 16)
+             | ((u32) (buffer[idx + 2] & 0xFF000000) << 8)
+             | ((u32) buffer[idx + 3] & 0xFF000000);
         break;
       case 8:
-        num  = ((buffer[idx] & 0xFF000000) << 56)
-             | ((buffer[idx + 1] & 0xFF000000) << 48)
-             | ((buffer[idx + 2] & 0xFF000000) << 40)
-             | ((buffer[idx + 3] & 0xFF000000) << 32)
-             | ((buffer[idx + 4] & 0xFF000000) << 24)
-             | ((buffer[idx + 5] & 0xFF000000) << 16)
-             | ((buffer[idx + 6] & 0xFF000000) << 8)
-             | (buffer[idx + 7] & 0xFF000000);
+        num  = ((u64) (buffer[idx] & 0xFF000000) << 56)
+             | ((u64) (buffer[idx + 1] & 0xFF000000) << 48)
+             | ((u64) (buffer[idx + 2] & 0xFF000000) << 40)
+             | ((u64) (buffer[idx + 3] & 0xFF000000) << 32)
+             | ((u64) (buffer[idx + 4] & 0xFF000000) << 24)
+             | ((u64) (buffer[idx + 5] & 0xFF000000) << 16)
+             | ((u64) (buffer[idx + 6] & 0xFF000000) << 8)
+             | ((u64) buffer[idx + 7] & 0xFF000000);
         break;      
     }
     

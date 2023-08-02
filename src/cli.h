@@ -5,6 +5,8 @@
   #include <getopt.h>
   #include <sys/ioctl.h>
 
+  #include "util.h"
+
   #define STRINGIZE1(a) #a
   #define STRINGIFY1(a) STRINGIZE1(a)
 
@@ -58,7 +60,7 @@
     printf("\e[%uC[OPTIONS]\n", center);
 
     // subtract 1 because it is half of width for arg (ex. "-d")
-    const u16 INDENT =  (SWIDTH / 16); 
+    const u16 INDENT = (SWIDTH / 16); 
     // total indent for help descriptions if they have to go to next line
     const u16 HELP_INDENT = INDENT + INDENT + 2;
     // max length for help description in COL 2 before it needs to wrap

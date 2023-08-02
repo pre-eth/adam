@@ -71,6 +71,6 @@
   /* User facing functions for the ADAM CLI */
 
   // Initiate RNG algorithm
-  FORCE_INLINE void generate(u32* restrict _ptr);
+  void generate(u32* restrict _ptr);
 
 #endif
