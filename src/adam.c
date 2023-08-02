@@ -101,8 +101,6 @@ FORCE_INLINE static void diffuse(u32* restrict _ptr, double* chseed, u8 iter) {
 
   double x = *chseed;
 
-  puts("Starting chaotic iteration...");
-  
   do {
     x = chaotic_iter(_ptr, x, 0, 0);
     x = (*chseed + iter);
@@ -189,16 +187,12 @@ void generate(u32* restrict _ptr) {
   seed ^= (seed ^ (GOLDEN_RATIO ^ (seed >> 32)));
 
   accumulate(_ptr, seed);
-  puts("Accumulated");
 
   while (!(res = SEED64(&seed))); 
   double x = ((double) (seed / __UINT64_MAX__)) * 0.5;
   
   diffuse(_ptr, &x, iter);
-  puts("Diffused");
   apply(_ptr, x, iter);
-  puts("Applied");
   mix(_ptr);
-  puts("Mixed");
 }
 

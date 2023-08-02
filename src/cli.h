@@ -7,14 +7,14 @@
 
   #include "util.h"
 
-  #define STRINGIZE1(a) #a
-  #define STRINGIFY1(a) STRINGIZE1(a)
+  #define STRINGIZE(a) #a
+  #define STRINGIFY(a) STRINGIZE(a)
 
   #define MAJOR 1
   #define MINOR 0
   #define PATCH 0
 
-  #define VERSION "v" STRINGIFY1(MAJOR) "." STRINGIFY1(MINOR) "." STRINGIFY1(PATCH)
+  #define VERSION "v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH)
 
   #define OPTSTR      ":hvlbdn:r:p:a::s::u::"
   #define ARG_MAX     5
@@ -28,7 +28,7 @@
     do {
       c = (num & 0x01) + '0';
       zeroes += (49 - c); 
-      fputc(c, stdout);
+      putchar(c);
     } while (num >>= 1);
     return zeroes;
   }
@@ -60,17 +60,20 @@
     printf("\e[%uC[OPTIONS]\n", center);
 
     // subtract 1 because it is half of width for arg (ex. "-d")
-    const u16 INDENT = (SWIDTH / 16); 
+    const u16 INDENT = (SWIDTH / 16) - 1; 
     // total indent for help descriptions if they have to go to next line
     const u16 HELP_INDENT = INDENT + INDENT + 2;
     // max length for help description in COL 2 before it needs to wrap
     const u16 HELP_WIDTH = SWIDTH - HELP_INDENT;
 
+    char version_str[33];
+    sprintf(version_str, "Version of this software (%d.%d.%d)", MAJOR, MINOR, PATCH);
+
     const char ARGS[ARG_COUNT] = {'h', 'v', 'u', 'n', 'p', 'd', 'b', 'a', 's', 'l'};
     const char* ARGSHELP[ARG_COUNT] = {
       "Get all available options",
-      "Version of this software",
-      "Generates a universally unique identifier (UUID). Optionally specify a number of UUID's to generate (max 256)",
+      version_str,
+      "Generate a universally unique identifier (UUID). Optionally specify a number of UUID's to generate (max 128)",
       "Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)",
       "Desired size (u8, u16, u32, u64) of returned numbers (default is u64)",
       "Dump the whole buffer",
@@ -79,11 +82,11 @@
       "Set the seed. Optionally, returns the seed for the generated buffer",
       "Live stream of continuously generated numbers"
     };
-    const u8 lengths[ARG_COUNT] = {25, 24, 109, 74, 69, 21, 63, 117, 132, 45};
+    const u8 lengths[ARG_COUNT] = {25, 24, 108, 74, 69, 21, 63, 117, 67, 45};
     
-    u8 len;
+    int len;
     for (int i = 0; i < ARG_COUNT; ++i) {
-      printf("\e[%uC-%s\e[%uC%.*s\n", INDENT, ARGS[i], INDENT, HELP_WIDTH, ARGSHELP[i]);
+      printf("\e[%uC-%c\e[%uC%.*s\n", INDENT, ARGS[i], INDENT, HELP_WIDTH, ARGSHELP[i]);
       len = lengths[i] - HELP_WIDTH;
       while (len > 0) {
         ARGSHELP[i] += HELP_WIDTH + (ARGSHELP[i][HELP_WIDTH] == ' ');
