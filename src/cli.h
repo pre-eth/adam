@@ -27,13 +27,14 @@
     char c;
     do {
       c = (num & 0x01) + '0';
+      // '0' == 48, '1' == 49, so this tallies zeroes based on the diff
       zeroes += (49 - c); 
       putchar(c);
     } while (num >>= 1);
     return zeroes;
   }
 
-  FORCE_INLINE static u16 a_to_u(const char* s, u16 min, u16 max) {
+  FORCE_INLINE static u8 a_to_u(const char* s, u16 min, u16 max) {
     u8  len = 0;
     u16 val = 0;
     
@@ -82,7 +83,7 @@
       "Set the seed. Optionally, returns the seed for the generated buffer",
       "Live stream of continuously generated numbers"
     };
-    const u8 lengths[ARG_COUNT] = {25, 24, 108, 74, 69, 21, 63, 117, 67, 45};
+    const u8 lengths[ARG_COUNT] = {25, 33, 108, 74, 69, 21, 63, 117, 67, 45};
     
     int len;
     for (int i = 0; i < ARG_COUNT; ++i) {
