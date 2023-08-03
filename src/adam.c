@@ -21,11 +21,8 @@
 
 FORCE_INLINE static double chaotic_iter(u32* restrict _ptr, double seed, u8 k, u8 factor) {
   /* 
-    According to the paper, the variable c is derived from: 
-      floor(log10(M)) + 3
-    Here M is the amount of bits in the buffer, which for ADAM is 
-    8192, and log10(8192) = 3.9, so c = floor(3.9) + 3 = 6. Then, 
-      BETA = pow(10, 6)
+    BETA is derived from the length of the mantissa 
+    ADAM uses the max length of 15 to minimize ROUNDS
   */
   #define BETA          10E15
 
@@ -138,7 +135,7 @@ FORCE_INLINE void apply(u32* restrict _ptr, double chseed, u8 iter) {
 }
 
 FORCE_INLINE void mix(u32* restrict _ptr) {
-  u16 i = 0, j = 512;
+  u16 i = 0, j = 1024;
 
   reg tmp1, tmp2, tmp3, tmp4;
   do {
