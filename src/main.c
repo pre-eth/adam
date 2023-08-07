@@ -3,22 +3,29 @@
 
 int main(int argc, char** argv) {
   if (argc - 1 > ARG_MAX) 
-    return fputs("ERROR: Invalid number of arguments", stderr);
+    return fputs("\e[1;31mERROR: Invalid number of arguments\e[m", stderr);
 
   u8 precision = 8;
   u16 results = 0;
+
+  // You can imagine this as a multidimensional 4D array of u8 with size 1024.
+  u32 buffer[BUF_SIZE] ALIGN(SIMD_INC);
+  u32* restrict buf_ptr = &buffer[0];
 
   int opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
     switch (opt) {
       case 'h':
-        return !help();
+        return help();
       case 'v':
         return puts(VERSION);
       // case 'l':
       //   return stream_live();
-      // case 'b':
-      //   return stream_bits(__UINT64_MAX__);
+      case 'b':
+        int limit = 1000000;
+        if (optarg != NULL) 
+          limit = a_to_u(optarg, 8, limit);
+        return 0;
       case 'p':
         u8 p = a_to_u(optarg, 8, 64);
         // Adapted from http://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
@@ -26,12 +33,12 @@ int main(int argc, char** argv) {
           precision = p >> 3;
           break;  
         } 
-        return fputs("Precision must be either 8, 16, 32, or 64 bits", stderr);
+        return fputs("\e[1;31mERROR: Precision must be either 8, 16, 32, or 64 bits\e[m", stderr);
       case 'd':
-        results = BUF_SIZE >> ((precision & 7) >> 1);
+        results = BUF_SIZE >> (precision >> 1);
         break;
       case 'n':
-        results = a_to_u(optarg, 1, BUF_SIZE);
+        results = a_to_u(optarg, 1, BUF_SIZE >> (precision >> 1));
         break;
       // case 's':
       //   puts("Enter a seed between 0.0 and 0.5");
@@ -43,57 +50,23 @@ int main(int argc, char** argv) {
       //     break;
       //   }
       default:
-        return fputs("ERROR: Option is invalid or missing required argument", stderr);             
+        return fputs("\e[1;31mERROR: Option is invalid or missing required argument\e[m", stderr);             
     }
   }
-
-  // You can imagine this as a multidimensional 4D array of u8 with size 1024.
-  u32 buffer[BUF_SIZE] ALIGN(SIMD_INC);
-  
-  u32* restrict buf_ptr = &buffer[0];
 
   puts("Generating numbers...");
   generate(buf_ptr);
   puts("Done.");
 
-  u16 idx = 0;
-
   u64 num;
-  print_num:
-    num = 0;
-    switch (precision) {
-      case 1:
-        num  = buffer[idx] & 0xFF000000;
-        break;
-      case 2:
-        num  = ((u16) (buffer[idx] & 0xFF000000) << 8)
-             | ((u16) buffer[idx + 1] & 0xFF000000);
-        break;
-      case 4:
-        num  = ((u32) (buffer[idx] & 0xFF000000) << 24)
-             | ((u32) (buffer[idx + 1] & 0xFF000000) << 16)
-             | ((u32) (buffer[idx + 2] & 0xFF000000) << 8)
-             | ((u32) buffer[idx + 3] & 0xFF000000);
-        break;
-      case 8:
-        num  = ((u64) (buffer[idx] & 0xFF000000) << 56)
-             | ((u64) (buffer[idx + 1] & 0xFF000000) << 48)
-             | ((u64) (buffer[idx + 2] & 0xFF000000) << 40)
-             | ((u64) (buffer[idx + 3] & 0xFF000000) << 32)
-             | ((u64) (buffer[idx + 4] & 0xFF000000) << 24)
-             | ((u64) (buffer[idx + 5] & 0xFF000000) << 16)
-             | ((u64) (buffer[idx + 6] & 0xFF000000) << 8)
-             | ((u64) buffer[idx + 7] & 0xFF000000);
-        break;      
-    }
-    
-    idx += precision;
-
-    printf("%llu", num);
+  // try condensing via cascade
+  print_buffer:
+    printf("%llu", print_num(buf_ptr, precision));
+    buf_ptr += precision;
 
     if (results-- > 0) {
       printf(", ");
-      goto print_num;
+      goto print_buffer;
     }
 
   putchar('\n');
