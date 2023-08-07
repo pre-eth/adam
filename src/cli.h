@@ -16,7 +16,7 @@
 
   #define VERSION "v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH)
 
-  #define OPTSTR      ":hvlbdn:r:p:a::s::u::"
+  #define OPTSTR      ":hvldn:r:p:a::b::u::"
   #define ARG_MAX     5
   #define ARG_COUNT   10
 
@@ -34,14 +34,44 @@
     return zeroes;
   }
 
-  FORCE_INLINE static u8 a_to_u(const char* s, u16 min, u16 max) {
+  FORCE_INLINE static u64 print_num(u32* restrict _ptr, u8 precision) {
+    // TRY REMOVING EXTRA CASTS
+    switch (precision) {
+      case 1:
+        return *_ptr & 0xFF000000;
+      case 2: 
+        return ((u16) (*_ptr      & 0xFF000000) << 8)
+             | ((u16) *(_ptr + 1) & 0xFF000000);
+      case 4:
+        return ((u32)  (*_ptr      & 0xFF000000) << 24)
+             | ((u32) (*(_ptr + 1) & 0xFF000000) << 16)
+             | ((u32) (*(_ptr + 2) & 0xFF000000) << 8)
+             | ((u32)  *(_ptr + 3) & 0xFF000000);
+      case 8:
+        return ((u64)  (*_ptr      & 0xFF000000) << 56)
+             | ((u64) (*(_ptr + 1) & 0xFF000000) << 48)
+             | ((u64) (*(_ptr + 2) & 0xFF000000) << 40)
+             | ((u64) (*(_ptr + 3) & 0xFF000000) << 32)
+             | ((u64) (*(_ptr + 4) & 0xFF000000) << 24)
+             | ((u64) (*(_ptr + 5) & 0xFF000000) << 16)
+             | ((u64) (*(_ptr + 6) & 0xFF000000) << 8)
+             | ((u64)  *(_ptr + 7) & 0xFF000000);      
+    }
+  }
+
+  // Only supports values up to 1 million. Only supports higher 
+  // than __UIN16_MAX__ because we need to provide the -b option
+  FORCE_INLINE static u32 a_to_u(const char* s, u32 min, u32 max) {
     u8  len = 0;
-    u16 val = 0;
+    u32 val = 0;
     
     // try while (len += (s[len] != '\0'));
     while (s[len++] != '\0');
 
     switch (len) { 
+      case  7: val += (s[len - 3]  - '0') * 1000000;
+      case  6: val += (s[len - 2]  - '0') * 100000;
+      case  5: val += (s[len - 1]  - '0') * 10000;
       case  4: val += (s[len - 4]  - '0') * 1000;
       case  3: val += (s[len - 3]  - '0') * 100;
       case  2: val += (s[len - 2]  - '0') * 10;
@@ -85,7 +115,7 @@
     };
     const u8 lengths[ARG_COUNT] = {25, 33, 108, 74, 69, 21, 63, 117, 67, 45};
     
-    int len;
+    short len;
     for (int i = 0; i < ARG_COUNT; ++i) {
       printf("\e[%uC-%c\e[%uC%.*s\n", INDENT, ARGS[i], INDENT, HELP_WIDTH, ARGSHELP[i]);
       len = lengths[i] - HELP_WIDTH;
