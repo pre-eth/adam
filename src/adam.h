@@ -59,25 +59,34 @@
 
   #define SEED64            _rdseed64_step
 
-  // Returns seed at the end of iteration so it can be used to start another iteration
-  FORCE_INLINE static double chaotic_iter(u32* restrict _ptr, double seed, u8 k, u8 factor);
+  #define ACCUMULATE(seed, i)\
+    _ptr[0  + i] = 0  + seed,\
+    _ptr[1  + i] = 1  + seed,\
+    _ptr[2  + i] = 2  + seed,\
+    _ptr[3  + i] = 3  + seed,\
+    _ptr[4  + i] = 4  + seed,\
+    _ptr[5  + i] = 5  + seed,\
+    _ptr[6  + i] = 6  + seed,\
+    _ptr[7  + i] = 7  + seed,\
+    _ptr[8  + i] = 8  + seed,\
+    _ptr[9  + i] = 9  + seed,\
+    _ptr[10 + i] = 10 + seed,\
+    _ptr[11 + i] = 11 + seed,\
+    _ptr[12 + i] = 12 + seed,\
+    _ptr[13 + i] = 13 + seed,\
+    _ptr[14 + i] = 14 + seed,\
+    _ptr[15 + i] = 15 + seed
 
-  // Produces initial vector
-  FORCE_INLINE static void accumulate(u32* restrict _ptr, u64 seed);
-
-  // Performs ISAAC mix logic on contents and creates the first chaotic map
-  FORCE_INLINE static void diffuse(u32* restrict _ptr, double* chseed, u8 iter);
-
-  // Applies (ROUNDS / 3) iterations twice to create the next two chaotic maps
-  FORCE_INLINE static void apply(u32* restrict _ptr, double chseed, u8 iter);
-
-  // XOR's the three chaotic maps to create final output vector
-  FORCE_INLINE static void mix(u32* restrict _ptr);
-
-
-  /* User facing functions for the ADAM CLI */
-
-  // Initiate RNG algorithm
-  void generate(u32* restrict _ptr);
-
+  #define XOR_MAPS(i) \
+    _ptr[0 + i] ^= (_ptr[0 + i + 256]) ^ (_ptr[0 + i + 512]),\
+    _ptr[1 + i] ^= (_ptr[1 + i + 256]) ^ (_ptr[1 + i + 512]),\
+    _ptr[2 + i] ^= (_ptr[2 + i + 256]) ^ (_ptr[2 + i + 512]),\
+    _ptr[3 + i] ^= (_ptr[3 + i + 256]) ^ (_ptr[3 + i + 512]),\
+    _ptr[4 + i] ^= (_ptr[4 + i + 256]) ^ (_ptr[4 + i + 512]),\
+    _ptr[5 + i] ^= (_ptr[5 + i + 256]) ^ (_ptr[5 + i + 512]),\
+    _ptr[6 + i] ^= (_ptr[6 + i + 256]) ^ (_ptr[6 + i + 512]),\
+    _ptr[7 + i] ^= (_ptr[7 + i + 256]) ^ (_ptr[7 + i + 512])
+    
+  // Initiates RNG algorithm
+  void adam(u64* restrict _ptr);
 #endif
