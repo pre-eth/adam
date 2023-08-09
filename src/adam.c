@@ -52,8 +52,8 @@ FORCE_INLINE static void accumulate(u64* restrict _ptr, u64 seed) {
   } while (++i < 4);
 }
 
-FORCE_INLINE static void diffuse(u32* restrict _ptr, double* chseed, u8 iter) {
-  u16 i = 0, j = 1024;
+FORCE_INLINE static void diffuse(u64* restrict _ptr) {
+  register u8 i = 0;
 
   do {
     ISAAC_MIX(0  + i),
@@ -64,8 +64,21 @@ FORCE_INLINE static void diffuse(u32* restrict _ptr, double* chseed, u8 iter) {
     ISAAC_MIX(40 + i),
     ISAAC_MIX(48 + i),
     ISAAC_MIX(56 + i);
-    i += 64;
-  } while (i < (BUF_SIZE >> 1));
+    i += (64 - (i == 192));
+  } while (i < BUF_SIZE - 1);
+
+  u64 *pp, *p2, *pend, *r;
+  pp = _ptr;
+
+  register u64 a = 0, b = 1, x, y;
+
+  for (pp = _ptr, pend = p2 = pp + BUF_SIZE; pp < pend;) {
+    ISAAC_STEP(~(a^(a<<21)), a, b, _ptr, pp, p2, r, x);
+    ISAAC_STEP(  a^(a>>5)  , a, b, _ptr, pp, p2, r, x);
+    ISAAC_STEP(  a^(a<<12) , a, b, _ptr, pp, p2, r, x);
+    ISAAC_STEP(  a^(a>>33) , a, b, _ptr, pp, p2, r, x);
+  }
+}
 
   do {
     ISAAC_MIX(0  + j),
