@@ -1,3 +1,5 @@
+#include <getopt.h>
+
 #include "adam.h"
 #include "cli.h"
 
