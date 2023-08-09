@@ -34,6 +34,7 @@
     generates. I'll let you check the math yourself to prove it :)
   */
   #define ROUNDS        9
+  #define ITER          (ROUNDS / 3)
 
   /* ISAAC64 stuff */
 

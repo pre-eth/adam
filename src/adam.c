@@ -80,54 +80,27 @@ FORCE_INLINE static void diffuse(u64* restrict _ptr) {
   }
 }
 
-  do {
-    ISAAC_MIX(0  + j),
-    ISAAC_MIX(8  + j),
-    ISAAC_MIX(16 + j),
-    ISAAC_MIX(24 + j),
-    ISAAC_MIX(32 + j),
-    ISAAC_MIX(40 + j),
-    ISAAC_MIX(48 + j),
-    ISAAC_MIX(56 + j);
-    j += 64;
-  } while (j < BUF_SIZE);
-
+FORCE_INLINE static void apply(u64* restrict _b, u64* restrict _a, double* chseed) {
   double x = *chseed;
 
-  do {
-    x = chaotic_iter(_ptr, x, 0, 0);
-    x = (*chseed + iter);
-  } while (--iter > 0);
+  register u8 i = 0;
+  do x = chaotic_iter(_b, _a, x);
+  while (++i < ITER);
 
-  *chseed = x;
-}
 
-FORCE_INLINE void apply(u32* restrict _ptr, double chseed, u8 iter) {
-  u8 i = iter;
-
-  double x = chaotic_iter(_ptr, chseed, 8, 0);
-
-  // Need to add 4 from now on bc diffuse() uses chseed + 1, chseed + 2, and chseed + 3
-  x = chseed + 4.0;
-  --i;
-
-  do {
-    x = chaotic_iter(_ptr, x, 8, 8);
-    x = chseed + 4.0 + i;
-  } while (--i > 0);
+  i = 0;
+  x += (double) (x / 10000);
+  do x = chaotic_iter(_b, _a, x);
+  while (++i < ITER);
 
   // Last iteration T
 
-  i = iter;
+  i = 0;
+  x += (double) (x / 100000);
+  do x = chaotic_iter(_b, _a, x);
+  while (++i < ITER);
 
-  x = chaotic_iter(_ptr, x, 16, 8);
-  x = chseed + 8.0;
-  --i;
-
-  do {
-    x = chaotic_iter(_ptr, x, 16, 16);
-    x = chseed + 8.0 + i;
-  } while (--i > 0);
+  *chseed = x;
 }
 
 FORCE_INLINE void mix(u32* restrict _ptr) {
