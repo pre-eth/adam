@@ -119,21 +119,22 @@ FORCE_INLINE static void mix(u64* restrict _a, u64* restrict _b, u64* restrict _
   } while (j < (BUF_SIZE - 1));
 }
 
-void generate(u32* restrict _ptr) { 
-  const u8 iter = ROUNDS / 3;
-
+void adam(u64* restrict _ptr) { 
   u8 res;
   u64 seed;
   while (!(res = SEED64(&seed))); 
   seed ^= (seed ^ (GOLDEN_RATIO ^ (seed >> 32)));
 
   accumulate(_ptr, seed);
+  diffuse(_ptr);
 
   while (!(res = SEED64(&seed))); 
   double x = ((double) (seed / __UINT64_MAX__)) * 0.5;
   
-  diffuse(_ptr, &x, iter);
-  apply(_ptr, x, iter);
-  mix(_ptr);
+  apply(_ptr + 256, _ptr, &x);
+  apply(_ptr + 512, _ptr + 256, &x);
+  apply(_ptr, _ptr + 512, &x);
+
+  mix(_ptr, b1, b2);
 }
 
