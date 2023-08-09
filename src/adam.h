@@ -35,7 +35,8 @@
   */
   #define ROUNDS        9
 
-  // Per Bob's original implementation
+  /* ISAAC64 stuff */
+
   #define GOLDEN_RATIO  0x9E3779B97F4A7C13UL
 
   #define ISAAC_MIX(i) \
@@ -48,8 +49,15 @@
     _ptr[5 + i] -= _ptr[2 + i], _ptr[3 + i] ^= _ptr[5 + i] >> 17, _ptr[5 + i] += _ptr[5 + i], \
     _ptr[7 + i] -= _ptr[3 + i], _ptr[4 + i] ^= _ptr[5 + i] << 14, _ptr[5 + i] += _ptr[7 + i] \
 
+  #define ISAAC_IND(mm,x)  (*(u64*)((u8*)(mm) + ((x) & ((BUF_SIZE-1)<<3))))
+  #define ISAAC_STEP(mx,a,b,mm,m,m2,r,x) { \
+    x = *m; \
+    a = (mx) + *(m2++); \
+    *(m++) = y = ISAAC_IND(mm,x) + a + b; \
+    *(r++) = b = ISAAC_IND(mm,y>>MAGNITUDE) + x; \
+  }
 
-  /* Internal functions for the ADAM RNG */
+  #define SEED64            _rdseed64_step
 
   // Returns seed at the end of iteration so it can be used to start another iteration
   FORCE_INLINE static double chaotic_iter(u32* restrict _ptr, double seed, u8 k, u8 factor);
