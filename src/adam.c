@@ -103,45 +103,20 @@ FORCE_INLINE static void apply(u64* restrict _b, u64* restrict _a, double* chsee
   *chseed = x;
 }
 
-FORCE_INLINE void mix(u32* restrict _ptr) {
-  u16 i = 0, j = 1024;
-
-  reg tmp1, tmp2, tmp3, tmp4;
-  do {
-    tmp1 = SIMD_SETR8(
-      SIMD_MASK_PREP(0, i),
-      SIMD_MASK_PREP(16, i)
-    );
-
-    tmp2 = SIMD_SETR8(
-      SIMD_XOR_PREP(0, i),
-      SIMD_XOR_PREP(16, i)
-    );
-
-    tmp1 = SIMD_XORBITS(tmp1, tmp2);
-    tmp2 = SIMD_LOADBITS((reg*) &_ptr[i]);
-    tmp2 = SIMD_ORBITS(tmp2, tmp1);
-
-    SIMD_STOREBITS((reg*) &_ptr[i], tmp2);
-  } while ((i += SIMD_INC) < (BUF_SIZE >> 1));
+FORCE_INLINE static void mix(u64* restrict _a, u64* restrict _b, u64* restrict _c) {
+  register u8 i = 0, j = 128;
 
   do {
-    tmp1 = SIMD_SETR8(
-      SIMD_MASK_PREP(0, j),
-      SIMD_MASK_PREP(16, j)
-    );
-    
-    tmp2 = SIMD_SETR8(
-      SIMD_XOR_PREP(0, j),
-      SIMD_XOR_PREP(16, j)
-    );
+    XOR_MAPS(i + 0),
+    XOR_MAPS(i + 8); 
+    i += 16;   
+  } while (i < (BUF_SIZE >> 1));
 
-    tmp1 = SIMD_XORBITS(tmp1, tmp2);
-    tmp2 = SIMD_LOADBITS((reg*) &_ptr[j]);
-    tmp2 = SIMD_ORBITS(tmp2, tmp1);
-
-    SIMD_STOREBITS((reg*) &_ptr[j], tmp2);
-  } while ((j += SIMD_INC) < BUF_SIZE);
+  do {
+    XOR_MAPS(j + 0),
+    XOR_MAPS(j + 8);
+    j += (16  - (i == 240));  
+  } while (j < (BUF_SIZE - 1));
 }
 
 void generate(u32* restrict _ptr) { 
