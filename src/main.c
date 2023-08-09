@@ -8,14 +8,14 @@
 // all one buffer
 static u64 buffer[BUF_SIZE * 3] ALIGN(64);
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   if (argc - 1 > ARG_MAX) 
     return fputs("\e[1;31mERROR: Invalid number of arguments\e[m\n", stderr);
 
   u8 precision = 8;
   u16 results = 0;
-
-  u64* restrict buf_ptr = &buffer[0];
+  
+  u64 *restrict buf_ptr = &buffer[0];
 
   int opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
@@ -27,23 +27,29 @@ int main(int argc, char** argv) {
       // case 'l':
       //   return stream_live();
       case 'b':
-        int limit = 1000000;
+        u32 limit = 999999;
         if (optarg != NULL) 
-          limit = a_to_u(optarg, 8, limit);
-        return 0;
+          limit = a_to_u(optarg, 512, limit);
+        const u32 ones = stream_bits(buf_ptr, limit);
+        return printf("\e[1mPRINTED %u BITS (%u ONES, %u ZEROES)\e[m\n", ones, limit - ones);
       case 'p':
-        u8 p = a_to_u(optarg, 8, 64);
-        // Adapted from http://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
-        if (p && !((p + 1) & p)) {
+        const u8 p = a_to_u(optarg, 8, 64);
+        if (LIKELY(!(p & (p - 1)))) {
           precision = p >> 3;
+          /*
+            This line will basically "floor" results to the max value of results
+            possible for this new precision in case it exceeds the possible limit
+            This can be avoided by ordering your arguments so that -p comes first
+          */ 
+          results -= (results > BUF_SIZE * precision) * (results - BUF_SIZE * precision);
           break;  
         } 
         return fputs("\e[1;31mERROR: Precision must be either 8, 16, 32, or 64 bits\e[m\n", stderr);
       case 'd':
-        results = BUF_SIZE >> (precision >> 1);
+        results = BUF_SIZE * precision;
         break;
       case 'n':
-        results = a_to_u(optarg, 1, BUF_SIZE >> (precision >> 1));
+        results = a_to_u(optarg, 1, BUF_SIZE * precision) - 1;
         break;
       // case 's':
       //   puts("Enter a seed between 0.0 and 0.5");
@@ -59,11 +65,8 @@ int main(int argc, char** argv) {
     }
   }
 
-  puts("Generating numbers...");
   adam(buf_ptr);
-  puts("Done.");
 
-  u64 num;
   // try condensing via cascade
   print_buffer:
     printf("%llu", print_num(buf_ptr, precision));
