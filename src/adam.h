@@ -3,6 +3,30 @@
 
   #include "util.h"
 
+  /* ISAAC64 stuff */
+
+  #define GOLDEN_RATIO  0x9E3779B97F4A7C13UL
+
+  #define ISAAC_MIX(i) \
+    _ptr[0 + i] -= _ptr[4 + i], _ptr[5 + i] ^= _ptr[7 + i] >> 9,  _ptr[7 + i] += _ptr[0 + i], \
+    _ptr[1 + i] -= _ptr[5 + i], _ptr[5 + i] ^= _ptr[0 + i] << 9,  _ptr[0 + i] += _ptr[1 + i], \
+    _ptr[2 + i] -= _ptr[5 + i], _ptr[7 + i] ^= _ptr[1 + i] >> 23, _ptr[1 + i] += _ptr[2 + i], \
+    _ptr[3 + i] -= _ptr[7 + i], _ptr[0 + i] ^= _ptr[2 + i] << 15, _ptr[2 + i] += _ptr[3 + i], \
+    _ptr[4 + i] -= _ptr[0 + i], _ptr[1 + i] ^= _ptr[3 + i] >> 14, _ptr[3 + i] += _ptr[4 + i], \
+    _ptr[5 + i] -= _ptr[1 + i], _ptr[2 + i] ^= _ptr[4 + i] << 20, _ptr[4 + i] += _ptr[5 + i], \
+    _ptr[5 + i] -= _ptr[2 + i], _ptr[3 + i] ^= _ptr[5 + i] >> 17, _ptr[5 + i] += _ptr[5 + i], \
+    _ptr[7 + i] -= _ptr[3 + i], _ptr[4 + i] ^= _ptr[5 + i] << 14, _ptr[5 + i] += _ptr[7 + i] \
+
+  #define ISAAC_IND(mm,x)  (*(u64*)((u8*)(mm) + ((x) & ((BUF_SIZE-1)<<3))))
+  #define ISAAC_STEP(mx,a,b,mm,m,m2,r,x) { \
+    x = *m; \
+    a = (mx) + *(m2++); \
+    *(m++) = y = ISAAC_IND(mm,x) + a + b; \
+    *(r++) = b = ISAAC_IND(mm,y>>MAGNITUDE) + x; \
+  }
+
+  /* ADAM stuff */
+
   /*
     The PRNG algorithm is based on the construction of three 
     chaotic maps obtained by permuting and shuffling the elements
@@ -35,28 +59,6 @@
   */
   #define ROUNDS        9
   #define ITER          (ROUNDS / 3)
-
-  /* ISAAC64 stuff */
-
-  #define GOLDEN_RATIO  0x9E3779B97F4A7C13UL
-
-  #define ISAAC_MIX(i) \
-    _ptr[0 + i] -= _ptr[4 + i], _ptr[5 + i] ^= _ptr[7 + i] >> 9,  _ptr[7 + i] += _ptr[0 + i], \
-    _ptr[1 + i] -= _ptr[5 + i], _ptr[5 + i] ^= _ptr[0 + i] << 9,  _ptr[0 + i] += _ptr[1 + i], \
-    _ptr[2 + i] -= _ptr[5 + i], _ptr[7 + i] ^= _ptr[1 + i] >> 23, _ptr[1 + i] += _ptr[2 + i], \
-    _ptr[3 + i] -= _ptr[7 + i], _ptr[0 + i] ^= _ptr[2 + i] << 15, _ptr[2 + i] += _ptr[3 + i], \
-    _ptr[4 + i] -= _ptr[0 + i], _ptr[1 + i] ^= _ptr[3 + i] >> 14, _ptr[3 + i] += _ptr[4 + i], \
-    _ptr[5 + i] -= _ptr[1 + i], _ptr[2 + i] ^= _ptr[4 + i] << 20, _ptr[4 + i] += _ptr[5 + i], \
-    _ptr[5 + i] -= _ptr[2 + i], _ptr[3 + i] ^= _ptr[5 + i] >> 17, _ptr[5 + i] += _ptr[5 + i], \
-    _ptr[7 + i] -= _ptr[3 + i], _ptr[4 + i] ^= _ptr[5 + i] << 14, _ptr[5 + i] += _ptr[7 + i] \
-
-  #define ISAAC_IND(mm,x)  (*(u64*)((u8*)(mm) + ((x) & ((BUF_SIZE-1)<<3))))
-  #define ISAAC_STEP(mx,a,b,mm,m,m2,r,x) { \
-    x = *m; \
-    a = (mx) + *(m2++); \
-    *(m++) = y = ISAAC_IND(mm,x) + a + b; \
-    *(r++) = b = ISAAC_IND(mm,y>>MAGNITUDE) + x; \
-  }
 
   #define SEED64            _rdseed64_step
 
