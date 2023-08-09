@@ -19,25 +19,23 @@
   }
 */ 
 
-FORCE_INLINE static double chaotic_iter(u32* restrict _ptr, double seed, u8 k, u8 factor) {
+FORCE_INLINE static double chaotic_iter(u64* map_b, u64* map_a, const double seed) {
   /* 
     BETA is derived from the length of the mantissa 
     ADAM uses the max length of 15 to minimize ROUNDS
   */
   #define BETA          10E15
 
-  double x = seed;
-  u16 s = SEQ_SIZE - 1;
-  u16 i, j;
+  register double x = seed;
+  register u16 s = SEQ_SIZE - 1;
+  register u16 i, j;
   i = j = 0;
-
-  // u16 m = (u16) 1 << factor;
 
   do {
     x = CHAOTIC_FN(x);
     j = i + 1 + ((u64) FLOOR(x * BETA) % s);
     --s;
-    _ptr[i >> 3] |= ((_ptr[i >> 3] >> ((i & 7) + factor) & 1UL)) ^ ((_ptr[j >> 3] >> ((i & 7) + factor) & 1UL)) << ((i & 7) + k);
+    map_b[i] |= (((map_a[i] >> i) & 1UL)) ^ (((map_b[j] >> i) & 1UL)) << (i & 63);
   } while (++i < SEQ_SIZE - 2);
 
   return x;
