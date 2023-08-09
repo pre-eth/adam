@@ -120,23 +120,20 @@ u8 help() {
   // max length for help description in COL 2 before it needs to wrap
   const u16 HELP_WIDTH = SWIDTH - HELP_INDENT;
 
-  char version_str[33];
-  sprintf(version_str, "Version of this software (%d.%d.%d)", MAJOR, MINOR, PATCH);
-
   const char ARGS[ARG_COUNT] = {'h', 'v', 'u', 'n', 'p', 'd', 'b', 'a', 's', 'l'};
-  const char* ARGSHELP[ARG_COUNT] = {
+  const char *ARGSHELP[ARG_COUNT] = {
     "Get all available options",
-    version_str,
+    VERSION_HELP,
     "Generate a universally unique identifier (UUID). Optionally specify a number of UUID's to generate (max 128)",
     "Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)",
     "Desired size (u8, u16, u32, u64) of returned numbers (default is u64)",
     "Dump the whole buffer",
-    "Just bits. Literally. You can provide a certain limit of N bits",
+    "Just bits. Literally. You can provide a limit of N bits within [512, 999999]",
     "Assess a sample of 1000000 bits (1 MB) written to a filename you provide. You can provide a multiplier within [1,256]",
     "Set the seed. Optionally, returns the seed for the generated buffer",
     "Live stream of continuously generated numbers"
   };
-  const u8 lengths[ARG_COUNT] = {25, 33, 108, 74, 69, 21, 63, 117, 67, 45};
+  const u8 lengths[ARG_COUNT] = {25, 33, 108, 74, 69, 21, 76, 117, 67, 45};
   
   short len;
   for (int i = 0; i < ARG_COUNT; ++i) {
