@@ -1,19 +1,43 @@
 #include <sys/ioctl.h>
 
+#include "adam.h"
 #include "cli.h"
 
+/*
+  To make writes more efficient, rather than writing one
+  number at a time, 8 numbers are parsed together and then
+  written to stdout with 1 fwrite call.
+*/  
+static char bitbuffer[BITBUF_SIZE] ALIGN(64);
+
 // prints digits in reverse order to buffer
-// and returns the number of zeroes
-FORCE_INLINE static u8 print_binary(u64 num) {
-  u8 zeroes = 0;
-  char c;
+FORCE_INLINE static void print_binary(char *restrict buf, u64 num) {
+  do *--buf = (num & 0x01) + '0';
+  while (num >>= 1);
+}
+
+// prints minimum of 512 bits
+FORCE_INLINE static u16 bit_chunk(const char *restrict _bptr, const u64 *restrict _ptr, const u64 limit) {  
+  register u8 i = 0;
+  register u16 ones = 0;
+
   do {
-    c = (num & 0x01) + '0';
-    // '0' == 48, '1' == 49, so this tallies zeroes based on the diff
-    zeroes += (49 - c); 
-    putchar(c);
-  } while (num >>= 1);
-  return zeroes;
+    ones += POPCNT(_ptr[i + 0]) + POPCNT(_ptr[i + 1]) + POPCNT(_ptr[i + 2]) + POPCNT(_ptr[i + 3]) 
+          + POPCNT(_ptr[i + 4]) + POPCNT(_ptr[i + 5]) + POPCNT(_ptr[i + 6]) + POPCNT(_ptr[i + 7]);
+
+    print_binary(_bptr + 64,  _ptr[i + 0]);
+    print_binary(_bptr + 128, _ptr[i + 1]);
+    print_binary(_bptr + 192, _ptr[i + 2]);
+    print_binary(_bptr + 256, _ptr[i + 3]);
+    print_binary(_bptr + 320, _ptr[i + 4]);
+    print_binary(_bptr + 384, _ptr[i + 5]);
+    print_binary(_bptr + 448, _ptr[i + 6]);
+    print_binary(_bptr + 512, _ptr[i + 7]);
+
+    fwrite(_bptr, 1, BITBUF_SIZE, stdout);
+  } while ((i += 8) < BUF_SIZE);
+
+  return ones;
 }
 
 u16 stream_bits(const u32* restrict _ptr, u32 limit) {
