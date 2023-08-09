@@ -35,7 +35,7 @@ FORCE_INLINE static double chaotic_iter(u64* map_b, u64* map_a, const double see
     x = CHAOTIC_FN(x);
     j = i + 1 + ((u64) FLOOR(x * BETA) % s);
     --s;
-    map_b[i] |= (((map_a[i] >> i) & 1UL)) ^ (((map_b[j] >> i) & 1UL)) << (i & 63);
+    map_b[i] |= (((map_a[i] >> i) & 1UL)) ^ (((map_a[j] >> i) & 1UL)) << (i & 63);
   } while (++i < SEQ_SIZE - 2);
 
   return x;
