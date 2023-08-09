@@ -8,7 +8,7 @@ static u64 buffer[BUF_SIZE * 3] ALIGN(64);
 
 int main(int argc, char** argv) {
   if (argc - 1 > ARG_MAX) 
-    return fputs("\e[1;31mERROR: Invalid number of arguments\e[m", stderr);
+    return fputs("\e[1;31mERROR: Invalid number of arguments\e[m\n", stderr);
 
   u8 precision = 8;
   u16 results = 0;
@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
           precision = p >> 3;
           break;  
         } 
-        return fputs("\e[1;31mERROR: Precision must be either 8, 16, 32, or 64 bits\e[m", stderr);
+        return fputs("\e[1;31mERROR: Precision must be either 8, 16, 32, or 64 bits\e[m\n", stderr);
       case 'd':
         results = BUF_SIZE >> (precision >> 1);
         break;
@@ -53,12 +53,12 @@ int main(int argc, char** argv) {
       //     break;
       //   }
       default:
-        return fputs("\e[1;31mERROR: Option is invalid or missing required argument\e[m", stderr);             
+        return fputs("\e[1;31mERROR: Option is invalid or missing required argument\e[m\n", stderr);             
     }
   }
 
   puts("Generating numbers...");
-  generate(buf_ptr);
+  adam(buf_ptr);
   puts("Done.");
 
   u64 num;
