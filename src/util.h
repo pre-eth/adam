@@ -11,4 +11,6 @@
   #define CLZ               __builtin_clz  
   #define MEMCPY	          __builtin_memcpy
   #define FLOOR             __builtin_floor
+  #define POPCNT            __builtin_popcountl
+  #define LIKELY(x, b)      __builtin_expect((x), 1)
 #endif
