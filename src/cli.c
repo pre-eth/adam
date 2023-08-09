@@ -40,17 +40,53 @@ FORCE_INLINE static u16 bit_chunk(const char *restrict _bptr, const u64 *restric
   return ones;
 }
 
-u16 stream_bits(const u32* restrict _ptr, u32 limit) {
-  // Max bits in a single buffer is 2048 * 8 = 16384
-  u16 zeroes = 0;
+u64 stream_bits(const u64 *restrict _ptr, const u64 limit) {
+  register u64 ones = 0;
 
+  /*
+    Split limit based on how many calls (if needed)
+    we make to bit_chunk, which prints the bits of 
+    an entire buffer (aka the SEQ_SIZE)
+  */ 
+  register short rate = limit >> 14;
+
+  char *restrict _bptr = &bitbuffer[0];
+
+  do {
+    adam(_ptr);
+    ones += bit_chunk(_bptr, _ptr, limit);
+  } while (--rate > 0);
   
+  /*
+    Since there are SEQ_SIZE (16384) bits in every 
+    buffer, adam_bits is designed to print up to SEQ_SIZE
+    bits per call, so any leftovers must be processed
+    independently. 
+    
+    Most users probably won't enter
+    powers of 2, especially if assessing bits, so this
+    branch has been marked as LIKELY.
+  */
+  if (LIKELY(leftovers > 0)) {
+    register const short leftovers = limit & (SEQ_SIZE - 1);
 
-  return zeroes;
+    // Remember - need to start at 64 since we print backwards
+    register short l = 64;
+
+    adam(_ptr);
+    do {
+      print_binary(_bptr + l, *_ptr);
+      ones += POPCNT(*_ptr++);
+    } while ((l += 64) < leftovers);
+
+    fwrite(_bptr, 1, leftovers, stdout);
+  }
+
+  return ones;
 }
 
 // Only supports values up to 999,999
-u32 a_to_u(const char* s, const u32 min, const u32 max) {
+u32 a_to_u(const char *s, const u32 min, const u32 max) {
   register u8  len = 0;
   register u32 val = 0;
   
