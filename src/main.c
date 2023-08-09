@@ -1,6 +1,11 @@
 #include "adam.h"
 #include "cli.h"
 
+// The algorithm requires at least the construction of 3 maps of size BUF_SIZE
+// Offsets are used to logically represent each individual map, but it's just
+// all one buffer
+static u64 buffer[BUF_SIZE * 3] ALIGN(64);
+
 int main(int argc, char** argv) {
   if (argc - 1 > ARG_MAX) 
     return fputs("\e[1;31mERROR: Invalid number of arguments\e[m", stderr);
@@ -8,9 +13,7 @@ int main(int argc, char** argv) {
   u8 precision = 8;
   u16 results = 0;
 
-  // You can imagine this as a multidimensional 4D array of u8 with size 1024.
-  u32 buffer[BUF_SIZE] ALIGN(SIMD_INC);
-  u32* restrict buf_ptr = &buffer[0];
+  u64* restrict buf_ptr = &buffer[0];
 
   int opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {

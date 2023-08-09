@@ -14,13 +14,12 @@
   
   /* 
     Sizes of the buffer and bit vector for the binary sequence
-    The buffer is of type [u32; 2048], but logically it is still
-    [u8; 2048] - the values for the other chaotic maps are stored 
-    in the different 8-bit slices of each u32 value
+    The buffer is of type [u64; 256] with size 256 * 8 = 6144 bytes;
+    Need to left shift by 6 because there are 64 bits per index
   */
-  #define MAGNITUDE     11  
-  #define BUF_SIZE      (1UL << MAGNITUDE)     
-  #define SEQ_SIZE      (BUF_SIZE << 3)
+  #define MAGNITUDE     8  
+  #define BUF_SIZE      (1U << MAGNITUDE)     
+  #define SEQ_SIZE      (BUF_SIZE << 6)
  
   /* 
     ROUNDS must satisfy k = T / 3 where T % 3 = 0. 
