@@ -19,7 +19,7 @@
   }
 */ 
 
-FORCE_INLINE static double chaotic_iter(u64* map_b, u64* map_a, const double seed) {
+FORCE_INLINE static double chaotic_iter(u64 *map_b, u64 *map_a, const double seed) {
   /* 
     BETA is derived from the length of the mantissa 
     ADAM uses the max length of 15 to minimize ROUNDS
@@ -35,13 +35,13 @@ FORCE_INLINE static double chaotic_iter(u64* map_b, u64* map_a, const double see
     x = CHAOTIC_FN(x);
     j = i + 1 + ((u64) FLOOR(x * BETA) % s);
     --s;
-    map_b[i] |= (((map_a[i] >> i) & 1UL)) ^ (((map_a[j] >> i) & 1UL)) << (i & 63);
+    map_b[i >> 6] |= (((map_a[i >> 6] >> (i & 63)) & 1UL)) ^ (((map_a[j >> 6] >> (i & 63)) & 1UL)) << (i & 63);
   } while (++i < SEQ_SIZE - 2);
 
   return x;
 }
 
-FORCE_INLINE static void accumulate(u64* restrict _ptr, u64 seed) {
+FORCE_INLINE static void accumulate(u64 *restrict _ptr, u64 seed) {
   register u8 i = 0;
   
   do {
@@ -52,7 +52,7 @@ FORCE_INLINE static void accumulate(u64* restrict _ptr, u64 seed) {
   } while (++i < 4);
 }
 
-FORCE_INLINE static void diffuse(u64* restrict _ptr) {
+FORCE_INLINE static void diffuse(u64 *restrict _ptr) {
   register u8 i = 0;
 
   do {
@@ -80,20 +80,17 @@ FORCE_INLINE static void diffuse(u64* restrict _ptr) {
   }
 }
 
-FORCE_INLINE static void apply(u64* restrict _b, u64* restrict _a, double* chseed) {
+FORCE_INLINE static void apply(u64 *restrict _b, u64 *restrict _a, double *chseed) {
   double x = *chseed;
 
   register u8 i = 0;
   do x = chaotic_iter(_b, _a, x);
   while (++i < ITER);
 
-
   i = 0;
   x += (double) (x / 10000);
   do x = chaotic_iter(_b, _a, x);
   while (++i < ITER);
-
-  // Last iteration T
 
   i = 0;
   x += (double) (x / 100000);
@@ -103,7 +100,7 @@ FORCE_INLINE static void apply(u64* restrict _b, u64* restrict _a, double* chsee
   *chseed = x;
 }
 
-FORCE_INLINE static void mix(u64* restrict _a, u64* restrict _b, u64* restrict _c) {
+FORCE_INLINE static void mix(u64 *restrict _ptr) {
   register u8 i = 0, j = 128;
 
   do {
@@ -115,11 +112,11 @@ FORCE_INLINE static void mix(u64* restrict _a, u64* restrict _b, u64* restrict _
   do {
     XOR_MAPS(j + 0),
     XOR_MAPS(j + 8);
-    j += (16  - (i == 240));  
+    j += (16  - (j == 240));  
   } while (j < (BUF_SIZE - 1));
 }
 
-void adam(u64* restrict _ptr) { 
+void adam(u64 *restrict _ptr) { 
   u8 res;
   u64 seed;
   while (!(res = SEED64(&seed))); 
@@ -135,6 +132,6 @@ void adam(u64* restrict _ptr) {
   apply(_ptr + 512, _ptr + 256, &x);
   apply(_ptr, _ptr + 512, &x);
 
-  mix(_ptr, b1, b2);
+  mix(_ptr);
 }
 

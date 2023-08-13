@@ -60,7 +60,7 @@
   #define ROUNDS        9
   #define ITER          (ROUNDS / 3)
 
-  #define SEED64            _rdseed64_step
+  #define SEED64        _rdseed64_step
 
   #define ACCUMULATE(seed, i)\
     _ptr[0  + i] = 0  + seed,\
@@ -91,5 +91,5 @@
     _ptr[7 + i] ^= (_ptr[7 + i + 256]) ^ (_ptr[7 + i + 512])
     
   // Initiates RNG algorithm
-  void adam(u64* restrict _ptr);
+  void adam(u64 *restrict _ptr);
 #endif
