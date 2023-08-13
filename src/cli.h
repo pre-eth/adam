@@ -19,7 +19,7 @@
   #define ARG_MAX       5
   #define ARG_COUNT     10
 
-  #define BITBUF_SIZE   512
+  #define BITBUF_SIZE   1024
   #define ASSESS_MULT   1000000
 
   u64 stream_bits(const u64 *restrict _ptr, const u64 limit);

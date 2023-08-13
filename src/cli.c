@@ -5,7 +5,7 @@
 
 /*
   To make writes more efficient, rather than writing one
-  number at a time, 8 numbers are parsed together and then
+  number at a time, 16 numbers are parsed together and then
   written to stdout with 1 fwrite call.
 */  
 static char bitbuffer[BITBUF_SIZE] ALIGN(64);
@@ -16,8 +16,8 @@ FORCE_INLINE static void print_binary(char *restrict buf, u64 num) {
   while (num >>= 1);
 }
 
-// prints minimum of 512 bits
-FORCE_INLINE static u16 bit_chunk(const char *restrict _bptr, const u64 *restrict _ptr, const u64 limit) {  
+// prints all bits in a buffer as chunks of 1024 bits
+FORCE_INLINE static u16 print_chunks(const char *restrict _bptr, const u64 *restrict _ptr) {  
   register u8 i = 0;
   register u16 ones = 0;
 
@@ -45,7 +45,7 @@ u64 stream_bits(const u64 *restrict _ptr, const u64 limit) {
 
   /*
     Split limit based on how many calls (if needed)
-    we make to bit_chunk, which prints the bits of 
+    we make to print_chunks, which prints the bits of 
     an entire buffer (aka the SEQ_SIZE)
   */ 
   register short rate = limit >> 14;
@@ -54,7 +54,7 @@ u64 stream_bits(const u64 *restrict _ptr, const u64 limit) {
 
   do {
     adam(_ptr);
-    ones += bit_chunk(_bptr, _ptr, limit);
+    ones += print_chunks(_bptr, _ptr);
   } while (--rate > 0);
   
   /*
@@ -63,9 +63,8 @@ u64 stream_bits(const u64 *restrict _ptr, const u64 limit) {
     bits per call, so any leftovers must be processed
     independently. 
     
-    Most users probably won't enter
-    powers of 2, especially if assessing bits, so this
-    branch has been marked as LIKELY.
+    Most users probably won't enter powers of 2, especially 
+    if assessing bits, so this branch has been marked as LIKELY.
   */
   if (LIKELY(leftovers > 0)) {
     register const short leftovers = limit & (SEQ_SIZE - 1);
@@ -75,8 +74,8 @@ u64 stream_bits(const u64 *restrict _ptr, const u64 limit) {
 
     adam(_ptr);
     do {
-      print_binary(_bptr + l, *_ptr);
-      ones += POPCNT(*_ptr++);
+      ones += POPCNT(*_ptr);
+      print_binary(_bptr + l, *_ptr++);
     } while ((l += 64) < leftovers);
 
     fwrite(_bptr, 1, leftovers, stdout);
