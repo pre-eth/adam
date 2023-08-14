@@ -17,25 +17,20 @@ FORCE_INLINE static void print_binary(char *restrict buf, u64 num) {
 }
 
 // prints all bits in a buffer as chunks of 1024 bits
-FORCE_INLINE static u16 print_chunks(const char *restrict _bptr, const u64 *restrict _ptr) {  
+FORCE_INLINE static u16 print_chunks(char *restrict _bptr, const u64 *_ptr) {  
   register u8 i = 0;
   register u16 ones = 0;
 
   do {
-    ones += POPCNT(_ptr[i + 0]) + POPCNT(_ptr[i + 1]) + POPCNT(_ptr[i + 2]) + POPCNT(_ptr[i + 3]) 
-          + POPCNT(_ptr[i + 4]) + POPCNT(_ptr[i + 5]) + POPCNT(_ptr[i + 6]) + POPCNT(_ptr[i + 7]);
+    ones += POPCNT_4(i + 0) + POPCNT_4(i + 4) + POPCNT_4(i + 8) + POPCNT_4(i + 12);
 
-    print_binary(_bptr + 64,  _ptr[i + 0]);
-    print_binary(_bptr + 128, _ptr[i + 1]);
-    print_binary(_bptr + 192, _ptr[i + 2]);
-    print_binary(_bptr + 256, _ptr[i + 3]);
-    print_binary(_bptr + 320, _ptr[i + 4]);
-    print_binary(_bptr + 384, _ptr[i + 5]);
-    print_binary(_bptr + 448, _ptr[i + 6]);
-    print_binary(_bptr + 512, _ptr[i + 7]);
+    PRINT_4(0, 0),
+    PRINT_4(256, 4),
+    PRINT_4(512, 8),
+    PRINT_4(768, 12);    
 
     fwrite(_bptr, 1, BITBUF_SIZE, stdout);
-  } while ((i += 8) < BUF_SIZE);
+  } while ((i += 16) < BUF_SIZE);
 
   return ones;
 }
@@ -49,6 +44,7 @@ u64 stream_bits(const u64 *restrict _ptr, const u64 limit) {
     an entire buffer (aka the SEQ_SIZE)
   */ 
   register short rate = limit >> 14;
+  register const short leftovers = limit & (SEQ_SIZE - 1);
 
   char *restrict _bptr = &bitbuffer[0];
 
@@ -56,7 +52,7 @@ u64 stream_bits(const u64 *restrict _ptr, const u64 limit) {
     adam(_ptr);
     ones += print_chunks(_bptr, _ptr);
   } while (--rate > 0);
-  
+
   /*
     Since there are SEQ_SIZE (16384) bits in every 
     buffer, adam_bits is designed to print up to SEQ_SIZE
@@ -67,8 +63,6 @@ u64 stream_bits(const u64 *restrict _ptr, const u64 limit) {
     if assessing bits, so this branch has been marked as LIKELY.
   */
   if (LIKELY(leftovers > 0)) {
-    register const short leftovers = limit & (SEQ_SIZE - 1);
-
     // Remember - need to start at 64 since we print backwards
     register short l = 64;
 

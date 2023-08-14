@@ -22,7 +22,14 @@
   #define BITBUF_SIZE   1024
   #define ASSESS_MULT   1000000
 
-  u64 stream_bits(const u64 *restrict _ptr, const u64 limit);
+  #define POPCNT_4(i)   POPCNT(_ptr[(i) + 0]) + POPCNT(_ptr[(i) + 1]) + POPCNT(_ptr[(i) + 2]) + POPCNT(_ptr[(i) + 3])
+  #define PRINT_4(i, j) \
+    print_binary(_bptr + 64  + i, _ptr[j + 0]), \
+    print_binary(_bptr + 128 + i, _ptr[j + 1]), \
+    print_binary(_bptr + 192 + i, _ptr[j + 2]), \
+    print_binary(_bptr + 256 + i, _ptr[j + 3])  \
+  
+  u64 stream_bits(u64 *restrict _ptr, const u64 limit);
   u32 a_to_u(const char *s, const u32 min, const u32 max);
   u8 help();
 
