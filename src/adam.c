@@ -52,32 +52,49 @@ FORCE_INLINE static void accumulate(u64 *restrict _ptr, u64 seed) {
   } while (++i < 4);
 }
 
-FORCE_INLINE static void diffuse(u64 *restrict _ptr) {
+FORCE_INLINE static void diffuse(u64 *restrict _ptr, u64 seed) {
   register u8 i = 0;
 
+  u64 a, b, c, d, e, f, g , h;
+  a = b = c = d = e = f = g = h = (_ptr[seed & 0xFF] ^ (GOLDEN_RATIO ^ (seed >> 32)));
+
+  // Scramble it
+  ISAAC_MIX(a, b, c, d, e, f, g, h);
+  ISAAC_MIX(a, b, c, d, e, f, g, h);
+  ISAAC_MIX(a, b, c, d, e, f, g, h);
+  ISAAC_MIX(a, b, c, d, e, f, g, h);
+
   do {
-    ISAAC_MIX(0  + i),
-    ISAAC_MIX(8  + i),
-    ISAAC_MIX(16 + i),
-    ISAAC_MIX(24 + i),
-    ISAAC_MIX(32 + i),
-    ISAAC_MIX(40 + i),
-    ISAAC_MIX(48 + i),
-    ISAAC_MIX(56 + i);
-    i += (64 - (i == 192));
+    a += _ptr[i];     b += _ptr[i + 1]; c += _ptr[i + 2]; d += _ptr[i + 3];
+    e += _ptr[i + 4]; f += _ptr[i + 5]; g += _ptr[i + 6]; h += _ptr[i + 7];
+
+    ISAAC_MIX(a, b, c, d, e, f, g, h);
+
+    _ptr[i]     = a; _ptr[i + 1] = b; _ptr[i + 2] = c; _ptr[i + 3] = d;
+    _ptr[i + 4] = e; _ptr[i + 5] = f; _ptr[i + 6] = g; _ptr[i + 7] = h;
+    i += (8 - (i == 248));
   } while (i < BUF_SIZE - 1);
 
-  u64 *pp, *p2, *pend, *r;
-  pp = _ptr;
+  u64 *pp, *p2, *p3, *pend, *r;
+  r = pp = _ptr;
+  pend = p2 = pp + (BUF_SIZE >> 1);
 
-  register u64 a = 0, b = 1, x, y;
+  register u64 x, y;
 
-  for (pp = _ptr, pend = p2 = pp + BUF_SIZE; pp < pend;) {
+  for (;pp < pend;) {
     ISAAC_STEP(~(a^(a<<21)), a, b, _ptr, pp, p2, r, x);
     ISAAC_STEP(  a^(a>>5)  , a, b, _ptr, pp, p2, r, x);
     ISAAC_STEP(  a^(a<<12) , a, b, _ptr, pp, p2, r, x);
     ISAAC_STEP(  a^(a>>33) , a, b, _ptr, pp, p2, r, x);
   }
+
+  p2 = pp;
+  for (;p2 < pend;) {
+    ISAAC_STEP(~(a^(a<<21)), a, b, _ptr, pp, p2, r, x);
+    ISAAC_STEP(  a^(a>>5)  , a, b, _ptr, pp, p2, r, x);
+    ISAAC_STEP(  a^(a<<12) , a, b, _ptr, pp, p2, r, x);
+    ISAAC_STEP(  a^(a>>33) , a, b, _ptr, pp, p2, r, x);
+  } 
 }
 
 FORCE_INLINE static void apply(u64 *restrict _b, u64 *restrict _a, double *chseed) {
