@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
   if (argc - 1 > ARG_MAX) 
     return fputs("\e[1;31mERROR: Invalid number of arguments\e[m\n", stderr);
 
-  u8 precision = 8;
+  u8 precision = 64;
   u16 results = 0;
   
   u64 *restrict buf_ptr = &buffer[0];
@@ -35,21 +35,21 @@ int main(int argc, char **argv) {
       case 'p':
         const u8 p = a_to_u(optarg, 8, 64);
         if (LIKELY(!(p & (p - 1)))) {
-          precision = p >> 3;
           /*
             This line will basically "floor" results to the max value of results
             possible for this new precision in case it exceeds the possible limit
             This can be avoided by ordering your arguments so that -p comes first
-          */ 
-          results -= (results > BUF_SIZE * precision) * (results - BUF_SIZE * precision);
+          */
+          const u8 max = BUF_SIZE << CTZ(precision);
+          results -= (results > max) * (results - max);
           break;  
         } 
         return fputs("\e[1;31mERROR: Precision must be either 8, 16, 32, or 64 bits\e[m\n", stderr);
       case 'd':
-        results = BUF_SIZE * precision;
+        results = SEQ_SIZE >> CTZ(precision);
         break;
       case 'n':
-        results = a_to_u(optarg, 1, BUF_SIZE * precision) - 1;
+        results = a_to_u(optarg, 1, BUF_SIZE << CTZ(precision)) - 1;
         break;
       // case 's':
       //   puts("Enter a seed between 0.0 and 0.5");
