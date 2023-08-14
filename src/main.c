@@ -67,10 +67,14 @@ int main(int argc, char **argv) {
 
   adam(buf_ptr);
 
-  // try condensing via cascade
+  register u8 idx = 0;
+  register u64 mask = (1UL << precision) - 1;
+
   print_buffer:
-    printf("%llu", print_num(buf_ptr, precision));
-    buf_ptr += precision;
+    printf("%llu", buf_ptr[idx] & mask);
+    mask <<= precision;
+    idx += !mask;
+    mask |= (!mask << precision) - !mask;
 
     if (results-- > 0) {
       printf(", ");
