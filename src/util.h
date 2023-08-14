@@ -8,9 +8,11 @@
 
   #define ALIGN(x)          __attribute__ ((aligned (x)))
   #define FORCE_INLINE	    inline __attribute__((always_inline))
+  #define CTZ               __builtin_ctz
   #define CLZ               __builtin_clz  
   #define MEMCPY	          __builtin_memcpy
   #define FLOOR             __builtin_floor
   #define POPCNT            __builtin_popcountl
-  #define LIKELY(x, b)      __builtin_expect((x), 1)
+  #define LIKELY(x)      __builtin_expect((x), 1)
+
 #endif
