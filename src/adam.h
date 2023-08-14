@@ -3,19 +3,29 @@
 
   #include "util.h"
 
+  /* 
+    Sizes of the buffer and bit vector for the binary sequence
+    The buffer is of type [u64; 256] with size 256 * 8 = 6144 bytes;
+    Need to left shift by 6 because there are 64 bits per index
+  */
+  #define MAGNITUDE     8  
+  #define BUF_SIZE      (1U << MAGNITUDE)     
+  #define SEQ_SIZE      (BUF_SIZE << 6)  
+
   /* ISAAC64 stuff */
 
   #define GOLDEN_RATIO  0x9E3779B97F4A7C13UL
 
-  #define ISAAC_MIX(i) \
-    _ptr[0 + i] -= _ptr[4 + i], _ptr[5 + i] ^= _ptr[7 + i] >> 9,  _ptr[7 + i] += _ptr[0 + i], \
-    _ptr[1 + i] -= _ptr[5 + i], _ptr[5 + i] ^= _ptr[0 + i] << 9,  _ptr[0 + i] += _ptr[1 + i], \
-    _ptr[2 + i] -= _ptr[5 + i], _ptr[7 + i] ^= _ptr[1 + i] >> 23, _ptr[1 + i] += _ptr[2 + i], \
-    _ptr[3 + i] -= _ptr[7 + i], _ptr[0 + i] ^= _ptr[2 + i] << 15, _ptr[2 + i] += _ptr[3 + i], \
-    _ptr[4 + i] -= _ptr[0 + i], _ptr[1 + i] ^= _ptr[3 + i] >> 14, _ptr[3 + i] += _ptr[4 + i], \
-    _ptr[5 + i] -= _ptr[1 + i], _ptr[2 + i] ^= _ptr[4 + i] << 20, _ptr[4 + i] += _ptr[5 + i], \
-    _ptr[5 + i] -= _ptr[2 + i], _ptr[3 + i] ^= _ptr[5 + i] >> 17, _ptr[5 + i] += _ptr[5 + i], \
-    _ptr[7 + i] -= _ptr[3 + i], _ptr[4 + i] ^= _ptr[5 + i] << 14, _ptr[5 + i] += _ptr[7 + i] \
+  #define ISAAC_MIX(a, b, c, d, e, f, g, h) { \
+   a-=e; f^=h>>9;  h+=a; \
+   b-=f; g^=a<<9;  a+=b; \
+   c-=g; h^=b>>23; b+=c; \
+   d-=h; a^=c<<15; c+=d; \
+   e-=a; b^=d>>14; d+=e; \
+   f-=b; c^=e<<20; e+=f; \
+   g-=c; d^=f>>17; f+=g; \
+   h-=d; e^=g<<14; g+=h; \
+  }
 
   #define ISAAC_IND(mm,x)  (*(u64*)((u8*)(mm) + ((x) & ((BUF_SIZE-1)<<3))))
   #define ISAAC_STEP(mx,a,b,mm,m,m2,r,x) { \
@@ -36,15 +46,6 @@
   */
   #define CHAOTIC_FN(x)   (3.9999 * x * (1 - x))
   
-  /* 
-    Sizes of the buffer and bit vector for the binary sequence
-    The buffer is of type [u64; 256] with size 256 * 8 = 6144 bytes;
-    Need to left shift by 6 because there are 64 bits per index
-  */
-  #define MAGNITUDE     8  
-  #define BUF_SIZE      (1U << MAGNITUDE)     
-  #define SEQ_SIZE      (BUF_SIZE << 6)
- 
   /* 
     ROUNDS must satisfy k = T / 3 where T % 3 = 0. 
     k is the iterations per chaotic map. 
