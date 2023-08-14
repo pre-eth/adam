@@ -61,8 +61,6 @@
   #define ROUNDS        9
   #define ITER          (ROUNDS / 3)
 
-  #define SEED64        _rdseed64_step
-
   #define ACCUMULATE(seed, i)\
     _ptr[0  + i] = 0  + seed,\
     _ptr[1  + i] = 1  + seed,\
@@ -91,6 +89,12 @@
     _ptr[6 + i] ^= (_ptr[6 + i + 256]) ^ (_ptr[6 + i + 512]),\
     _ptr[7 + i] ^= (_ptr[7 + i + 256]) ^ (_ptr[7 + i + 512])
     
+  extern __inline int
+  __attribute__((__gnu_inline__, __always_inline__, __artificial__))
+  SEED64(unsigned long long *__p) {
+    return __builtin_ia32_rdseed_di_step (__p);
+  }
+
   // Initiates RNG algorithm
   void adam(u64 *restrict _ptr);
 #endif
