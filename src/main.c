@@ -3,19 +3,18 @@
 #include "adam.h"
 #include "cli.h"
 
-// The algorithm requires at least the construction of 3 maps of size BUF_SIZE
-// Offsets are used to logically represent each individual map, but it's just
-// all one buffer
-static u64 buffer[BUF_SIZE * 3] ALIGN(64);
-
 int main(int argc, char **argv) {
   if (argc - 1 > ARG_MAX) 
     return fputs("\e[1;31mERROR: Invalid number of arguments\e[m\n", stderr);
 
+  // The algorithm requires at least the construction of 3 maps of size BUF_SIZE
+  // Offsets logically represent each individual map, but it's all one buffer
+  u64 buffer[BUF_SIZE * 3] ALIGN(64);
+  u64 *restrict buf_ptr = &buffer[0];
+
   u8 precision = 64;
   u16 results = 0;
-  
-  u64 *restrict buf_ptr = &buffer[0];
+  u32 limit = ASSESS_MULT;
 
   int opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
@@ -27,11 +26,35 @@ int main(int argc, char **argv) {
       // case 'l':
       //   return stream_live();
       case 'b':
-        u32 limit = 999999;
         if (optarg != NULL) 
-          limit = a_to_u(optarg, 512, limit);
-        const u32 ones = stream_bits(buf_ptr, limit);
-        return printf("\e[1mPRINTED %u BITS (%u ONES, %u ZEROES)\e[m\n", ones, limit - ones);
+          limit *= a_to_u(optarg, 1, 256);
+
+        char file_name[65];
+        file_name[65] = 0;
+        printf("Enter file name: ")
+        scanf("%64s", &file_name);
+        char c = '\0';
+
+        do {
+          puts("Select file type: [0] ASCII [1] BINARY")
+          scanf("%c", &c);
+          switch (c) {
+            case '0':
+
+            break;
+            case '1':
+
+            break;
+            default:
+              fputs("\e[1;31mERROR: Valid options are 0 or 1\e[m\n", stderr);
+              continue;
+          }
+        } while();
+
+        return stream_bits(buf_ptr, limit);
+      case 'b':
+        const u32 ones = stream_bits(buf_ptr, __UINT32_MAX__);
+        return printf("\n\e[1;36mPRINTED %u BITS (%u ONES, %u ZEROES)\e[m\n", limit, ones, limit - ones);
       case 'p':
         const u8 p = a_to_u(optarg, 8, 64);
         if (LIKELY(!(p & (p - 1)))) {
