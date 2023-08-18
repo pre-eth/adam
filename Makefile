@@ -10,5 +10,5 @@ HEADERS=$(DEPS:%=src/%.h)
 adam: adam.o cli.o main.o
 	@echo -e "\e[1;36mBuilding ADAM...\e[m"
 	$(CC) -o $(INSTALL_DIR)/adam adam.o cli.o main.o
-	@echo -e "\e[1;32mFinished! Run adam -h to get started!\e[m"
 	rm adam.o cli.o main.o src/*.gch
+	@echo -e "\e[1;32mFinished! Run adam -h to get started!\e[m"
