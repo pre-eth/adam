@@ -35,20 +35,20 @@ FORCE_INLINE static double chaotic_iter(u64 *map_b, u64 *map_a, const double see
     x = CHAOTIC_FN(x);
     j = i + 1 + ((u64) FLOOR(x * BETA) % s);
     --s;
-    map_b[i >> 6] |= (((map_a[i >> 6] >> (i & 63)) & 1UL)) ^ (((map_a[j >> 6] >> (i & 63)) & 1UL)) << (i & 63);
+    map_b[i >> 6] ^= map_a[j >> 6];
   } while (++i < SEQ_SIZE - 2);
 
   return x;
 }
 
-FORCE_INLINE static void accumulate(u64 *restrict _ptr, u64 seed) {
+FORCE_INLINE static void accumulate(u64 *restrict _ptr, const u64 seed) {
   register u8 i = 0;
   
   do {
-    ACCUMULATE(((seed + (i << 6)) >> 56),  ((i << 6) + 0)),
-    ACCUMULATE(((seed + (i << 6)) >> 48),  ((i << 6) + 16)),
-    ACCUMULATE(((seed + (i << 6)) >> 40),  ((i << 6) + 32)),
-    ACCUMULATE(((seed + (i << 6)) >> 32),  ((i << 6) + 48));
+    ACCUMULATE(((seed + (i << 6)) >> (56 + i)),  ((i << 6) + 0)),
+    ACCUMULATE(((seed + (i << 6)) >> (48 + i)),  ((i << 6) + 16)),
+    ACCUMULATE(((seed + (i << 6)) >> (40 + i)),  ((i << 6) + 32)),
+    ACCUMULATE(((seed + (i << 6)) >> (32 + i)),  ((i << 6) + 48));
   } while (++i < 4);
 }
 
@@ -77,11 +77,11 @@ FORCE_INLINE static void diffuse(u64 *restrict _ptr, u64 seed) {
 
   u64 *pp, *p2, *p3, *pend, *r;
   r = pp = _ptr;
-  pend = p2 = pp + (BUF_SIZE >> 1);
+  p3 = p2 = pp + (BUF_SIZE >> 1);
 
   register u64 x, y;
 
-  for (;pp < pend;) {
+  for (;pp < p3;) {
     ISAAC_STEP(~(a^(a<<21)), a, b, _ptr, pp, p2, r, x);
     ISAAC_STEP(  a^(a>>5)  , a, b, _ptr, pp, p2, r, x);
     ISAAC_STEP(  a^(a<<12) , a, b, _ptr, pp, p2, r, x);
@@ -89,6 +89,7 @@ FORCE_INLINE static void diffuse(u64 *restrict _ptr, u64 seed) {
   }
 
   p2 = pp;
+  pend = &_ptr[BUF_SIZE];
   for (;p2 < pend;) {
     ISAAC_STEP(~(a^(a<<21)), a, b, _ptr, pp, p2, r, x);
     ISAAC_STEP(  a^(a>>5)  , a, b, _ptr, pp, p2, r, x);
@@ -105,12 +106,12 @@ FORCE_INLINE static void apply(u64 *restrict _b, u64 *restrict _a, double *chsee
   while (++i < ITER);
 
   i = 0;
-  x += (double) (x / 10000);
+  x += (double) (x / 100000);
   do x = chaotic_iter(_b, _a, x);
   while (++i < ITER);
 
   i = 0;
-  x += (double) (x / 100000);
+  x += (double) (x / 1000000);
   do x = chaotic_iter(_b, _a, x);
   while (++i < ITER);
 
@@ -133,14 +134,13 @@ FORCE_INLINE static void mix(u64 *restrict _ptr) {
   } while (j < (BUF_SIZE - 1));
 }
 
-void adam(u64 *restrict _ptr) { 
+void adam(u64 *restrict _ptr) {
   u8 res;
   u64 seed;
   while (!(res = SEED64(&seed))); 
-  seed ^= (seed ^ (GOLDEN_RATIO ^ (seed >> 32)));
 
   accumulate(_ptr, seed);
-  diffuse(_ptr);
+  diffuse(_ptr, seed);
 
   while (!(res = SEED64(&seed))); 
   double x = ((double) (seed / __UINT64_MAX__)) * 0.5;
