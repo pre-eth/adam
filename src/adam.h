@@ -58,7 +58,7 @@
     maximum double precision value of 15 with the seeds that it 
     generates. I'll let you check the math yourself to prove it :)
   */
-  #define ROUNDS        9
+  #define ROUNDS        12
   #define ITER          (ROUNDS / 3)
 
   #define ACCUMULATE(seed, i)\
