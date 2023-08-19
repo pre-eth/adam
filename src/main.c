@@ -4,9 +4,6 @@
 #include "cli.h"
 
 int main(int argc, char **argv) {
-  if (argc - 1 > ARG_MAX) 
-    return fputs("\e[1;31mERROR: Invalid number of arguments\e[m\n", stderr);
-
   // The algorithm requires at least the construction of 3 maps of size BUF_SIZE
   // Offsets logically represent each individual map, but it's all one buffer
   u64 buffer[BUF_SIZE * 3] ALIGN(64);
@@ -14,7 +11,7 @@ int main(int argc, char **argv) {
 
   u8 precision = 64;
   u16 results = 0;
-  u32 limit = ASSESS_MULT;
+  u32 limit = ASSESS_BITS;
 
   int opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
@@ -23,38 +20,40 @@ int main(int argc, char **argv) {
         return help();
       case 'v':
         return puts(VERSION);
-      // case 'l':
-      //   return stream_live();
-      case 'b':
+      case 'l':
+        return stream_live(buf_ptr);
+      case 'a':
         if (optarg != NULL) 
-          limit *= a_to_u(optarg, 1, 256);
+          limit *= a_to_u(optarg, 1, ASSESS_LIMIT);
 
         char file_name[65];
-        file_name[65] = 0;
-        printf("Enter file name: ")
+        file_name[65] = '\0';
+        printf("Enter file name: ");
         scanf("%64s", &file_name);
         char c = '\0';
 
+        FILE *fptr;
         do {
-          puts("Select file type: [0] ASCII [1] BINARY")
+          puts("Select file type: [0] ASCII [1] BINARY");
           scanf("%c", &c);
           switch (c) {
             case '0':
-
+              fptr = fopen(file_name, "w+");
             break;
             case '1':
-
+              fptr = fopen(file_name, "wb+");
             break;
             default:
               fputs("\e[1;31mERROR: Valid options are 0 or 1\e[m\n", stderr);
               continue;
           }
-        } while();
-
-        return stream_bits(buf_ptr, limit);
+        } while(1);
+        results = stream_bits(fptr, buf_ptr, limit);
+        fclose(fptr);
+        return printf("\n\e[1;36mPRINTED %u BITS (%u ONES, %u ZEROES)\e[m\n", limit, results, limit - results);
       case 'b':
-        const u32 ones = stream_bits(buf_ptr, __UINT32_MAX__);
-        return printf("\n\e[1;36mPRINTED %u BITS (%u ONES, %u ZEROES)\e[m\n", limit, ones, limit - ones);
+        results = stream_bits(stdout, buf_ptr, __UINT32_MAX__);
+        return printf("\n\e[1;36mPRINTED %u BITS (%u ONES, %u ZEROES)\e[m\n", limit, results, limit - results);
       case 'p':
         const u8 p = a_to_u(optarg, 8, 64);
         if (LIKELY(!(p & (p - 1)))) {

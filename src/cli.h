@@ -15,7 +15,7 @@
   #define VERSION       "v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH)
   #define VERSION_HELP  "Version of this software (" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH) ")"
 
-  #define OPTSTR        ":hvldn:r:p:b::u::"
+  #define OPTSTR        ":hvldbn:r:p:a:u::"
   #define ARG_MAX       5
   #define ARG_COUNT     9
 
