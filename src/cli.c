@@ -24,7 +24,7 @@ FORCE_INLINE static void print_binary(char *restrict buf, u64 num) {
 }
 
 // prints all bits in a buffer as chunks of 1024 bits
-FORCE_INLINE static u16 print_chunks(char *restrict _bptr, const u64 *restrict _ptr) {  
+FORCE_INLINE static u16 print_chunks(FILE *fptr, char *restrict _bptr, const u64 *restrict _ptr) {  
   register u8 i = 0;
   register u16 ones = 0;
 
@@ -37,62 +37,8 @@ FORCE_INLINE static u16 print_chunks(char *restrict _bptr, const u64 *restrict _
     PRINT_4(512, i + 8),
     PRINT_4(768, i + 12);    
 
-    fwrite(_bptr, 1, BITBUF_SIZE, stdout);
+    fwrite(_bptr, 1, BITBUF_SIZE, fptr);
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
-
-  return ones;
-}
-
-u64 stream_bits(u64 *restrict _ptr, const u64 limit) {
-  register u64 ones = 0;
-
-  /*
-    Split limit based on how many calls (if needed)
-    we make to print_chunks, which prints the bits of 
-    an entire buffer (aka the SEQ_SIZE)
-  */ 
-  register short rate = limit >> 14;
-  register short leftovers = limit & (SEQ_SIZE - 1);
-
-  char *restrict _bptr = &bitbuffer[0];
-
-  while (rate > 0) {
-    adam(_ptr);
-    ones += print_chunks(_bptr, _ptr);
-    --rate;
-  } 
-
-  /*
-    Since there are SEQ_SIZE (16384) bits in every 
-    buffer, adam_bits is designed to print up to SEQ_SIZE
-    bits per call, so any leftovers must be processed
-    independently. 
-    
-    Most users probably won't enter powers of 2, especially 
-    if assessing bits, so this branch has been marked as LIKELY.
-  */
-  if (LIKELY(leftovers > 0)) {
-    register short l;
-    register u16 limit;
-    register u64 num;
-
-    print_leftovers:
-      limit = (leftovers < BITBUF_SIZE) ? leftovers : BITBUF_SIZE;
-
-      l = 0;
-      adam(_ptr);
-      do {
-        num = *(_ptr + (l >> 6));
-        ones += POPCNT(num);
-        print_binary(_bptr + l, num);
-      } while ((l += 64) < limit);
-
-      fwrite(_bptr, 1, limit, stdout);
-      leftovers -= limit;
-
-      if (LIKELY(leftovers > 0)) 
-        goto print_leftovers;
-  }
 
   return ones;
 }
@@ -139,7 +85,7 @@ u8 help() {
     "Desired size (u8, u16, u32, u64) of returned numbers (default is u64)",
     "Dump the whole buffer",
     "Just bits. Literally",
-    "Assess a binary or ASCII sample of 1000000 bits (1 MB) written to a filename you provide. You can choose a multiplier within [1,256]",
+    "Assess a binary or ASCII sample of 1000000 bits (1 MB) written to a filename you provide. You can choose a multiplier within [1,1000]",
     "Live stream of continuously generated numbers"
   };
   const u8 lengths[ARG_COUNT] = {25, 33, 108, 74, 69, 21, 20, 132, 45};
@@ -154,5 +100,210 @@ u8 help() {
       len -= HELP_WIDTH;
     }
   }
+  return 0;
+}
+
+u64 stream_bits(FILE *fptr, u64 *restrict _ptr, const u64 limit) {
+  register u64 ones = 0;
+
+  /*
+    Split limit based on how many calls (if needed)
+    we make to print_chunks, which prints the bits of 
+    an entire buffer (aka the SEQ_SIZE)
+  */ 
+  register short rate = limit >> 14;
+  register short leftovers = limit & (SEQ_SIZE - 1);
+
+  char *restrict _bptr = &bitbuffer[0];
+
+  while (rate > 0) {
+    adam(_ptr);
+    ones += print_chunks(fptr, _bptr, _ptr);
+    --rate;
+  } 
+
+  /*
+    Since there are SEQ_SIZE (16384) bits in every 
+    buffer, adam_bits is designed to print up to SEQ_SIZE
+    bits per call, so any leftovers must be processed
+    independently. 
+    
+    Most users probably won't enter powers of 2, especially 
+    if assessing bits, so this branch has been marked as LIKELY.
+  */
+  if (LIKELY(leftovers > 0)) {
+    register short l;
+    register u16 limit;
+    register u64 num;
+
+    print_leftovers:
+      limit = (leftovers < BITBUF_SIZE) ? leftovers : BITBUF_SIZE;
+
+      l = 0;
+      adam(_ptr);
+      do {
+        num = *(_ptr + (l >> 6));
+        ones += POPCNT(num);
+        print_binary(_bptr + l, num);
+      } while ((l += 64) < limit);
+
+      fwrite(_bptr, 1, limit, fptr);
+      leftovers -= limit;
+
+      if (LIKELY(leftovers > 0)) 
+        goto print_leftovers;
+  }
+
+  return ones;
+}
+
+u8 stream_live(u64 *restrict ptr) {
+  /*
+    There are 256 numbers per buffer. But we only need 75 to print one
+    iteration. So 75 * 3 = 225. 256 - 225 = 31. Thus, for each buffer 31
+    numbers will be left over. To avoid waste, these numbers ARE used, but
+    only when the index upon exiting the loop is 225, meaning the index 
+    started from 0 for this iteration.
+
+    If the 31 numbers are leftover and printed, the index is appropriately
+    changed to 31 before the goto statement trigger, starting the loop with
+    i = 31. Meaning when we exit the loop this time, our index value is at 
+    255! (31 + 75 * 3) - 1. We subtract one to avoid overflow. Since the 
+    index is NOT 225 in this case, the statement to print leftovers won't 
+    happen, and the next iteration will start clean.
+
+    This pattern is cyclical as you may be able to tell - one round there will
+    be leftovers, next round there won't. On and on until the program exits.
+  */ 
+  const u8 LIVE_ITER = BUF_SIZE - 31;
+  const char* ADAM_ASCII = {
+    "%s\e[38;2;173;58;0m/\e[38;2;255;107;33m@@@@@@\e[38;2;173;58;0m\\\e[0m"
+    "%s\e[38;2;173;58;0m/(\e[38;2;255;107;33m@@\e[38;2;173;58;0m((((((((((((((((\e[38;2;255;107;33m@@\e[0m"
+    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m((((((((((((((((((((((((\e[38;2;255;107;33m@@@\e[0m"
+    "%s\e[38;2;173;58;0m(((((((((((((((((((((((((((((\e[38;2;255;107;33m#@##@@\e[0m"
+    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m(((((((((((((\e[38;2;255;107;33m@#####&\e[38;2;173;58;0m(((((((((((((((\e[38;2;255;107;33m@@@@\e[0m"
+    "%s\e[38;2;173;58;0m((((((((((((((\e[38;2;255;107;33m#@@\e[38;2;173;58;0m((((\e[38;2;255;107;33m@@@@@\e[38;2;173;58;0m((((((((((((((\e[38;2;255;107;33m@@\e[0m"
+    "%s\e[38;2;173;58;0m((((((((\e[38;2;255;107;33m@@\e[38;2;173;58;0m(((((((((\e[38;2;255;107;33m@\e[38;2;173;58;0m((((((((((((\e[38;2;255;107;33m@&#@\e[38;2;173;58;0m(((((((((((\e[38;2;255;107;33m#@@\e[0m"
+    "%s\e[38;2;173;58;0m(\e[38;2;255;107;33m@@@\e[38;2;173;58;0m(((\e[38;2;255;107;33m##\e[38;2;173;58;0m((((((((\e[38;2;255;107;33m@@\e[38;2;173;58;0m((((((((((((((\e[38;2;255;107;33m##@##\e[38;2;173;58;0m(((((((((\e[38;2;255;107;33m#@@\e[0m"
+    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m(((((\e[38;2;255;107;33m##\e[38;2;173;58;0m(((\e[38;2;255;107;33m@#####\e[38;2;173;58;0m(((((\e[38;2;255;107;33m######\e[38;2;173;58;0m((((\e[38;2;255;107;33m###@\e[38;2;173;58;0m(((((((((\e[38;2;255;107;33m@@@\e[0m"
+    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m((((((\e[38;2;255;107;33m@&#########\e[38;2;173;58;0m((((\e[38;2;255;107;33m###@@##\e[38;2;173;58;0m(((\e[38;2;255;107;33m@###@\e[38;2;173;58;0m((((((((\e[38;2;255;107;33m#@@\e[0m"
+    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m(((((((((\e[38;2;255;107;33m#&@@@#########@\e[38;2;173;58;0m(((((\e[38;2;255;107;33m@@\e[38;2;173;58;0m((((\e[38;2;255;107;33m#####@\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m#@@\e[0m"
+    "%s\e[38;2;255;107;33m@@@@\e[38;2;173;58;0m((((\e[38;2;255;107;33m&#\e[38;2;173;58;0m(\e[38;2;255;107;33m################&@@@####@###@\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m@&&\e[0m"
+    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m((((\e[38;2;255;107;33m#####\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m###########@&####\e[38;2;173;58;0m((((\e[38;2;255;107;33m@##@&\e[0m"
+    "%s\e[38;2;173;58;0m(\e[38;2;255;107;33m@\e[38;2;173;58;0m((((\e[38;2;255;107;33m@####@######@@###\e[38;2;173;58;0m(((\e[38;2;255;107;33m@######@\e[38;2;173;58;0m((((((\e[38;2;255;107;33m@#\e[0m"
+    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m((((((\e[38;2;255;107;33m##############@@##\e[38;2;173;58;0m((((((((((((((((((\e[38;2;255;107;33m@\e[0m"
+    "%s\e[38;2;255;107;33m@\e[0m"
+    "%s\e[38;2;173;58;0m/\e[38;2;255;107;33m@\e[38;2;173;58;0m((\e[38;2;255;107;33m@###\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m###@@@@@@@@@@@@@&@##@\e[38;2;173;58;0m((\e[38;2;255;107;33m@&\e[0m"
+    "%s\e[38;2;255;107;33m#@\e[0m"
+    "%s\e[38;2;173;58;0m(((\e[38;2;255;107;33m################@@@#########\e[0m"
+    "%s\e[38;2;173;58;0m/\e[38;2;255;107;33m#\e[38;2;173;58;0m)\e[0m"
+    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m(((\e[38;2;255;107;33m####\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m####&###\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m##@\e[0m"
+    "%s\e[38;2;255;107;33m@&@\e[0m"
+    "%s\e[38;2;255;107;33m.@\e[38;2;173;58;0m((((\e[38;2;255;107;33m##############@#@######@@@@@#####\e[0m"
+    "%s\e[38;2;255;107;33m@&@\e[0m"
+    "%s\e[38;2;255;107;33m@@@@\e[38;2;173;58;0m((\e[38;2;255;107;33m@####@\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m#####@@@#\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m&#@@\e[38;2;173;58;0m\\\e[0m"
+    "%s\e[38;2;255;107;33m@@#@\e[0m"
+    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m((\e[38;2;255;107;33m@#####@@#######@#################@\e[0m"
+    "%s\e[38;2;255;107;33m@@##@@\e[0m"
+    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m(((\e[38;2;255;107;33m@#####\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m######@###@@@@@\e[0m"
+    "%s\e[38;2;255;107;33m@@#@##&#\e[0m"
+    "%s\e[38;2;255;107;33m@@\e[38;2;173;58;0m((\e[38;2;255;107;33m@@\e[38;2;173;58;0m((((\e[38;2;255;107;33m@##########&\e[38;2;173;58;0m((((\e[38;2;255;107;33m###@\e[0m"
+    "%s\e[38;2;255;107;33m@&&##@\e[38;2;173;58;0m))\e[38;2;255;107;33m@#@@\e[0m"
+    "%s\e[38;2;255;107;33m@@@\e[0m"
+    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m(((((\e[38;2;255;107;33m&#######\e[38;2;173;58;0m((\e[38;2;255;107;33m#@############&\e[38;2;173;58;0m)))))))\e[0m"
+    "%s\e[38;2;255;107;33m@#\e[38;2;173;58;0m(((((\e[38;2;255;107;33m#@##############@\e[38;2;173;58;0m((((((\e[38;2;255;107;33m#@#@\e[0m"
+    "%s\e[38;2;255;107;33m@@@@@@&@#\e[38;2;173;58;0m((((\e[38;2;255;107;33m##@@@@@#\e[38;2;173;58;0m((((((\e[38;2;255;107;33m#&#@#&\e[0m"
+    "%s\e[38;2;255;107;33m####\e[0m"
+    "%s\e[38;2;255;107;33m#&#\e[38;2;173;58;0m(\e[38;2;255;107;33m@@@@@\e[0m%s%s"
+  };
+
+  // set window dimensions for live stream
+  printf("\e[8;29;64t");
+  // no buffering
+  setbuf(stdout, NULL);
+  
+  char lines[40][100];
+
+  u8 i = 0;
+  adam(ptr);
+  live_adam:
+    do {
+      snprintf(lines[0],  96, "%llu%llu%llu%llu%llu%llu", GET_3(i + 0), GET_3(i + 3));
+      snprintf(lines[1],  50, "%llu%llu%llu",             GET_3(i + 6));
+      snprintf(lines[2],  39, "%llu%llu%llu",             GET_3(i + 9));
+      snprintf(lines[3],  32, "%llu%llu%llu",             GET_3(i + 12));
+      snprintf(lines[4],  29, "%llu%llu",                 GET_2(i + 15));
+      snprintf(lines[5],  26, "%llu%llu",                 GET_2(i + 17));
+      snprintf(lines[6],  16, "%llu%llu",                 GET_2(i + 19));
+      snprintf(lines[7],  15, "%llu",                     GET_1(i + 21));
+      snprintf(lines[8],  17, "%llu%llu",                 GET_2(i + 22));
+      snprintf(lines[9],  17, "%llu%llu",                 GET_2(i + 24));
+      snprintf(lines[10], 11, "%llu%llu",                 GET_2(i + 26));
+      snprintf(lines[11], 14, "%llu",                     GET_1(i + 28));
+      snprintf(lines[12], 18, "%llu%llu",                 GET_2(i + 29));
+      snprintf(lines[13], 20, "%llu%llu",                 GET_2(i + 31));
+      snprintf(lines[14], 21, "%llu%llu",                 GET_2(i + 33));
+      snprintf(lines[15], 7,  "%llu",                     GET_1(i + 35));
+      snprintf(lines[16], 18, "%llu%llu",                 GET_2(i + 36));
+      snprintf(lines[17], 8,  "%llu",                     GET_1(i + 38));
+      snprintf(lines[18], 18, "%llu%llu",                 GET_2(i + 39));
+      snprintf(lines[19], 15, "%llu",                     GET_1(i + 41));
+      snprintf(lines[20], 17, "%llu%llu",                 GET_2(i + 42));
+      snprintf(lines[21], 13, "%llu",                     GET_1(i + 44));
+      snprintf(lines[22], 15, "%llu",                     GET_1(i + 45));
+      snprintf(lines[23], 8,  "%llu",                     GET_1(i + 46));
+      snprintf(lines[24], 16, "%llu",                     GET_1(i + 47));
+      snprintf(lines[25], 5,  "%llu",                     GET_1(i + 48));
+      snprintf(lines[26], 21, "%llu%llu",                 GET_2(i + 49));
+      snprintf(lines[27], 3,  "%llu",                     GET_1(i + 51));
+      snprintf(lines[28], 22, "%llu%llu",                 GET_2(i + 52));
+      snprintf(lines[29], 5,  "%llu",                     GET_1(i + 54));
+      snprintf(lines[30], 19, "%llu%llu",                 GET_2(i + 55));
+      snprintf(lines[31], 6,  "%llu",                     GET_1(i + 57));
+      snprintf(lines[32], 16, "%llu%llu",                 GET_2(i + 58));
+      snprintf(lines[33], 4,  "%llu",                     GET_1(i + 60));
+      snprintf(lines[34], 29, "%llu%llu",                 GET_2(i + 61));
+      snprintf(lines[35], 31, "%llu%llu",                 GET_2(i + 63));
+      snprintf(lines[36], 38, "%llu%llu%llu",             GET_3(i + 65));
+      snprintf(lines[37], 3,  "%llu%llu",                 GET_1(i + 68));
+      snprintf(lines[38], 26, "%llu%llu",                 GET_2(i + 69));
+      snprintf(lines[39], 65, "%llu%llu%llu%llu",         GET_3(i + 71), GET_1(i + 74));
+      printf(ADAM_ASCII,
+              lines[0],  lines[1],  lines[2],  lines[3],
+              lines[4],  lines[5],  lines[6],  lines[7],
+              lines[8],  lines[9],  lines[10], lines[11],
+              lines[12], lines[13], lines[14], lines[15],
+              lines[16], lines[17], lines[18], lines[19],
+              lines[20], lines[21], lines[22], lines[23],
+              lines[24], lines[25], lines[26], lines[27],
+              lines[28], lines[29], lines[30], lines[31],
+              lines[32], lines[33], lines[34], lines[35],
+              lines[36], lines[37], lines[38], lines[39]
+      );
+      sleep(1);
+      fwrite("\e[2J\r", 1, 5, stdout);
+    } while ((i += 75 - (i == 181)) < LIVE_ITER);
+
+    const u8 leftovers = (i == 225);
+
+    if (leftovers) {
+      snprintf(lines[0],  96, "%llu%llu%llu%llu%llu%llu", GET_3(i + 0), GET_3(i + 3));
+      snprintf(lines[1],  50, "%llu%llu%llu",             GET_3(i + 6));
+      snprintf(lines[2],  39, "%llu%llu%llu",             GET_3(i + 9));
+      snprintf(lines[3],  32, "%llu%llu%llu",             GET_3(i + 12));
+      snprintf(lines[4],  29, "%llu%llu",                 GET_2(i + 15));
+      snprintf(lines[5],  26, "%llu%llu",                 GET_2(i + 17));
+      snprintf(lines[6],  16, "%llu%llu",                 GET_2(i + 19));
+      snprintf(lines[7],  15, "%llu",                     GET_1(i + 21));
+      snprintf(lines[8],  17, "%llu%llu",                 GET_2(i + 22));
+      snprintf(lines[9],  17, "%llu%llu",                 GET_2(i + 24));
+      snprintf(lines[10], 11, "%llu%llu",                 GET_2(i + 26));
+      snprintf(lines[11], 14, "%llu",                     GET_1(i + 28));
+      snprintf(lines[12], 18, "%llu%llu",                 GET_2(i + 29)); 
+    }
+    i = ((leftovers) << 5) - (leftovers);
+    adam(ptr);
+    goto live_adam; 
+
   return 0;
 }
