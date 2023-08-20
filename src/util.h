@@ -13,6 +13,7 @@
   #define MEMCPY	          __builtin_memcpy
   #define FLOOR             __builtin_floor
   #define POPCNT            __builtin_popcountl
-  #define LIKELY(x)      __builtin_expect((x), 1)
+  #define LIKELY(x)         __builtin_expect((x), 1)
+  #define UNLIKELY(x)       __builtin_expect((x), 0)
 
 #endif
