@@ -9,9 +9,9 @@ int main(int argc, char **argv) {
   u64 buffer[BUF_SIZE * 3] ALIGN(64);
   u64 *restrict buf_ptr = &buffer[0];
 
-  u8 precision = 64;
-  u16 results = 0;
-  u32 limit = ASSESS_BITS;
+  u8  precision = 64;
+  u32 results = 0;
+  u64 limit = ASSESS_BITS;
 
   int opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
@@ -23,37 +23,38 @@ int main(int argc, char **argv) {
       case 'l':
         return stream_live(buf_ptr);
       case 'a':
-        if (optarg != NULL) 
-          limit *= a_to_u(optarg, 1, ASSESS_LIMIT);
+        limit *= a_to_u(optarg, 1, ASSESS_LIMIT);
 
         char file_name[65];
-        file_name[65] = '\0';
-        printf("Enter file name: ");
-        scanf("%64s", &file_name);
-        char c = '\0';
+        get_file_name:
+          printf("Enter file name: ");
+          if (fgets(file_name, sizeof(file_name), stdin) == NULL) {
+            fputs("\e[1;31mPlease enter a valid file name\e[m\n", stderr);
+            goto get_file_name;
+          }
 
         FILE *fptr;
-        do {
-          puts("Select file type: [0] ASCII [1] BINARY");
+        char c;
+        get_file_type:
+          printf("Select file type - ASCII [0] or BINARY [1]: ");
           scanf("%c", &c);
-          switch (c) {
-            case '0':
-              fptr = fopen(file_name, "w+");
-            break;
-            case '1':
-              fptr = fopen(file_name, "wb+");
-            break;
-            default:
-              fputs("\e[1;31mERROR: Valid options are 0 or 1\e[m\n", stderr);
-              continue;
+          if (c == '0') {
+            fptr = fopen(file_name, "w+");
+            c = stream_ascii(fptr, buf_ptr, limit);
+          } else if (c == '1') {
+            fptr = fopen(file_name, "wb+");
+            c = stream_bytes(fptr, buf_ptr, limit);
+          } else {
+            fputs("\e[1;31mValue must be 0 or 1\e[m\n", stderr);
+            goto get_file_type;
           }
-        } while(1);
-        results = stream_bits(fptr, buf_ptr, limit);
-        fclose(fptr);
-        return printf("\n\e[1;36mPRINTED %u BITS (%u ONES, %u ZEROES)\e[m\n", limit, results, limit - results);
+
+        if (UNLIKELY(!c))
+          return fputs("\e[1;31mError while creating file. Exiting.\e[m\n", stderr);
+        
+        return fclose(fptr);
       case 'b':
-        results = stream_bits(stdout, buf_ptr, __UINT32_MAX__);
-        return printf("\n\e[1;36mPRINTED %u BITS (%u ONES, %u ZEROES)\e[m\n", limit, results, limit - results);
+        return stream_ascii(stdout, buf_ptr, __UINT64_MAX__);
       case 'p':
         const u8 p = a_to_u(optarg, 8, 64);
         if (LIKELY(!(p & (p - 1)))) {
@@ -66,7 +67,7 @@ int main(int argc, char **argv) {
           results -= (results > max) * (results - max);
           break;  
         } 
-        return fputs("\e[1;31mERROR: Precision must be either 8, 16, 32, or 64 bits\e[m\n", stderr);
+        return fputs("\e[1;31mPrecision must be either 8, 16, 32, or 64 bits\e[m\n", stderr);
       case 'd':
         results = SEQ_SIZE >> CTZ(precision);
         break;
@@ -83,7 +84,7 @@ int main(int argc, char **argv) {
       //     break;
       //   }
       default:
-        return fputs("\e[1;31mERROR: Option is invalid or missing required argument\e[m\n", stderr);             
+        return fputs("\e[1;31mOption is invalid or missing required argument\e[m\n", stderr);             
     }
   }
 
@@ -99,7 +100,7 @@ int main(int argc, char **argv) {
     mask |= (!mask << precision) - !mask;
 
     if (results-- > 0) {
-      printf(", ");
+      printf(",\n");
       goto print_buffer;
     }
 
