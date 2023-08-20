@@ -72,8 +72,8 @@ FORCE_INLINE static void diffuse(u64 *restrict _ptr, u64 seed) {
 
     _ptr[i]     = a; _ptr[i + 1] = b; _ptr[i + 2] = c; _ptr[i + 3] = d;
     _ptr[i + 4] = e; _ptr[i + 5] = f; _ptr[i + 6] = g; _ptr[i + 7] = h;
-    i += (8 - (i == 248));
-  } while (i < BUF_SIZE - 1);
+
+  } while ((i += 8 - (i == 248)) < BUF_SIZE - 1);
 
   u64 *pp, *p2, *p3, *pend, *r;
   r = pp = _ptr;
@@ -124,8 +124,7 @@ FORCE_INLINE static void mix(u64 *restrict _ptr) {
   do {
     XOR_MAPS(i + 0),
     XOR_MAPS(i + 8); 
-    i += 16;   
-  } while (i < (BUF_SIZE >> 1));
+  } while ((i += 16) < (BUF_SIZE >> 1));
 
   do {
     XOR_MAPS(j + 0),
@@ -142,7 +141,6 @@ void adam(u64 *restrict _ptr) {
   accumulate(_ptr, seed);
   diffuse(_ptr, seed);
 
-  while (!(res = SEED64(&seed))); 
   double x = ((double) (seed / __UINT64_MAX__)) * 0.5;
   
   apply(_ptr + 256, _ptr, &x);
