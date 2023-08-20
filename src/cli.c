@@ -13,7 +13,6 @@ static char bitbuffer[BITBUF_SIZE] ALIGN(64);
 // prints digits in reverse order to buffer
 FORCE_INLINE static void print_binary(char *restrict buf, u64 num) {
   char *bend = buf + 64;
-  *bend = '\0';
   do *--bend = (num & 0x01) + '0';
   while (num >>= 1);
 
@@ -24,14 +23,10 @@ FORCE_INLINE static void print_binary(char *restrict buf, u64 num) {
 }
 
 // prints all bits in a buffer as chunks of 1024 bits
-FORCE_INLINE static u16 print_chunks(FILE *fptr, char *restrict _bptr, const u64 *restrict _ptr) {  
+FORCE_INLINE static void print_chunks(FILE *fptr, char *restrict _bptr, const u64 *restrict _ptr) {  
   register u8 i = 0;
-  register u16 ones = 0;
 
   do {
-    ones += POPCNT_4(i + 0) + POPCNT_4(i + 4) 
-          + POPCNT_4(i + 8) + POPCNT_4(i + 12);
-
     PRINT_4(0,   i + 0),
     PRINT_4(256, i + 4),
     PRINT_4(512, i + 8),
@@ -39,8 +34,6 @@ FORCE_INLINE static u16 print_chunks(FILE *fptr, char *restrict _bptr, const u64
 
     fwrite(_bptr, 1, BITBUF_SIZE, fptr);
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
-
-  return ones;
 }
 
 // Only supports values up to 4 digits
@@ -63,7 +56,6 @@ u16 a_to_u(const char *s, const u16 min, const u16 max) {
 u8 help() {
   struct winsize wsize;
   ioctl(0, TIOCGWINSZ, &wsize);
-  u16 SHEIGHT = wsize.ws_row;
   u16 SWIDTH =  wsize.ws_col;
   u16 center = (SWIDTH >> 1) - 4;
 
@@ -103,8 +95,10 @@ u8 help() {
   return 0;
 }
 
-u64 stream_bits(FILE *fptr, u64 *restrict _ptr, const u64 limit) {
-  register u64 ones = 0;
+u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit) {
+  if (UNLIKELY(fptr == NULL)) return 0;
+  
+  clock_t start = clock();
 
   /*
     Split limit based on how many calls (if needed)
@@ -118,7 +112,7 @@ u64 stream_bits(FILE *fptr, u64 *restrict _ptr, const u64 limit) {
 
   while (rate > 0) {
     adam(_ptr);
-    ones += print_chunks(fptr, _bptr, _ptr);
+    print_chunks(fptr, _bptr, _ptr);
     --rate;
   } 
 
@@ -132,18 +126,17 @@ u64 stream_bits(FILE *fptr, u64 *restrict _ptr, const u64 limit) {
     if assessing bits, so this branch has been marked as LIKELY.
   */
   if (LIKELY(leftovers > 0)) {
-    register short l;
+    register u16 l;
     register u16 limit;
     register u64 num;
 
+    adam(_ptr);
     print_leftovers:
       limit = (leftovers < BITBUF_SIZE) ? leftovers : BITBUF_SIZE;
 
       l = 0;
-      adam(_ptr);
       do {
-        num = *(_ptr + (l >> 6));
-        ones += POPCNT(num);
+        num = *_ptr++;
         print_binary(_bptr + l, num);
       } while ((l += 64) < limit);
 
@@ -154,7 +147,43 @@ u64 stream_bits(FILE *fptr, u64 *restrict _ptr, const u64 limit) {
         goto print_leftovers;
   }
 
-  return ones;
+  clock_t end = clock();
+  double duration = (double)(end - start) / CLOCKS_PER_SEC;
+
+  return printf("\e[1;36mWrote %lu bits to ASCII file in %lfs\e[m\n", 
+                limit, duration);
+}
+
+u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit) {   
+  if (UNLIKELY(fptr == NULL)) return 0;
+
+  clock_t start = clock();
+
+  /*
+    Split limit based on how many calls we need to make
+    to write the bytes of an entire buffer directly
+    (aka the SEQ_SIZE)
+  */ 
+  register short rate = limit >> 14;
+  register short leftovers = limit & (SEQ_SIZE - 1);
+
+  while (rate > 0) {
+    adam(_ptr);
+    fwrite(_ptr, 8, BUF_SIZE, fptr);
+    --rate;
+  } 
+
+  if (LIKELY(leftovers > 0)) {
+    const u16 nums = leftovers >> 6; 
+    adam(_ptr);
+    fwrite(_ptr, 8, nums + !!(nums & 63), fptr);
+  }
+
+  clock_t end = clock();
+  double duration = (double)(end - start) / CLOCKS_PER_SEC;
+
+  return printf("\e[1;36mWrote %lu bits to BINARY file in %lfs\e[m\n", 
+                limit, duration);
 }
 
 u8 stream_live(u64 *restrict ptr) {
