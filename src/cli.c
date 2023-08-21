@@ -1,4 +1,5 @@
 #include <sys/ioctl.h>
+#include <unistd.h>   // for sleep()
 
 #include "adam.h"
 #include "cli.h"
@@ -8,7 +9,7 @@
   number at a time, 16 numbers are parsed together and then
   written to stdout with 1 fwrite call.
 */  
-static char bitbuffer[BITBUF_SIZE] ALIGN(64);
+static char bitbuffer[BITBUF_SIZE] ALIGN(SIMD_LEN);
 
 // prints digits in reverse order to buffer
 FORCE_INLINE static void print_binary(char *restrict buf, u64 num) {
@@ -34,6 +35,10 @@ FORCE_INLINE static void print_chunks(FILE *fptr, char *restrict _bptr, const u6
 
     fwrite(_bptr, 1, BITBUF_SIZE, fptr);
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
+}
+
+u8 err(const char *s) {
+  return fprintf(stderr, "\e[1;31m%s\e[m\n", s);
 }
 
 // Only supports values up to 4 digits
@@ -93,6 +98,14 @@ u8 help() {
     }
   }
   return 0;
+}
+
+u8 print_seeds(double *seeds) {
+  u8 i = 0;
+  printf("\e[1;36mSEEDS:\e[m\n[ %.15f", *seeds);
+  do printf(",\n  %.15f", *(seeds + ++i));
+  while (i < ROUNDS - 1);
+  return puts(" ]\n");
 }
 
 u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit) {

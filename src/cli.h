@@ -2,8 +2,6 @@
 #define CLI_H
 
   #include <stdio.h>
-  #include <time.h>       // for clock_t, clock(), CLOCKS_PER_SEC
-  #include <unistd.h>     // for sleep()
 
   #include "util.h"
 
@@ -17,8 +15,7 @@
   #define VERSION       "v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH)
   #define VERSION_HELP  "Version of this software (" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH) ")"
 
-  #define OPTSTR        ":hvldbn:p:a:u::"
-  #define ARG_MAX       5
+  #define OPTSTR        ":hvldbr:p:a:u::n::s::"
   #define ARG_COUNT     9
 
   #define BITBUF_SIZE   1024
@@ -34,12 +31,13 @@
   #define GET_2(i)      ptr[i], ptr[i + 1]
   #define GET_3(i)      ptr[i], ptr[i + 1], ptr[i + 2]
 
-  u16 a_to_u(const char *s, const u16 min, const u16 max);
+
+  u64 a_to_u(const char *s, const u64 min, const u64 max);
+  u8  print_seeds(double *seeds);
+  u8  err(const char *s);
   u8  help();
   u8  stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit);
   u8  stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit);
   u8  stream_live(u64 *restrict ptr);
-
-
 
 #endif
