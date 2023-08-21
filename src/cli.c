@@ -105,7 +105,7 @@ u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit) {
     we make to print_chunks, which prints the bits of 
     an entire buffer (aka the SEQ_SIZE)
   */ 
-  register short rate = limit >> 14;
+  register long int rate = limit >> 14;
   register short leftovers = limit & (SEQ_SIZE - 1);
 
   char *restrict _bptr = &bitbuffer[0];
@@ -150,7 +150,7 @@ u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit) {
   clock_t end = clock();
   double duration = (double)(end - start) / CLOCKS_PER_SEC;
 
-  return printf("\e[1;36mWrote %lu bits to ASCII file in %lfs\e[m\n", 
+  return printf("\n\e[1;36mWrote %lu bits to ASCII file in %lfs\e[m\n", 
                 limit, duration);
 }
 
@@ -164,7 +164,7 @@ u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit) {
     to write the bytes of an entire buffer directly
     (aka the SEQ_SIZE)
   */ 
-  register short rate = limit >> 14;
+  register long int rate = limit >> 14;
   register short leftovers = limit & (SEQ_SIZE - 1);
 
   while (rate > 0) {
@@ -182,7 +182,7 @@ u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit) {
   clock_t end = clock();
   double duration = (double)(end - start) / CLOCKS_PER_SEC;
 
-  return printf("\e[1;36mWrote %lu bits to BINARY file in %lfs\e[m\n", 
+  return printf("\n\e[1;36mWrote %lu bits to BINARY file in %lfs\e[m\n", 
                 limit, duration);
 }
 

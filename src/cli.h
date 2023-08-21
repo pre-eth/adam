@@ -17,7 +17,7 @@
   #define VERSION       "v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH)
   #define VERSION_HELP  "Version of this software (" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH) ")"
 
-  #define OPTSTR        ":hvldbn:r:p:a:u::"
+  #define OPTSTR        ":hvldbn:p:a:u::"
   #define ARG_MAX       5
   #define ARG_COUNT     9
 
@@ -25,8 +25,7 @@
   #define ASSESS_BITS   1000000
   #define ASSESS_LIMIT  1000
 
-  #define PRINT_4(i, j) \
-                        print_binary(_bptr + i,       _ptr[(j) + 0]), \
+  #define PRINT_4(i, j) print_binary(_bptr + i,       _ptr[(j) + 0]), \
                         print_binary(_bptr + 64 + i,  _ptr[(j) + 1]), \
                         print_binary(_bptr + 128 + i, _ptr[(j) + 2]), \
                         print_binary(_bptr + 192 + i, _ptr[(j) + 3])  \
