@@ -121,14 +121,6 @@ u8 help() {
   return 0;
 }
 
-u8 print_seeds(double *seeds) {
-  u8 i = 0;
-  printf("\e[1;36mSEEDS:\e[m\n[ %.15f", *seeds);
-  do printf(",\n  %.15f", *(seeds + ++i));
-  while (i < ROUNDS - 1);
-  return puts(" ]\n");
-}
-
 u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit) {
   if (UNLIKELY(fptr == NULL)) return 0;
   
