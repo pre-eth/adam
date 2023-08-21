@@ -91,8 +91,8 @@
 
   #define SEED64  _rdseed64_step
 
-  // Initiates RNG algorithm with user provided seed and nonce
-  void adam_param(u64 *restrict _ptr, double *chseed, const u64 nonce);
+  // Initiates RNG algorithm with user provided seed
+  void adam_param(u64 *restrict _ptr, const u64 seed);
 
   // Initiates RNG algorithm - generic
   void adam(u64 *restrict _ptr);

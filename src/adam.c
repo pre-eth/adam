@@ -22,7 +22,7 @@
 FORCE_INLINE static double chaotic_iter(u64 *map_b, u64 *map_a, const double seed) {
   /* 
     BETA is derived from the length of the mantissa 
-    ADAM uses the max length of 15 to minimize ROUNDS
+    ADAM uses the max double accuracy length of 15 to minimize ROUNDS
   */
   #define BETA          10E15
 
@@ -45,17 +45,17 @@ FORCE_INLINE static void accumulate(u64 *restrict _ptr, const u64 seed) {
   register u8 i = 0;
   
   do {
-    ACCUMULATE(((seed + (i << 6)) >> (56 + i)),  ((i << 6) + 0)),
-    ACCUMULATE(((seed + (i << 6)) >> (48 + i)),  ((i << 6) + 16)),
-    ACCUMULATE(((seed + (i << 6)) >> (40 + i)),  ((i << 6) + 32)),
-    ACCUMULATE(((seed + (i << 6)) >> (32 + i)),  ((i << 6) + 48));
+    ACCUMULATE(((seed + (i << 6)) >> (56 + i)), ((i << 6) + 0)),
+    ACCUMULATE(((seed + (i << 6)) >> (48 + i)), ((i << 6) + 16)),
+    ACCUMULATE(((seed + (i << 6)) >> (40 + i)), ((i << 6) + 32)),
+    ACCUMULATE(((seed + (i << 6)) >> (32 + i)), ((i << 6) + 48));
   } while (++i < 4);
 }
 
 FORCE_INLINE static void diffuse(u64 *restrict _ptr, u64 seed) {
   register u8 i = 0;
 
-  u64 a, b, c, d, e, f, g , h;
+  u64 a, b, c, d, e, f, g, h;
   a = b = c = d = e = f = g = h = (_ptr[seed & 0xFF] ^ (GOLDEN_RATIO ^ (seed >> 32)));
 
   // Scramble it
@@ -135,20 +135,32 @@ FORCE_INLINE static void mix(u64 *restrict _ptr) {
   } while (j < (BUF_SIZE - 1));
 }
 
+void adam_param(u64 *restrict _ptr, const u64 seed) {
+  accumulate(_ptr, seed);
+  diffuse(_ptr, seed);
+
+  double chseed = ((double) seed / (double) __UINT64_MAX__) * 0.5;
+  
+  apply(_ptr + 256, _ptr, &chseed);
+  apply(_ptr + 512, _ptr + 256, &chseed);
+  apply(_ptr, _ptr + 512, &chseed);
+
+  mix(_ptr);
+}
+
 void adam(u64 *restrict _ptr) {
-  u8 res;
+  register u8 res;
   u64 seed;
   while (!(res = SEED64(&seed))); 
 
   accumulate(_ptr, seed);
   diffuse(_ptr, seed);
 
-  double x = ((double) (seed / __UINT64_MAX__)) * 0.5;
-  
-  apply(_ptr + 256, _ptr, &x);
-  apply(_ptr + 512, _ptr + 256, &x);
-  apply(_ptr, _ptr + 512, &x);
+  double chseed = ((double) seed / (double) __UINT64_MAX__) * 0.5;
+
+  apply(_ptr + 256, _ptr, &chseed);
+  apply(_ptr + 512, _ptr + 256, &chseed);
+  apply(_ptr, _ptr + 512, &chseed);
 
   mix(_ptr);
 }
-
