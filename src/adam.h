@@ -88,13 +88,13 @@
     _ptr[5 + i] ^= (_ptr[5 + i + 256]) ^ (_ptr[5 + i + 512]),\
     _ptr[6 + i] ^= (_ptr[6 + i + 256]) ^ (_ptr[6 + i + 512]),\
     _ptr[7 + i] ^= (_ptr[7 + i + 256]) ^ (_ptr[7 + i + 512])
-    
-  extern __inline int
-  __attribute__((__gnu_inline__, __always_inline__, __artificial__))
-  SEED64(unsigned long long *__p) {
-    return __builtin_ia32_rdseed_di_step (__p);
-  }
 
-  // Initiates RNG algorithm
+  #define SEED64  _rdseed64_step
+
+  // Initiates RNG algorithm with user provided seed and nonce
+  void adam_param(u64 *restrict _ptr, double *chseed, const u64 nonce);
+
+  // Initiates RNG algorithm - generic
   void adam(u64 *restrict _ptr);
+
 #endif
