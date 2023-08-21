@@ -1,155 +1,101 @@
 <pre style="text-align:center;">
-<p align="center">
     █     ▀██▀▀█▄       █     ▀██    ██▀ 
    ███     ██   ██     ███     ███  ███  
   █  ██    ██    ██   █  ██    █▀█▄▄▀██  
  ▄▀▀▀▀█▄   ██    ██  ▄▀▀▀▀█▄   █ ▀█▀ ██  
 ▄█▄  ▄██▄ ▄██▄▄▄█▀  ▄█▄  ▄██▄ ▄█▄ █ ▄██▄ 
 
-v0.1.0
+v1.0.0
 
-A SIMD accelerated pseudo-random number generator inspired by the code of ISAAC, by Bob
-Jenkins. Added some of my own twists and turns to experiment. I did this just for fun and 
-learning, not to set any records or make anything groundbreaking. That being said, being able 
-to rightfully call this a CSPRNG is my chief goal.
+<b>Use at your own risk</b>. Criticism and suggestions are welcome.
+</pre>         
 
-<b>Use at your own risk</b>. Criticism and suggestions are welcome.</p></pre>                                   
+ADAM is an actively developed cryptographically secure pseudorandom number generator (CSPRNG) inspired by ISAAC64. At the heart of the generator is an implementation of the algorithm described in [François M et al. Pseudo-random number generator based on mixing of three chaotic maps. Commun Nonlinear Sci Numer Simulat (2013)](https://doi.org/10.1016/j.cnsns.2013.08.032), which uses a chaotic function over multiple iterations to produce random bits with strong cryptographic properties. ADAM incorporates parts of ISAAC’s logic into this algorithm where it is applicable to form a compact number generation scheme that’s easy to use, tune, and test.
+
+Also, just like ISAAC, ADAM is a backronym that describes its steps. You can find a deep dive into the number generation process here. This README will just focus on getting you setup and started 
 
 You can read more information about ISAAC [here](http://burtleburtle.net/bob/rand/isaacafa.html).
 
-Check out the rest of Bob's site too, it's a treasure trove of interesting information!
+## FEATURES
 
-Currently, I'm tweaking the algorithm of ADAM to pass the NIST Test Suite for Random Bit Generation [SP 800-22 Rev. 1a](https://csrc.nist.gov/publications/detail/sp/800-22/rev-1a/final). After that, the 
-next goal will be to pass Dieharder, and then hopefully other suites of generator tests like PractRand. While passing one or even all of these test suites doesn't guarantee that a RNG is cryptographically secure, it follows that a CSPRNG will pass these tests, so they provide a measuring stick of sorts.
+- 4 step algorithm: **A**ccumulate **D**iffuse **A**pply **M**ix
+- Avoids brute force and differential attacks (see paper or website for details)
+- Easy interface for bit generation in both ASCII and binary form. Output up to 1GB at a time.
+- Alternatively, stream bits directly to the `stdin` of your own programs, RNG test suites, etc.
+- Extract different precisions of numbers from the buffer
+- Generate RFC 4122 compliant UUID’s
+- View all generated numbers at once
+- Get the seed for a generated buffer or provide one
+- Reports execution time for number generation process
+- Continuously stream and regenerate random numbers
 
+## INSTALLATION
 
-# INSTALLATION
-
-ADAM supports x86-64 based Linux systems. SSE, AVX, AVX2, and optionally AVX-512
-intrinsics support is required, along with CMake >= 3.10. Then, inside the repo:
+`adam` was developed on Fedora for 64-bit Linux systems. It may be possible to run on other operating systems but I haven't checked or configured the program for other systems/distros.
 
 ```
-cd build
-cmake .. && make
-./adam -h
+git clone https://github.com/pre-eth/adam.git
+cd adam
+make
+adam -h
 ```
 
 And you should be good to go! 
 
-ADAM was developed on Fedora, so it should work fine on RHEL flavors,
-but as of now I have not been able to test on other distros.
+By default the executable is installed to `~/.local/bin` but you can change this by tweaking the INSTALL_DIR variable in the Makefile.
 
-# USAGE
+## SYNOPSIS
+
+<pre>
+adam [-h|-v|-l|-b|-d] [-p <em>precision</em>] [-a <em>bit_multiplier</em>] [-n <em>results</em>]
+</pre>
+
 If you run `adam` with no arguments, you will get one randomly generated 64-bit number.
 
-Or you can also provide the following options:
+The following options are available:
 
-    -h      Get all available options
-    -v      Version of this software
-    -u      Set the uniform distributor's bitwise right shift depth (default 3, max 8)
-    -n      Number of results to return (default 1, max 256)
-    -p      Desired size (8, 16, 32) of returned numbers if you need less precision than 64-bit
-    -d      Dump all currently generated numbers, separated by spaces
-    -b      Just bits. Literally. Optionally, you can provide a certain limit of N bits
-    -a      Assess a sample of 100000000 bits (100 MB) written to a filename you provide
-    -s      Set the seed (u64). If no argument is provided, returns seed for current buffer
-    -l      Live stream of continuously generated numbers
+    -h    Get all available options
+    -v    Version of this software (1.0.0)
+    -u    Generate a universally unique identifier (UUID). Optionally specify a 
+          number of UUID's to generate (max 128)
+    -n    Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)
+    -p    Desired size (u8, u16, u32, u64) of returned numbers (default is u64)
+    -d    Dump the whole buffer
+    -b    Just bits. Literally
+    -a    Assess a binary or ASCII sample of 1000000 bits (1 MB) written to a
+          filename you provide. You can choose a multiplier within [1,1000]
+    -l    Live stream of continuously generated numbers
 
-# ALGORITHM
+## But is it REALLY secure?
 
-The name comes from the biblical figure Adam (a play on words since I 
-came up with this while studying the source of ISAAC64). It is also a 
-backronym like ISAAC that explains its process: **A**CCUMULATE, **D**IFFUSE 
-**A**SSIMILATE, and **M**ANGLE
+“Proving” security is a very difficult thing to do, and a good deal of cryptanalysis is needed before domain wide recognition for the security properties of any cryptographic algorithm is gained. That’s why the saying [“Don’t Roll Your Own Crypto”](https://security.stackexchange.com/questions/18197/why-shouldnt-we-roll-our-own) exists.
 
-## I. ACCUMULATE
+ADAM has passed the [NIST Test Suite for Random Bit Generation SP 800-22](https://csrc.nist.gov/publications/detail/sp/800-22/rev-1a/final) just like the original algorithm in the paper, but conducting further testing is required before strong security guarantees can be made. This is just a toy RNG for now, and for production use I strongly recommend using something more thoroughly vetted by the field like [ChaCha20](https://datatracker.ietf.org/doc/html/rfc7539). 
 
-A seed can be set programmatically or on the command line. If no seed is 
-provided, a true random seed is queried via RDRAND. This seed is used to 
-initially fill the buffer, before a set of initialization vectors is permuted
-with the same mixing logic from ISAAC64, and then those vectors themselves are
-mixed into the buffer. Each vector is inserted twice - once in the top half,
-once in the bottom half.
+While passing one or even all of these test suites doesn't guarantee that a RNG is cryptographically secure, it follows that a CSPRNG will pass these tests, so they nonetheless provide a measuring stick of sorts to reveal flaws in the design and various characteristics of the randomness of the generated numbers.
 
-The 8 IV's are derived from the following verse:
+## TESTING
 
-> ***"Be fruitful and multiply, and replenish the earth (Genesis 1:28)"***
+Testing is easy with the `-a` option. The minimum number of bits that can be outputted is 1 million (1M) bits. You can supply a multiplier within [1, 1000] as mentioned above, and then write those bits to a text or binary file through the `-a` option that you can supply to any of the testing frameworks listed below, a different framework, or your own RNG tests!
 
-(Which can also be considered a TL;DR for the whole algorithm in case you
-don't want to keep reading.)
+### SUMMARY
 
-A set of 8 initial addends are set to the Golden Ratio (GR), per Bob's original 
-implementation. They are also inserted twice like above and distributed across
-the top and bottom half.
+Click on a test to learn more.
 
-The initial configuration of the buffer looks like this:
+| Status      | Name        | Description | Status |
+| ----------- | ----------- | ----------- | ------ |
+| ⌛          | [chi.c](http://burtleburtle.net/bob/rand/testsfor.html) | From Bob Jenkins (author of ISAAC), calculates the distributions for the frequency, gap, and run tests exactly | PENDING
+| ✅          | [NIST](https://csrc.nist.gov/projects/random-bit-generation/documentation-and-software) | Set of statistical tests of randomness for generators intended for cryptographic applications | **PASS**
+| ⌛          | [ent](https://www.fourmilab.ch/random) | Calculates various values for a supplied pseudo random sequence like entropy, arithmetic mean, Monte Carlo value for pi, and more | PENDING
+| ⌛          | [gjrand](https://gjrand.sourceforge.net) | Test suites for uniform bits and normally distributed numbers | PENDING
+| ⌛          | [DIEHARDER](https://webhome.phy.duke.edu/~rgb/General/dieharder.php) | Cleaned up version of George Marsaglia's DIEHARD suite, with additional parameterizable tests | PENDING 
 
-## II. DIFFUSE
+### NIST
 
-First, we permute the IV's and GR values 4x each with the same mixing
-logic from ISAAC64. 4 rounds were chosen because that's the same amount of initial
-permutation Bob used.
+Test results for 1M, 10M, 100M, 200M, 250M bits, 500M bits, and 1B bits are available in the `tests/NIST` subdirectory.
 
-Once they've been permuted themselves, SIMD registers are used to sum different groups
-of contiguous bits, with an additional permutation applied to the IV and GR locations
-every iteration. These SIMD registers that store the results are written back to the
-`frt` buffer in reverse order.
+## CONTRIBUTING
 
-Alternating segments per column are swapped from the top and bottom halves of the
-buffer like so:
+I started ADAM just for fun after looking at the source of ISAAC while I was learning C. I didn't intend to make anything groundbreaking or crazy, but I welcome all cryptanalysis that can increase the cryptographic strength of this generator. Feel free to reach out to me or open an issue for any ideas/critiques/statistics you may have that can improve the implementation.
 
-## III. ASSIMILATE
-
-This phase begins by applying a compression permutation. More rigorously, this means
-that a certain subset of bits are selected AND order is changed. So bitwise manipulation
-is used for the first requirement and then results are written back in reverse order 
-like before for the second requirement:
-
-
-The right shift parameter can be configured programmatically or on the command line.
-
-Then, the permutation logic of ISAAC64 is extended to 16 integers at a time, and used to
-thoroughly blend the top and bottom halves. We now have a rudimentary buffer of 256
-64-bit randomly generated integers, but we have some work left before we can use them:
-
-## IV. MANGLE
-
-The last step makes use of the same quarter rounding functions used by the ChaCha
-derived BLAKE2b hash function. These are designed to operate on 16 blocks of 
-64-bit integers, so they seamlessly integrate with ADAM's operations. 2 rounds are 
-applied per 16 integer block on columns and diagonal groups of 4. 
-
-And with that, the user now has a pool of 256 cryptographically generated random 
-numbers, which can be retrieved and used upon will! 
-
-Bit shifting is used to satisfy arbitrary precision needs from the user. Each location
-is zeroed out after its value is retrieved, so the original isn't retained. 
-
-# TESTS
-
-To run with the NIST Test Suite, use `adam -a > bits` to output a sample of 100 bit
-streams to a text file for testing. After that, running the tests is as simple as
-loading the file and letting the statistical tests work through the data. This may
-take a while. Currently, it passes a good number of the tests but fails other ones
-spectacularly, so I'm in the process of figuring out why.   
-
-# LICENSE: MIT
-
-Copyright © 2022 Preeth Vijay
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this 
-software and associated documentation files (the "Software"), to deal in the Software 
-without restriction, including without limitation the rights to use, copy, modify, 
-merge, publish, distribute, sublicense, and/or sell copies of the Software, and to 
-permit persons to whom the Software is furnished to do so, subject to the following 
-conditions:
-
-The above copyright notice and this permission notice shall be included in all copies 
-or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
-PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE 
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT 
-OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
-DEALINGS IN THE SOFTWARE.
+As far as code contributions though, I'd like to maintain the project myself for now as a continued learning opportunity. If I open the codebase up in the future I will amend the README, but as of now I'm not looking for other developers.
