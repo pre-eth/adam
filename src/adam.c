@@ -98,24 +98,26 @@ FORCE_INLINE static void diffuse(u64 *restrict _ptr, u64 seed) {
   } 
 }
 
-FORCE_INLINE static void apply(u64 *restrict _b, u64 *restrict _a, double *chseed) {
+FORCE_INLINE static void apply(u64 *restrict _b, u64 *restrict _a, double *restrict chseed) {
   double x = *chseed;
 
   register u8 i = 0;
   do x = chaotic_iter(_b, _a, x);
   while (++i < ITER);
 
-  i = 0;
-  x += (double) (x / 100000);
-  do x = chaotic_iter(_b, _a, x);
-  while (++i < ITER);
+  // i = 0;
+  // x += (double) (x / 100000);
+  // do x = chaotic_iter(_b, _a, x);
+  // while (++i < ITER);
 
-  i = 0;
-  x += (double) (x / 1000000);
-  do x = chaotic_iter(_b, _a, x);
-  while (++i < ITER);
+  // i = 0;
+  // x += (double) (x / 1000000);
+  // do x = chaotic_iter(_b, _a, x);
+  // while (++i < ITER);
 
-  *chseed = x;
+  // Some testing revealed that x sometimes exceeds 0.5, which 
+  // violates the algorithm, so this is a corrective measure
+  *chseed = x - (0.5 * (double)(x >= 0.5));
 }
 
 FORCE_INLINE static void mix(u64 *restrict _ptr) {
