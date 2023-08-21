@@ -16,7 +16,7 @@
   #define VERSION_HELP  "Version of this software (" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH) ")"
 
   #define OPTSTR        ":hvldbn:p:a:u::s::"
-  #define ARG_COUNT     9
+  #define ARG_COUNT     10
 
   #define BITBUF_SIZE   1024
   #define ASSESS_BITS   1000000
@@ -33,11 +33,10 @@
 
 
   u64 a_to_u(const char *s, const u64 min, const u64 max);
-  u8  print_seeds(double *seeds);
   u8  err(const char *s);
-  u8  help();
   u8  stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit);
   u8  stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit);
   u8  stream_live(u64 *restrict ptr);
-
+  u8  help();
+  
 #endif
