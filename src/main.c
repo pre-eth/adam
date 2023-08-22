@@ -3,23 +3,39 @@
 #include "adam.h"
 #include "cli.h"
 
+/*
+  TODO
+  
+  UUID
+  matrix
+  ent
+  gjrand
+  bob's tests (chi.c and est.c)
+
+*/
+
+// The algorithm requires at least the construction of 3 maps of size BUF_SIZE
+// Offsets logically represent each individual map, but it's all one buffer
+static u64 buffer[BUF_SIZE * 3] ALIGN(SIMD_LEN);
+
 int main(int argc, char **argv) {
-  // The algorithm requires at least the construction of 3 maps of size BUF_SIZE
-  // Offsets logically represent each individual map, but it's all one buffer
-  static u64 buffer[BUF_SIZE * 3] ALIGN(SIMD_LEN);
   u64 *restrict buf_ptr = &buffer[0];
 
   register u8  precision = 64;
   register u16 results = 0;
-  register u64 limit = ASSESS_BITS;
+  register u8 limit = 1;
 
-  register u8 idx, show_seed;
+  register u8 idx, show_seed, show_nonce;
   register u64 mask = (1UL << precision) - 1;
 
-  u64 seed;
+  u64 seed, nonce;
   while (!(idx = SEED64(&seed))); 
 
-  idx = show_seed = 0;
+  double chseed = ((double) seed / (double) __UINT64_MAX__) * 0.5;
+  nonce = time(NULL) ^ GOLDEN_RATIO ^ seed;
+
+  show_seed = 1;
+  idx = show_nonce = 0;
 
   int opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
@@ -29,14 +45,14 @@ int main(int argc, char **argv) {
       case 'v':
         return puts(VERSION);
       case 'l':
-        return stream_live(buf_ptr);
+        return stream_live(buf_ptr, chseed, nonce);
       case 'a':
-        limit *= a_to_u(optarg, 1, ASSESS_LIMIT);
+        limit = a_to_u(optarg, 1, ASSESS_LIMIT);
 
         char file_name[65];
         get_file_name:
           printf("Enter file name: ");
-          if (fgets(file_name, sizeof(file_name), stdin) == NULL) {
+          if (fgets(file_name, 64, stdin) == NULL) {
             err("Please enter a valid file name");
             goto get_file_name;
           }
@@ -48,10 +64,10 @@ int main(int argc, char **argv) {
           scanf("%c", &c);
           if (c == '0') {
             fptr = fopen(file_name, "w+");
-            c = stream_ascii(fptr, buf_ptr, limit);
+            c = stream_ascii(fptr, buf_ptr, limit * ASSESS_BITS, chseed, nonce);
           } else if (c == '1') {
             fptr = fopen(file_name, "wb+");
-            c = stream_bytes(fptr, buf_ptr, limit);
+            c = stream_bytes(fptr, buf_ptr, limit * ASSESS_BITS, chseed, nonce);
           } else {
             err("Value must be 0 or 1");
             goto get_file_type;
@@ -62,7 +78,7 @@ int main(int argc, char **argv) {
         
         return fclose(fptr);
       case 'b':
-        return stream_ascii(stdout, buf_ptr, __UINT64_MAX__);
+        return stream_ascii(stdout, buf_ptr, __UINT64_MAX__, chseed, nonce);
       case 'p':
         const u8 p = a_to_u(optarg, 8, 64);
         if (LIKELY(!(p & (p - 1)))) {
@@ -81,20 +97,33 @@ int main(int argc, char **argv) {
       case 'd':
         results = SEQ_SIZE >> CTZ(precision);
       break;
-      case 'n':
+      case 'r':
         results = a_to_u(optarg, 1, BUF_SIZE << CTZ(precision)) - 1;
       break;
       case 's':
         show_seed = (optarg == NULL);
-        if (!show_seed) 
-          seed = a_to_u(optarg, 1, __UINT64_MAX__);
+        if (!show_seed) {
+          int res = sscanf(optarg, "%lf", &chseed);
+          if (!res || res == -1) 
+            return err("Seed must be a valid decimal within (0.0, 0.5)");
+        }
+      break;
+      case 'n':
+        show_nonce = (optarg == NULL);
+        if (!show_nonce)
+          nonce = a_to_u(optarg, 1, __UINT64_MAX__);
       break;
       default:
         return err("Option is invalid or missing required argument");             
     }
   }
 
-  adam_param(buf_ptr, seed);
+  // Checking to make sure user isn't reusing nonce
+  show_seed -= (show_seed && !show_nonce);
+  if (UNLIKELY(!show_seed))
+    return err("SECURITY RISK: Nonces should NEVER be reused. Exiting.");
+
+  adam(buf_ptr, chseed, nonce);
 
   print_buffer:
     printf("%lu", buf_ptr[idx] & mask);
@@ -110,7 +139,10 @@ int main(int argc, char **argv) {
   putchar('\n');
 
   if (UNLIKELY(show_seed))
-    printf("\e[1;36mSEED:\e[m %lu\n", seed);
+    printf("\e[1;36mSEED:\e[m %.15f\n", chseed);
+
+  if (UNLIKELY(show_nonce))
+    printf("\e[1;36mNONCE:\e[m %lu\n", nonce);
 
   return 0;
 }
