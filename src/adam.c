@@ -45,10 +45,10 @@ FORCE_INLINE static void accumulate(u64 *restrict _ptr, const u64 seed) {
   register u8 i = 0;
   
   do {
-    ACCUMULATE(((seed + (i << 6)) >> (56 + i)), ((i << 6) + 0)),
-    ACCUMULATE(((seed + (i << 6)) >> (48 + i)), ((i << 6) + 16)),
-    ACCUMULATE(((seed + (i << 6)) >> (40 + i)), ((i << 6) + 32)),
-    ACCUMULATE(((seed + (i << 6)) >> (32 + i)), ((i << 6) + 48));
+    ACCUMULATE(((seed + (i << 6)) << (5  + i)), ((i << 6) + 0)),
+    ACCUMULATE(((seed + (i << 6)) << (9 + i)), ((i << 6) + 16)),
+    ACCUMULATE(((seed + (i << 6)) << (13 + i)), ((i << 6) + 32)),
+    ACCUMULATE(((seed + (i << 6)) << (17 + i)), ((i << 6) + 48));
   } while (++i < 4);
 }
 
@@ -56,7 +56,7 @@ FORCE_INLINE static void diffuse(u64 *restrict _ptr, u64 seed) {
   register u8 i = 0;
 
   u64 a, b, c, d, e, f, g, h;
-  a = b = c = d = e = f = g = h = (_ptr[seed & 0xFF] ^ (GOLDEN_RATIO ^ (seed >> 32)));
+  a = b = c = d = e = f = g = h = (_ptr[seed & 0xFF] ^ (GOLDEN_RATIO ^ _ptr[(seed >> 32) & 0xFF]));
 
   // Scramble it
   ISAAC_MIX(a, b, c, d, e, f, g, h);
@@ -75,13 +75,13 @@ FORCE_INLINE static void diffuse(u64 *restrict _ptr, u64 seed) {
 
   } while ((i += 8 - (i == 248)) < BUF_SIZE - 1);
 
-  u64 *pp, *p2, *p3, *pend, *r;
+  u64 *pp, *p2, *pend, *r;
   r = pp = _ptr;
-  p3 = p2 = pp + (BUF_SIZE >> 1);
+  pend = p2 = pp + (BUF_SIZE >> 1);
 
   register u64 x, y;
 
-  for (;pp < p3;) {
+  for (;pp < pend;) {
     ISAAC_STEP(~(a^(a<<21)), a, b, _ptr, pp, p2, r, x);
     ISAAC_STEP(  a^(a>>5)  , a, b, _ptr, pp, p2, r, x);
     ISAAC_STEP(  a^(a<<12) , a, b, _ptr, pp, p2, r, x);
@@ -135,32 +135,17 @@ FORCE_INLINE static void mix(u64 *restrict _ptr) {
   } while (j < (BUF_SIZE - 1));
 }
 
-void adam_param(u64 *restrict _ptr, const u64 seed) {
-  accumulate(_ptr, seed);
-  diffuse(_ptr, seed);
+double adam(u64 *restrict _ptr, const double seed, const u64 nonce) {
+  accumulate(_ptr, nonce);
+  diffuse(_ptr, nonce);
 
-  double chseed = ((double) seed / (double) __UINT64_MAX__) * 0.5;
+  double chseed = seed;
   
   apply(_ptr + 256, _ptr, &chseed);
   apply(_ptr + 512, _ptr + 256, &chseed);
   apply(_ptr, _ptr + 512, &chseed);
 
   mix(_ptr);
-}
 
-void adam(u64 *restrict _ptr) {
-  register u8 res;
-  u64 seed;
-  while (!(res = SEED64(&seed))); 
-
-  accumulate(_ptr, seed);
-  diffuse(_ptr, seed);
-
-  double chseed = ((double) seed / (double) __UINT64_MAX__) * 0.5;
-
-  apply(_ptr + 256, _ptr, &chseed);
-  apply(_ptr + 512, _ptr + 256, &chseed);
-  apply(_ptr, _ptr + 512, &chseed);
-
-  mix(_ptr);
+  return chseed;
 }
