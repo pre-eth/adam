@@ -104,11 +104,11 @@ u8 help() {
     "Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)",
     "Desired size (u8, u16, u32, u64) of returned numbers (default is u64)",
     "Dump the whole buffer",
-    "Just bits. Literally",
+    "Just bits...literally",
     "Assess a binary or ASCII sample of 1000000 bits (1 MB) written to a filename you provide. You can choose a multiplier within [1,1000]",
     "Live stream of continuously generated numbers"
   };
-  const u8 lengths[ARG_COUNT] = {25, 33, 57, 119, 117, 108, 74, 69, 21, 20, 132, 45};
+  const u8 lengths[ARG_COUNT] = {25, 32, 119, 117, 108, 74, 69, 21, 20, 133, 45};
   
   short len;
   for (int i = 0; i < ARG_COUNT; ++i) {
