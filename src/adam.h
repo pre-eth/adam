@@ -47,37 +47,48 @@
   #define CHAOTIC_FN(x)   (3.9999 * x * (1 - x))
   
   /* 
-    ROUNDS must satisfy k = T / 3 where T % 3 = 0. 
-    k is the iterations per chaotic map. 
+    ROUNDS must satisfy k = T / 3 where T % 3 = 0, where k is 
+    the iterations per each chaotic map. 
 
-    ROUNDS must satisfy the condition:
-      floor(128 / log2(5 x pow(10, c - 1) - 1)) + 1 > pow(2, 128)
+    To avoid brute force attacks, ROUNDS must also satisfy the 
+    condition: pow([5 x pow(10, c - 1) - 1], ROUNDS) > pow(2, 256),
     where c is the number of digits in the seed.
 
-    ADAM uses a strict ROUNDS value of 9 because it always uses the 
+    Note: The paper says that "In any cryptosystem, for poor keys 
+    or limited key space K, the cryptosystem can be easily broken. 
+    
+    Indeed, given today’s computer speed, it is generally accepted 
+    that a key space of size smaller than 2^128."
+
+    However, the paper was written in 2014, and computing power has
+    increased even more since then, so instead of 128, 256 is used 
+    above as well as the following formula used to calculate k:
+      floor(256 / log2(5 x pow(10, c - 1) - 1)) + 1
+
+    ADAM uses a strict ROUNDS value of 18 because it always uses the 
     maximum double precision value of 15 with the seeds that it 
     generates. I'll let you check the math yourself to prove it :)
   */
-  #define ROUNDS        12
+  #define ROUNDS        18
   #define ITER          (ROUNDS / 3)
 
   #define ACCUMULATE(seed, i)\
-    _ptr[0  + i] = 0  + seed,\
-    _ptr[1  + i] = 1  + seed,\
-    _ptr[2  + i] = 2  + seed,\
-    _ptr[3  + i] = 3  + seed,\
-    _ptr[4  + i] = 4  + seed,\
-    _ptr[5  + i] = 5  + seed,\
-    _ptr[6  + i] = 6  + seed,\
-    _ptr[7  + i] = 7  + seed,\
-    _ptr[8  + i] = 8  + seed,\
-    _ptr[9  + i] = 9  + seed,\
-    _ptr[10 + i] = 10 + seed,\
-    _ptr[11 + i] = 11 + seed,\
-    _ptr[12 + i] = 12 + seed,\
-    _ptr[13 + i] = 13 + seed,\
-    _ptr[14 + i] = 14 + seed,\
-    _ptr[15 + i] = 15 + seed
+    _ptr[0  + i] = 0  + i + seed,\
+    _ptr[1  + i] = 1  + i + seed,\
+    _ptr[2  + i] = 2  + i + seed,\
+    _ptr[3  + i] = 3  + i + seed,\
+    _ptr[4  + i] = 4  + i + seed,\
+    _ptr[5  + i] = 5  + i + seed,\
+    _ptr[6  + i] = 6  + i + seed,\
+    _ptr[7  + i] = 7  + i + seed,\
+    _ptr[8  + i] = 8  + i + seed,\
+    _ptr[9  + i] = 9  + i + seed,\
+    _ptr[10 + i] = 10 + i + seed,\
+    _ptr[11 + i] = 11 + i + seed,\
+    _ptr[12 + i] = 12 + i + seed,\
+    _ptr[13 + i] = 13 + i + seed,\
+    _ptr[14 + i] = 14 + i + seed,\
+    _ptr[15 + i] = 15 + i + seed
 
   #define XOR_MAPS(i) \
     _ptr[0 + i] ^= (_ptr[0 + i + 256]) ^ (_ptr[0 + i + 512]),\
@@ -91,10 +102,8 @@
 
   #define SEED64  _rdseed64_step
 
-  // Initiates RNG algorithm with user provided seed
-  void adam_param(u64 *restrict _ptr, const u64 seed);
-
-  // Initiates RNG algorithm - generic
-  void adam(u64 *restrict _ptr);
+  // Initiates RNG algorithm with user provided seed and nonce
+  // Returns actual seed used to start iteration
+  double adam(u64 *restrict _ptr, const double seed, const u64 nonce);
 
 #endif
