@@ -7,21 +7,22 @@
   #ifdef __AVX512F__
     #define SIMD_LEN        64
     typedef __m512i         reg;
-    #define REG_SETZERO     _mm512_setzero_si512
-    #define REG_SETR64      _mm512_setr_epi64 
-    #define REG_SET64       _mm512_set1_epi64
-    #define REG_LOADBITS    _mm512_load_si512
-    #define REG_STOREBITS   _mm512_store_si512
-    #define REG_XORBITS     _mm512_xor_si512
+    #define SIMD_SETZERO     _mm512_setzero_si512
+    #define SIMD_SETR64      _mm512_setr_epi64 
+    #define SIMD_SET64       _mm512_set1_epi64
+    #define SIMD_LOADBITS    _mm512_load_si512
+    #define SIMD_STOREBITS   _mm512_store_si512
+    #define SIMD_XORBITS     _mm512_xor_si512
   #else
     #define SIMD_LEN        32
     typedef __m256i         reg;
-    #define REG_SETZERO     _mm256_setzero_si256
-    #define REG_SETR64      _mm256_setr_epi64x 
-    #define REG_SET64       _mm256_set1_epi64x 
-    #define REG_LOADBITS    _mm256_load_si256
-    #define REG_STOREBITS   _mm256_store_si256
-    #define REG_XORBITS     _mm256_xor_si256
+    #define SIMD_SETZERO     _mm256_setzero_si256
+    #define SIMD_SET64       _mm256_set1_epi64x 
+    #define SIMD_SETR64      _mm256_setr_epi64x 
+    #define SIMD_ADD64       _mm256_add_epi64
+    #define SIMD_LOADBITS    _mm256_load_si256
+    #define SIMD_STOREBITS   _mm256_store_si256
+    #define SIMD_XORBITS     _mm256_xor_si256
   #endif
 
   typedef __UINT8_TYPE__    u8;
