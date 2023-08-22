@@ -94,11 +94,12 @@ u8 help() {
   // max length for help description in COL 2 before it needs to wrap
   const u16 HELP_WIDTH = SWIDTH - HELP_INDENT;
 
-  const char ARGS[ARG_COUNT] = {'h', 'v', 's', 'u', 'n', 'p', 'd', 'b', 'a', 'l'};
+  const char ARGS[ARG_COUNT] = {'h', 'v', 's', 'n', 'u', 'r', 'p', 'd', 'b', 'a', 'l'};
   const char *ARGSHELP[ARG_COUNT] = {
     "Get all available options",
     VERSION_HELP,
-    "Get the seed for the generated buffer or provide your own",
+    "Get the seed for the generated buffer (no parameter) or provide your own. Seeds are reusable but should be kept secret.",
+    "Get the nonce for the generated buffer (no parameter) or provide your own. Nonces should ALWAYS be unique and secret.",
     "Generate a universally unique identifier (UUID). Optionally specify a number of UUID's to generate (max 128)",
     "Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)",
     "Desired size (u8, u16, u32, u64) of returned numbers (default is u64)",
@@ -107,7 +108,7 @@ u8 help() {
     "Assess a binary or ASCII sample of 1000000 bits (1 MB) written to a filename you provide. You can choose a multiplier within [1,1000]",
     "Live stream of continuously generated numbers"
   };
-  const u8 lengths[ARG_COUNT] = {25, 33, 57, 108, 74, 69, 21, 20, 132, 45};
+  const u8 lengths[ARG_COUNT] = {25, 33, 57, 119, 117, 108, 74, 69, 21, 20, 132, 45};
   
   short len;
   for (int i = 0; i < ARG_COUNT; ++i) {

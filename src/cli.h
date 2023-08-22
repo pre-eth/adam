@@ -15,8 +15,8 @@
   #define VERSION       "v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH)
   #define VERSION_HELP  "Version of this software (" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH) ")"
 
-  #define OPTSTR        ":hvldbn:p:a:u::s::"
-  #define ARG_COUNT     10
+  #define OPTSTR        ":hvldbr:p:a:u::s::n::"
+  #define ARG_COUNT     11
 
   #define BITBUF_SIZE   1024
   #define ASSESS_BITS   1000000
@@ -27,16 +27,16 @@
                         print_binary(_bptr + 128 + i, _ptr[(j) + 2]), \
                         print_binary(_bptr + 192 + i, _ptr[(j) + 3])  \
 
-  #define GET_1(i)      ptr[i]
-  #define GET_2(i)      ptr[i], ptr[i + 1]
-  #define GET_3(i)      ptr[i], ptr[i + 1], ptr[i + 2]
+  #define GET_1(i)      _ptr[i]
+  #define GET_2(i)      _ptr[i], _ptr[i + 1]
+  #define GET_3(i)      _ptr[i], _ptr[i + 1], _ptr[i + 2]
 
 
   u64 a_to_u(const char *s, const u64 min, const u64 max);
   u8  err(const char *s);
-  u8  stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit);
-  u8  stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit);
-  u8  stream_live(u64 *restrict ptr);
+  u8  stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double chseed, u64 nonce);
+  u8  stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, double chseed, u64 nonce);
+  u8  stream_live(u64 *restrict ptr, double chseed, u64 nonce);
   u8  help();
   
 #endif
