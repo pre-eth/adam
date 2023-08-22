@@ -123,7 +123,7 @@ u8 help() {
   return 0;
 }
 
-u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit) {
+u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double chseed, u64 nonce) {
   if (UNLIKELY(fptr == NULL)) return 0;
   
   clock_t start = clock();
@@ -139,9 +139,10 @@ u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit) {
   char *restrict _bptr = &bitbuffer[0];
 
   while (rate > 0) {
-    adam(_ptr);
+    chseed = adam(_ptr, chseed, nonce);
     print_chunks(fptr, _bptr, _ptr);
     --rate;
+    nonce ^= _ptr[nonce & 0xFF];
   } 
 
   /*
@@ -158,7 +159,7 @@ u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit) {
     register u16 limit;
     register u64 num;
 
-    adam(_ptr);
+    adam(_ptr, chseed, nonce);
     print_leftovers:
       limit = (leftovers < BITBUF_SIZE) ? leftovers : BITBUF_SIZE;
 
@@ -182,7 +183,7 @@ u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit) {
                 limit, duration);
 }
 
-u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit) {   
+u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, double chseed, u64 nonce) {   
   if (UNLIKELY(fptr == NULL)) return 0;
 
   clock_t start = clock();
@@ -196,14 +197,15 @@ u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit) {
   register short leftovers = limit & (SEQ_SIZE - 1);
 
   while (rate > 0) {
-    adam(_ptr);
+    chseed = adam(_ptr, chseed, nonce);
     fwrite(_ptr, 8, BUF_SIZE, fptr);
     --rate;
+    nonce ^= _ptr[nonce & 0xFF];
   } 
 
   if (LIKELY(leftovers > 0)) {
     const u16 nums = leftovers >> 6; 
-    adam(_ptr);
+    adam(_ptr, chseed, nonce);
     fwrite(_ptr, 8, nums + !!(nums & 63), fptr);
   }
 
@@ -214,7 +216,7 @@ u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit) {
                 limit, duration);
 }
 
-u8 stream_live(u64 *restrict ptr) {
+u8 stream_live(u64 *restrict _ptr, double chseed, u64 nonce) {
   /*
     There are 256 numbers per buffer. But we only need 75 to print one
     iteration. So 75 * 3 = 225. 256 - 225 = 31. Thus, for each buffer 31
@@ -282,7 +284,7 @@ u8 stream_live(u64 *restrict ptr) {
   char lines[40][100];
 
   u8 i = 0;
-  adam(ptr);
+  chseed = adam(_ptr, chseed, nonce);
   live_adam:
     do {
       snprintf(lines[0],  96, "%llu%llu%llu%llu%llu%llu", GET_3(i + 0), GET_3(i + 3));
@@ -359,7 +361,8 @@ u8 stream_live(u64 *restrict ptr) {
       snprintf(lines[12], 18, "%llu%llu",                 GET_2(i + 29)); 
     }
     i = ((leftovers) << 5) - (leftovers);
-    adam(ptr);
+    nonce ^= _ptr[nonce & 0xFF];
+    chseed = adam(_ptr, chseed, nonce);
     goto live_adam; 
 
   return 0;
