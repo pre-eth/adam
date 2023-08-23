@@ -18,20 +18,22 @@ You can read more information about ISAAC [here](http://burtleburtle.net/bob/ran
 
 ## FEATURES
 
-- 4 step algorithm: **A**ccumulate **D**iffuse **A**pply **M**ix
+- 4 step algorithm: **A**ccumulate, **D**iffuse, **A**pply, **M**ix
 - Avoids brute force and differential attacks (see paper or website for details)
+- Only two input parameters: one 64-bit seed and one 64-bit nonce
+- Space Complexity: O(N)
+- Output sequence is irreversible
 - Easy interface for bit generation in both ASCII and binary form. Output up to 1GB at a time.
 - Alternatively, stream bits directly to the `stdin` of your own programs, RNG test suites, etc.
 - Extract different precisions of numbers from the buffer
 - Generate RFC 4122 compliant UUID’s
 - View all generated numbers at once
-- Get the seed for a generated buffer or provide one
 - Reports execution time for number generation process
 - Continuously stream and regenerate random numbers
 
 ## INSTALLATION
 
-`adam` was developed on Fedora for 64-bit Linux systems. It may be possible to run on other operating systems but I haven't checked or configured the program for other systems/distros.
+ADAM was developed on Fedora for x86 64-bit Linux systems. It may be possible to run on other operating systems but I haven't checked or configured the program for other systems/distros.
 
 ```
 git clone https://github.com/pre-eth/adam.git
@@ -42,12 +44,13 @@ adam -h
 
 And you should be good to go! 
 
-By default the executable is installed to `~/.local/bin` but you can change this by tweaking the INSTALL_DIR variable in the Makefile.
+By default the executable is installed to `~/.local/bin` but you can change this by tweaking the `INSTALL_DIR` variable in the Makefile.
 
 ## SYNOPSIS
 
 <pre>
-adam [-h|-v|-l|-b|-d] [-p <em>precision</em>] [-a <em>bit_multiplier</em>] [-n <em>results</em>]
+adam [-h|-v|-l|-b|-d] [-p <em>precision</em>] [-a <em>bit_multiplier</em>] [-r <em>results</em>]
+     [-s <em>seed?</em>] [-n <em>nonce?</em>] [-u <em>amount</em>]
 </pre>
 
 If you run `adam` with no arguments, you will get one randomly generated 64-bit number.
@@ -56,15 +59,20 @@ The following options are available:
 
     -h    Get all available options
     -v    Version of this software (1.0.0)
+    -s    Get the seed for the generated buffer (no parameter) or provide your
+          own. Seeds are reusable but should be kept secret.
+    -n    Get the nonce for the generated buffer (no parameter) or provide your 
+          own. Nonces should ALWAYS be unique and secret.
     -u    Generate a universally unique identifier (UUID). Optionally specify a 
           number of UUID's to generate (max 128)
-    -n    Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)
+    -r    Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)
     -p    Desired size (u8, u16, u32, u64) of returned numbers (default is u64)
     -d    Dump the whole buffer
-    -b    Just bits. Literally
+    -b    Just bits...literally
     -a    Assess a binary or ASCII sample of 1000000 bits (1 MB) written to a
           filename you provide. You can choose a multiplier within [1,1000]
     -l    Live stream of continuously generated numbers
+
 
 ## But is it REALLY secure?
 
@@ -90,9 +98,7 @@ Click on a test to learn more.
 | ⌛          | [gjrand](https://gjrand.sourceforge.net) | Test suites for uniform bits and normally distributed numbers | PENDING
 | ⌛          | [DIEHARDER](https://webhome.phy.duke.edu/~rgb/General/dieharder.php) | Cleaned up version of George Marsaglia's DIEHARD suite, with additional parameterizable tests | PENDING 
 
-### NIST
-
-Test results for 1M, 10M, 100M, 200M, 250M bits, 500M bits, and 1B bits are available in the `tests/NIST` subdirectory.
+Files containing test results for 1M, 10M, 100M, 200M, 250M bits, 500M bits, and 1B bits are available in the `tests` subdirectory with the appropriate prefix per test.
 
 ## CONTRIBUTING
 
