@@ -28,15 +28,14 @@ int main(int argc, char **argv) {
   register u8 idx, show_seed, show_nonce;
   register u64 mask = (1UL << precision) - 1;
 
-  u64 seed, nonce;
+  u64 seed;
   while (!(idx = SEED64(&seed))); 
 
   double chseed = ((double) seed / (double) __UINT64_MAX__) * 0.5;
-  nonce = time(NULL) ^ GOLDEN_RATIO ^ seed;
+  u64 nonce = ((u64) time(NULL)) ^ GOLDEN_RATIO ^ seed;
 
-  show_seed = 1;
-  idx = show_nonce = 0;
-
+  idx = show_seed = show_nonce = 0;
+  
   int opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
     switch (opt) {
@@ -52,7 +51,7 @@ int main(int argc, char **argv) {
         char file_name[65];
         get_file_name:
           printf("Enter file name: ");
-          if (fgets(file_name, 64, stdin) == NULL) {
+          if (!scanf("%64s", &file_name)) {
             err("Please enter a valid file name");
             goto get_file_name;
           }
@@ -61,7 +60,7 @@ int main(int argc, char **argv) {
         char c;
         get_file_type:
           printf("Select file type - ASCII [0] or BINARY [1]: ");
-          scanf("%c", &c);
+          scanf(" %c", &c);
           if (c == '0') {
             fptr = fopen(file_name, "w+");
             c = stream_ascii(fptr, buf_ptr, limit * ASSESS_BITS, chseed, nonce);
@@ -118,12 +117,10 @@ int main(int argc, char **argv) {
     }
   }
 
-  // Checking to make sure user isn't reusing nonce
-  show_seed -= (show_seed && !show_nonce);
-  if (UNLIKELY(!show_seed))
-    return err("SECURITY RISK: Nonces should NEVER be reused. Exiting.");
-
+  clock_t start = clock();
   adam(buf_ptr, chseed, nonce);
+  clock_t end = clock();
+  double duration = (double)(end - start) / CLOCKS_PER_SEC;
 
   print_buffer:
     printf("%lu", buf_ptr[idx] & mask);
@@ -138,11 +135,14 @@ int main(int argc, char **argv) {
 
   putchar('\n');
 
-  if (UNLIKELY(show_seed))
+  if (UNLIKELY(show_seed == 1))
     printf("\e[1;36mSEED:\e[m %.15f\n", chseed);
 
-  if (UNLIKELY(show_nonce))
+  if (UNLIKELY(show_nonce == 1))
     printf("\e[1;36mNONCE:\e[m %lu\n", nonce);
+
+
+  printf("DURATION: %lfs\n", duration);
 
   return 0;
 }
