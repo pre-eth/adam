@@ -44,12 +44,16 @@ FORCE_INLINE static double chaotic_iter(u64 *map_b, u64 *map_a, const double see
 FORCE_INLINE static void accumulate(u64 *restrict _ptr, const u64 seed) {
   register u8 i = 0;
   
+  const reg a = SIMD_SET64(seed);
+  const reg b = SIMD_SET64(seed);
+
   do {
-    ACCUMULATE(((seed + (i << 6)) << (5  + i)), ((i << 6) + 0)),
-    ACCUMULATE(((seed + (i << 6)) << (9 + i)), ((i << 6) + 16)),
-    ACCUMULATE(((seed + (i << 6)) << (13 + i)), ((i << 6) + 32)),
-    ACCUMULATE(((seed + (i << 6)) << (17 + i)), ((i << 6) + 48));
-  } while (++i < 4);
+    SIMD_STOREBITS((reg*) (_ptr + i), a);
+    SIMD_STOREBITS((reg*) (_ptr + i + (SIMD_LEN >> 3)), b);
+    SIMD_STOREBITS((reg*) (_ptr + i + (SIMD_LEN >> 2)), a); 
+    SIMD_STOREBITS((reg*) (_ptr + i + (SIMD_LEN >> 1)), b);         
+    i += SIMD_LEN - (i == BUF_SIZE - SIMD_LEN);
+  } while (i < BUF_SIZE - 1);
 }
 
 FORCE_INLINE static void diffuse(u64 *restrict _ptr, u64 seed) {

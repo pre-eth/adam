@@ -72,24 +72,6 @@
   #define ROUNDS        18
   #define ITER          (ROUNDS / 3)
 
-  #define ACCUMULATE(seed, i)\
-    _ptr[0  + i] = 0  + i + seed,\
-    _ptr[1  + i] = 1  + i + seed,\
-    _ptr[2  + i] = 2  + i + seed,\
-    _ptr[3  + i] = 3  + i + seed,\
-    _ptr[4  + i] = 4  + i + seed,\
-    _ptr[5  + i] = 5  + i + seed,\
-    _ptr[6  + i] = 6  + i + seed,\
-    _ptr[7  + i] = 7  + i + seed,\
-    _ptr[8  + i] = 8  + i + seed,\
-    _ptr[9  + i] = 9  + i + seed,\
-    _ptr[10 + i] = 10 + i + seed,\
-    _ptr[11 + i] = 11 + i + seed,\
-    _ptr[12 + i] = 12 + i + seed,\
-    _ptr[13 + i] = 13 + i + seed,\
-    _ptr[14 + i] = 14 + i + seed,\
-    _ptr[15 + i] = 15 + i + seed
-
   #define XOR_MAPS(i) \
     _ptr[0 + i] ^= (_ptr[0 + i + 256]) ^ (_ptr[0 + i + 512]),\
     _ptr[1 + i] ^= (_ptr[1 + i + 256]) ^ (_ptr[1 + i + 512]),\
