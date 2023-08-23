@@ -73,14 +73,10 @@
   #define ITER          (ROUNDS / 3)
 
   #define XOR_MAPS(i) \
-    _ptr[0 + i] ^= (_ptr[0 + i + 256]) ^ (_ptr[0 + i + 512]),\
-    _ptr[1 + i] ^= (_ptr[1 + i + 256]) ^ (_ptr[1 + i + 512]),\
-    _ptr[2 + i] ^= (_ptr[2 + i + 256]) ^ (_ptr[2 + i + 512]),\
-    _ptr[3 + i] ^= (_ptr[3 + i + 256]) ^ (_ptr[3 + i + 512]),\
-    _ptr[4 + i] ^= (_ptr[4 + i + 256]) ^ (_ptr[4 + i + 512]),\
-    _ptr[5 + i] ^= (_ptr[5 + i + 256]) ^ (_ptr[5 + i + 512]),\
-    _ptr[6 + i] ^= (_ptr[6 + i + 256]) ^ (_ptr[6 + i + 512]),\
-    _ptr[7 + i] ^= (_ptr[7 + i + 256]) ^ (_ptr[7 + i + 512])
+    _ptr[0 + i] ^ (_ptr[0 + i + 256]) ^ (_ptr[0 + i + 512]),\
+    _ptr[1 + i] ^ (_ptr[1 + i + 256]) ^ (_ptr[1 + i + 512]),\
+    _ptr[2 + i] ^ (_ptr[2 + i + 256]) ^ (_ptr[2 + i + 512]),\
+    _ptr[3 + i] ^ (_ptr[3 + i + 256]) ^ (_ptr[3 + i + 512])
 
   #define SEED64  _rdseed64_step
 

@@ -103,21 +103,11 @@ FORCE_INLINE static void diffuse(u64 *restrict _ptr, u64 seed) {
 }
 
 FORCE_INLINE static void apply(u64 *restrict _b, u64 *restrict _a, double *restrict chseed) {
-  double x = *chseed;
+  register double x = *chseed;
 
   register u8 i = 0;
   do x = chaotic_iter(_b, _a, x);
   while (++i < ITER);
-
-  // i = 0;
-  // x += (double) (x / 100000);
-  // do x = chaotic_iter(_b, _a, x);
-  // while (++i < ITER);
-
-  // i = 0;
-  // x += (double) (x / 1000000);
-  // do x = chaotic_iter(_b, _a, x);
-  // while (++i < ITER);
 
   // Some testing revealed that x sometimes exceeds 0.5, which 
   // violates the algorithm, so this is a corrective measure
@@ -125,18 +115,27 @@ FORCE_INLINE static void apply(u64 *restrict _b, u64 *restrict _a, double *restr
 }
 
 FORCE_INLINE static void mix(u64 *restrict _ptr) {
-  register u8 i = 0, j = 128;
+  register u8 i = 0;
+
+  reg a, b;
 
   do {
-    XOR_MAPS(i + 0),
-    XOR_MAPS(i + 8); 
-  } while ((i += 16) < (BUF_SIZE >> 1));
-
-  do {
-    XOR_MAPS(j + 0),
-    XOR_MAPS(j + 8);
-    j += (16  - (j == 240));  
-  } while (j < (BUF_SIZE - 1));
+    a = SIMD_SETR64(
+      XOR_MAPS(i)
+      #ifdef __AVX512F__
+        , XOR_MAPS(i + 4)
+      #endif
+    );
+    SIMD_STOREBITS((reg*) _ptr, a);   
+    b = SIMD_SETR64(
+      XOR_MAPS(i + (SIMD_LEN >> 3))
+      #ifdef __AVX512F__
+        , XOR_MAPS(i + (SIMD_LEN >> 3) + 4)
+      #endif
+    );
+    SIMD_STOREBITS((reg*) _ptr, b);    
+    i += (SIMD_LEN >> 2) - (i == BUF_SIZE - (SIMD_LEN >> 2));
+  } while (i < (BUF_SIZE - 1));
 }
 
 double adam(u64 *restrict _ptr, const double seed, const u64 nonce) {
