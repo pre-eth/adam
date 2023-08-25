@@ -37,6 +37,11 @@
 
   /* ADAM stuff */
 
+  #define SEED64        _rdseed64_step
+  
+  #define THREAD_EXP    3
+  #define THSEED(i, sd) chdata[i].seed = *sd, *sd += (*sd / 100000000)
+
   /*
     The PRNG algorithm is based on the construction of three 
     chaotic maps obtained by permuting and shuffling the elements
@@ -72,13 +77,10 @@
   #define ROUNDS        18
   #define ITER          (ROUNDS / 3)
 
-  #define XOR_MAPS(i) \
-    _ptr[0 + i] ^ (_ptr[0 + i + 256]) ^ (_ptr[0 + i + 512]),\
-    _ptr[1 + i] ^ (_ptr[1 + i + 256]) ^ (_ptr[1 + i + 512]),\
-    _ptr[2 + i] ^ (_ptr[2 + i + 256]) ^ (_ptr[2 + i + 512]),\
-    _ptr[3 + i] ^ (_ptr[3 + i + 256]) ^ (_ptr[3 + i + 512])
-
-  #define SEED64  _rdseed64_step
+  #define XOR_MAPS(i)   _ptr[0 + i] ^ (_ptr[0 + i + 256]) ^ (_ptr[0 + i + 512]),\
+                        _ptr[1 + i] ^ (_ptr[1 + i + 256]) ^ (_ptr[1 + i + 512]),\
+                        _ptr[2 + i] ^ (_ptr[2 + i + 256]) ^ (_ptr[2 + i + 512]),\
+                        _ptr[3 + i] ^ (_ptr[3 + i + 256]) ^ (_ptr[3 + i + 512])
 
   // Initiates RNG algorithm with user provided seed and nonce
   // Returns actual seed used to start iteration
