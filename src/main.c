@@ -23,11 +23,11 @@ int main(int argc, char **argv) {
 
   register u8  precision = 64;
   register u16 results = 0;
-  register u8 limit = 1;
+  register u16 limit = 1;
 
   register u8 idx, show_seed, show_nonce;
   register u64 mask = (1UL << precision) - 1;
-
+  
   u64 seed;
   while (!(idx = SEED64(&seed))); 
 
@@ -44,40 +44,12 @@ int main(int argc, char **argv) {
       case 'v':
         return puts(VERSION);
       case 'l':
-        return stream_live(buf_ptr, chseed, nonce);
+        return infinite(buf_ptr, chseed, nonce);
       case 'a':
         limit = a_to_u(optarg, 1, ASSESS_LIMIT);
-
-        char file_name[65];
-        get_file_name:
-          printf("Enter file name: ");
-          if (!scanf("%64s", &file_name)) {
-            err("Please enter a valid file name");
-            goto get_file_name;
-          }
-
-        FILE *fptr;
-        char c;
-        get_file_type:
-          printf("Select file type - ASCII [0] or BINARY [1]: ");
-          scanf(" %c", &c);
-          if (c == '0') {
-            fptr = fopen(file_name, "w+");
-            c = stream_ascii(fptr, buf_ptr, limit * ASSESS_BITS, chseed, nonce);
-          } else if (c == '1') {
-            fptr = fopen(file_name, "wb+");
-            c = stream_bytes(fptr, buf_ptr, limit * ASSESS_BITS, chseed, nonce);
-          } else {
-            err("Value must be 0 or 1");
-            goto get_file_type;
-          }
-
-        if (UNLIKELY(!c))
-          return err("Error while creating file. Exiting.");
-        
-        return fclose(fptr);
+        return assess(buf_ptr, limit, chseed, nonce);
       case 'b':
-        return stream_ascii(stdout, buf_ptr, __UINT64_MAX__, chseed, nonce);
+        return bits(buf_ptr, chseed, nonce);
       case 'p':
         const u8 p = a_to_u(optarg, 8, 64);
         if (LIKELY(!(p & (p - 1)))) {
