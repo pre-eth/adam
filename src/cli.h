@@ -31,12 +31,12 @@
   #define GET_2(i)      _ptr[i], _ptr[i + 1]
   #define GET_3(i)      _ptr[i], _ptr[i + 1], _ptr[i + 2]
 
-
-  u64 a_to_u(const char *s, const u64 min, const u64 max);
   u8  err(const char *s);
-  u8  stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double chseed, u64 nonce);
-  u8  stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, double chseed, u64 nonce);
-  u8  stream_live(u64 *restrict ptr, double chseed, u64 nonce);
+  u8  bits(u64 *restrict _ptr, const double chseed, const u64 nonce);
+  u8  assess(u64 *restrict _ptr, const u64 limit, const double chseed, const u64 nonce);
+  u64 a_to_u(const char *s, const u64 min, const u64 max);
   u8  help();
+  u8  uuid(u64 *restrict _ptr, u8 limit, const double chseed, const u64 nonce);
+  u8  infinite(u64 *restrict _ptr, double chseed, u64 nonce);
   
 #endif

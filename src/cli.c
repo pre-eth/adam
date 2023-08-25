@@ -37,11 +37,138 @@ FORCE_INLINE static void print_chunks(FILE *fptr, char *restrict _bptr, const u6
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
 }
 
+static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double chseed, u64 nonce) {
+  if (UNLIKELY(fptr == NULL)) return 0;
+  
+  clock_t start = clock();
+
+  /*
+    Split limit based on how many calls (if needed)
+    we make to print_chunks, which prints the bits of 
+    an entire buffer (aka the SEQ_SIZE)
+  */ 
+  register long int rate = limit >> 14;
+  register short leftovers = limit & (SEQ_SIZE - 1);
+
+  char *restrict _bptr = &bitbuffer[0];
+
+  while (rate > 0) {
+    chseed = adam(_ptr, chseed, nonce);
+    print_chunks(fptr, _bptr, _ptr);
+    --rate;
+    nonce ^= _ptr[nonce & 0xFF] ^ GOLDEN_RATIO;
+  } 
+
+  /*
+    Since there are SEQ_SIZE (16384) bits in every 
+    buffer, adam_bits is designed to print up to SEQ_SIZE
+    bits per call, so any leftovers must be processed
+    independently. 
+    
+    Most users probably won't enter powers of 2, especially 
+    if assessing bits, so this branch has been marked as LIKELY.
+  */
+  if (LIKELY(leftovers > 0)) {
+    register u16 l;
+    register u16 limit;
+    register u64 num;
+
+    adam(_ptr, chseed, nonce);
+    print_leftovers:
+      limit = (leftovers < BITBUF_SIZE) ? leftovers : BITBUF_SIZE;
+
+      l = 0;
+      do {
+        num = *_ptr++;
+        print_binary(_bptr + l, num);
+      } while ((l += 64) < limit);
+
+      fwrite(_bptr, 1, limit, fptr);
+      leftovers -= limit;
+
+      if (LIKELY(leftovers > 0)) 
+        goto print_leftovers;
+  }
+
+  clock_t end = clock();
+  double duration = (double)(end - start) / CLOCKS_PER_SEC;
+
+  return printf("\n\e[1;36mWrote %lu bits to ASCII file in %lfs\e[m\n", 
+                limit, duration);
+}
+
+static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, double chseed, u64 nonce) {   
+  if (UNLIKELY(fptr == NULL)) return 0;
+
+  clock_t start = clock();
+
+  /*
+    Split limit based on how many calls we need to make
+    to write the bytes of an entire buffer directly
+    (aka the SEQ_SIZE)
+  */ 
+  register long int rate = limit >> 14;
+  register short leftovers = limit & (SEQ_SIZE - 1);
+
+  while (rate > 0) {
+    chseed = adam(_ptr, chseed, nonce);
+    fwrite(_ptr, 1, BUF_SIZE * sizeof(u64), fptr);
+    --rate;
+    nonce ^= _ptr[nonce & 0xFF] ^ GOLDEN_RATIO;
+  } 
+
+  if (LIKELY(leftovers > 0)) {
+    const u16 nums = leftovers >> 6; 
+    adam(_ptr, chseed, nonce);
+    fwrite(_ptr, 1, sizeof(u64) * (nums + !!(nums & 63)), fptr);
+  }
+
+  clock_t end = clock();
+  double duration = (double)(end - start) / CLOCKS_PER_SEC;
+
+  return printf("\n\e[1;36mWrote %lu bits to BINARY file in %lfs\e[m\n", 
+                limit, duration);
+}
+
 u8 err(const char *s) {
   return fprintf(stderr, "\e[1;31m%s\e[m\n", s);
 }
 
-// Only supports values up to 4 digits
+u8 bits(u64 *restrict _ptr, const double chseed, const u64 nonce) {
+  return stream_ascii(stdout, _ptr, __UINT64_MAX__, chseed, nonce);
+}
+
+u8 assess(u64 *restrict _ptr, const u64 limit, const double chseed, const u64 nonce) {
+  char file_name[65];
+  get_file_name:
+    printf("Enter file name: ");
+    if (!scanf("%64s", &file_name)) {
+      err("Please enter a valid file name");
+      goto get_file_name;
+    }
+
+  FILE *fptr;
+  char c;
+  get_file_type:
+    printf("Select file type - ASCII [0] or BINARY [1]: ");
+    scanf(" %c", &c);
+    if (c == '0') {
+      fptr = fopen(file_name, "w+");
+      c = stream_ascii(fptr, _ptr, limit * ASSESS_BITS, chseed, nonce);
+    } else if (c == '1') {
+      fptr = fopen(file_name, "wb+");
+      c = stream_bytes(fptr, _ptr, limit * ASSESS_BITS, chseed, nonce);
+    } else {
+      err("Value must be 0 or 1");
+      goto get_file_type;
+    }
+
+  if (UNLIKELY(!c))
+    return err("Error while creating file. Exiting.");
+  
+  return fclose(fptr);
+}
+
 u64 a_to_u(const char *s, const u64 min, const u64 max) {
   if (UNLIKELY(s[0] == '-')) return min;
 
@@ -123,100 +250,12 @@ u8 help() {
   return 0;
 }
 
-u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double chseed, u64 nonce) {
-  if (UNLIKELY(fptr == NULL)) return 0;
-  
-  clock_t start = clock();
-
-  /*
-    Split limit based on how many calls (if needed)
-    we make to print_chunks, which prints the bits of 
-    an entire buffer (aka the SEQ_SIZE)
-  */ 
-  register long int rate = limit >> 14;
-  register short leftovers = limit & (SEQ_SIZE - 1);
-
-  char *restrict _bptr = &bitbuffer[0];
-
-  while (rate > 0) {
-    chseed = adam(_ptr, chseed, nonce);
-    print_chunks(fptr, _bptr, _ptr);
-    --rate;
-    nonce ^= _ptr[nonce & 0xFF];
-  } 
-
-  /*
-    Since there are SEQ_SIZE (16384) bits in every 
-    buffer, adam_bits is designed to print up to SEQ_SIZE
-    bits per call, so any leftovers must be processed
-    independently. 
-    
-    Most users probably won't enter powers of 2, especially 
-    if assessing bits, so this branch has been marked as LIKELY.
-  */
-  if (LIKELY(leftovers > 0)) {
-    register u16 l;
-    register u16 limit;
-    register u64 num;
-
-    adam(_ptr, chseed, nonce);
-    print_leftovers:
-      limit = (leftovers < BITBUF_SIZE) ? leftovers : BITBUF_SIZE;
-
-      l = 0;
-      do {
-        num = *_ptr++;
-        print_binary(_bptr + l, num);
-      } while ((l += 64) < limit);
-
-      fwrite(_bptr, 1, limit, fptr);
-      leftovers -= limit;
-
-      if (LIKELY(leftovers > 0)) 
-        goto print_leftovers;
-  }
-
-  clock_t end = clock();
-  double duration = (double)(end - start) / CLOCKS_PER_SEC;
-
-  return printf("\n\e[1;36mWrote %lu bits to ASCII file in %lfs\e[m\n", 
-                limit, duration);
+u8 uuid(u64 *restrict _ptr, const u8 limit, const double chseed, const u64 nonce) {
+  adam(_ptr, chseed, nonce);
+  return 0;
 }
 
-u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, double chseed, u64 nonce) {   
-  if (UNLIKELY(fptr == NULL)) return 0;
-
-  clock_t start = clock();
-
-  /*
-    Split limit based on how many calls we need to make
-    to write the bytes of an entire buffer directly
-    (aka the SEQ_SIZE)
-  */ 
-  register long int rate = limit >> 14;
-  register short leftovers = limit & (SEQ_SIZE - 1);
-
-  while (rate > 0) {
-    chseed = adam(_ptr, chseed, nonce);
-    fwrite(_ptr, 8, BUF_SIZE, fptr);
-    --rate;
-    nonce ^= _ptr[nonce & 0xFF];
-  } 
-
-  if (LIKELY(leftovers > 0)) {
-    const u16 nums = leftovers >> 6; 
-    adam(_ptr, chseed, nonce);
-    fwrite(_ptr, 8, nums + !!(nums & 63), fptr);
-  }
-
-  clock_t end = clock();
-  double duration = (double)(end - start) / CLOCKS_PER_SEC;
-
-  return printf("\n\e[1;36mWrote %lu bits to BINARY file in %lfs\e[m\n", 
-                limit, duration);
-}
-
-u8 stream_live(u64 *restrict _ptr, double chseed, u64 nonce) {
+u8 infinite(u64 *restrict _ptr, double chseed, u64 nonce) {
   /*
     There are 256 numbers per buffer. But we only need 75 to print one
     iteration. So 75 * 3 = 225. 256 - 225 = 31. Thus, for each buffer 31
@@ -361,7 +400,7 @@ u8 stream_live(u64 *restrict _ptr, double chseed, u64 nonce) {
       snprintf(lines[12], 18, "%llu%llu",                 GET_2(i + 29)); 
     }
     i = ((leftovers) << 5) - (leftovers);
-    nonce ^= _ptr[nonce & 0xFF];
+    nonce ^= _ptr[nonce & 0xFF] ^ GOLDEN_RATIO;
     chseed = adam(_ptr, chseed, nonce);
     goto live_adam; 
 
