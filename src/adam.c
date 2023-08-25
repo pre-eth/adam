@@ -1,23 +1,12 @@
+#include <threads.h>
+
 #include "adam.h"
 
-/*
-  To avoid expensive modulus for all the required chaotic iterations, this
-  function implements the modular reduction algorithm described in:
-
- "Computing Mod with a Variable Lookup Table" by Mark A. Will & Ryan K. L. Ko 
-  from the Cyber Security Lab at The University of Waikato, New Zealand
-
-  FORCE_INLINE static mod_reduction(u32 integer, u16 mod) {
-    const u8 mod_width = 32 - CLZ(mod);
-    const u8 int_width = 32 - CLZ(integer);
-    const u8 num = (u8) (int_width / mod_width);
-    
-    u8 n = num - 1;
-    while (n > 0) {
-
-    }
-  }
-*/ 
+typedef struct thread_data {
+  u64 *start;
+  u64 *end;
+  double seed;
+} thdata;
 
 FORCE_INLINE static double chaotic_iter(u64 *map_b, u64 *map_a, const double seed) {
   /* 
@@ -27,16 +16,17 @@ FORCE_INLINE static double chaotic_iter(u64 *map_b, u64 *map_a, const double see
   #define BETA          10E15
 
   register double x = seed;
-  register u16 s = SEQ_SIZE - 1;
-  register u16 i, j;
+  register u16 s = (SEQ_SIZE) - 1;
+  register u16 i, j = 0;
   i = j = 0;
 
+  // rewrite with SIMD
   do {
     x = CHAOTIC_FN(x);
-    j = i + 1 + ((u64) FLOOR(x * BETA) % s);
-    --s;
-    map_b[i >> 6] ^= map_a[j >> 6];
-  } while (++i < SEQ_SIZE - 2);
+    j = i + 1 + (((u64) FLOOR(x * BETA) % s) >> 6);
+    s -= 64 - (s == 1983);
+    map_b[i++] ^= map_a[j];
+  } while (s > 0);
 
   return x;
 }
@@ -60,7 +50,7 @@ FORCE_INLINE static void diffuse(u64 *restrict _ptr, u64 seed) {
   register u8 i = 0;
 
   u64 a, b, c, d, e, f, g, h;
-  a = b = c = d = e = f = g = h = (_ptr[seed & 0xFF] ^ (GOLDEN_RATIO ^ _ptr[(seed >> 32) & 0xFF]));
+  a = b = c = d = e = f = g = h = (_ptr[seed & 0xFF] ^ (GOLDEN_RATIO ^ _ptr[(seed >> 37) & 0xFF]));
 
   // Scramble it
   ISAAC_MIX(a, b, c, d, e, f, g, h);
@@ -102,6 +92,60 @@ FORCE_INLINE static void diffuse(u64 *restrict _ptr, u64 seed) {
   } 
 }
 
+static double multi_thread(thdata *data) {
+  register double x = data->seed;
+  register u8 i = 0;
+  do {
+    x = chaotic_iter(data->end, data->start, x);
+    
+    // Some testing revealed that x sometimes exceeds 0.5, which 
+    // violates the algorithm, so this is a corrective measure
+    x -= (double)(x >= 0.5) * 0.5;
+  } while (++i < ITER);
+  
+  return x;
+}
+
+/* FORCE_INLINE static void apply(u64 *restrict _ptr, double *restrict chseed) {
+  // Number of threads we will use
+  #define THREAD_COUNT  (1 << THREAD_EXP)
+
+  // Divide sequence bits by thread count, then divide that by 64 
+  // to get the increment value for _ptr and ctz to get shift count
+  #define THREAD_INC    CTZ((SEQ_SIZE / THREAD_COUNT) >> 6)
+
+  register u8 i = 0;
+  register u16 start = 0, end = BUF_SIZE; 
+
+  thrd_t threads[THREAD_COUNT];
+  thdata chdata[THREAD_COUNT];
+
+  THSEED(0, chseed),
+  THSEED(1, chseed),
+  THSEED(2, chseed),
+  THSEED(3, chseed),
+  THSEED(4, chseed),
+  THSEED(5, chseed),
+  THSEED(6, chseed),
+  THSEED(7, chseed); 
+
+  eval_fn:
+    for(; i < THREAD_COUNT; ++i) {
+      chdata[i].start = _ptr + start  + (i << THREAD_INC);
+      chdata[i].end   = _ptr + end + (i << THREAD_INC);
+      thrd_create(&threads[i], multi_thread, chdata);
+    }
+
+    i = 0;
+    for(; i < THREAD_COUNT; ++i)
+      thrd_join(threads[i], &chdata[i].seed);
+    
+    i = 0;
+    end += start += 256;
+    end *= (end <= 512);
+    if (start <= 512) goto eval_fn;
+} */
+
 FORCE_INLINE static void apply(u64 *restrict _b, u64 *restrict _a, double *restrict chseed) {
   register double x = *chseed;
 
@@ -126,19 +170,25 @@ FORCE_INLINE static void mix(u64 *restrict _ptr) {
         , XOR_MAPS(i + 4)
       #endif
     );
-    SIMD_STOREBITS((reg*) _ptr, a);   
+    SIMD_STOREBITS((reg*) (_ptr + i), a);   
     b = SIMD_SETR64(
       XOR_MAPS(i + (SIMD_LEN >> 3))
       #ifdef __AVX512F__
         , XOR_MAPS(i + (SIMD_LEN >> 3) + 4)
       #endif
     );
-    SIMD_STOREBITS((reg*) _ptr, b);    
+    SIMD_STOREBITS((reg*) (_ptr + i + (SIMD_LEN >> 3)), b);    
     i += (SIMD_LEN >> 2) - (i == BUF_SIZE - (SIMD_LEN >> 2));
   } while (i < (BUF_SIZE - 1));
 }
 
 double adam(u64 *restrict _ptr, const double seed, const u64 nonce) {
+  // double chseed = seed;
+  // accumulate(_ptr, nonce);
+  // diffuse(_ptr, nonce);
+  // apply(_ptr, &chseed);
+  // mix(_ptr);
+
   accumulate(_ptr, nonce);
   diffuse(_ptr, nonce);
 
