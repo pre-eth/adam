@@ -84,6 +84,9 @@ int main(int argc, char **argv) {
         if (!show_nonce)
           nonce = a_to_u(optarg, 1, __UINT64_MAX__);
       break;
+      case 'u':
+        limit = optarg ? a_to_u(optarg, 1, 128) : 1;
+        return uuid(buf_ptr, limit, chseed, nonce);
       default:
         return err("Option is invalid or missing required argument");             
     }

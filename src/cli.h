@@ -36,7 +36,7 @@
   u8  assess(u64 *restrict _ptr, const u64 limit, const double chseed, const u64 nonce);
   u64 a_to_u(const char *s, const u64 min, const u64 max);
   u8  help();
-  u8  uuid(u64 *restrict _ptr, u8 limit, const double chseed, const u64 nonce);
+  u8  uuid(u64 *restrict _ptr, const u8 limit, const double chseed, const u64 nonce);
   u8  infinite(u64 *restrict _ptr, double chseed, u64 nonce);
   
 #endif

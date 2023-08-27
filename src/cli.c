@@ -93,7 +93,7 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
   clock_t end = clock();
   double duration = (double)(end - start) / CLOCKS_PER_SEC;
 
-  return printf("\n\e[1;36mWrote %lu bits to ASCII file in %lfs\e[m\n", 
+  return printf("\n\e[1;36mWrote %lu bits to ASCII file in (%lfs)\e[m\n", 
                 limit, duration);
 }
 
@@ -126,7 +126,7 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
   clock_t end = clock();
   double duration = (double)(end - start) / CLOCKS_PER_SEC;
 
-  return printf("\n\e[1;36mWrote %lu bits to BINARY file in %lfs\e[m\n", 
+  return printf("\n\e[1;36mWrote %lu bits to BINARY file (%lfs)\e[m\n", 
                 limit, duration);
 }
 
@@ -250,9 +250,38 @@ u8 help() {
   return 0;
 }
 
-u8 uuid(u64 *restrict _ptr, const u8 limit, const double chseed, const u64 nonce) {
+u8 uuid(u64 *restrict _ptr, u8 limit, const double chseed, const u64 nonce) {
   adam(_ptr, chseed, nonce);
-  return 0;
+
+  u8 buf[16];
+
+  print_uuid:
+    // Fill buf with 16 random bytes
+    u128 tmp = ((u128)_ptr[0] << 64) | _ptr[1];
+    __builtin_memcpy(buf, &tmp, sizeof(u128));
+
+    // CODE AND COMMENT PULLED FROM CRYPTOSYS (https://www.cryptosys.net/pki/Uuid.c.html)
+    //
+    // Adjust certain bits according to RFC 4122 section 4.4.
+    // This just means do the following
+    // (a) set the high nibble of the 7th byte equal to 4 and
+    // (b) set the two most significant bits of the 9th byte to 10'B,
+    //     so the high nibble will be one of {8,9,A,B}.
+    buf[6] = 0x40 | (buf[6] & 0xf);
+    buf[8] = 0x80 | (buf[8] & 0x3f);
+
+    // Print the UUID
+    printf("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+            buf[0], buf[1], buf[2],  buf[3],  buf[4],  buf[5],  buf[6],  buf[7],
+            buf[8], buf[9], buf[10], buf[11], buf[12], buf[13], buf[14], buf[15]);
+
+    if (--limit > 0) {
+      printf(",\n");
+      _ptr += 2;
+      goto print_uuid;
+    }
+
+  return putchar('\n');
 }
 
 u8 infinite(u64 *restrict _ptr, double chseed, u64 nonce) {
