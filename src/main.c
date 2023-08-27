@@ -5,14 +5,18 @@
 
 /*
   TODO
-  
-  UUID
-  matrix
-  ent
+
+  -e (ent with bob's tests (chi.c and est.c))
+  Strength Reduction
+  Multi-threading
   gjrand
-  bob's tests (chi.c and est.c)
+  matrix
 
 */
+
+FORCE_INLINE static u8 err(const char *s) {
+  return fprintf(stderr, "\e[1;31m%s\e[m\n", s);
+}
 
 // The algorithm requires at least the construction of 3 maps of size BUF_SIZE
 // Offsets logically represent each individual map, but it's all one buffer
@@ -21,22 +25,21 @@ static u64 buffer[BUF_SIZE * 3] ALIGN(SIMD_LEN);
 int main(int argc, char **argv) {
   u64 *restrict buf_ptr = &buffer[0];
 
-  register u8  precision = 64;
-  register u16 results = 0;
-  register u16 limit = 1;
+  register u8 precision = 64, idx, show_seed, show_nonce;
+  idx = show_seed = show_nonce = 0;
 
-  register u8 idx, show_seed, show_nonce;
+  register u16 results = 0, limit = 1;
+
   register u64 mask = (1UL << precision) - 1;
-  
+
   u64 seed;
   while (!(idx = SEED64(&seed))); 
 
   double chseed = ((double) seed / (double) __UINT64_MAX__) * 0.5;
-  u64 nonce = ((u64) time(NULL)) ^ GOLDEN_RATIO ^ seed;
+  register u64 nonce = ((u64) time(NULL)) ^ GOLDEN_RATIO ^ seed;
 
-  idx = show_seed = show_nonce = 0;
-  
-  int opt;
+
+  register int opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
     switch (opt) {
       case 'h':
@@ -60,7 +63,7 @@ int main(int argc, char **argv) {
             possible for this new precision in case it exceeds the possible limit
             This can be avoided by ordering your arguments so that -p comes first
           */
-          const register u8 max = BUF_SIZE << CTZ(precision);
+          const u8 max = BUF_SIZE << CTZ(precision);
           results -= (results > max) * (results - max);
           break;  
         } 
@@ -94,8 +97,7 @@ int main(int argc, char **argv) {
 
   clock_t start = clock();
   adam(buf_ptr, chseed, nonce);
-  clock_t end = clock();
-  double duration = (double)(end - start) / CLOCKS_PER_SEC;
+  register double duration = (double)(clock() - start) / CLOCKS_PER_SEC;
 
   print_buffer:
     printf("%lu", buf_ptr[idx] & mask);
@@ -110,14 +112,11 @@ int main(int argc, char **argv) {
 
   putchar('\n');
 
-  if (UNLIKELY(show_seed == 1))
+  if (UNLIKELY(show_seed))
     printf("\e[1;36mSEED:\e[m %.15f\n", chseed);
 
-  if (UNLIKELY(show_nonce == 1))
+  if (UNLIKELY(show_nonce))
     printf("\e[1;36mNONCE:\e[m %lu\n", nonce);
-
-
-  printf("DURATION: %lfs\n", duration);
 
   return 0;
 }

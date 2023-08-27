@@ -90,8 +90,7 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
         goto print_leftovers;
   }
 
-  clock_t end = clock();
-  double duration = (double)(end - start) / CLOCKS_PER_SEC;
+  register double duration = (double)(clock() - start) / CLOCKS_PER_SEC;
 
   return printf("\n\e[1;36mWrote %lu bits to ASCII file in (%lfs)\e[m\n", 
                 limit, duration);
@@ -123,15 +122,10 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
     fwrite(_ptr, 1, sizeof(u64) * (nums + !!(nums & 63)), fptr);
   }
 
-  clock_t end = clock();
-  double duration = (double)(end - start) / CLOCKS_PER_SEC;
+  register double duration = (double)(clock() - start) / CLOCKS_PER_SEC;
 
   return printf("\n\e[1;36mWrote %lu bits to BINARY file (%lfs)\e[m\n", 
                 limit, duration);
-}
-
-u8 err(const char *s) {
-  return fprintf(stderr, "\e[1;31m%s\e[m\n", s);
 }
 
 u8 bits(u64 *restrict _ptr, const double chseed, const u64 nonce) {
@@ -143,7 +137,7 @@ u8 assess(u64 *restrict _ptr, const u64 limit, const double chseed, const u64 no
   get_file_name:
     printf("Enter file name: ");
     if (!scanf("%64s", &file_name)) {
-      err("Please enter a valid file name");
+      fputs("\e[1;31mPlease enter a valid file name\e[m\n", stderr);
       goto get_file_name;
     }
 
@@ -159,12 +153,12 @@ u8 assess(u64 *restrict _ptr, const u64 limit, const double chseed, const u64 no
       fptr = fopen(file_name, "wb+");
       c = stream_bytes(fptr, _ptr, limit * ASSESS_BITS, chseed, nonce);
     } else {
-      err("Value must be 0 or 1");
+      fputs("\e[1;31mValue must be 0 or 1\e[m\n", stderr);
       goto get_file_type;
     }
 
   if (UNLIKELY(!c))
-    return err("Error while creating file. Exiting.");
+    return fputs("\e[1;31mError while creating file. Exiting.\e[m\n", stderr);
   
   return fclose(fptr);
 }
@@ -209,8 +203,8 @@ u64 a_to_u(const char *s, const u64 min, const u64 max) {
 u8 help() {
   struct winsize wsize;
   ioctl(0, TIOCGWINSZ, &wsize);
-  u16 SWIDTH =  wsize.ws_col;
-  u16 center = (SWIDTH >> 1) - 4;
+  register u16 SWIDTH =  wsize.ws_col;
+  register u16 center = (SWIDTH >> 1) - 4;
 
   printf("\e[%uC[OPTIONS]\n", center);
 
@@ -237,7 +231,7 @@ u8 help() {
   };
   const u8 lengths[ARG_COUNT] = {25, 32, 119, 117, 108, 74, 69, 21, 20, 133, 45};
   
-  short len;
+  register short len;
   for (int i = 0; i < ARG_COUNT; ++i) {
     printf("\e[%uC-%c\e[%uC%.*s\n", INDENT, ARGS[i], INDENT, HELP_WIDTH, ARGSHELP[i]);
     len = lengths[i] - HELP_WIDTH;
@@ -351,7 +345,7 @@ u8 infinite(u64 *restrict _ptr, double chseed, u64 nonce) {
   
   char lines[40][100];
 
-  u8 i = 0;
+  register u8 i = 0;
   chseed = adam(_ptr, chseed, nonce);
   live_adam:
     do {

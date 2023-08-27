@@ -12,14 +12,14 @@ v1.0.0
 
 ADAM is an actively developed cryptographically secure pseudorandom number generator (CSPRNG) inspired by ISAAC64. At the heart of the generator is an implementation of the algorithm described in [François M et al. Pseudo-random number generator based on mixing of three chaotic maps. Commun Nonlinear Sci Numer Simulat (2013)](https://doi.org/10.1016/j.cnsns.2013.08.032), which uses a chaotic function over multiple iterations to produce random bits with strong cryptographic properties. ADAM incorporates parts of ISAAC’s logic into this algorithm where it is applicable to form a compact number generation scheme that’s easy to use, tune, and test.
 
-Also, just like ISAAC, ADAM is a backronym that describes its steps. You can find a deep dive into the number generation process here. This README will just focus on getting you setup and started 
+Also, just like ISAAC, ADAM is a backronym that describes its steps. You can find a deep dive into the number generation process in the paper. This README will just focus on getting you setup and started 
 
-You can read more information about ISAAC [here](http://burtleburtle.net/bob/rand/isaacafa.html).
+You can read more information about ISAAC and its wonderful author Bob Jenkins [here](http://burtleburtle.net/bob/rand/isaacafa.html).
 
 ## FEATURES
 
 - 4 step algorithm: **A**ccumulate, **D**iffuse, **A**pply, **M**ix
-- Avoids brute force and differential attacks (see paper or website for details)
+- Avoids brute force and differential attacks
 - Only two input parameters: one 64-bit seed and one 64-bit nonce
 - Space Complexity: O(N)
 - Output sequence is irreversible
@@ -31,9 +31,15 @@ You can read more information about ISAAC [here](http://burtleburtle.net/bob/ran
 - Reports execution time for number generation process
 - Continuously stream and regenerate random numbers
 
+### Coming Soon!
+- Multithreading
+- Better performance, including benchmarks and self-benchmark ability
+- Examination option for exploring generated buffers based on ent and Bob Jenkins' own RNG tests!
+- Some other cool surprises :)
+
 ## INSTALLATION
 
-ADAM was developed on Fedora for x86 64-bit Linux systems. It may be possible to run on other operating systems but I haven't checked or configured the program for other systems/distros.
+ADAM was developed on Fedora for x86 64-bit Linux systems. It may be possible to run on other operating systems but I haven't checked or configured the program for other systems/distros. AVX/AVX2 is required.
 
 ```
 git clone https://github.com/pre-eth/adam.git
@@ -98,7 +104,7 @@ Click on a test to learn more.
 | ⌛          | [gjrand](https://gjrand.sourceforge.net) | Test suites for uniform bits and normally distributed numbers | PENDING
 | ⌛          | [DIEHARDER](https://webhome.phy.duke.edu/~rgb/General/dieharder.php) | Cleaned up version of George Marsaglia's DIEHARD suite, with additional parameterizable tests | PENDING 
 
-Files containing test results for 1M, 10M, 100M, 200M, 250M bits, 500M bits, and 1B bits are available in the `tests` subdirectory with the appropriate prefix per test.
+Files containing test results for 1M, 10M, 100M, 200M, 250M bits, 500M bits are available in the `tests` subdirectory with the appropriate prefix per test. 1B bits will be added once the 1 GB/s benchmark is passed.
 
 ## CONTRIBUTING
 

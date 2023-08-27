@@ -177,7 +177,9 @@ FORCE_INLINE static void mix(u64 *restrict _ptr) {
         , XOR_MAPS(i + (SIMD_LEN >> 3) + 4)
       #endif
     );
-    SIMD_STOREBITS((reg*) (_ptr + i + (SIMD_LEN >> 3)), b);    
+
+    SIMD_STOREBITS((reg*) (_ptr + i + (SIMD_LEN >> 3)), b);   
+
     i += (SIMD_LEN >> 2) - (i == BUF_SIZE - (SIMD_LEN >> 2));
   } while (i < (BUF_SIZE - 1));
 }
@@ -188,12 +190,11 @@ double adam(u64 *restrict _ptr, const double seed, const u64 nonce) {
   // diffuse(_ptr, nonce);
   // apply(_ptr, &chseed);
   // mix(_ptr);
+  double chseed = seed;
 
   accumulate(_ptr, nonce);
   diffuse(_ptr, nonce);
-
-  double chseed = seed;
-  
+ 
   apply(_ptr + 256, _ptr, &chseed);
   apply(_ptr + 512, _ptr + 256, &chseed);
   apply(_ptr, _ptr + 512, &chseed);
