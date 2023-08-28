@@ -106,14 +106,17 @@ int main(int argc, char **argv) {
   adam(buf_ptr, chseed, nonce);
   register double duration = (double)(clock() - start) / CLOCKS_PER_SEC;
 
+  // Need to do this for default precision because 
+  // we can't rely on overflow arithmetic :(
+  u8 inc = (precision == 64);
   print_buffer:
-    printf("%lu", buf_ptr[idx] & mask);
-    mask <<= precision;
-    idx += !mask;
-    mask |= (!mask << precision) - !mask;
+    printf(fmt, buf_ptr[idx] & mask);
 
-    if (results-- > 0) {
+    if (--results > 0) {
       printf(",\n");
+      buf_ptr[idx] >>= precision;
+      idx += (inc || !buf_ptr[idx]);
+      // printf("val: %lu idx: %u precision: %u mask: %llu\n", buf_ptr[idx] & mask, idx, precision, (!mask << precision));
       goto print_buffer;
     }
 
