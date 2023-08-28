@@ -25,19 +25,23 @@ static u64 buffer[BUF_SIZE * 3] ALIGN(SIMD_LEN);
 int main(int argc, char **argv) {
   u64 *restrict buf_ptr = &buffer[0];
 
-  register u8 precision = 64, idx, show_seed, show_nonce;
+  const char *fmt = "%lu";
+
+  register u8 precision, idx, show_seed, show_nonce;
+  precision = 64;
   idx = show_seed = show_nonce = 0;
 
-  register u16 results = 0, limit = 1;
+  register u16 results, limit;
+  results = limit = 1;
 
-  register u64 mask = (1UL << precision) - 1;
+  register u64 mask = __UINT64_MAX__ - 1;
 
   u64 seed;
   while (!(idx = SEED64(&seed))); 
+  idx = 0;
 
   double chseed = ((double) seed / (double) __UINT64_MAX__) * 0.5;
   register u64 nonce = ((u64) time(NULL)) ^ GOLDEN_RATIO ^ seed;
-
 
   register int opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
