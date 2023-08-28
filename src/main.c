@@ -57,6 +57,9 @@ int main(int argc, char **argv) {
         return assess(buf_ptr, limit, chseed, nonce);
       case 'b':
         return bits(buf_ptr, chseed, nonce);
+      case 'x':
+        fmt = "0x%lX";
+      break;
       case 'p':
         const u8 p = a_to_u(optarg, 8, 64);
         if (LIKELY(!(p & (p - 1)))) {
@@ -67,7 +70,7 @@ int main(int argc, char **argv) {
             possible for this new precision in case it exceeds the possible limit
             This can be avoided by ordering your arguments so that -p comes first
           */
-          const u8 max = BUF_SIZE << CTZ(precision);
+          const u8 max = SEQ_SIZE >> CTZ(precision);
           results -= (results > max) * (results - max);
           break;  
         } 
@@ -76,13 +79,13 @@ int main(int argc, char **argv) {
         results = SEQ_SIZE >> CTZ(precision);
       break;
       case 'r':
-        results = a_to_u(optarg, 1, BUF_SIZE << CTZ(precision)) - 1;
+        results = a_to_u(optarg, 1, SEQ_SIZE >> CTZ(precision));
       break;
       case 's':
         show_seed = (optarg == NULL);
         if (!show_seed) {
           int res = sscanf(optarg, "%lf", &chseed);
-          if (!res || res == -1) 
+          if (!res || res == EOF || chseed <= 0.0 || chseed >= 0.5) 
             return err("Seed must be a valid decimal within (0.0, 0.5)");
         }
       break;
