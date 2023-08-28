@@ -12,15 +12,12 @@
 static char bitbuffer[BITBUF_SIZE] ALIGN(SIMD_LEN);
 
 // prints digits in reverse order to buffer
-FORCE_INLINE static void print_binary(char *restrict buf, u64 num) {
-  char *bend = buf + 64;
-  do *--bend = (num & 0x01) + '0';
-  while (num >>= 1);
-
-  // If we reach the end of a number before printing 64 digits,
-  // fill in the rest with zeroes
-  while (bend - buf > 0)
-    *--bend = '0';
+FORCE_INLINE static void print_binary(char *restrict _bptr, u64 num) {
+  char *bend = _bptr + 64;
+  do {
+    *--bend = (num & 0x01) + '0';
+    num >>= 1;
+  } while (bend - _bptr > 0);
 }
 
 // prints all bits in a buffer as chunks of 1024 bits
@@ -40,8 +37,6 @@ FORCE_INLINE static void print_chunks(FILE *fptr, char *restrict _bptr, const u6
 static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double chseed, u64 nonce) {
   if (UNLIKELY(fptr == NULL)) return 0;
   
-  clock_t start = clock();
-
   /*
     Split limit based on how many calls (if needed)
     we make to print_chunks, which prints the bits of 
@@ -51,6 +46,8 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
   register short leftovers = limit & (SEQ_SIZE - 1);
 
   char *restrict _bptr = &bitbuffer[0];
+
+  clock_t start = clock();
 
   while (rate > 0) {
     chseed = adam(_ptr, chseed, nonce);
@@ -98,8 +95,6 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
 static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, double chseed, u64 nonce) {   
   if (UNLIKELY(fptr == NULL)) return 0;
 
-  clock_t start = clock();
-
   /*
     Split limit based on how many calls we need to make
     to write the bytes of an entire buffer directly
@@ -107,6 +102,8 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
   */ 
   register long int rate = limit >> 14;
   register short leftovers = limit & (SEQ_SIZE - 1);
+
+  clock_t start = clock();
 
   while (rate > 0) {
     chseed = adam(_ptr, chseed, nonce);
@@ -233,7 +230,7 @@ u8 help() {
   
   register short len;
   for (int i = 0; i < ARG_COUNT; ++i) {
-    printf("\e[%uC-%c\e[%uC%.*s\n", INDENT, ARGS[i], INDENT, HELP_WIDTH, ARGSHELP[i]);
+    printf("\e[%uC\e[1;33m-%c\e[m\e[%uC%.*s\n", INDENT, ARGS[i], INDENT, HELP_WIDTH, ARGSHELP[i]);
     len = lengths[i] - HELP_WIDTH;
     while (len > 0) {
       ARGSHELP[i] += HELP_WIDTH + (ARGSHELP[i][HELP_WIDTH] == ' ');
@@ -296,7 +293,8 @@ u8 infinite(u64 *restrict _ptr, double chseed, u64 nonce) {
     This pattern is cyclical as you may be able to tell - one round there will
     be leftovers, next round there won't. On and on until the program exits.
   */ 
-  const u8 LIVE_ITER = BUF_SIZE - 31;
+  #define LIVE_ITER   (BUF_SIZE - 31)
+
   const char* ADAM_ASCII = {
     "%s\e[38;2;173;58;0m/\e[38;2;255;107;33m@@@@@@\e[38;2;173;58;0m\\\e[0m"
     "%s\e[38;2;173;58;0m/(\e[38;2;255;107;33m@@\e[38;2;173;58;0m((((((((((((((((\e[38;2;255;107;33m@@\e[0m"
