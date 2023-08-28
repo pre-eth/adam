@@ -13,19 +13,49 @@ FORCE_INLINE static double chaotic_iter(u64 *map_b, u64 *map_a, const double see
     BETA is derived from the length of the mantissa 
     ADAM uses the max double accuracy length of 15 to minimize ROUNDS
   */
-  #define BETA          10E15
+  #define BETA            10E15
 
-  register double x = seed;
-  register u16 s = (SEQ_SIZE) - 1;
-  register u16 i, j = 0;
+  // strength reduction to avoid expensive modulus
+  #define REDUCTION(i)    (u64)((1 / ((s - i) >> 6)) & (__UINT64_MAX__ - 1))
+  #define POSITION(x, i)  ((((u64) FLOOR((x) * BETA)) * REDUCTION(i)) >> 6)
+  #define JIDX(x, n, j)   ((i + j) + POSITION(x, n))
+
+  register double a, b, c, x;
+  register short s = SEQ_SIZE - 1;
+  register u16 i, j;
   i = j = 0;
+  x = seed;
 
-  // rewrite with SIMD
+  reg r1, r2;
+  
   do {
-    x = CHAOTIC_FN(x);
-    j = i + 1 + (((u64) FLOOR(x * BETA) % s) >> 6);
-    s -= 64 - (s == 1983);
-    map_b[i++] ^= map_a[j];
+    a = CHAOTIC_FN(x), b = CHAOTIC_FN(a);
+    c = CHAOTIC_FN(b), x = CHAOTIC_FN(c);
+
+    r1 = SIMD_SETR64(
+                      map_a[JIDX(a, 0, 1)],   map_a[JIDX(b, 64, 2)], 
+                      map_a[JIDX(c, 128, 3)], map_a[JIDX(x, 192, 4)]
+                  #ifdef __AVX512F__
+                    , map_a[JIDX(a = CHAOTIC_FN(x), 256, 5)]
+                    , map_a[JIDX(b = CHAOTIC_FN(a), 320, 6)]
+                    , map_a[JIDX(c = CHAOTIC_FN(b), 384, 7)]
+                    , map_a[JIDX(x = CHAOTIC_FN(c), 448, 8)]
+                  #endif
+                    );
+
+    // SIMD_LOADBITS causes a seg fault even though map_b is aligned...
+    r2 = SIMD_SETR64(
+                      map_b[i], map_b[i + 1], map_b[i + 2], map_b[i + 3]
+                    #ifdef __AVX512F__
+                    , map_b[i + 4], map_b[i + 5], map_b[i + 6], map_b[i + 7]
+                    #endif
+                    );
+
+    r2 = SIMD_XORBITS(r2, r1);
+    SIMD_STOREBITS((reg*) map_b, r2);
+
+    s -= ((u16) SIMD_LEN << 3);
+    i += (SIMD_LEN >> 3);
   } while (s > 0);
 
   return x;
@@ -50,7 +80,7 @@ FORCE_INLINE static void diffuse(u64 *restrict _ptr, u64 seed) {
   register u8 i = 0;
 
   u64 a, b, c, d, e, f, g, h;
-  a = b = c = d = e = f = g = h = (_ptr[seed & 0xFF] ^ (GOLDEN_RATIO ^ _ptr[(seed >> 37) & 0xFF]));
+  a = b = c = d = e = f = g = h = (_ptr[seed & 0xFF] ^ (GOLDEN_RATIO ^ _ptr[(seed >> (seed & 31)) & 0xFF]));
 
   // Scramble it
   ISAAC_MIX(a, b, c, d, e, f, g, h);
@@ -150,12 +180,12 @@ FORCE_INLINE static void apply(u64 *restrict _b, u64 *restrict _a, double *restr
   register double x = *chseed;
 
   register u8 i = 0;
-  do x = chaotic_iter(_b, _a, x);
+  do x = chaotic_iter(_b, _a, x) / 100;
   while (++i < ITER);
 
   // Some testing revealed that x sometimes exceeds 0.5, which 
   // violates the algorithm, so this is a corrective measure
-  *chseed = x - (0.5 * (double)(x >= 0.5));
+  *chseed = x;
 }
 
 FORCE_INLINE static void mix(u64 *restrict _ptr) {
