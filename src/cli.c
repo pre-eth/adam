@@ -56,7 +56,7 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
     chseed = adam(_ptr, chseed, nonce);
     print_chunks(fptr, _bptr, _ptr);
     --rate;
-    nonce ^= _ptr[nonce & 0xFF] ^ GOLDEN_RATIO;
+    nonce ^= _ptr[nonce & 0xFF];
   } 
 
   /*
@@ -69,8 +69,7 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
     if assessing bits, so this branch has been marked as LIKELY.
   */
   if (LIKELY(leftovers > 0)) {
-    register u16 l;
-    register u16 limit;
+    register u16 l, limit;
     register u64 num;
 
     adam(_ptr, chseed, nonce);
@@ -92,7 +91,7 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
 
   register double duration = (double)(clock() - start) / CLOCKS_PER_SEC;
 
-  return printf("\n\e[1;36mWrote %lu bits to ASCII file in (%lfs)\e[m\n", 
+  return printf("\n\e[1;36mWrote %lu bits to ASCII file (%lfs)\e[m\n", 
                 limit, duration);
 }
 
@@ -113,7 +112,7 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
     chseed = adam(_ptr, chseed, nonce);
     fwrite(_ptr, 1, BUF_SIZE * sizeof(u64), fptr);
     --rate;
-    nonce ^= _ptr[nonce & 0xFF] ^ GOLDEN_RATIO;
+    nonce ^= _ptr[nonce & 0xFF];
   } 
 
   if (LIKELY(leftovers > 0)) {
@@ -132,7 +131,7 @@ u8 bits(u64 *restrict _ptr, const double chseed, const u64 nonce) {
   return stream_ascii(stdout, _ptr, __UINT64_MAX__, chseed, nonce);
 }
 
-u8 assess(u64 *restrict _ptr, const u64 limit, const double chseed, const u64 nonce) {
+u8 assess(u64 *restrict _ptr, const u16 limit, const double chseed, const u64 nonce) {
   char file_name[65];
   get_file_name:
     printf("Enter file name: ");
@@ -215,7 +214,7 @@ u8 help() {
   // max length for help description in COL 2 before it needs to wrap
   const u16 HELP_WIDTH = SWIDTH - HELP_INDENT;
 
-  const char ARGS[ARG_COUNT] = {'h', 'v', 's', 'n', 'u', 'r', 'p', 'd', 'b', 'a', 'l'};
+  const char ARGS[ARG_COUNT] = {'h', 'v', 's', 'n', 'u', 'r', 'p', 'd', 'b', 'a', 'l', 'x'};
   const char *ARGSHELP[ARG_COUNT] = {
     "Get all available options",
     VERSION_HELP,
@@ -227,9 +226,10 @@ u8 help() {
     "Dump the whole buffer",
     "Just bits...literally",
     "Assess a binary or ASCII sample of 1000000 bits (1 MB) written to a filename you provide. You can choose a multiplier within [1,1000]",
-    "Live stream of continuously generated numbers"
+    "Live stream of continuously generated numbers",
+    "Print numbers in hexadecimal format with leading prefix"
   };
-  const u8 lengths[ARG_COUNT] = {25, 32, 119, 117, 108, 74, 69, 21, 20, 133, 45};
+  const u8 lengths[ARG_COUNT] = {25, 32, 119, 117, 108, 74, 69, 21, 20, 133, 45, 55};
   
   register short len;
   for (int i = 0; i < ARG_COUNT; ++i) {
