@@ -17,7 +17,7 @@ FORCE_INLINE static double chaotic_iter(u64 *map_b, u64 *map_a, const double see
 
   // strength reduction to avoid expensive modulus
   #define REDUCTION(i)    (u64)((1 / ((s - i) >> 6)) & (__UINT64_MAX__ - 1))
-  #define POSITION(x, i)  ((((u64) FLOOR((x) * BETA)) * REDUCTION(i)) >> 6)
+  #define POSITION(x, i)  ((((u64) FLOOR((x) * BETA) >> 6) * REDUCTION(i)) >> 6)
   #define JIDX(x, n, j)   ((i + j) + POSITION(x, n))
 
   register double a, b, c, x;
@@ -27,7 +27,6 @@ FORCE_INLINE static double chaotic_iter(u64 *map_b, u64 *map_a, const double see
   x = seed;
 
   reg r1, r2;
-  
   do {
     a = CHAOTIC_FN(x), b = CHAOTIC_FN(a);
     c = CHAOTIC_FN(b), x = CHAOTIC_FN(c);
@@ -176,15 +175,19 @@ static double multi_thread(thdata *data) {
     if (start <= 512) goto eval_fn;
 } */
 
-FORCE_INLINE static void apply(u64 *restrict _b, u64 *restrict _a, double *restrict chseed) {
+FORCE_INLINE static void apply(u64 *restrict _ptr, double *chseed) {
   register double x = *chseed;
 
   register u8 i = 0;
-  do x = chaotic_iter(_b, _a, x) / 100;
+  do x = chaotic_iter(_ptr + 256, _ptr, x) / 100;
   while (++i < ITER);
 
-  // Some testing revealed that x sometimes exceeds 0.5, which 
-  // violates the algorithm, so this is a corrective measure
+  do x = chaotic_iter(_ptr + 512, _ptr + 256, x) / 100;
+  while (++i < ITER + 6);
+
+  do x = chaotic_iter(_ptr, _ptr + 512, x) / 100;
+  while (++i < ITER + 12);
+
   *chseed = x;
 }
 
@@ -215,21 +218,10 @@ FORCE_INLINE static void mix(u64 *restrict _ptr) {
 }
 
 double adam(u64 *restrict _ptr, const double seed, const u64 nonce) {
-  // double chseed = seed;
-  // accumulate(_ptr, nonce);
-  // diffuse(_ptr, nonce);
-  // apply(_ptr, &chseed);
-  // mix(_ptr);
   double chseed = seed;
-
   accumulate(_ptr, nonce);
   diffuse(_ptr, nonce);
- 
-  apply(_ptr + 256, _ptr, &chseed);
-  apply(_ptr + 512, _ptr + 256, &chseed);
-  apply(_ptr, _ptr + 512, &chseed);
-
+  apply(_ptr, &chseed);
   mix(_ptr);
-
   return chseed;
 }
