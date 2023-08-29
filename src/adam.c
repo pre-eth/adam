@@ -60,11 +60,26 @@ FORCE_INLINE static double chaotic_iter(u64 *map_b, u64 *map_a, const double see
   return x;
 }
 
-FORCE_INLINE static void accumulate(u64 *restrict _ptr, const u64 seed) {
+FORCE_INLINE static void accumulate(u64 *restrict _ptr, const u64 nonce) {
   register u8 i = 0;
   
-  const reg a = SIMD_SET64(seed);
-  const reg b = SIMD_SET64(seed);
+  /*
+    8 64-bit IV's that correspond to the verse:
+    "Be fruitful and multiply, and replenish the earth (Genesis 1:28)"
+  */
+  u64 IV[8] ALIGN(SIMD_LEN) = {
+    0x4265206672756974UL ^ nonce, 
+    0x66756C20616E6420UL ^ ~nonce, 
+    0x6D756C7469706C79UL ^ nonce,
+    0x2C20616E64207265UL ^ ~nonce, 
+    0x706C656E69736820UL ^ nonce,
+    0x7468652065617274UL ^ ~nonce, 
+    0x68202847656E6573UL ^ nonce,
+    0x697320313A323829UL ^ ~nonce
+  };
+
+  const reg a = SIMD_LOADBITS((reg*) IV);
+  const reg b = SIMD_LOADBITS((reg*) IV + (!!(SIMD_LEN & 63) << 2));
 
   do {
     SIMD_STOREBITS((reg*) (_ptr + i), a);
@@ -179,13 +194,13 @@ FORCE_INLINE static void apply(u64 *restrict _ptr, double *chseed) {
   register double x = *chseed;
 
   register u8 i = 0;
-  do x = chaotic_iter(_ptr + 256, _ptr, x) / 100;
+  do x = chaotic_iter(_ptr + 256, _ptr, x);
   while (++i < ITER);
 
-  do x = chaotic_iter(_ptr + 512, _ptr + 256, x) / 100;
+  do x = chaotic_iter(_ptr + 512, _ptr + 256, x);
   while (++i < ITER + 6);
 
-  do x = chaotic_iter(_ptr, _ptr + 512, x) / 100;
+  do x = chaotic_iter(_ptr, _ptr + 512, x);
   while (++i < ITER + 12);
 
   *chseed = x;
@@ -204,13 +219,13 @@ FORCE_INLINE static void mix(u64 *restrict _ptr) {
       #endif
     );
     SIMD_STOREBITS((reg*) (_ptr + i), a);   
+
     b = SIMD_SETR64(
       XOR_MAPS(i + (SIMD_LEN >> 3))
       #ifdef __AVX512F__
         , XOR_MAPS(i + (SIMD_LEN >> 3) + 4)
       #endif
     );
-
     SIMD_STOREBITS((reg*) (_ptr + i + (SIMD_LEN >> 3)), b);   
 
     i += (SIMD_LEN >> 2) - (i == BUF_SIZE - (SIMD_LEN >> 2));
