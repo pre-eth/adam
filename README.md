@@ -6,7 +6,7 @@
  ▄▀▀▀▀█▄   ██    ██  ▄▀▀▀▀█▄   █ ▀█▀ ██  
 ▄█▄  ▄██▄ ▄██▄▄▄█▀  ▄█▄  ▄██▄ ▄█▄ █ ▄██▄ 
 
-v1.1.0
+v1.1.2
 
 <b>Use at your own risk</b>. Criticism and suggestions are welcome.
 </pre>         
@@ -61,7 +61,7 @@ And you should be good to go!
 ## SYNOPSIS
 
 <pre>
-adam [-h|-v|-l|-b] [-dx] [-p <em>precision</em>] [-a <em>bit_multiplier</em>] [-r <em>results</em>]
+adam [-h|-v|-l|-b] [-dx] [-w <em>width</em>] [-a <em>bit_multiplier</em>] [-r <em>results</em>]
      [-s <em>seed?</em>] [-n <em>nonce?</em>] [-u <em>amount?</em>]
 </pre>
 
@@ -78,7 +78,7 @@ The following options are available:
     -u    Generate a universally unique identifier (UUID). Optionally specify a 
           number of UUID's to generate (max 128)
     -r    Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)
-    -p    Desired size (u8, u16, u32, u64) of returned numbers (default is u64)
+    -w    Desired size (u8, u16, u32, u64) of returned numbers (default width is u64)
     -d    Dump the whole buffer
     -b    Just bits...literally
     -a    Assess a binary or ASCII sample of 1000000 bits (1 MB) written to a
