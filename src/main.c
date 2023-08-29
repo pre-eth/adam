@@ -54,7 +54,8 @@ int main(int argc, char **argv) {
         return infinite(buf_ptr, chseed, nonce);
       case 'a':
         limit = a_to_u(optarg, 1, ASSESS_LIMIT);
-        return assess(buf_ptr, limit, chseed, nonce);
+        assess(buf_ptr, limit, chseed, nonce);
+        goto show_params;
       case 'b':
         return bits(buf_ptr, chseed, nonce);
       case 'x':
@@ -116,17 +117,17 @@ int main(int argc, char **argv) {
       printf(",\n");
       buf_ptr[idx] >>= precision;
       idx += (inc || !buf_ptr[idx]);
-      // printf("val: %lu idx: %u precision: %u mask: %llu\n", buf_ptr[idx] & mask, idx, precision, (!mask << precision));
       goto print_buffer;
     }
 
   putchar('\n');
 
-  if (UNLIKELY(show_seed))
-    printf("\e[1;36mSEED:\e[m %.15f\n", chseed);
+  show_params:
+    if (UNLIKELY(show_seed))
+      printf("\e[1;36mSEED:\e[m %.15f\n", chseed);
 
-  if (UNLIKELY(show_nonce))
-    printf("\e[1;36mNONCE:\e[m %lu\n", nonce);
+    if (UNLIKELY(show_nonce))
+      printf("\e[1;36mNONCE:\e[m %lu\n", nonce);
 
   return 0;
 }
