@@ -218,22 +218,58 @@ u64 a_to_u(const char *s, const u64 min, const u64 max) {
   return (val >= min || val < max - 1) ? val : min;
 }
 
+FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent) {
+  #define SUMM_PIECES     7
+
+  const char* pieces[SUMM_PIECES] = {
+    "\e[1madam \e[m[-h|-v|-l|-b] [-dx]",
+    "[-w \e[1mwidth\e[m]",
+    "[-a \e[1mmultiplier\e[m]",
+    "[-r \e[1mresults\e[m]",
+    "[-s \e[3mseed?\e[m]",
+    "[-n \e[3mnonce?\e[m]",
+    "[-u \e[3mamount?\e[m]"
+  };
+
+  const u8 sizes[SUMM_PIECES + 1] = {24, 10, 19, 12, 10, 11, 12, 0};
+
+  u8 i, running_length;
+  i = running_length = 0;
+
+  printf("\n\e[%uC", indent);
+
+  for (; i < SUMM_PIECES; ++i) {
+    printf(pieces[i]), putchar(' ');
+    // add one for space
+    running_length += sizes[i] + 1;
+    if (running_length + sizes[i + 1] > swidth) {
+      // add 5 for "adam "
+      printf("\n\e[%uC", indent + 5);
+      running_length = 0;
+    }
+  }
+
+  putchar('\n'), putchar('\n');
+}
+
 u8 help() {
   struct winsize wsize;
   ioctl(0, TIOCGWINSZ, &wsize);
-  register u16 SWIDTH =  wsize.ws_col;
-  register u16 center = (SWIDTH >> 1) - 4;
-
-  printf("\e[%uC[OPTIONS]\n", center);
-
+  register u8 SWIDTH =  wsize.ws_col;
+  
+  const u8 CENTER = (SWIDTH >> 1) - 4;
   // subtract 1 because it is half of width for arg (ex. "-d")
-  const u16 INDENT = (SWIDTH >> 4) - 1; 
+  const u8 INDENT = (SWIDTH >> 4) - 1; 
   // total indent for help descriptions if they have to go to next line
-  const u16 HELP_INDENT = INDENT + INDENT + 2;
+  const u8 HELP_INDENT = INDENT + INDENT + 2;
   // max length for help description in COL 2 before it needs to wrap
-  const u16 HELP_WIDTH = SWIDTH - HELP_INDENT;
+  const u8 HELP_WIDTH = SWIDTH - HELP_INDENT;
 
-  const char ARGS[ARG_COUNT] = {'h', 'v', 's', 'n', 'u', 'r', 'p', 'd', 'b', 'a', 'l', 'x'};
+  print_summary(SWIDTH, INDENT);
+
+  printf("\e[%uC[OPTIONS]\n", CENTER);
+
+  const char ARGS[ARG_COUNT] = {'h', 'v', 's', 'n', 'u', 'r', 'w', 'd', 'b', 'a', 'l', 'x'};
   const char *ARGSHELP[ARG_COUNT] = {
     "Get all available options",
     VERSION_HELP,
