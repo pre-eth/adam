@@ -80,7 +80,7 @@ FORCE_INLINE static void accumulate(u64 *restrict _ptr, const u64 nonce) {
 
   const reg a = SIMD_LOADBITS((reg*) IV);
   const reg b = SIMD_LOADBITS((reg*) IV + (!!(SIMD_LEN & 63) << 2));
-
+  
   do {
     SIMD_STOREBITS((reg*) (_ptr + i), a);
     SIMD_STOREBITS((reg*) (_ptr + i + (SIMD_LEN >> 3)), b);
@@ -90,11 +90,11 @@ FORCE_INLINE static void accumulate(u64 *restrict _ptr, const u64 nonce) {
   } while (i < BUF_SIZE - 1);
 }
 
-FORCE_INLINE static void diffuse(u64 *restrict _ptr, u64 seed) {
+FORCE_INLINE static void diffuse(u64 *restrict _ptr, const u64 nonce) {
   register u8 i = 0;
 
-  u64 a, b, c, d, e, f, g, h;
-  a = b = c = d = e = f = g = h = (_ptr[seed & 0xFF] ^ (GOLDEN_RATIO ^ _ptr[(seed >> (seed & 31)) & 0xFF]));
+  register u64 a, b, c, d, e, f, g, h;
+  a = b = c = d = e = f = g = h = (_ptr[nonce & 0xFF] ^ (GOLDEN_RATIO ^ _ptr[(nonce >> (nonce & 31)) & 0xFF]));
 
   // Scramble it
   ISAAC_MIX(a, b, c, d, e, f, g, h);
@@ -141,10 +141,7 @@ static double multi_thread(thdata *data) {
   register u8 i = 0;
   do {
     x = chaotic_iter(data->end, data->start, x);
-    
-    // Some testing revealed that x sometimes exceeds 0.5, which 
-    // violates the algorithm, so this is a corrective measure
-    x -= (double)(x >= 0.5) * 0.5;
+
   } while (++i < ITER);
   
   return x;
@@ -209,34 +206,40 @@ FORCE_INLINE static void apply(u64 *restrict _ptr, double *chseed) {
 FORCE_INLINE static void mix(u64 *restrict _ptr) {
   register u8 i = 0;
 
-  reg a, b;
+  reg r1, r2;
 
   do {
-    a = SIMD_SETR64(
+    r1 = SIMD_SETR64(
       XOR_MAPS(i)
       #ifdef __AVX512F__
         , XOR_MAPS(i + 4)
       #endif
     );
-    SIMD_STOREBITS((reg*) (_ptr + i), a);   
+    SIMD_STOREBITS((reg*) (_ptr + i), r1);   
 
-    b = SIMD_SETR64(
+    r2 = SIMD_SETR64(
       XOR_MAPS(i + (SIMD_LEN >> 3))
       #ifdef __AVX512F__
         , XOR_MAPS(i + (SIMD_LEN >> 3) + 4)
       #endif
     );
-    SIMD_STOREBITS((reg*) (_ptr + i + (SIMD_LEN >> 3)), b);   
+    SIMD_STOREBITS((reg*) (_ptr + i + (SIMD_LEN >> 3)), r2);   
 
     i += (SIMD_LEN >> 2) - (i == BUF_SIZE - (SIMD_LEN >> 2));
   } while (i < (BUF_SIZE - 1));
 }
 
-double adam(u64 *restrict _ptr, const double seed, const u64 nonce) {
-  double chseed = seed;
+double adam(u64 *restrict _ptr, double *seed, const u64 nonce) {
+  double chseed = *seed;
+
+  clock_t start = clock();
+
   accumulate(_ptr, nonce);
   diffuse(_ptr, nonce);
   apply(_ptr, &chseed);
   mix(_ptr);
-  return chseed;
+
+  *seed = chseed;
+
+  return (double)(clock() - start) / CLOCKS_PER_SEC;
 }
