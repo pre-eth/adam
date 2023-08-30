@@ -30,12 +30,12 @@ FORCE_INLINE static void print_binary(char *restrict _bptr, u64 num, const reg *
                     , BYTE_TO_BITS(e), BYTE_TO_BITS(f), BYTE_TO_BITS(g), BYTE_TO_BITS(h)
                     #endif
                      );
-  r2 = SIMD_SET8(r2, *r1);
+  r2 = SIMD_ADD8(r2, *r1);
   SIMD_STOREBITS((reg*) _bptr, r2);
 
   #ifndef __AVX512F__
     r2 = SIMD_SETR8(BYTE_TO_BITS(e), BYTE_TO_BITS(f), BYTE_TO_BITS(g), BYTE_TO_BITS(h));
-    r2 = SIMD_SET8(r2, *r1);
+    r2 = SIMD_ADD8(r2, *r1);
     SIMD_STOREBITS((reg*) (_bptr + 32), r2);
   #endif
 }
