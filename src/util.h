@@ -8,6 +8,9 @@
     #define SIMD_LEN         64
     typedef __m512i          reg;
     #define SIMD_SETZERO     _mm512_setzero_si512
+    #define SIMD_SET8        _mm512_set1_epi8
+    #define SIMD_SETR8       _mm512_setr_epi8
+    #define SIMD_ADD8        _mm512_add_epi8
     #define SIMD_SETR64      _mm512_setr_epi64 
     #define SIMD_SET64       _mm512_set1_epi64
     #define SIMD_LOADBITS    _mm512_load_si512
@@ -17,6 +20,9 @@
     #define SIMD_LEN         32
     typedef __m256i          reg;
     #define SIMD_SETZERO     _mm256_setzero_si256
+    #define SIMD_SET8        _mm256_set1_epi8
+    #define SIMD_SETR8       _mm256_setr_epi8
+    #define SIMD_ADD8        _mm256_add_epi8
     #define SIMD_SET64       _mm256_set1_epi64x 
     #define SIMD_SETR64      _mm256_setr_epi64x 
     #define SIMD_ADD64       _mm256_add_epi64

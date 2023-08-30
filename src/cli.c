@@ -11,17 +11,37 @@
 */  
 static char bitbuffer[BITBUF_SIZE] ALIGN(SIMD_LEN);
 
-// prints digits in reverse order to buffer
-FORCE_INLINE static void print_binary(char *restrict _bptr, u64 num) {
-  char *bend = _bptr + 64;
-  do {
-    *--bend = (num & 0x01) + '0';
-    num >>= 1;
-  } while (bend - _bptr > 0);
+FORCE_INLINE static void print_binary(char *restrict _bptr, u64 num, const reg *r1) {
+  #define BYTE_TO_BITS(x) \
+    (x >> 0) & 1, (x >> 1) & 1, (x >> 2) & 1, (x >> 3) & 1,\
+    (x >> 4) & 1, (x >> 5) & 1, (x >> 6) & 1, (x >> 7) & 1
+
+  u8 a = num & 0xFF;
+  u8 b = (num >> 8)  & 0xFF;
+  u8 c = (num >> 16) & 0xFF;
+  u8 d = (num >> 24) & 0xFF;
+  u8 e = (num >> 32) & 0xFF;
+  u8 f = (num >> 40) & 0xFF;
+  u8 g = (num >> 48) & 0xFF;
+  u8 h = (num >> 56) & 0xFF;
+
+  reg r2 = SIMD_SETR8(BYTE_TO_BITS(a), BYTE_TO_BITS(b), BYTE_TO_BITS(c), BYTE_TO_BITS(d)
+                    #ifdef __AVX512F__
+                    , BYTE_TO_BITS(e), BYTE_TO_BITS(f), BYTE_TO_BITS(g), BYTE_TO_BITS(h)
+                    #endif
+                     );
+  r2 = SIMD_SET8(r2, *r1);
+  SIMD_STOREBITS((reg*) _bptr, r2);
+
+  #ifndef __AVX512F__
+    r2 = SIMD_SETR8(BYTE_TO_BITS(e), BYTE_TO_BITS(f), BYTE_TO_BITS(g), BYTE_TO_BITS(h));
+    r2 = SIMD_SET8(r2, *r1);
+    SIMD_STOREBITS((reg*) (_bptr + 32), r2);
+  #endif
 }
 
 // prints all bits in a buffer as chunks of 1024 bits
-FORCE_INLINE static void print_chunks(FILE *fptr, char *restrict _bptr, const u64 *restrict _ptr) {  
+FORCE_INLINE static void print_chunks(FILE *fptr, char *restrict _bptr, const u64 *restrict _ptr, const reg *r1) {  
   register u8 i = 0;
 
   do {
@@ -49,10 +69,11 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
 
   register double duration = 0.0;
 
+  const reg r1 = SIMD_SET8('0');
 
   while (rate > 0) {
     duration += adam(_ptr, &chseed, nonce);
-    print_chunks(fptr, _bptr, _ptr);
+    print_chunks(fptr, _bptr, _ptr, &r1);
     --rate;
     nonce ^= _ptr[nonce & 0xFF];
   } 
@@ -77,7 +98,7 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
       l = 0;
       do {
         num = *_ptr++;
-        print_binary(_bptr + l, num);
+        print_binary(_bptr + l, num, &r1);
       } while ((l += 64) < limit);
 
       fwrite(_bptr, 1, limit, fptr);
@@ -86,8 +107,6 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
       if (LIKELY(leftovers > 0)) 
         goto print_leftovers;
   }
-
-  register double duration = (double)(clock() - start) / CLOCKS_PER_SEC;
 
   return printf("\n\e[1;36mWrote %lu bits to ASCII file (%lfs)\e[m\n", 
                 limit, duration);
@@ -118,8 +137,6 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
     duration += adam(_ptr, &chseed, nonce);
     fwrite(_ptr, 8, (nums + !!(nums & 63)), fptr);
   }
-
-  register double duration = (double)(clock() - start) / CLOCKS_PER_SEC;
 
   return printf("\n\e[1;36mWrote %lu bits to BINARY file (%lfs)\e[m\n", 
                 limit, duration);
