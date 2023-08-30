@@ -79,7 +79,7 @@ FORCE_INLINE static void accumulate(u64 *restrict _ptr, const u64 nonce) {
   };
 
   const reg a = SIMD_LOADBITS((reg*) IV);
-  const reg b = SIMD_LOADBITS((reg*) IV + (!!(SIMD_LEN & 63) << 2));
+  const reg b = SIMD_LOADBITS((reg*) (IV + (!!(SIMD_LEN & 63) << 2)));
   
   do {
     SIMD_STOREBITS((reg*) (_ptr + i), a);
@@ -239,7 +239,9 @@ double adam(u64 *restrict _ptr, double *seed, const u64 nonce) {
   apply(_ptr, &chseed);
   mix(_ptr);
 
+  double duration = (clock() - start) / CLOCKS_PER_SEC;
+
   *seed = chseed;
 
-  return (double)(clock() - start) / CLOCKS_PER_SEC;
+  return duration;
 }
