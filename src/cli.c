@@ -149,27 +149,31 @@ u8 bits(u64 *restrict _ptr, const double chseed, const u64 nonce) {
 u8 assess(u64 *restrict _ptr, const u16 limit, const double chseed, const u64 nonce) {
   char file_name[65];
   get_file_name:
-    printf("Enter file name: ");
+    printf("File name: \e[1;33m");
     if (!scanf("%64s", &file_name)) {
-      fputs("\e[1;31mPlease enter a valid file name\e[m\n", stderr);
+      fputs("\e[m\e[1;31mPlease enter a valid file name\e[m\n", stderr);
       goto get_file_name;
     }
 
   FILE *fptr;
+  const char *file_type;
+  u8 (*fn)(FILE*, u64 *restrict, const u64, double, u64);
   char c;
   get_file_type:
-    printf("Select file type - ASCII [0] or BINARY [1]: ");
+    printf("\e[mFile type (ASCII = 0, BINARY = 1): \e[1;33m");
     scanf(" %c", &c);
-    if (c == '0') {
-      fptr = fopen(file_name, "w+");
-      c = stream_ascii(fptr, _ptr, limit * ASSESS_BITS, chseed, nonce);
-    } else if (c == '1') {
-      fptr = fopen(file_name, "wb+");
-      c = stream_bytes(fptr, _ptr, limit * ASSESS_BITS, chseed, nonce);
-    } else {
-      fputs("\e[1;31mValue must be 0 or 1\e[m\n", stderr);
+    if (c == '0')
+      file_type = "w+", fn = &stream_ascii;
+    else if (c == '1')
+      file_type = "wb+", fn = &stream_bytes;
+    else {
+      fputs("\e[1;31mValue must be 0 or 1\n", stderr);
       goto get_file_type;
     }
+
+  fptr = fopen(file_name, file_type);
+  fputs("\e[m", stdout);
+  c = fn(fptr, _ptr, limit * ASSESS_BITS, chseed, nonce);
 
   if (UNLIKELY(!c))
     return fputs("\e[1;31mError while creating file. Exiting.\e[m\n", stderr);
