@@ -6,9 +6,8 @@
 /*
   TODO
 
-  -e (ent with bob's tests (chi.c and est.c))
-  Strength Reduction
   Multi-threading
+  -e (ent with bob's tests (chi.c and est.c))
   gjrand
   matrix
 
@@ -43,7 +42,7 @@ int main(int argc, char **argv) {
   double chseed = ((double) seed / (double) __UINT64_MAX__) * 0.5;
   register u64 nonce = ((u64) time(NULL)) ^ GOLDEN_RATIO ^ seed;
 
-  register int opt;
+  register short opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
     switch (opt) {
       case 'h':
@@ -75,7 +74,7 @@ int main(int argc, char **argv) {
           results -= (results > max) * (results - max);
           break;  
         } 
-        return err("Precision must be either 8, 16, 32, or 64 bits");
+        return err("Width must be either 8, 16, 32, or 64 bits");
       case 'd':
         results = SEQ_SIZE >> CTZ(precision);
       break;
@@ -97,15 +96,14 @@ int main(int argc, char **argv) {
       break;
       case 'u':
         limit = optarg ? a_to_u(optarg, 1, 128) : 1;
-        return uuid(buf_ptr, limit, chseed, nonce);
+        uuid(buf_ptr, limit, chseed, nonce);
+        goto show_params;
       default:
         return err("Option is invalid or missing required argument");             
     }
   }
 
-  clock_t start = clock();
-  adam(buf_ptr, chseed, nonce);
-  register double duration = (double)(clock() - start) / CLOCKS_PER_SEC;
+  adam(buf_ptr, &chseed, nonce);
 
   // Need to do this for default precision because 
   // we can't rely on overflow arithmetic :(
