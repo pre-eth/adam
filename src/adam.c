@@ -239,7 +239,7 @@ double adam(u64 *restrict _ptr, double *seed, const u64 nonce) {
   apply(_ptr, &chseed);
   mix(_ptr);
 
-  double duration = (clock() - start) / CLOCKS_PER_SEC;
+  double duration = (double) (clock() - start) / CLOCKS_PER_SEC;
 
   *seed = chseed;
 
