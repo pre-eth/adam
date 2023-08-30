@@ -83,7 +83,7 @@
                         _ptr[3 + i] ^ (_ptr[3 + i + 256]) ^ (_ptr[3 + i + 512])
 
   // Initiates RNG algorithm with user provided seed and nonce
-  // Returns actual seed used to start iteration
-  double adam(u64 *restrict _ptr, const double seed, const u64 nonce);
+  // Returns duration of generation
+  double adam(u64 *restrict _ptr, double *seed, const u64 nonce);
 
 #endif
