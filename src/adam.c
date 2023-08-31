@@ -79,19 +79,21 @@ FORCE_INLINE static void accumulate(u64 *restrict _ptr, const u64 nonce) {
   };
 
   const reg a = SIMD_LOADBITS((reg*) IV);
-  const reg b = SIMD_LOADBITS((reg*) (IV + (!!(SIMD_LEN & 63) << 2)));
+  const reg b = SIMD_LOADBITS((reg*) &IV[(!!(SIMD_LEN & 63) << 2)]);
   
   do {
-    SIMD_STOREBITS((reg*) (_ptr + i), a);
-    SIMD_STOREBITS((reg*) (_ptr + i + (SIMD_LEN >> 3)), b);
-    SIMD_STOREBITS((reg*) (_ptr + i + (SIMD_LEN >> 2)), a); 
-    SIMD_STOREBITS((reg*) (_ptr + i + (SIMD_LEN >> 1)), b);         
+    SIMD_STOREBITS((reg*) &_ptr[i], a);
+    SIMD_STOREBITS((reg*) &_ptr[i + (SIMD_LEN >> 3)], b);
+    SIMD_STOREBITS((reg*) &_ptr[i + (SIMD_LEN >> 2)], a); 
+    SIMD_STOREBITS((reg*) &_ptr[i + (SIMD_LEN >> 1)], b);         
     i += SIMD_LEN - (i == BUF_SIZE - SIMD_LEN);
   } while (i < BUF_SIZE - 1);
 }
 
 FORCE_INLINE static void diffuse(u64 *restrict _ptr, const u64 nonce) {
   register u8 i = 0;
+
+  // Following code is derived from Bob Jenkins, author of ISAAC64
 
   register u64 a, b, c, d, e, f, g, h;
   a = b = c = d = e = f = g = h = (_ptr[nonce & 0xFF] ^ (GOLDEN_RATIO ^ _ptr[(nonce >> (nonce & 31)) & 0xFF]));
@@ -210,20 +212,20 @@ FORCE_INLINE static void mix(u64 *restrict _ptr) {
 
   do {
     r1 = SIMD_SETR64(
-      XOR_MAPS(i)
-      #ifdef __AVX512F__
-        , XOR_MAPS(i + 4)
-      #endif
-    );
-    SIMD_STOREBITS((reg*) (_ptr + i), r1);   
+                    XOR_MAPS(i)
+                #ifdef __AVX512F__
+                  , XOR_MAPS(i + 4)
+                #endif
+                    );
+    SIMD_STOREBITS((reg*) &_ptr[i], r1);   
 
     r2 = SIMD_SETR64(
-      XOR_MAPS(i + (SIMD_LEN >> 3))
-      #ifdef __AVX512F__
-        , XOR_MAPS(i + (SIMD_LEN >> 3) + 4)
-      #endif
-    );
-    SIMD_STOREBITS((reg*) (_ptr + i + (SIMD_LEN >> 3)), r2);   
+                      XOR_MAPS(i + (SIMD_LEN >> 3))
+                  #ifdef __AVX512F__
+                    , XOR_MAPS(i + (SIMD_LEN >> 3) + 4)
+                  #endif
+                    );
+    SIMD_STOREBITS((reg*) &_ptr[i + (SIMD_LEN >> 3)], r2);   
 
     i += (SIMD_LEN >> 2) - (i == BUF_SIZE - (SIMD_LEN >> 2));
   } while (i < (BUF_SIZE - 1));
