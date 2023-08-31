@@ -31,7 +31,7 @@ FORCE_INLINE static void print_binary(char *restrict _bptr, u64 num, const reg *
   #ifndef __AVX512F__
     r2 = SIMD_SETR8(BYTE_TO_BITS(e), BYTE_TO_BITS(f), BYTE_TO_BITS(g), BYTE_TO_BITS(h));
     r2 = SIMD_ADD8(r2, *r1);
-    SIMD_STOREBITS((reg*) (_bptr + 32), r2);
+    SIMD_STOREBITS((reg*) &_bptr[32], r2);
   #endif
 }
 
@@ -47,6 +47,158 @@ FORCE_INLINE static void print_chunks(FILE *fptr, char *restrict _bptr, const u6
 
     fwrite(_bptr, 1, BITBUF_SIZE, fptr);
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
+}
+
+FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent) {
+  #define SUMM_PIECES     7
+
+  const char* pieces[SUMM_PIECES] = {
+    "\e[1madam \e[m[-h|-v|-l|-b] [-dx]",
+    "[-w \e[1mwidth\e[m]",
+    "[-a \e[1mmultiplier\e[m]",
+    "[-r \e[1mresults\e[m]",
+    "[-s \e[3mseed?\e[m]",
+    "[-n \e[3mnonce?\e[m]",
+    "[-u \e[3mamount?\e[m]"
+  };
+
+  const u8 sizes[SUMM_PIECES + 1] = {24, 10, 19, 12, 10, 11, 12, 0};
+
+  u8 i, running_length;
+  i = running_length = 0;
+
+  printf("\n\e[%uC", indent);
+
+  for (; i < SUMM_PIECES; ++i) {
+    printf(pieces[i]), putchar(' ');
+    // add one for space
+    running_length += sizes[i] + 1;
+    if (running_length + sizes[i + 1] > swidth) {
+      // add 5 for "adam "
+      printf("\n\e[%uC", indent + 5);
+      running_length = 0;
+    }
+  }
+
+  putchar('\n'), putchar('\n');
+}
+
+u8 help() {
+  struct winsize wsize;
+  ioctl(0, TIOCGWINSZ, &wsize);
+  register u8 SWIDTH =  wsize.ws_col;
+  
+  const u8 CENTER = (SWIDTH >> 1) - 4;
+  // subtract 1 because it is half of width for arg (ex. "-d")
+  const u8 INDENT = (SWIDTH >> 4) - 1; 
+  // total indent for help descriptions if they have to go to next line
+  const u8 HELP_INDENT = INDENT + INDENT + 2;
+  // max length for help description in COL 2 before it needs to wrap
+  const u8 HELP_WIDTH = SWIDTH - HELP_INDENT;
+
+  print_summary(SWIDTH, INDENT);
+
+  printf("\e[%uC[OPTIONS]\n", CENTER);
+
+  const char ARGS[ARG_COUNT] = {'h', 'v', 's', 'n', 'u', 'r', 'w', 'd', 'b', 'a', 'l', 'x'};
+  const char *ARGSHELP[ARG_COUNT] = {
+    "Get all available options",
+    VERSION_HELP,
+    "Get the seed for the generated buffer (no parameter) or provide your own. Seeds are reusable but should be kept secret.",
+    "Get the nonce for the generated buffer (no parameter) or provide your own. Nonces should ALWAYS be unique and secret.",
+    "Generate a universally unique identifier (UUID). Optionally specify a number of UUID's to generate (max 128)",
+    "Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)",
+    "Desired size (u8, u16, u32, u64) of returned numbers (default width is u64)",
+    "Dump the whole buffer",
+    "Just bits...literally",
+    "Assess a binary or ASCII sample of 1000000 bits (1 MB) written to a filename you provide. You can choose a multiplier within [1,1000]",
+    "Live stream of continuously generated numbers",
+    "Print numbers in hexadecimal format with leading prefix"
+  };
+  const u8 lengths[ARG_COUNT] = {25, 32, 119, 117, 108, 74, 75, 21, 20, 133, 45, 55};
+  
+  register short len;
+  for (int i = 0; i < ARG_COUNT; ++i) {
+    printf("\e[%uC\e[1;33m-%c\e[m\e[%uC%.*s\n", INDENT, ARGS[i], INDENT, HELP_WIDTH, ARGSHELP[i]);
+    len = lengths[i] - HELP_WIDTH;
+    while (len > 0) {
+      ARGSHELP[i] += HELP_WIDTH + (ARGSHELP[i][HELP_WIDTH] == ' ');
+      printf("\e[%uC%.*s\n", HELP_INDENT, HELP_WIDTH, ARGSHELP[i]);
+      len -= HELP_WIDTH;
+    }
+  }
+  return 0;
+}
+
+u64 a_to_u(const char *s, const u64 min, const u64 max) {
+  if (UNLIKELY(s[0] == '-')) return min;
+
+  register u8  len = 0;
+  register u64 val = 0;
+  
+  for(; s[len] != '\0'; ++len) {
+    if (UNLIKELY(s[len] < '0' || s[len] > '9'))
+      return min;
+  };
+
+  switch (len) { 
+    case 20:    val += 10000000000000000000LU;
+    case 19:    val += (s[len-19] - '0') * 1000000000000000000LU;
+    case 18:    val += (s[len-18] - '0') * 100000000000000000LU;
+    case 17:    val += (s[len-17] - '0') * 10000000000000000LU;
+    case 16:    val += (s[len-16] - '0') * 1000000000000000LU;
+    case 15:    val += (s[len-15] - '0') * 100000000000000LU;
+    case 14:    val += (s[len-14] - '0') * 10000000000000LU;
+    case 13:    val += (s[len-13] - '0') * 1000000000000LU;
+    case 12:    val += (s[len-12] - '0') * 100000000000LU;
+    case 11:    val += (s[len-11] - '0') * 10000000000LU;
+    case 10:    val += (s[len-10] - '0') * 1000000000LU;
+    case  9:    val += (s[len- 9] - '0') * 100000000LU;
+    case  8:    val += (s[len- 8] - '0') * 10000000LU;
+    case  7:    val += (s[len- 7] - '0') * 1000000LU;
+    case  6:    val += (s[len- 6] - '0') * 100000LU;
+    case  5:    val += (s[len- 5] - '0') * 10000LU;
+    case  4:    val += (s[len- 4] - '0') * 1000LU;
+    case  3:    val += (s[len- 3] - '0') * 100LU;
+    case  2:    val += (s[len- 2] - '0') * 10LU;
+    case  1:    val += (s[len- 1] - '0');
+      break;
+  }
+  return (val >= min || val < max - 1) ? val : min;
+}
+
+u8 uuid(u64 *restrict _ptr, u8 limit, double chseed, const u64 nonce) {
+  adam(_ptr, &chseed, nonce);
+
+  u8 buf[16];
+
+  print_uuid:
+    // Fill buf with 16 random bytes
+    u128 tmp = ((u128)_ptr[0] << 64) | _ptr[1];
+    __builtin_memcpy(buf, &tmp, sizeof(u128));
+
+    // CODE AND COMMENT PULLED FROM CRYPTOSYS (https://www.cryptosys.net/pki/Uuid.c.html)
+    //
+    // Adjust certain bits according to RFC 4122 section 4.4.
+    // This just means do the following
+    // (a) set the high nibble of the 7th byte equal to 4 and
+    // (b) set the two most significant bits of the 9th byte to 10'B,
+    //     so the high nibble will be one of {8,9,A,B}.
+    buf[6] = 0x40 | (buf[6] & 0xf);
+    buf[8] = 0x80 | (buf[8] & 0x3f);
+
+    // Print the UUID
+    printf("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+            buf[0], buf[1], buf[2],  buf[3],  buf[4],  buf[5],  buf[6],  buf[7],
+            buf[8], buf[9], buf[10], buf[11], buf[12], buf[13], buf[14], buf[15]);
+
+    if (--limit > 0) {
+      printf(",\n");
+      _ptr += 2;
+      goto print_uuid;
+    }
+
+  return putchar('\n');
 }
 
 static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double chseed, u64 nonce) {
@@ -122,7 +274,7 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
 
   while (rate > 0) {
     duration += adam(_ptr, &chseed, nonce);
-    fwrite(_ptr, 1, BUF_SIZE * sizeof(u64), fptr);
+    fwrite(_ptr, 8, BUF_SIZE, fptr);
     --rate;
     nonce ^= _ptr[nonce & 0xFF];
   } 
@@ -155,7 +307,7 @@ u8 assess(u64 *restrict _ptr, const u16 limit, const double chseed, const u64 no
   u8 (*fn)(FILE*, u64 *restrict, const u64, double, u64);
   char c;
   get_file_type:
-    printf("\e[mFile type (ASCII = 0, BINARY = 1): \e[1;33m");
+    printf("\e[mFile type (0 = ASCII, BINARY = 1): \e[1;33m");
     scanf(" %c", &c);
     if (c == '0')
       file_type = "w+", fn = &stream_ascii;
@@ -174,158 +326,6 @@ u8 assess(u64 *restrict _ptr, const u16 limit, const double chseed, const u64 no
     return fputs("\e[1;31mError while creating file. Exiting.\e[m\n", stderr);
   
   return fclose(fptr);
-}
-
-u64 a_to_u(const char *s, const u64 min, const u64 max) {
-  if (UNLIKELY(s[0] == '-')) return min;
-
-  register u8  len = 0;
-  register u64 val = 0;
-  
-  for(; s[len] != '\0'; ++len) {
-    if (UNLIKELY(s[len] < '0' || s[len] > '9'))
-      return min;
-  };
-
-  switch (len) { 
-    case 20:    val += 10000000000000000000LU;
-    case 19:    val += (s[len-19] - '0') * 1000000000000000000LU;
-    case 18:    val += (s[len-18] - '0') * 100000000000000000LU;
-    case 17:    val += (s[len-17] - '0') * 10000000000000000LU;
-    case 16:    val += (s[len-16] - '0') * 1000000000000000LU;
-    case 15:    val += (s[len-15] - '0') * 100000000000000LU;
-    case 14:    val += (s[len-14] - '0') * 10000000000000LU;
-    case 13:    val += (s[len-13] - '0') * 1000000000000LU;
-    case 12:    val += (s[len-12] - '0') * 100000000000LU;
-    case 11:    val += (s[len-11] - '0') * 10000000000LU;
-    case 10:    val += (s[len-10] - '0') * 1000000000LU;
-    case  9:    val += (s[len- 9] - '0') * 100000000LU;
-    case  8:    val += (s[len- 8] - '0') * 10000000LU;
-    case  7:    val += (s[len- 7] - '0') * 1000000LU;
-    case  6:    val += (s[len- 6] - '0') * 100000LU;
-    case  5:    val += (s[len- 5] - '0') * 10000LU;
-    case  4:    val += (s[len- 4] - '0') * 1000LU;
-    case  3:    val += (s[len- 3] - '0') * 100LU;
-    case  2:    val += (s[len- 2] - '0') * 10LU;
-    case  1:    val += (s[len- 1] - '0');
-      break;
-  }
-  return (val >= min || val < max - 1) ? val : min;
-}
-
-FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent) {
-  #define SUMM_PIECES     7
-
-  const char* pieces[SUMM_PIECES] = {
-    "\e[1madam \e[m[-h|-v|-l|-b] [-dx]",
-    "[-w \e[1mwidth\e[m]",
-    "[-a \e[1mmultiplier\e[m]",
-    "[-r \e[1mresults\e[m]",
-    "[-s \e[3mseed?\e[m]",
-    "[-n \e[3mnonce?\e[m]",
-    "[-u \e[3mamount?\e[m]"
-  };
-
-  const u8 sizes[SUMM_PIECES + 1] = {24, 10, 19, 12, 10, 11, 12, 0};
-
-  u8 i, running_length;
-  i = running_length = 0;
-
-  printf("\n\e[%uC", indent);
-
-  for (; i < SUMM_PIECES; ++i) {
-    printf(pieces[i]), putchar(' ');
-    // add one for space
-    running_length += sizes[i] + 1;
-    if (running_length + sizes[i + 1] > swidth) {
-      // add 5 for "adam "
-      printf("\n\e[%uC", indent + 5);
-      running_length = 0;
-    }
-  }
-
-  putchar('\n'), putchar('\n');
-}
-
-u8 help() {
-  struct winsize wsize;
-  ioctl(0, TIOCGWINSZ, &wsize);
-  register u8 SWIDTH =  wsize.ws_col;
-  
-  const u8 CENTER = (SWIDTH >> 1) - 4;
-  // subtract 1 because it is half of width for arg (ex. "-d")
-  const u8 INDENT = (SWIDTH >> 4) - 1; 
-  // total indent for help descriptions if they have to go to next line
-  const u8 HELP_INDENT = INDENT + INDENT + 2;
-  // max length for help description in COL 2 before it needs to wrap
-  const u8 HELP_WIDTH = SWIDTH - HELP_INDENT;
-
-  print_summary(SWIDTH, INDENT);
-
-  printf("\e[%uC[OPTIONS]\n", CENTER);
-
-  const char ARGS[ARG_COUNT] = {'h', 'v', 's', 'n', 'u', 'r', 'w', 'd', 'b', 'a', 'l', 'x'};
-  const char *ARGSHELP[ARG_COUNT] = {
-    "Get all available options",
-    VERSION_HELP,
-    "Get the seed for the generated buffer (no parameter) or provide your own. Seeds are reusable but should be kept secret.",
-    "Get the nonce for the generated buffer (no parameter) or provide your own. Nonces should ALWAYS be unique and secret.",
-    "Generate a universally unique identifier (UUID). Optionally specify a number of UUID's to generate (max 128)",
-    "Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)",
-    "Desired size (u8, u16, u32, u64) of returned numbers (default is u64)",
-    "Dump the whole buffer",
-    "Just bits...literally",
-    "Assess a binary or ASCII sample of 1000000 bits (1 MB) written to a filename you provide. You can choose a multiplier within [1,1000]",
-    "Live stream of continuously generated numbers",
-    "Print numbers in hexadecimal format with leading prefix"
-  };
-  const u8 lengths[ARG_COUNT] = {25, 32, 119, 117, 108, 74, 69, 21, 20, 133, 45, 55};
-  
-  register short len;
-  for (int i = 0; i < ARG_COUNT; ++i) {
-    printf("\e[%uC\e[1;33m-%c\e[m\e[%uC%.*s\n", INDENT, ARGS[i], INDENT, HELP_WIDTH, ARGSHELP[i]);
-    len = lengths[i] - HELP_WIDTH;
-    while (len > 0) {
-      ARGSHELP[i] += HELP_WIDTH + (ARGSHELP[i][HELP_WIDTH] == ' ');
-      printf("\e[%uC%.*s\n", HELP_INDENT, HELP_WIDTH, ARGSHELP[i]);
-      len -= HELP_WIDTH;
-    }
-  }
-  return 0;
-}
-
-u8 uuid(u64 *restrict _ptr, u8 limit, double chseed, const u64 nonce) {
-  adam(_ptr, &chseed, nonce);
-
-  u8 buf[16];
-
-  print_uuid:
-    // Fill buf with 16 random bytes
-    u128 tmp = ((u128)_ptr[0] << 64) | _ptr[1];
-    __builtin_memcpy(buf, &tmp, sizeof(u128));
-
-    // CODE AND COMMENT PULLED FROM CRYPTOSYS (https://www.cryptosys.net/pki/Uuid.c.html)
-    //
-    // Adjust certain bits according to RFC 4122 section 4.4.
-    // This just means do the following
-    // (a) set the high nibble of the 7th byte equal to 4 and
-    // (b) set the two most significant bits of the 9th byte to 10'B,
-    //     so the high nibble will be one of {8,9,A,B}.
-    buf[6] = 0x40 | (buf[6] & 0xf);
-    buf[8] = 0x80 | (buf[8] & 0x3f);
-
-    // Print the UUID
-    printf("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-            buf[0], buf[1], buf[2],  buf[3],  buf[4],  buf[5],  buf[6],  buf[7],
-            buf[8], buf[9], buf[10], buf[11], buf[12], buf[13], buf[14], buf[15]);
-
-    if (--limit > 0) {
-      printf(",\n");
-      _ptr += 2;
-      goto print_uuid;
-    }
-
-  return putchar('\n');
 }
 
 u8 infinite(u64 *restrict _ptr, double chseed, u64 nonce) {
