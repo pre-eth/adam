@@ -17,8 +17,13 @@ FORCE_INLINE static u8 err(const char *s) {
   return fprintf(stderr, "\e[1;31m%s\e[m\n", s);
 }
 
-// The algorithm requires at least the construction of 3 maps of size BUF_SIZE
-// Offsets logically represent each individual map, but it's all one buffer
+/* 
+  The algorithm requires at least the construction of 3 maps of size BUF_SIZE
+  Offsets logically represent each individual map, but it's all one buffer
+
+  static is necessary because otherwise buffer is initiated with junk that 
+  removes the deterministic nature of the algorithm
+*/
 static u64 buffer[BUF_SIZE * 3] ALIGN(SIMD_LEN);
 
 int main(int argc, char **argv) {
@@ -27,8 +32,8 @@ int main(int argc, char **argv) {
   const char *fmt = "%lu";
 
   register u8 precision, idx, show_seed, show_nonce;
-  precision = 64;
   idx = show_seed = show_nonce = 0;
+  precision = 64;
 
   register u16 results, limit;
   results = limit = 1;
