@@ -16,14 +16,9 @@ FORCE_INLINE static void print_binary(char *restrict _bptr, u64 num, const reg *
     (x >> 0) & 1, (x >> 1) & 1, (x >> 2) & 1, (x >> 3) & 1,\
     (x >> 4) & 1, (x >> 5) & 1, (x >> 6) & 1, (x >> 7) & 1
 
-  u8 a = num & 0xFF;
-  u8 b = (num >> 8)  & 0xFF;
-  u8 c = (num >> 16) & 0xFF;
-  u8 d = (num >> 24) & 0xFF;
-  u8 e = (num >> 32) & 0xFF;
-  u8 f = (num >> 40) & 0xFF;
-  u8 g = (num >> 48) & 0xFF;
-  u8 h = (num >> 56) & 0xFF;
+  u8 a, b, c, d, e, f, g, h;
+
+  LONG_TO_BYTES(num, a, b, c, d, e, f, g, h);
 
   reg r2 = SIMD_SETR8(BYTE_TO_BITS(a), BYTE_TO_BITS(b), BYTE_TO_BITS(c), BYTE_TO_BITS(d)
                     #ifdef __AVX512F__

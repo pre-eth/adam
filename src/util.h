@@ -44,4 +44,14 @@
   #define LIKELY(x)         __builtin_expect((x), 1)
   #define UNLIKELY(x)       __builtin_expect((x), 0)
 
+  #define LONG_TO_BYTES(num,a,b,c,d,e,f,g,h) \
+    a = num & 0xFF, \
+    b = (num >> 8)  & 0xFF, \
+    c = (num >> 16) & 0xFF, \
+    d = (num >> 24) & 0xFF, \
+    e = (num >> 32) & 0xFF, \
+    f = (num >> 40) & 0xFF, \
+    g = (num >> 48) & 0xFF, \
+    h = (num >> 56) & 0xFF
+
 #endif
