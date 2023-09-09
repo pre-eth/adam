@@ -241,19 +241,13 @@ FORCE_INLINE static void mix(u64 *restrict _ptr) {
   } while (i < BUF_SIZE - 1);
 }
 
-double adam(u64 *restrict _ptr, double *seed, const u64 nonce) {
-  double chseed = *seed;
-
+double adam(u64 *restrict _ptr, regd *seeds, const u64 nonce) {
   clock_t start = clock();
 
   accumulate(_ptr, nonce);
   diffuse(_ptr, nonce);
-  apply(_ptr, &chseed);
-  mix(_ptr);
+  apply(_ptr, seeds);
+  mix(_ptr); 
 
-  double duration = (double) (clock() - start) / CLOCKS_PER_SEC;
-
-  *seed = chseed;
-
-  return duration;
+  return (double) (clock() - start) / CLOCKS_PER_SEC;
 }
