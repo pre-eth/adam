@@ -76,33 +76,51 @@ static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
 };
 
 FORCE_INLINE static void accumulate(u64 *restrict _ptr, const u64 nonce) {
-  register u8 i = 0;
-  
   /*
     8 64-bit IV's that correspond to the verse:
     "Be fruitful and multiply, and replenish the earth (Genesis 1:28)"
   */
   u64 IV[8] ALIGN(SIMD_LEN) = {
-    0x4265206672756974UL ^ nonce, 
-    0x66756C20616E6420UL ^ ~nonce, 
-    0x6D756C7469706C79UL ^ nonce,
-    0x2C20616E64207265UL ^ ~nonce, 
-    0x706C656E69736820UL ^ nonce,
-    0x7468652065617274UL ^ ~nonce, 
-    0x68202847656E6573UL ^ nonce,
-    0x697320313A323829UL ^ ~nonce
+    0x4265206672756974UL ^  nonce, 
+    0x66756C20616E6420UL ^  nonce, 
+    0x6D756C7469706C79UL ^  nonce,
+    0x2C20616E64207265UL ^  nonce, 
+    0x706C656E69736820UL ^  nonce,
+    0x7468652065617274UL ^  nonce, 
+    0x68202847656E6573UL ^  nonce,
+    0x697320313A323829UL ^  nonce
   };
 
-  const reg a = SIMD_LOADBITS((reg*) IV);
-  const reg b = SIMD_LOADBITS((reg*) &IV[(!!(SIMD_LEN & 63) << 2)]);
+  ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
+  ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
+  ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
+  ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);    
+
+  reg a, b;
   
-  do {
-    SIMD_STOREBITS((reg*) &_ptr[i], a);
-    SIMD_STOREBITS((reg*) &_ptr[i + (SIMD_LEN >> 3)], b);
-    SIMD_STOREBITS((reg*) &_ptr[i + (SIMD_LEN >> 2)], a); 
-    SIMD_STOREBITS((reg*) &_ptr[i + (SIMD_LEN >> 1)], b);         
-    i += SIMD_LEN - (i == BUF_SIZE - SIMD_LEN);
-  } while (i < BUF_SIZE - 1);
+  register u8 i;
+  register u8 maps_filled = 0;
+  fill_the_earth:
+    i = 0;
+    a = SIMD_LOADBITS((reg*) IV);
+    b = SIMD_LOADBITS((reg*) &IV[(!!(SIMD_LEN & 63) << 2)]);    
+    do {
+      SIMD_STOREBITS((reg*) &_ptr[i], a);
+      SIMD_STOREBITS((reg*) &_ptr[i + (SIMD_LEN >> 3)], b);
+      SIMD_STOREBITS((reg*) &_ptr[i + (SIMD_LEN >> 2)], a); 
+      SIMD_STOREBITS((reg*) &_ptr[i + (SIMD_LEN >> 1)], b);         
+      i += SIMD_LEN - (i == BUF_SIZE - SIMD_LEN);
+    } while (i < BUF_SIZE - 1);
+
+    if (++maps_filled < 3) {
+      ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
+      ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
+      ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
+      ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
+          
+      _ptr += BUF_SIZE;
+      goto fill_the_earth;
+    }
 }
 
 FORCE_INLINE static void diffuse(u64 *restrict _ptr, const u64 nonce) {
