@@ -17,6 +17,23 @@ FORCE_INLINE static u8 err(const char *s) {
   return fprintf(stderr, "\e[1;31m%s\e[m\n", s);
 }
 
+static u8 fill_seeds(double seed, double *seeds, regd *seeds_reg) {
+  const regd dbl_and = SIMD_SETPD(2.22507385850720088902458687609E-308),
+             dbl_or  = SIMD_SETPD(0.5);
+
+  seeds[0] = seed;
+  seeds[1] = CHAOTIC_FN(1.0 - seed);
+  seeds[2] = 1.0 - CHAOTIC_FN(seeds[1]);
+  seeds[3] = CHAOTIC_FN(seeds[2]); 
+  regd d1 = SIMD_LOADPD(seeds);
+
+  d1 = SIMD_ANDPD(dbl_and, d1);
+  d1 = SIMD_ORPD(d1, dbl_or);
+  d1 = SIMD_SUBPD(d1, dbl_or);
+
+  *seeds_reg = d1;
+}
+
 /* 
   The algorithm requires at least the construction of 3 maps of size BUF_SIZE
   Offsets logically represent each individual map, but it's all one buffer
@@ -31,12 +48,13 @@ int main(int argc, char **argv) {
 
   const char *fmt = "%lu";
 
-  register u8 precision, idx, show_seed, show_nonce;
-  idx = show_seed = show_nonce = 0;
-  precision = 64;
+  register u8 precision  = 64,
+              idx        = 0,
+              show_seed  = 0,
+              show_nonce = 0;
 
-  register u16 results, limit;
-  results = limit = 1;
+  register u16 results = 1, 
+               limit   = 0;
 
   register u64 mask = __UINT64_MAX__ - 1;
 
@@ -44,7 +62,11 @@ int main(int argc, char **argv) {
   while (!(idx = SEED64(&seed))); 
   idx = 0;
 
+  double seeds[SIMD_LEN >> 3] ALIGN(SIMD_LEN);
   double chseed = ((double) seed / (double) __UINT64_MAX__) * 0.5;
+  regd seeds_reg;
+  fill_seeds(chseed, seeds, &seeds_reg);
+
   register u64 nonce = ((u64) time(NULL)) ^ GOLDEN_RATIO ^ seed;
 
   register short opt;
@@ -55,13 +77,13 @@ int main(int argc, char **argv) {
       case 'v':
         return puts(VERSION);
       case 'l':
-        return infinite(buf_ptr, chseed, nonce);
+        return infinite(buf_ptr, &seeds_reg, nonce);
       case 'a':
         limit = a_to_u(optarg, 1, ASSESS_LIMIT);
-        assess(buf_ptr, limit, chseed, nonce);
+        assess(buf_ptr, limit, &seeds_reg, nonce);
         goto show_params;
       case 'b':
-        return bits(buf_ptr, chseed, nonce);
+        return bits(buf_ptr, &seeds_reg, nonce);
       case 'x':
         fmt = "0x%lX";
       break;
@@ -92,6 +114,7 @@ int main(int argc, char **argv) {
           int res = sscanf(optarg, "%lf", &chseed);
           if (!res || res == EOF || chseed <= 0.0 || chseed >= 0.5) 
             return err("Seed must be a valid decimal within (0.0, 0.5)");
+          fill_seeds(chseed, seeds, &seeds_reg);
         }
       break;
       case 'n':
@@ -101,14 +124,14 @@ int main(int argc, char **argv) {
       break;
       case 'u':
         limit = optarg ? a_to_u(optarg, 1, 128) : 1;
-        uuid(buf_ptr, limit, chseed, nonce);
+        uuid(buf_ptr, limit, &seeds_reg, nonce);
         goto show_params;
       default:
         return err("Option is invalid or missing required argument");             
     }
   }
 
-  adam(buf_ptr, &chseed, nonce);
+  adam(buf_ptr, &seeds_reg, nonce);
 
   // Need to do this for default precision because 
   // we can't rely on overflow arithmetic :(
