@@ -219,15 +219,13 @@ FORCE_INLINE static void mix(u64 *restrict _ptr) {
   register u8 i = 0;
 
   reg r1, r2;
-
   do {
     r1 = SIMD_SETR64(
-                    XOR_MAPS(i)
-                #ifdef __AVX512F__
-                  , XOR_MAPS(i + 4)
-                #endif
+                      XOR_MAPS(i)
+                  #ifdef __AVX512F__
+                    , XOR_MAPS(i + 4)
+                  #endif
                     );
-    SIMD_STOREBITS((reg*) &_ptr[i], r1);   
 
     r2 = SIMD_SETR64(
                       XOR_MAPS(i + (SIMD_LEN >> 3))
@@ -235,10 +233,12 @@ FORCE_INLINE static void mix(u64 *restrict _ptr) {
                     , XOR_MAPS(i + (SIMD_LEN >> 3) + 4)
                   #endif
                     );
+
+    SIMD_STOREBITS((reg*) &_ptr[i], r1);   
     SIMD_STOREBITS((reg*) &_ptr[i + (SIMD_LEN >> 3)], r2);   
 
     i += (SIMD_LEN >> 2) - (i == BUF_SIZE - (SIMD_LEN >> 2));
-  } while (i < (BUF_SIZE - 1));
+  } while (i < BUF_SIZE - 1);
 }
 
 double adam(u64 *restrict _ptr, double *seed, const u64 nonce) {
