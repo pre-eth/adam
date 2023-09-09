@@ -24,7 +24,7 @@ static u8 fill_seeds(double seed, double *seeds, regd *seeds_reg) {
   seeds[0] = seed;
   seeds[1] = CHAOTIC_FN(1.0 - seed);
   seeds[2] = 1.0 - CHAOTIC_FN(seeds[1]);
-  seeds[3] = CHAOTIC_FN(seeds[2]); 
+  seeds[3] = CHAOTIC_FN(seeds[2]) - 0.5; 
   regd d1 = SIMD_LOADPD(seeds);
 
   d1 = SIMD_ANDPD(dbl_and, d1);
