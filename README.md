@@ -6,7 +6,7 @@
  ▄▀▀▀▀█▄   ██    ██  ▄▀▀▀▀█▄   █ ▀█▀ ██  
 ▄█▄  ▄██▄ ▄██▄▄▄█▀  ▄█▄  ▄██▄ ▄█▄ █ ▄██▄ 
 
-v1.1.2
+v1.1.3
 
 <b>Use at your own risk</b>. Criticism and suggestions are welcome.
 </pre>         
@@ -18,9 +18,9 @@ Also, just like ISAAC, ADAM is a backronym that describes its steps:
 **A** ccumulate seed content in the buffer <br>
 **D** iffuse the buffer with logic adapted from ISAAC <br>
 **A** pply the necessary iterations of the chaotic function <br>
-**M** ix the chaotic maps together to produce the output vector
+**M** ix the chaotic maps in the buffer together to produce the output vector
 
-You can find a deeper dive into the algorithm behind the number generation process in the paper above, and you can read more information about ISAAC and its wonderful author Bob Jenkins [here](http://burtleburtle.net/bob/rand/isaacafa.html).
+You can find a deeper dive into the algorithm behind the number generation process in the paper above, and you can learn more information about ISAAC and its wonderful author Bob Jenkins [here](http://burtleburtle.net/bob/rand/isaacafa.html).
 
 ## FEATURES
 
@@ -30,7 +30,7 @@ You can find a deeper dive into the algorithm behind the number generation proce
 - Output sequence is irreversible
 - Easy interface for bit generation in both ASCII and binary form. Output up to 1GB at a time.
 - Alternatively, stream bits directly to the `stdin` of your own programs, RNG test suites, etc.
-- Extract different precisions of numbers from the buffer
+- Extract different widths of numbers from the buffer
 - Generate RFC 4122 compliant UUID’s
 - View all generated numbers at once
 - Reports execution time for number generation process
@@ -38,7 +38,9 @@ You can find a deeper dive into the algorithm behind the number generation proce
 - Uses SIMD acceleration where applicable (AVX2/AVX-512F)
 
 ### Coming Soon!
+
 - Multithreading
+- ARM NEON support
 - Better performance, including benchmarks and self-benchmark ability
 - Examination option for exploring generated buffers based on ent and Bob Jenkins' own RNG tests!
 - Some other cool surprises :)
