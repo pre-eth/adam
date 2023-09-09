@@ -15,10 +15,12 @@
     #define SIMD_SET64       _mm512_set1_epi64
     #define SIMD_LOADBITS    _mm512_load_si512
     #define SIMD_STOREBITS   _mm512_store_si512
+    #define SIMD_ANDBITS     _mm512_and_si512
     #define SIMD_XORBITS     _mm512_xor_si512
   #else
     #define SIMD_LEN         32
     typedef __m256i          reg;
+    typedef __m256d          regd;
     #define SIMD_SETZERO     _mm256_setzero_si256
     #define SIMD_SET8        _mm256_set1_epi8
     #define SIMD_SETR8       _mm256_setr_epi8
@@ -28,7 +30,18 @@
     #define SIMD_ADD64       _mm256_add_epi64
     #define SIMD_LOADBITS    _mm256_load_si256
     #define SIMD_STOREBITS   _mm256_store_si256
+    #define SIMD_ANDBITS     _mm256_and_si256
     #define SIMD_XORBITS     _mm256_xor_si256
+    #define SIMD_CASTPD      _mm256_castpd_si256
+    #define SIMD_LOADPD      _mm256_load_pd
+    #define SIMD_STOREPD     _mm256_store_pd
+    #define SIMD_SETPD       _mm256_set1_pd
+    #define SIMD_SETRPD      _mm256_setr_pd
+    #define SIMD_ADDPD       _mm256_add_pd
+    #define SIMD_SUBPD       _mm256_sub_pd
+    #define SIMD_MULPD       _mm256_mul_pd
+    #define SIMD_ANDPD       _mm256_and_pd
+    #define SIMD_ORPD        _mm256_or_pd
   #endif
 
   typedef __UINT8_TYPE__    u8;
