@@ -293,8 +293,13 @@ u8 bits(u64 *restrict _ptr, regd *seeds, const u64 nonce) {
   return stream_ascii(stdout, _ptr, __UINT64_MAX__, seeds, nonce);
 }
 
-u8 assess(u64 *restrict _ptr, const u16 limit, const double chseed, const u64 nonce) {
+u8 assess(u64 *restrict _ptr, const u16 limit, regd *seeds, const u64 nonce) {
+  FILE *fptr;
+  const char *file_type;
+  u8 (*fn)(FILE*, u64 *restrict, const u64, regd*, u64);
+  char c;
   char file_name[65];
+
   get_file_name:
     printf("File name: \e[1;33m");
     if (!scanf("%64s", &file_name)) {
@@ -302,12 +307,8 @@ u8 assess(u64 *restrict _ptr, const u16 limit, const double chseed, const u64 no
       goto get_file_name;
     }
 
-  FILE *fptr;
-  const char *file_type;
-  u8 (*fn)(FILE*, u64 *restrict, const u64, double, u64);
-  char c;
-  get_file_type:
-    printf("\e[mFile type (0 = ASCII, BINARY = 1): \e[1;33m");
+  get_file_type:  // fix order here of binary
+    printf("\e[mFile type (0 = ASCII, 1 = BINARY): \e[1;33m");
     scanf(" %c", &c);
     if (c == '0')
       file_type = "w+", fn = &stream_ascii;
@@ -320,7 +321,7 @@ u8 assess(u64 *restrict _ptr, const u16 limit, const double chseed, const u64 no
 
   fptr = fopen(file_name, file_type);
   fputs("\e[m", stdout);
-  c = fn(fptr, _ptr, limit * ASSESS_BITS, chseed, nonce);
+  c = fn(fptr, _ptr, limit * ASSESS_BITS, seeds, nonce);
 
   if (UNLIKELY(!c))
     return fputs("\e[1;31mError while creating file. Exiting.\e[m\n", stderr);
