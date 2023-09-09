@@ -27,20 +27,12 @@
    h-=d; e^=g<<14; g+=h; \
   }
 
-  #define ISAAC_IND(mm,x)  (*(u64*)((u8*)(mm) + ((x) & ((BUF_SIZE-1)<<3))))
-  #define ISAAC_STEP(mx,a,b,mm,m,m2,r,x) { \
-    x = *m; \
-    a = (mx) + *(m2++); \
-    *(m++) = y = ISAAC_IND(mm,x) + a + b; \
-    *(r++) = b = ISAAC_IND(mm,y>>MAGNITUDE) + x; \
-  }
-
   /* ADAM stuff */
 
-  #define SEED64        _rdseed64_step
+  #define SEED64          _rdseed64_step
   
-  #define THREAD_EXP    3
-  #define THSEED(i, sd) chdata[i].seed = *sd, *sd += (*sd / 100000000)
+  #define THREAD_EXP      3
+  #define THSEED(i, sd)   chdata[i].seed = *sd, *sd += (*sd / 100000000)
 
   /*
     The PRNG algorithm is based on the construction of three 
@@ -49,7 +41,7 @@
     using a chaotic function to scramble the used positions. The 
     chaotic function is given by this logistic function
   */
-  #define CHAOTIC_FN(x)   (3.9999 * x * (1 - x))
+  #define CHAOTIC_FN(x)   (3.9999 * (x) * (1 - (x)))
   
   /* 
     ROUNDS must satisfy k = T / 3 where T % 3 = 0, where k is 
@@ -84,6 +76,6 @@
 
   // Initiates RNG algorithm with user provided seed and nonce
   // Returns duration of generation
-  double adam(u64 *restrict _ptr, double *seed, const u64 nonce);
+  double adam(u64 *restrict _ptr, regd *seeds, const u64 nonce);
 
 #endif
