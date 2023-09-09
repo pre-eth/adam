@@ -1,5 +1,5 @@
-#include <sys/ioctl.h>
-#include <unistd.h>   // for sleep()
+#include <sys/ioctl.h>    // for pretty help printing
+#include <unistd.h>       // for sleep()
 
 #include "adam.h"
 #include "cli.h"
@@ -31,7 +31,7 @@ FORCE_INLINE static void print_binary(char *restrict _bptr, u64 num, const reg *
   #ifndef __AVX512F__
     r2 = SIMD_SETR8(BYTE_TO_BITS(e), BYTE_TO_BITS(f), BYTE_TO_BITS(g), BYTE_TO_BITS(h));
     r2 = SIMD_ADD8(r2, *r1);
-    SIMD_STOREBITS((reg*) &_bptr[32], r2);
+    SIMD_STOREBITS((reg*) &_bptr[SIMD_LEN], r2);
   #endif
 }
 
@@ -70,11 +70,11 @@ FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent) {
   printf("\n\e[%uC", indent);
 
   for (; i < SUMM_PIECES; ++i) {
-    printf(pieces[i]), putchar(' ');
+    printf("%s ", pieces[i]);
     // add one for space
     running_length += sizes[i] + 1;
     if (running_length + sizes[i + 1] > swidth) {
-      // add 5 for "adam "
+      // add 5 for "adam " to create hanging indent for succeeding lines
       printf("\n\e[%uC", indent + 5);
       running_length = 0;
     }
@@ -167,8 +167,8 @@ u64 a_to_u(const char *s, const u64 min, const u64 max) {
   return (val >= min || val < max - 1) ? val : min;
 }
 
-u8 uuid(u64 *restrict _ptr, u8 limit, double chseed, const u64 nonce) {
-  adam(_ptr, &chseed, nonce);
+u8 uuid(u64 *restrict _ptr, u8 limit, regd *seeds, const u64 nonce) {
+  adam(_ptr, seeds, nonce);
 
   u8 buf[16];
 
@@ -201,7 +201,7 @@ u8 uuid(u64 *restrict _ptr, u8 limit, double chseed, const u64 nonce) {
   return putchar('\n');
 }
 
-static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double chseed, u64 nonce) {
+static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, regd *seeds, u64 nonce) {
   if (UNLIKELY(fptr == NULL)) return 0;
   
   /*
@@ -219,10 +219,10 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
   const reg r1 = SIMD_SET8('0');
 
   while (rate > 0) {
-    duration += adam(_ptr, &chseed, nonce);
+    duration += adam(_ptr, seeds, nonce);
     print_chunks(fptr, _bptr, _ptr, &r1);
     --rate;
-    nonce ^= _ptr[nonce & 0xFF];
+    nonce = (nonce ^ ~_ptr[nonce & 0xFF] ^ GOLDEN_RATIO) - (_ptr[nonce & 0xFF] >> 32);
   } 
 
   /*
@@ -238,7 +238,7 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
     register u16 l, limit;
     register u64 num;
 
-    duration += adam(_ptr, &chseed, nonce);
+    duration += adam(_ptr, seeds, nonce);
     print_leftovers:
       limit = (leftovers < BITBUF_SIZE) ? leftovers : BITBUF_SIZE;
 
@@ -259,7 +259,7 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
                 limit, duration);
 }
 
-static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, double chseed, u64 nonce) {   
+static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, regd *seeds, u64 nonce) {   
   if (UNLIKELY(fptr == NULL)) return 0;
 
   /*
@@ -272,16 +272,16 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
 
   register double duration = 0.0;
 
-  while (rate > 0) {
-    duration += adam(_ptr, &chseed, nonce);
+  while (LIKELY(rate > 0)) {
+    duration += adam(_ptr, seeds, nonce);
     fwrite(_ptr, 8, BUF_SIZE, fptr);
     --rate;
-    nonce ^= _ptr[nonce & 0xFF];
+    nonce = (nonce ^ ~_ptr[nonce & 0xFF] ^ GOLDEN_RATIO) - (_ptr[nonce & 0xFF] >> 32);
   } 
 
   if (LIKELY(leftovers > 0)) {
     const u16 nums = leftovers >> 6; 
-    duration += adam(_ptr, &chseed, nonce);
+    duration += adam(_ptr, seeds, nonce);
     fwrite(_ptr, 8, (nums + !!(nums & 63)), fptr);
   }
 
@@ -289,8 +289,8 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, double c
                 limit, duration);
 }
 
-u8 bits(u64 *restrict _ptr, const double chseed, const u64 nonce) {
-  return stream_ascii(stdout, _ptr, __UINT64_MAX__, chseed, nonce);
+u8 bits(u64 *restrict _ptr, regd *seeds, const u64 nonce) {
+  return stream_ascii(stdout, _ptr, __UINT64_MAX__, seeds, nonce);
 }
 
 u8 assess(u64 *restrict _ptr, const u16 limit, const double chseed, const u64 nonce) {
@@ -397,7 +397,7 @@ u8 infinite(u64 *restrict _ptr, double chseed, u64 nonce) {
   char lines[40][100];
 
   register u8 i = 0;
-  adam(_ptr, &chseed, nonce);
+  adam(_ptr, seeds, nonce);
   live_adam:
     do {
       snprintf(lines[0],  96, "%llu%llu%llu%llu%llu%llu", GET_3(i + 0), GET_3(i + 3));
@@ -474,8 +474,8 @@ u8 infinite(u64 *restrict _ptr, double chseed, u64 nonce) {
       snprintf(lines[12], 18, "%llu%llu",                 GET_2(i + 29)); 
     }
     i = ((leftovers) << 5) - (leftovers);
-    nonce ^= _ptr[nonce & 0xFF] ^ GOLDEN_RATIO;
-    adam(_ptr, &chseed, nonce);
+    nonce = (nonce ^ ~_ptr[nonce & 0xFF] ^ GOLDEN_RATIO) - (_ptr[nonce & 0xFF] >> 32);
+    adam(_ptr, seeds, nonce);
     goto live_adam; 
 
   return 0;
