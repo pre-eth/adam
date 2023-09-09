@@ -124,8 +124,6 @@ FORCE_INLINE static void accumulate(u64 *restrict _ptr, const u64 nonce) {
 }
 
 FORCE_INLINE static void diffuse(u64 *restrict _ptr, const u64 nonce) {
-  register u8 i = 0;
-
   // Following code is derived from Bob Jenkins, author of ISAAC64
 
   register u64 a, b, c, d, e, f, g, h;
@@ -137,6 +135,7 @@ FORCE_INLINE static void diffuse(u64 *restrict _ptr, const u64 nonce) {
   ISAAC_MIX(a, b, c, d, e, f, g, h);
   ISAAC_MIX(a, b, c, d, e, f, g, h);
 
+  register u8 i = 0;
   do {
     a += _ptr[i];     b += _ptr[i + 1]; c += _ptr[i + 2]; d += _ptr[i + 3];
     e += _ptr[i + 4]; f += _ptr[i + 5]; g += _ptr[i + 6]; h += _ptr[i + 7];
@@ -147,28 +146,6 @@ FORCE_INLINE static void diffuse(u64 *restrict _ptr, const u64 nonce) {
     _ptr[i + 4] = e; _ptr[i + 5] = f; _ptr[i + 6] = g; _ptr[i + 7] = h;
 
   } while ((i += 8 - (i == 248)) < BUF_SIZE - 1);
-
-  u64 *pp, *p2, *pend, *r;
-  r = pp = _ptr;
-  pend = p2 = pp + (BUF_SIZE >> 1);
-
-  register u64 x, y;
-
-  for (;pp < pend;) {
-    ISAAC_STEP(~(a^(a<<21)), a, b, _ptr, pp, p2, r, x);
-    ISAAC_STEP(  a^(a>>5)  , a, b, _ptr, pp, p2, r, x);
-    ISAAC_STEP(  a^(a<<12) , a, b, _ptr, pp, p2, r, x);
-    ISAAC_STEP(  a^(a>>33) , a, b, _ptr, pp, p2, r, x);
-  }
-
-  p2 = pp;
-  pend = &_ptr[BUF_SIZE];
-  for (;p2 < pend;) {
-    ISAAC_STEP(~(a^(a<<21)), a, b, _ptr, pp, p2, r, x);
-    ISAAC_STEP(  a^(a>>5)  , a, b, _ptr, pp, p2, r, x);
-    ISAAC_STEP(  a^(a<<12) , a, b, _ptr, pp, p2, r, x);
-    ISAAC_STEP(  a^(a>>33) , a, b, _ptr, pp, p2, r, x);
-  } 
 }
 
 static double multi_thread(thdata *data) {
