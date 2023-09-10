@@ -3,51 +3,7 @@
 
 #include "adam.h"
 #include "cli.h"
-
-/*
-  To make writes more efficient, rather than writing one
-  number at a time, 16 numbers are parsed together and then
-  written to stdout with 1 fwrite call.
-*/  
-static char bitbuffer[BITBUF_SIZE] ALIGN(SIMD_LEN);
-
-FORCE_INLINE static void print_binary(char *restrict _bptr, u64 num, const reg *r1) {
-  #define BYTE_TO_BITS(x) \
-    (x >> 0) & 1, (x >> 1) & 1, (x >> 2) & 1, (x >> 3) & 1,\
-    (x >> 4) & 1, (x >> 5) & 1, (x >> 6) & 1, (x >> 7) & 1
-
-  u8 a, b, c, d, e, f, g, h;
-
-  LONG_TO_BYTES(num, a, b, c, d, e, f, g, h);
-
-  reg r2 = SIMD_SETR8(BYTE_TO_BITS(a), BYTE_TO_BITS(b), BYTE_TO_BITS(c), BYTE_TO_BITS(d)
-                    #ifdef __AVX512F__
-                    , BYTE_TO_BITS(e), BYTE_TO_BITS(f), BYTE_TO_BITS(g), BYTE_TO_BITS(h)
-                    #endif
-                     );
-  r2 = SIMD_ADD8(r2, *r1);
-  SIMD_STOREBITS((reg*) _bptr, r2);
-
-  #ifndef __AVX512F__
-    r2 = SIMD_SETR8(BYTE_TO_BITS(e), BYTE_TO_BITS(f), BYTE_TO_BITS(g), BYTE_TO_BITS(h));
-    r2 = SIMD_ADD8(r2, *r1);
-    SIMD_STOREBITS((reg*) &_bptr[SIMD_LEN], r2);
-  #endif
-}
-
-// prints all bits in a buffer as chunks of 1024 bits
-FORCE_INLINE static void print_chunks(FILE *fptr, char *restrict _bptr, const u64 *restrict _ptr, const reg *r1) {  
-  register u8 i = 0;
-
-  do {
-    PRINT_4(0,   i + 0),
-    PRINT_4(256, i + 4),
-    PRINT_4(512, i + 8),
-    PRINT_4(768, i + 12);    
-
-    fwrite(_bptr, 1, BITBUF_SIZE, fptr);
-  } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
-}
+#include "ent.h"
 
 FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent) {
   #define SUMM_PIECES     7
@@ -201,6 +157,51 @@ u8 uuid(u64 *restrict _ptr, u8 limit, regd *seeds, const u64 nonce) {
   return putchar('\n');
 }
 
+/*
+  To make writes more efficient, rather than writing one
+  number at a time, 16 numbers are parsed together and then
+  written to stdout with 1 fwrite call.
+*/  
+static char bitbuffer[BITBUF_SIZE] ALIGN(SIMD_LEN);
+
+FORCE_INLINE static void print_binary(char *restrict _bptr, u64 num, const reg *r1) {
+  #define BYTE_TO_BITS(x) \
+    (x >> 0) & 1, (x >> 1) & 1, (x >> 2) & 1, (x >> 3) & 1,\
+    (x >> 4) & 1, (x >> 5) & 1, (x >> 6) & 1, (x >> 7) & 1
+
+  u8 a, b, c, d, e, f, g, h;
+
+  LONG_TO_BYTES(num, a, b, c, d, e, f, g, h);
+
+  reg r2 = SIMD_SETR8(BYTE_TO_BITS(a), BYTE_TO_BITS(b), BYTE_TO_BITS(c), BYTE_TO_BITS(d)
+                    #ifdef __AVX512F__
+                    , BYTE_TO_BITS(e), BYTE_TO_BITS(f), BYTE_TO_BITS(g), BYTE_TO_BITS(h)
+                    #endif
+                     );
+  r2 = SIMD_ADD8(r2, *r1);
+  SIMD_STOREBITS((reg*) _bptr, r2);
+
+  #ifndef __AVX512F__
+    r2 = SIMD_SETR8(BYTE_TO_BITS(e), BYTE_TO_BITS(f), BYTE_TO_BITS(g), BYTE_TO_BITS(h));
+    r2 = SIMD_ADD8(r2, *r1);
+    SIMD_STOREBITS((reg*) &_bptr[SIMD_LEN], r2);
+  #endif
+}
+
+// prints all bits in a buffer as chunks of 1024 bits
+FORCE_INLINE static void print_chunks(FILE *fptr, char *restrict _bptr, const u64 *restrict _ptr, const reg *r1) {  
+  register u8 i = 0;
+
+  do {
+    PRINT_4(0,   i + 0),
+    PRINT_4(256, i + 4),
+    PRINT_4(512, i + 8),
+    PRINT_4(768, i + 12);    
+
+    fwrite(_bptr, 1, BITBUF_SIZE, fptr);
+  } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
+}
+
 static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, regd *seeds, u64 nonce) {
   if (UNLIKELY(fptr == NULL)) return 0;
   
@@ -329,7 +330,17 @@ u8 assess(u64 *restrict _ptr, const u16 limit, regd *seeds, const u64 nonce) {
   return fclose(fptr);
 }
 
-u8 infinite(u64 *restrict _ptr, double chseed, u64 nonce) {
+u8 examine(u64 *restrict _ptr, const u16 limit, regd *seeds, u64 nonce) {
+  double r_ent, r_chisq, r_mean, r_montepicalc, r_scc;
+
+  u64 ones = 0;
+
+  
+
+  return 0;
+}
+
+u8 infinite(u64 *restrict _ptr, regd *seeds, u64 nonce) {
   /*
     There are 256 numbers per buffer. But we only need 75 to print one
     iteration. So 75 * 3 = 225. 256 - 225 = 31. Thus, for each buffer 31

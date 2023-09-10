@@ -10,7 +10,7 @@
 
   #define MAJOR         1
   #define MINOR         1
-  #define PATCH         2
+  #define PATCH         4
 
   #define VERSION       "v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH)
   #define VERSION_HELP  "Version of this software (" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH) ")"
