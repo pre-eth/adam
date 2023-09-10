@@ -63,11 +63,13 @@ int main(int argc, char **argv) {
   idx = 0;
 
   double seeds[SIMD_LEN >> 3] ALIGN(SIMD_LEN);
-  double chseed = ((double) seed / (double) __UINT64_MAX__) * 0.5;
-  regd seeds_reg;
-  fill_seeds(chseed, seeds, &seeds_reg);
 
-  register u64 nonce = ((u64) time(NULL)) ^ GOLDEN_RATIO ^ seed;
+  double start = ((double) seed / (double) __UINT64_MAX__) * 0.5;
+  seeds[0] = seeds[1] = seeds[2] = seeds[3] = start;
+
+  regd seeds_reg = SIMD_LOADPD(seeds);
+
+  register u64 nonce = ~((u64) time(NULL)) ^ GOLDEN_RATIO ^ seed;
 
   register short opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
@@ -111,10 +113,10 @@ int main(int argc, char **argv) {
       case 's':
         show_seed = (optarg == NULL);
         if (!show_seed) {
-          int res = sscanf(optarg, "%lf", &chseed);
-          if (!res || res == EOF || chseed <= 0.0 || chseed >= 0.5) 
+          int res = sscanf(optarg, "%lf", &start);
+          if (!res || res == EOF || start <= 0.0 || start >= 0.5) 
             return err("Seed must be a valid decimal within (0.0, 0.5)");
-          fill_seeds(chseed, seeds, &seeds_reg);
+          seeds[0] = seeds[1] = seeds[2] = seeds[3] = start;
         }
       break;
       case 'n':
@@ -150,7 +152,7 @@ int main(int argc, char **argv) {
 
   show_params:
     if (UNLIKELY(show_seed))
-      printf("\e[1;36mSEED:\e[m %.15f\n", chseed);
+      printf("\e[1;36mSEED:\e[m %.15f\n", start);
 
     if (UNLIKELY(show_nonce))
       printf("\e[1;36mNONCE:\e[m %lu\n", nonce);
