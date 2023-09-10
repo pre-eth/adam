@@ -82,13 +82,13 @@ FORCE_INLINE static void accumulate(u64 *restrict _ptr, const u64 nonce) {
   */
   u64 IV[8] ALIGN(SIMD_LEN) = {
     0x4265206672756974UL ^  nonce, 
-    0x66756C20616E6420UL ^  nonce, 
+    0x66756C20616E6420UL ^ ~nonce, 
     0x6D756C7469706C79UL ^  nonce,
-    0x2C20616E64207265UL ^  nonce, 
+    0x2C20616E64207265UL ^ ~nonce, 
     0x706C656E69736820UL ^  nonce,
-    0x7468652065617274UL ^  nonce, 
+    0x7468652065617274UL ^ ~nonce, 
     0x68202847656E6573UL ^  nonce,
-    0x697320313A323829UL ^  nonce
+    0x697320313A323829UL ^ ~nonce
   };
 
   ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
@@ -97,27 +97,24 @@ FORCE_INLINE static void accumulate(u64 *restrict _ptr, const u64 nonce) {
   ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);    
 
   reg a, b;
-  
-  register u8 i;
   register u8 maps_filled = 0;
+  register u8 i;
   fill_the_earth:
     i = 0;
     a = SIMD_LOADBITS((reg*) IV);
     b = SIMD_LOADBITS((reg*) &IV[(!!(SIMD_LEN & 63) << 2)]);    
     do {
       SIMD_STOREBITS((reg*) &_ptr[i], a);
-      SIMD_STOREBITS((reg*) &_ptr[i + (SIMD_LEN >> 3)], b);
-      SIMD_STOREBITS((reg*) &_ptr[i + (SIMD_LEN >> 2)], a); 
-      SIMD_STOREBITS((reg*) &_ptr[i + (SIMD_LEN >> 1)], b);         
-      i += SIMD_LEN - (i == BUF_SIZE - SIMD_LEN);
+      SIMD_STOREBITS((reg*) &_ptr[i + 4], b);
+      SIMD_STOREBITS((reg*) &_ptr[i + 8], a); 
+      SIMD_STOREBITS((reg*) &_ptr[i + 12], b);    
+      i += (SIMD_LEN >> 1) - (i == BUF_SIZE - (SIMD_LEN >> 1));
     } while (i < BUF_SIZE - 1);
 
     if (++maps_filled < 3) {
       ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
       ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
-      ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
-      ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
-          
+
       _ptr += BUF_SIZE;
       goto fill_the_earth;
     }
@@ -213,7 +210,7 @@ FORCE_INLINE static void apply(u64 *restrict _ptr, regd *seeds) {
              one = SIMD_SETPD(1.0);
 
   const reg mask = SIMD_SET64(0xFFUL),
-            inc  = SIMD_SET64(1UL);
+            inc  = SIMD_SET64(4UL);
 
   regd d1, d2, d3;
   d1 = *seeds;
@@ -224,13 +221,18 @@ FORCE_INLINE static void apply(u64 *restrict _ptr, regd *seeds) {
 
   register u8 rounds = ROUNDS, i = 0, j;
 
+  // double debug[4] ALIGN(SIMD_LEN);
+
   chaotic_iter:
     j = 0;
-    scale = SIMD_SETR64(1UL, 64UL, 128UL, 192UL);
+    scale = SIMD_SETR64(1UL, 2UL, 3UL, 4UL);
 
     do {
+      // SIMD_STOREPD(debug, d1);
+      // __builtin_printf("SEEDS: %.15lf, %.15lf, %.15lf, %.15lf\n", debug[0], debug[1], debug[2], debug[3]);
+
       d2 = SIMD_MULPD(d1, beta);
-      d3 = SIMD_LOADPD(&mod_table[j << 2]);     // NEEDS TO BE 3 FOR AVX-512
+      d3 = SIMD_LOADPD(&mod_table[j]);     // NEEDS TO BE 3 FOR AVX-512
       d2 = SIMD_MULPD(d2, d3);
 
       r1 = SIMD_CASTPD(d2);
@@ -239,19 +241,21 @@ FORCE_INLINE static void apply(u64 *restrict _ptr, regd *seeds) {
       r1 = SIMD_ANDBITS(r1, mask);
       SIMD_STOREBITS((reg*) arr, r1);   
 
-      map_b[j]       ^= map_a[arr[0]];
-      map_b[j + 64]  ^= map_a[arr[1]];
-      map_b[j + 128] ^= map_a[arr[2]];
-      map_b[j + 192] ^= map_a[arr[3]];
+      map_b[j]     ^= map_a[arr[0]];
+      map_b[j + 1] ^= map_a[arr[1]];
+      map_b[j + 2] ^= map_a[arr[2]];
+      map_b[j + 3] ^= map_a[arr[3]];
 
       d2 = SIMD_SUBPD(one, d1);
       d2 = SIMD_MULPD(d2, coefficient);
       d1 = SIMD_MULPD(d1, d2);
 
       scale = SIMD_ADD64(scale, inc);
-    } while (++j < 64);
+      j += 4 - (j == 252);
+    } while (j < BUF_SIZE - 1);
 
-    if (++i < ITER) goto chaotic_iter;
+    if (++i < ITER) 
+      goto chaotic_iter;
 
     if (rounds -= ITER) {
       i = 0;
