@@ -8,13 +8,13 @@
     The buffer is of type [u64; 256] with size 256 * 8 = 6144 bytes;
     Need to left shift by 6 because there are 64 bits per index
   */
-  #define MAGNITUDE     8  
-  #define BUF_SIZE      (1U << MAGNITUDE)     
-  #define SEQ_SIZE      (BUF_SIZE << 6)  
+  #define MAGNITUDE           8  
+  #define BUF_SIZE            (1U << MAGNITUDE)     
+  #define SEQ_SIZE            (BUF_SIZE << 6)  
 
   /* ISAAC64 stuff */
 
-  #define GOLDEN_RATIO  0x9E3779B97F4A7C13UL
+  #define GOLDEN_RATIO        0x9E3779B97F4A7C13UL
 
   #define ISAAC_MIX(a, b, c, d, e, f, g, h) { \
    a-=e; f^=h>>9;  h+=a; \
@@ -29,10 +29,10 @@
 
   /* ADAM stuff */
 
-  #define SEED64          _rdseed64_step
+  #define SEED64              _rdseed64_step
   
-  #define THREAD_EXP      3
-  #define THSEED(i, sd)   chdata[i].seed = *sd, *sd += (*sd / 100000000)
+  #define THREAD_EXP          3
+  #define THSEED(i, sd)       chdata[i].seed = *sd, *sd += (*sd / 100000000)
 
   /*
     The PRNG algorithm is based on the construction of three 
@@ -41,7 +41,7 @@
     using a chaotic function to scramble the used positions. The 
     chaotic function is given by this logistic function
   */
-  #define CHAOTIC_FN(x)   (3.9999 * (x) * (1 - (x)))
+  #define CHAOTIC_FN(x)       (3.9999 * (x) * (1 - (x)))
   
   /* 
     ROUNDS must satisfy k = T / 3 where T % 3 = 0, where k is 
@@ -66,16 +66,19 @@
     maximum double precision value of 15 with the seeds that it 
     generates. I'll let you check the math yourself to prove it :)
   */
-  #define ROUNDS        18
-  #define ITER          (ROUNDS / 3)
+  #define ROUNDS              18
+  #define ITER                (ROUNDS / 3)
 
-  #define XOR_MAPS(i)   _ptr[0 + i] ^ (_ptr[0 + i + 256]) ^ (_ptr[0 + i + 512]),\
-                        _ptr[1 + i] ^ (_ptr[1 + i + 256]) ^ (_ptr[1 + i + 512]),\
-                        _ptr[2 + i] ^ (_ptr[2 + i + 256]) ^ (_ptr[2 + i + 512]),\
-                        _ptr[3 + i] ^ (_ptr[3 + i + 256]) ^ (_ptr[3 + i + 512])
+  #define SEED_ADAM(s, start) s[0] = start,      s[1] = (start + 0.565) * 0.55, \
+                              s[2] = 1.0 - s[0], s[3] = 1.0 - s[1]
+
+  #define XOR_MAPS(i)         _ptr[0 + i] ^ (_ptr[0 + i + 256]) ^ (_ptr[0 + i + 512]),\
+                              _ptr[1 + i] ^ (_ptr[1 + i + 256]) ^ (_ptr[1 + i + 512]),\
+                              _ptr[2 + i] ^ (_ptr[2 + i + 256]) ^ (_ptr[2 + i + 512]),\
+                              _ptr[3 + i] ^ (_ptr[3 + i + 256]) ^ (_ptr[3 + i + 512])
 
   // Initiates RNG algorithm with user provided seed and nonce
   // Returns duration of generation
-  double adam(u64 *restrict _ptr, regd *seeds, const u64 nonce);
+  double adam(u64 *restrict _ptr, double *seeds, const u64 nonce);
 
 #endif
