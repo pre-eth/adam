@@ -58,7 +58,7 @@ u8 help() {
 
   const char ARGS[ARG_COUNT] = {'h', 'v', 's', 'n', 'u', 'r', 'w', 'd', 'b', 'a', 'l', 'x'};
   const char *ARGSHELP[ARG_COUNT] = {
-    "Get all available options",
+    "Get command summary and all available options",
     VERSION_HELP,
     "Get the seed for the generated buffer (no parameter) or provide your own. Seeds are reusable but should be kept secret.",
     "Get the nonce for the generated buffer (no parameter) or provide your own. Nonces should ALWAYS be unique and secret.",
@@ -67,7 +67,7 @@ u8 help() {
     "Desired size (u8, u16, u32, u64) of returned numbers (default width is u64)",
     "Dump the whole buffer",
     "Just bits...literally",
-    "Assess a binary or ASCII sample of 1000000 bits (1 MB) written to a filename you provide. You can choose a multiplier within [1,1000]",
+    "Assess a binary or ASCII sample of 1000000 bits (1 MB) written to a filename you provide. You can choose a multiplier within [1,5000]",
     "Live stream of continuously generated numbers",
     "Print numbers in hexadecimal format with leading prefix"
   };
@@ -123,7 +123,7 @@ u64 a_to_u(const char *s, const u64 min, const u64 max) {
   return (val >= min || val < max - 1) ? val : min;
 }
 
-u8 uuid(u64 *restrict _ptr, u8 limit, regd *seeds, const u64 nonce) {
+u8 uuid(u64 *restrict _ptr, u8 limit, double *seeds, const u64 nonce) {
   adam(_ptr, seeds, nonce);
 
   u8 buf[16];
@@ -202,7 +202,7 @@ FORCE_INLINE static void print_chunks(FILE *fptr, char *restrict _bptr, const u6
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
 }
 
-static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, regd *seeds, u64 nonce) {
+static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, double *seeds, u64 nonce) {
   if (UNLIKELY(fptr == NULL)) return 0;
   
   /*
@@ -215,7 +215,7 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, regd *se
 
   char *restrict _bptr = &bitbuffer[0];
 
-  register double duration = 0.0;
+  register double duration = 0.0, iter;
 
   const reg r1 = SIMD_SET8('0');
 
@@ -224,6 +224,7 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, regd *se
     print_chunks(fptr, _bptr, _ptr, &r1);
     --rate;
     nonce = (nonce ^ ~_ptr[nonce & 0xFF] ^ GOLDEN_RATIO) - (_ptr[nonce & 0xFF] >> 32);
+    nonce ^= (u64) clock();
   } 
 
   /*
@@ -260,7 +261,7 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, regd *se
                 limit, duration);
 }
 
-static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, regd *seeds, u64 nonce) {   
+static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, double *seeds, u64 nonce) {   
   if (UNLIKELY(fptr == NULL)) return 0;
 
   /*
@@ -278,6 +279,7 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, regd *se
     fwrite(_ptr, 8, BUF_SIZE, fptr);
     --rate;
     nonce = (nonce ^ ~_ptr[nonce & 0xFF] ^ GOLDEN_RATIO) - (_ptr[nonce & 0xFF] >> 32);
+    nonce ^= (u64) clock();
   } 
 
   if (LIKELY(leftovers > 0)) {
@@ -290,14 +292,14 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, regd *se
                 limit, duration);
 }
 
-u8 bits(u64 *restrict _ptr, regd *seeds, const u64 nonce) {
-  return stream_ascii(stdout, _ptr, __UINT64_MAX__, seeds, nonce);
+u8 bits(u64 *restrict _ptr, double *seeds, const u64 nonce) {
+  return stream_bytes(stdout, _ptr, __UINT64_MAX__, seeds, nonce);
 }
 
-u8 assess(u64 *restrict _ptr, const u16 limit, regd *seeds, const u64 nonce) {
+u8 assess(u64 *restrict _ptr, const u16 limit, double *seeds, const u64 nonce) {
   FILE *fptr;
   const char *file_type;
-  u8 (*fn)(FILE*, u64 *restrict, const u64, regd*, u64);
+  u8 (*fn)(FILE*, u64 *restrict, const u64, double*, u64);
   char c;
   char file_name[65];
 
@@ -308,7 +310,7 @@ u8 assess(u64 *restrict _ptr, const u16 limit, regd *seeds, const u64 nonce) {
       goto get_file_name;
     }
 
-  get_file_type:  // fix order here of binary
+  get_file_type:  
     printf("\e[mFile type (0 = ASCII, 1 = BINARY): \e[1;33m");
     scanf(" %c", &c);
     if (c == '0')
@@ -330,7 +332,7 @@ u8 assess(u64 *restrict _ptr, const u16 limit, regd *seeds, const u64 nonce) {
   return fclose(fptr);
 }
 
-u8 examine(u64 *restrict _ptr, const u16 limit, regd *seeds, u64 nonce) {
+u8 examine(u64 *restrict _ptr, const u16 limit, double *seeds, u64 nonce) {
   double r_ent, r_chisq, r_mean, r_montepicalc, r_scc;
 
   u64 ones = 0;
@@ -340,7 +342,7 @@ u8 examine(u64 *restrict _ptr, const u16 limit, regd *seeds, u64 nonce) {
   return 0;
 }
 
-u8 infinite(u64 *restrict _ptr, regd *seeds, u64 nonce) {
+u8 infinite(u64 *restrict _ptr, double *seeds, u64 nonce) {
   /*
     There are 256 numbers per buffer. But we only need 75 to print one
     iteration. So 75 * 3 = 225. 256 - 225 = 31. Thus, for each buffer 31
@@ -487,6 +489,7 @@ u8 infinite(u64 *restrict _ptr, regd *seeds, u64 nonce) {
     }
     i = ((leftovers) << 5) - (leftovers);
     nonce = (nonce ^ ~_ptr[nonce & 0xFF] ^ GOLDEN_RATIO) - (_ptr[nonce & 0xFF] >> 32);
+    nonce ^= (u64) clock();
     adam(_ptr, seeds, nonce);
     goto live_adam; 
 
