@@ -94,7 +94,7 @@ u64 a_to_u(const char *s, const u64 min, const u64 max) {
   
   for(; s[len] != '\0'; ++len) {
     if (UNLIKELY(s[len] < '0' || s[len] > '9'))
-      return min;
+      return 0;
   };
 
   switch (len) { 

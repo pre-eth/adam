@@ -57,8 +57,9 @@ int main(int argc, char **argv) {
       case 'l':
         return infinite(buf_ptr, seed, nonce);
       case 'a':
-        // sscanf(optarg, "%lf", &start);
         limit = a_to_u(optarg, 1, ASSESS_LIMIT);
+        if (!limit)
+          return err("Multiplier must be within range [1, 5000]");
         assess(buf_ptr, limit, seed, nonce);
         goto show_params;
       case 'b':
