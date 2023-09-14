@@ -7,6 +7,7 @@
   #ifdef __AVX512F__
     #define SIMD_LEN         64
     typedef __m512i          reg;
+    typedef __m512d          regd;
     #define SIMD_SETZERO     _mm512_setzero_si512
     #define SIMD_SET8        _mm512_set1_epi8
     #define SIMD_SETR8       _mm512_setr_epi8
@@ -17,6 +18,15 @@
     #define SIMD_STOREBITS   _mm512_store_si512
     #define SIMD_ANDBITS     _mm512_and_si512
     #define SIMD_XORBITS     _mm512_xor_si512
+    #define SIMD_CASTPD      _mm512_castpd_si512
+    #define SIMD_LOADPD      _mm512_load_pd
+    #define SIMD_STOREPD     _mm512_store_pd
+    #define SIMD_SETPD       _mm512_set1_pd
+    #define SIMD_SETRPD      _mm512_setr_pd
+    #define SIMD_ADDPD       _mm512_add_pd
+    #define SIMD_SUBPD       _mm512_sub_pd
+    #define SIMD_MULPD       _mm512_mul_pd
+    #define SIMD_DIVPD       _mm512_div_pd
   #else
     #define SIMD_LEN         32
     typedef __m256i          reg;
@@ -40,8 +50,7 @@
     #define SIMD_ADDPD       _mm256_add_pd
     #define SIMD_SUBPD       _mm256_sub_pd
     #define SIMD_MULPD       _mm256_mul_pd
-    #define SIMD_ANDPD       _mm256_and_pd
-    #define SIMD_ORPD        _mm256_or_pd
+    #define SIMD_DIVPD       _mm256_div_pd
   #endif
 
   typedef __UINT8_TYPE__    u8;
