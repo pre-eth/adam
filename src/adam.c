@@ -75,7 +75,7 @@ static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
   6148914691236516864.0, 9218868437227405312.0, 9223372036854775808.0,  18446744073709551616.0,  
 };
 
-FORCE_INLINE static void accumulate(u64 *restrict _ptr, const u64 nonce) {
+FORCE_INLINE static void accumulate(u64 *restrict _ptr, u64 seed, const u64 nonce, double *chseeds) {
   /*
     8 64-bit IV's that correspond to the verse:
     "Be fruitful and multiply, and replenish the earth (Genesis 1:28)"
@@ -94,30 +94,50 @@ FORCE_INLINE static void accumulate(u64 *restrict _ptr, const u64 nonce) {
   ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
   ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
   ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
-  ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);    
+  ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
 
-  reg a, b;
+  reg r1, r2;
   register u8 maps_filled = 0;
   register u8 i;
   fill_the_earth:
     i = 0;
-    a = SIMD_LOADBITS((reg*) IV);
-    b = SIMD_LOADBITS((reg*) &IV[(!!(SIMD_LEN & 63) << 2)]);    
+    r1 = SIMD_LOADBITS((reg*) IV);
+    r2 = SIMD_LOADBITS((reg*) &IV[(!!(SIMD_LEN & 63) << 2)]);    
     do {
-      SIMD_STOREBITS((reg*) &_ptr[i], a);
-      SIMD_STOREBITS((reg*) &_ptr[i + 4], b);
-      SIMD_STOREBITS((reg*) &_ptr[i + 8], a); 
-      SIMD_STOREBITS((reg*) &_ptr[i + 12], b);    
+      SIMD_STOREBITS((reg*) &_ptr[i], r1);
+      SIMD_STOREBITS((reg*) &_ptr[i + 4], r2);
+      SIMD_STOREBITS((reg*) &_ptr[i + 8], r1); 
+      SIMD_STOREBITS((reg*) &_ptr[i + 12], r2);    
       i += (SIMD_LEN >> 1) - (i == BUF_SIZE - (SIMD_LEN >> 1));
     } while (i < BUF_SIZE - 1);
 
     if (++maps_filled < 3) {
       ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
-      ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
-
       _ptr += BUF_SIZE;
       goto fill_the_earth;
     }
+
+  const regd div = SIMD_SETPD((double)__UINT64_MAX__),
+             limit = SIMD_SETPD(0.5);
+
+  regd seeds;
+
+  i = 0;
+
+  do {
+    seeds = SIMD_SETRPD((double)(IV[0] ^ IV[7]), 
+                        (double)(IV[1] ^ IV[6]),
+                        (double)(IV[2] ^ IV[5]),
+                        (double)(IV[3] ^ IV[4]));
+                        
+    seeds = SIMD_DIVPD(seeds, div);
+    seeds = SIMD_MULPD(seeds, limit);
+
+    SIMD_STOREPD(&chseeds[i << 2], seeds);
+               
+    ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
+    ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
+  } while (++i < ROUNDS);
 }
 
 FORCE_INLINE static void diffuse(u64 *restrict _ptr, const u64 nonce) {
@@ -293,10 +313,12 @@ FORCE_INLINE static void mix(u64 *restrict _ptr) {
   } while (i < BUF_SIZE - 1);
 }
 
-double adam(u64 *restrict _ptr, regd *seeds, const u64 nonce) {
+double adam(u64 *restrict _ptr, const u64 seed, const u64 nonce) {
+  double seeds[ROUNDS << 2] ALIGN(SIMD_LEN);
+
   clock_t start = clock();
 
-  accumulate(_ptr, nonce);
+  accumulate(_ptr, seed, nonce, seeds);
   diffuse(_ptr, nonce);
   apply(_ptr, seeds);
   mix(_ptr); 
