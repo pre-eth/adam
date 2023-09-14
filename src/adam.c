@@ -180,7 +180,8 @@ FORCE_INLINE static void diffuse(u64 *restrict _ptr, const u64 nonce) {
     _ptr[i]     = a; _ptr[i + 1] = b; _ptr[i + 2] = c; _ptr[i + 3] = d;
     _ptr[i + 4] = e; _ptr[i + 5] = f; _ptr[i + 6] = g; _ptr[i + 7] = h;
 
-  } while ((i += 8 - (i == 248)) < BUF_SIZE - 1);
+    i += 8 - (i == 248);
+  } while (i < BUF_SIZE - 1);
 }
 
 static double multi_thread(thdata *data) {
@@ -273,6 +274,8 @@ FORCE_INLINE static void apply(u64 *restrict _ptr, double *seeds) {
       d2 = SIMD_MULPD(d2, coefficient);
       d1 = SIMD_MULPD(d1, d2);
 
+      // Multiply result of chaotic function by beta
+      // Then multiply result of that against values in mod reduction table
       d2 = SIMD_MULPD(d1, beta);
       d3 = SIMD_LOADPD(&mod_table[j]);
       d2 = SIMD_MULPD(d2, d3);

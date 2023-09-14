@@ -119,7 +119,17 @@ Click on a test to learn more.
 
 Testing with TestU01 will probably require some kind of port as it only accepts 32-bit inputs. PractRand is the crown jewel and will be taken on once all these other tests have been passed at all the bit sequence lengths.
 
-Files containing test results for 10Mb, 100Mb, 200Mb, 250Mb, 500Mb, and 1Gb are available in the `tests` subdirectory with the appropriate prefix per test. 
+### NIST
+
+The STS can be downloaded from the link above. [This](https://www.slideshare.net/Muhammadhamid23/running-of-nist-test-109375052) is a good little quick start guide.
+
+Results for testing 10Mb, 100Mb, 200Mb, 250Mb, 500Mb, and 1Gb are available in the `tests` subdirectory. 
+
+### Dieharder
+
+`adam -b | dieharder -a -Y 1 -k 2 -g 200`
+
+Explanation of options can be found in Dieharder's [man page](https://linux.die.net/man/1/dieharder)
 
 ## CONTRIBUTING
 
