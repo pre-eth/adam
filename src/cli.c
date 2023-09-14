@@ -9,19 +9,18 @@ FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent) {
   #define SUMM_PIECES     7
 
   const char* pieces[SUMM_PIECES] = {
-    "\e[1madam \e[m[-h|-v|-l|-b] [-dx]",
+    "\e[1madam \e[m[-h|-v|-l|-b|-x|-o]",
     "[-w \e[1mwidth\e[m]",
     "[-a \e[1mmultiplier\e[m]",
-    "[-r \e[1mresults\e[m]",
+    "[-r \e[3mresults?\e[m]",
     "[-s \e[3mseed?\e[m]",
     "[-n \e[3mnonce?\e[m]",
     "[-u \e[3mamount?\e[m]"
   };
 
-  const u8 sizes[SUMM_PIECES + 1] = {24, 10, 19, 12, 10, 11, 12, 0};
+  const u8 sizes[SUMM_PIECES + 1] = {24, 10, 15, 13, 10, 11, 12, 0};
 
-  u8 i, running_length;
-  i = running_length = 0;
+  u8 i = 0, running_length = indent;
 
   printf("\n\e[%uC", indent);
 
@@ -29,7 +28,7 @@ FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent) {
     printf("%s ", pieces[i]);
     // add one for space
     running_length += sizes[i] + 1;
-    if (running_length + sizes[i + 1] > swidth) {
+    if (running_length + sizes[i + 1] + 1 >= swidth) {
       // add 5 for "adam " to create hanging indent for succeeding lines
       printf("\n\e[%uC", indent + 5);
       running_length = 0;
@@ -56,7 +55,7 @@ u8 help() {
 
   printf("\e[%uC[OPTIONS]\n", CENTER);
 
-  const char ARGS[ARG_COUNT] = {'h', 'v', 's', 'n', 'u', 'r', 'w', 'd', 'b', 'a', 'l', 'x'};
+  const char ARGS[ARG_COUNT] = {'h', 'v', 's', 'n', 'u', 'r', 'w', 'b', 'a', 'l', 'x', 'o'};
   const char *ARGSHELP[ARG_COUNT] = {
     "Get command summary and all available options",
     VERSION_HELP,
@@ -69,11 +68,12 @@ u8 help() {
     "Assess a binary or ASCII sample of 1000000 bits (1 MB) written to a filename you provide. You can choose a multiplier within [1,5000]",
     "Live stream of continuously generated numbers",
     "Print numbers in hexadecimal format with leading prefix",
+    "Print numbers in octal format with leading prefix"
   };
-  const u8 lengths[ARG_COUNT] = {25, 32, 119, 117, 108, 107, 75, 21, 20, 133, 45, 55};
+  const u8 lengths[ARG_COUNT] = {25, 32, 119, 117, 108, 107, 75, 21, 133, 45, 55, 49};
   
   register short len;
-  for (int i = 0; i < ARG_COUNT; ++i) {
+  for (u8 i = 0; i < ARG_COUNT; ++i) {
     printf("\e[%uC\e[1;33m-%c\e[m\e[%uC%.*s\n", INDENT, ARGS[i], INDENT, HELP_WIDTH, ARGSHELP[i]);
     len = lengths[i] - HELP_WIDTH;
     while (len > 0) {

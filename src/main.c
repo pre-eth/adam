@@ -67,6 +67,9 @@ int main(int argc, char **argv) {
       case 'x':
         fmt = "0x%lX";
       break;
+      case 'o':
+        fmt = "0o%lo";
+      break;      
       case 'w':
         const u8 p = a_to_u(optarg, 8, 64);
         if (LIKELY(!(p & (p - 1)))) {

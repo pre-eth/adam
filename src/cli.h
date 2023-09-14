@@ -9,13 +9,13 @@
   #define STRINGIFY(a)  STRINGIZE(a)
 
   #define MAJOR         1
-  #define MINOR         1
+  #define MINOR         3
   #define PATCH         4
 
   #define VERSION       "v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH)
   #define VERSION_HELP  "Version of this software (" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH) ")"
 
-  #define OPTSTR        ":hvlbxr::w:a:u::s::n::"
+  #define OPTSTR        ":hvlbxow:a:r::u::s::n::"
   #define ARG_COUNT     12
 
   #define BITBUF_SIZE   1024
