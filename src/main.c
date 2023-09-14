@@ -45,11 +45,6 @@ int main(int argc, char **argv) {
   while (!(idx = SEED64(&seed))); 
   idx = 0;
 
-  double seeds[SIMD_LEN >> 3] ALIGN(SIMD_LEN);
-
-  double start = ((double) seed / (double) __UINT64_MAX__);
-  SEED_ADAM(seeds, start);
-
   register u64 nonce = ((u64) time(NULL)) ^ GOLDEN_RATIO ^ ~seed;
 
   register short opt;
@@ -60,14 +55,14 @@ int main(int argc, char **argv) {
       case 'v':
         return puts(VERSION);
       case 'l':
-        return infinite(buf_ptr, seeds, nonce);
+        return infinite(buf_ptr, seed, nonce);
       case 'a':
         // sscanf(optarg, "%lf", &start);
         limit = a_to_u(optarg, 1, ASSESS_LIMIT);
-        assess(buf_ptr, limit, seeds, nonce);
+        assess(buf_ptr, limit, seed, nonce);
         goto show_params;
       case 'b':
-        return bits(buf_ptr, seeds, nonce);
+        return bits(buf_ptr, seed, nonce);
       case 'x':
         fmt = "0x%lX";
       break;
@@ -111,14 +106,14 @@ int main(int argc, char **argv) {
       break;
       case 'u':
         limit = optarg ? a_to_u(optarg, 1, 128) : 1;
-        uuid(buf_ptr, limit, seeds, nonce);
+        uuid(buf_ptr, limit, seed, nonce);
         goto show_params;
       default:
         return err("Option is invalid or missing required argument");             
     }
   }
 
-  adam(buf_ptr, seeds, nonce);
+  adam(buf_ptr, seed, nonce);
 
   // Need to do this for default precision because 
   // we can't rely on overflow arithmetic :(
@@ -137,7 +132,7 @@ int main(int argc, char **argv) {
 
   show_params:
     if (UNLIKELY(show_seed))
-      printf("\e[1;36mSEED:\e[m %.15f\n", start * 0.5);
+      printf("\e[1;36mSEED:\e[m %.15f\n", ((double) seed / (double) __UINT64_MAX__) * 0.5);
 
     if (UNLIKELY(show_nonce))
       printf("\e[1;36mNONCE:\e[m %lu\n", nonce);

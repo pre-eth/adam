@@ -79,6 +79,6 @@
 
   // Initiates RNG algorithm with user provided seed and nonce
   // Returns duration of generation
-  double adam(u64 *restrict _ptr, double *seeds, const u64 nonce);
+  double adam(u64 *restrict _ptr, const u64 seed, const u64 nonce);
 
 #endif
