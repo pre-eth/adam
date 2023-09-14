@@ -6,7 +6,7 @@
  ▄▀▀▀▀█▄   ██    ██  ▄▀▀▀▀█▄   █ ▀█▀ ██  
 ▄█▄  ▄██▄ ▄██▄▄▄█▀  ▄█▄  ▄██▄ ▄█▄ █ ▄██▄ 
 
-v1.2.4
+v1.3.0
 
 <b>Use at your own risk</b>. Criticism and suggestions are welcome.
 </pre>         

@@ -10,12 +10,12 @@
 
   #define MAJOR         1
   #define MINOR         3
-  #define PATCH         4
+  #define PATCH         0
 
   #define VERSION       "v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH)
   #define VERSION_HELP  "Version of this software (" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH) ")"
 
-  #define OPTSTR        ":hvlbxow:a:r::u::s::n::"
+  #define OPTSTR        ":hvlebxow:a:r::u::s::n::"
   #define ARG_COUNT     12
 
   #define BITBUF_SIZE   1024
@@ -36,6 +36,7 @@
   u64 a_to_u(const char *s, const u64 min, const u64 max);
   u8  help();
   u8  uuid(u64 *restrict _ptr, const u8 limit, const u64 seed, const u64 nonce);
+  u8  matrix(u64 *restrict _ptr, u64 seed, u64 nonce);
   u8  infinite(u64 *restrict _ptr, u64 seed, u64 nonce);
   
 #endif
