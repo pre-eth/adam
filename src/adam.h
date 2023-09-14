@@ -69,8 +69,7 @@
   #define ROUNDS              18
   #define ITER                (ROUNDS / 3)
 
-  #define SEED_ADAM(s, start) s[0] = start,      s[1] = (start + 0.565) * 0.55, \
-                              s[2] = 1.0 - s[0], s[3] = 1.0 - s[1]
+  #define RESEED_ADAM(s)      seed ^= (seed + ((seed << (seed & 31)))) ^ _ptr[seed & 0xFF]
 
   #define XOR_MAPS(i)         _ptr[0 + i] ^ (_ptr[0 + i + 256]) ^ (_ptr[0 + i + 512]),\
                               _ptr[1 + i] ^ (_ptr[1 + i + 256]) ^ (_ptr[1 + i + 512]),\
