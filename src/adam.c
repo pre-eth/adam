@@ -216,7 +216,7 @@ static double multi_thread(thdata *data) {
     if (start <= 512) goto eval_fn;
 } */
 
-FORCE_INLINE static void apply(u64 *restrict _ptr, regd *seeds) {
+FORCE_INLINE static void apply(u64 *restrict _ptr, double *seeds) {
   /* 
     BETA is derived from the length of the significant digits
     ADAM uses the max double accuracy length of 15
@@ -232,31 +232,36 @@ FORCE_INLINE static void apply(u64 *restrict _ptr, regd *seeds) {
   const reg mask = SIMD_SET64(0xFFUL),
             inc  = SIMD_SET64(4UL);
 
+  u64 *map_a = _ptr, *map_b = _ptr + BUF_SIZE;
+
+  register u8 rounds = 0, i = 0,  j;
+
   regd d1, d2, d3;
-  d1 = *seeds;
 
   reg r1, scale;
 
-  u64 *map_a = _ptr, *map_b = _ptr + BUF_SIZE;
-
-  register u8 rounds = ROUNDS, i = 0, j;
-
-  // double debug[4] ALIGN(SIMD_LEN);
-
   chaotic_iter:
+    d1 = SIMD_LOADPD(&seeds[rounds]);
     j = 0;
-    scale = SIMD_SETR64(1UL, 2UL, 3UL, 4UL);
+    scale = SIMD_SETR64(1UL, 2UL, 3UL, 4UL
+                     #ifdef __AVX512__  
+                      , 5UL, 6UL, 7UL, 8UL
+                     #endif 
+                       );
 
     do {
-      // SIMD_STOREPD(debug, d1);
-      // __builtin_printf("SEEDS: %.15lf, %.15lf, %.15lf, %.15lf\n", debug[0], debug[1], debug[2], debug[3]);
+      // 3.9999 * X * (1 - X) for all X in the register
+      d2 = SIMD_SUBPD(one, d1);
+      d2 = SIMD_MULPD(d2, coefficient);
+      d1 = SIMD_MULPD(d1, d2);
 
       d2 = SIMD_MULPD(d1, beta);
-      d3 = SIMD_LOADPD(&mod_table[j]);     // NEEDS TO BE 3 FOR AVX-512
+      d3 = SIMD_LOADPD(&mod_table[j]);
       d2 = SIMD_MULPD(d2, d3);
 
+      // Cast to u64, add the scaling factor
+      // Mask so idx stays in range of buffer
       r1 = SIMD_CASTPD(d2);
-      r1 = _mm256_srli_epi64(r1, 6);
       r1 = SIMD_ADD64(r1, scale);
       r1 = SIMD_ANDBITS(r1, mask);
       SIMD_STOREBITS((reg*) arr, r1);   
@@ -266,25 +271,30 @@ FORCE_INLINE static void apply(u64 *restrict _ptr, regd *seeds) {
       map_b[j + 2] ^= map_a[arr[2]];
       map_b[j + 3] ^= map_a[arr[3]];
 
-      d2 = SIMD_SUBPD(one, d1);
-      d2 = SIMD_MULPD(d2, coefficient);
-      d1 = SIMD_MULPD(d1, d2);
+    #ifdef __AVX512__
+      map_b[j + 4] ^= map_a[arr[4]];
+      map_b[j + 5] ^= map_a[arr[5]];
+      map_b[j + 6] ^= map_a[arr[6]];
+      map_b[j + 7] ^= map_a[arr[7]];
+    #endif
 
       scale = SIMD_ADD64(scale, inc);
-      j += 4 - (j == 252);
-    } while (j < BUF_SIZE - 1);
+      j += (SIMD_LEN >> 3) - (j == BUF_SIZE - (SIMD_LEN >> 3));
+    } while (j < BUF_SIZE - 1); 
+
+    // Use the next 4 (or 8 for AVX-512) seeds to start next iteration
+    rounds += (SIMD_LEN >> 3);
 
     if (++i < ITER) 
       goto chaotic_iter;
-
-    if (rounds -= ITER) {
-      i = 0;
+             
+    if (rounds < (ROUNDS << 2)) {
+      i = (rounds == (ITER << 3));
       map_a += BUF_SIZE;
-      map_b += ((u16)!(rounds == 6) << 8) - ((u16)(rounds == 6) << 9);     
+      map_b += ((u16)!i << 8) - ((u16)i << 9); 
+      i = 0;    
       goto chaotic_iter;
-    }   
-
-  *seeds = d1;
+    } 
 }
 
 FORCE_INLINE static void mix(u64 *restrict _ptr) {
