@@ -90,15 +90,8 @@ int main(int argc, char **argv) {
       break;
       case 's':
         show_seed = (optarg == NULL);
-        if (!show_seed) {
-          int res = sscanf(optarg, "%lf", &start);
-          if (res < 1 || start <= 0.0 || start >= 0.5) 
-            return err("Seed must be a valid decimal within (0.0, 0.5)");
-          // Need to multiply by 2 since all seeds get 
-          // halved during start of chaotic function
-          start *= 2.0;
-          SEED_ADAM(seeds, start);
-        }
+        if (!show_seed)
+          seed = a_to_u(optarg, 1, __UINT64_MAX__);
       break;
       case 'n':
         show_nonce = (optarg == NULL);
@@ -133,7 +126,7 @@ int main(int argc, char **argv) {
 
   show_params:
     if (UNLIKELY(show_seed))
-      printf("\e[1;36mSEED:\e[m %.15f\n", ((double) seed / (double) __UINT64_MAX__) * 0.5);
+      printf("\e[1;36mSEED:\e[m %lu\n", seed);
 
     if (UNLIKELY(show_nonce))
       printf("\e[1;36mNONCE:\e[m %lu\n", nonce);

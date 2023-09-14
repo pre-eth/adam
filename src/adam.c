@@ -104,14 +104,23 @@ FORCE_INLINE static void accumulate(u64 *restrict _ptr, u64 seed, const u64 nonc
     r1 = SIMD_LOADBITS((reg*) IV);
     r2 = SIMD_LOADBITS((reg*) &IV[(!!(SIMD_LEN & 63) << 2)]);    
     do {
-      SIMD_STOREBITS((reg*) &_ptr[i], r1);
-      SIMD_STOREBITS((reg*) &_ptr[i + 4], r2);
-      SIMD_STOREBITS((reg*) &_ptr[i + 8], r1); 
-      SIMD_STOREBITS((reg*) &_ptr[i + 12], r2);    
+
+      #ifdef __AVX512F__
+        SIMD_STOREBITS((reg*) &_ptr[i],      r1);
+        SIMD_STOREBITS((reg*) &_ptr[i + 8],  r2);
+        SIMD_STOREBITS((reg*) &_ptr[i + 16], r1); 
+        SIMD_STOREBITS((reg*) &_ptr[i + 24], r2);    
+      #else
+        SIMD_STOREBITS((reg*) &_ptr[i],      r1);
+        SIMD_STOREBITS((reg*) &_ptr[i + 4],  r2);
+        SIMD_STOREBITS((reg*) &_ptr[i + 8],  r1); 
+        SIMD_STOREBITS((reg*) &_ptr[i + 12], r2);    
+      #endif
       i += (SIMD_LEN >> 1) - (i == BUF_SIZE - (SIMD_LEN >> 1));
     } while (i < BUF_SIZE - 1);
 
     if (++maps_filled < 3) {
+      ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
       ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
       _ptr += BUF_SIZE;
       goto fill_the_earth;
@@ -122,9 +131,15 @@ FORCE_INLINE static void accumulate(u64 *restrict _ptr, u64 seed, const u64 nonc
 
   regd seeds;
 
+  // We process 8 seeds at a time with AVX-512, so this adjusts
+  // the rounds upper bound for the loop appropriately
+  const u8 rounds = ROUNDS >> !(SIMD_LEN & 63);
+  
   i = 0;
-
   do {
+    IV[0] += seed, IV[1] += seed, IV[2] += seed, IV[3] += seed,
+    IV[4] += seed, IV[5] += seed, IV[6] += seed, IV[7] += seed;
+
     seeds = SIMD_SETRPD((double)(IV[0] ^ IV[7]), 
                         (double)(IV[1] ^ IV[6]),
                         (double)(IV[2] ^ IV[5]),
@@ -133,11 +148,14 @@ FORCE_INLINE static void accumulate(u64 *restrict _ptr, u64 seed, const u64 nonc
     seeds = SIMD_DIVPD(seeds, div);
     seeds = SIMD_MULPD(seeds, limit);
 
-    SIMD_STOREPD(&chseeds[i << 2], seeds);
+    #ifdef __AVX512F__
+      SIMD_STOREPD(&chseeds[i << 3], seeds);
+    #else
+      SIMD_STOREPD(&chseeds[i << 2], seeds);
+    #endif
                
     ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
-    ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
-  } while (++i < ROUNDS);
+  } while (++i < rounds);
 }
 
 FORCE_INLINE static void diffuse(u64 *restrict _ptr, const u64 nonce) {
