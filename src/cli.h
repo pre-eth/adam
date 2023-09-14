@@ -15,7 +15,7 @@
   #define VERSION       "v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH)
   #define VERSION_HELP  "Version of this software (" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH) ")"
 
-  #define OPTSTR        ":hvldbxr:w:a:u::s::n::"
+  #define OPTSTR        ":hvlbxr::w:a:u::s::n::"
   #define ARG_COUNT     12
 
   #define BITBUF_SIZE   1024

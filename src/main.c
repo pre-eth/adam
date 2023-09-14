@@ -82,11 +82,12 @@ int main(int argc, char **argv) {
           break;  
         } 
         return err("Width must be either 8, 16, 32, or 64 bits");
-      case 'd':
-        results = SEQ_SIZE >> CTZ(precision);
       break;
       case 'r':
-        results = a_to_u(optarg, 1, SEQ_SIZE >> CTZ(precision));
+        if (optarg)
+          results = a_to_u(optarg, 1, SEQ_SIZE >> CTZ(precision));   
+        else
+          results = SEQ_SIZE >> CTZ(precision);
       break;
       case 's':
         show_seed = (optarg == NULL);

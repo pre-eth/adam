@@ -63,15 +63,14 @@ u8 help() {
     "Get the seed for the generated buffer (no parameter) or provide your own. Seeds are reusable but should be kept secret.",
     "Get the nonce for the generated buffer (no parameter) or provide your own. Nonces should ALWAYS be unique and secret.",
     "Generate a universally unique identifier (UUID). Optionally specify a number of UUID's to generate (max 128)",
-    "Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)",
+    "Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8). No argument dumps entire buffer",
     "Desired size (u8, u16, u32, u64) of returned numbers (default width is u64)",
-    "Dump the whole buffer",
     "Just bits...literally",
     "Assess a binary or ASCII sample of 1000000 bits (1 MB) written to a filename you provide. You can choose a multiplier within [1,5000]",
     "Live stream of continuously generated numbers",
-    "Print numbers in hexadecimal format with leading prefix"
+    "Print numbers in hexadecimal format with leading prefix",
   };
-  const u8 lengths[ARG_COUNT] = {25, 32, 119, 117, 108, 74, 75, 21, 20, 133, 45, 55};
+  const u8 lengths[ARG_COUNT] = {25, 32, 119, 117, 108, 107, 75, 21, 20, 133, 45, 55};
   
   register short len;
   for (int i = 0; i < ARG_COUNT; ++i) {

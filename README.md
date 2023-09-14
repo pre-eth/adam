@@ -80,7 +80,8 @@ The following options are available:
           own. Nonces should ALWAYS be unique and secret.
     -u    Generate a universally unique identifier (UUID). Optionally specify a 
           number of UUID's to generate (max 128)
-    -r    Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)
+    -r    Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8). No argument dumps     
+          entire buffer
     -w    Desired size (u8, u16, u32, u64) of returned numbers (default width is u64)
     -d    Dump the whole buffer
     -b    Just bits...literally
