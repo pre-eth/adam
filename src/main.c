@@ -24,7 +24,11 @@ FORCE_INLINE static u8 err(const char *s) {
   static is necessary because otherwise buffer is initiated with junk that 
   removes the deterministic nature of the algorithm
 */
+#ifdef __AARCH64_SIMD__
+  static u64 buffer[BUF_SIZE * 3] ALIGN(64);
+#else
 static u64 buffer[BUF_SIZE * 3] ALIGN(SIMD_LEN);
+#endif
 
 int main(int argc, char **argv) {
   u64 *restrict buf_ptr = &buffer[0];
@@ -42,8 +46,7 @@ int main(int argc, char **argv) {
   register u64 mask = __UINT64_MAX__ - 1;
 
   u64 seed;
-  while (!(idx = SEED64(&seed))); 
-  idx = 0;
+  getentropy(&seed, sizeof(u64));
 
   register u64 nonce = ((u64) time(NULL)) ^ GOLDEN_RATIO ^ ~seed;
 
@@ -71,9 +74,8 @@ int main(int argc, char **argv) {
         fmt = "0o%lo";
       break;      
       case 'w':
-        const u8 p = a_to_u(optarg, 8, 64);
-        if (LIKELY(!(p & (p - 1)))) {
-          precision = p;
+        precision = a_to_u(optarg, 8, 64);
+        if (LIKELY(!(precision & (precision - 1)))) {
           mask = (1UL << precision) - 1;
           /*
             This line will basically "floor" results to the max value of results
@@ -103,7 +105,12 @@ int main(int argc, char **argv) {
           nonce = a_to_u(optarg, 1, __UINT64_MAX__);
       break;
       case 'u':
-        limit = optarg ? a_to_u(optarg, 1, 128) : 1;
+        limit = 1;
+        if (optarg) {
+          limit = a_to_u(optarg, 1, 128);
+          if (!limit)
+            return err("Invalid amount specified. Value must be within range [1, 128]");
+        }
         uuid(buf_ptr, limit, seed, nonce);
         goto show_params;
       default:
@@ -130,10 +137,10 @@ int main(int argc, char **argv) {
 
   show_params:
     if (UNLIKELY(show_seed))
-      printf("\e[1;36mSEED:\e[m %lu\n", seed);
+      printf("\e[1;36mSEED:\e[m %llu\n", seed);
 
     if (UNLIKELY(show_nonce))
-      printf("\e[1;36mNONCE:\e[m %lu\n", nonce);
+      printf("\e[1;36mNONCE:\e[m %llu\n", nonce);
 
   return 0;
 }
