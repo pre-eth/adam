@@ -1,7 +1,6 @@
 #include <sys/ioctl.h>    // for pretty help printing
 #include <unistd.h>       // for sleep()
 
-#include "adam.h"
 #include "cli.h"
 #include "ent.h"
 
@@ -9,20 +8,20 @@ FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent) {
   #define SUMM_PIECES     7
 
   const char* pieces[SUMM_PIECES] = {
-    "\e[1madam \e[m[-h|-v|-l|-b|-x|-o]",
-    "[-w \e[1mwidth\e[m]",
-    "[-a \e[1mmultiplier\e[m]",
-    "[-r \e[3mresults?\e[m]",
-    "[-s \e[3mseed?\e[m]",
-    "[-n \e[3mnonce?\e[m]",
-    "[-u \e[3mamount?\e[m]"
+    "\033[1madam \033[m[-h|-v|-l|-b|-x|-o]",
+    "[-w \033[1mwidth\033[m]",
+    "[-a \033[1mmultiplier\033[m]",
+    "[-r \033[3mresults?\033[m]",
+    "[-s \033[3mseed?\033[m]",
+    "[-n \033[3mnonce?\033[m]",
+    "[-u \033[3mamount?\033[m]"
   };
 
   const u8 sizes[SUMM_PIECES + 1] = {24, 10, 15, 13, 10, 11, 12, 0};
 
   u8 i = 0, running_length = indent;
 
-  printf("\n\e[%uC", indent);
+  printf("\n\033[%uC", indent);
 
   for (; i < SUMM_PIECES; ++i) {
     printf("%s ", pieces[i]);
@@ -30,7 +29,7 @@ FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent) {
     running_length += sizes[i] + 1;
     if (running_length + sizes[i + 1] + 1 >= swidth) {
       // add 5 for "adam " to create hanging indent for succeeding lines
-      printf("\n\e[%uC", indent + 5);
+      printf("\n\033[%uC", indent + 5);
       running_length = 0;
     }
   }
@@ -53,7 +52,7 @@ u8 help() {
 
   print_summary(SWIDTH, INDENT);
 
-  printf("\e[%uC[OPTIONS]\n", CENTER);
+  printf("\033[%uC[OPTIONS]\n", CENTER);
 
   const char ARGS[ARG_COUNT] = {'h', 'v', 's', 'n', 'u', 'r', 'w', 'b', 'a', 'l', 'x', 'o'};
   const char *ARGSHELP[ARG_COUNT] = {
@@ -74,11 +73,11 @@ u8 help() {
   
   register short len;
   for (u8 i = 0; i < ARG_COUNT; ++i) {
-    printf("\e[%uC\e[1;33m-%c\e[m\e[%uC%.*s\n", INDENT, ARGS[i], INDENT, HELP_WIDTH, ARGSHELP[i]);
+    printf("\033[%uC\033[1;33m-%c\033[m\033[%uC%.*s\n", INDENT, ARGS[i], INDENT, HELP_WIDTH, ARGSHELP[i]);
     len = lengths[i] - HELP_WIDTH;
     while (len > 0) {
       ARGSHELP[i] += HELP_WIDTH + (ARGSHELP[i][HELP_WIDTH] == ' ');
-      printf("\e[%uC%.*s\n", HELP_INDENT, HELP_WIDTH, ARGSHELP[i]);
+      printf("\033[%uC%.*s\n", HELP_INDENT, HELP_WIDTH, ARGSHELP[i]);
       len -= HELP_WIDTH;
     }
   }
@@ -126,10 +125,10 @@ u8 uuid(u64 *restrict _ptr, u8 limit, const u64 seed, const u64 nonce) {
   adam(_ptr, seed, nonce);
 
   u8 buf[16];
-
+  u128 tmp;
   print_uuid:
     // Fill buf with 16 random bytes
-    u128 tmp = ((u128)_ptr[0] << 64) | _ptr[1];
+    tmp = ((u128)_ptr[0] << 64) | _ptr[1];
     __builtin_memcpy(buf, &tmp, sizeof(u128));
 
     // CODE AND COMMENT PULLED FROM CRYPTOSYS (https://www.cryptosys.net/pki/Uuid.c.html)
@@ -160,42 +159,84 @@ u8 uuid(u64 *restrict _ptr, u8 limit, const u64 seed, const u64 nonce) {
   To make writes more efficient, rather than writing one
   number at a time, 16 numbers are parsed together and then
   written to stdout with 1 fwrite call.
-*/  
-static char bitbuffer[BITBUF_SIZE] ALIGN(SIMD_LEN);
+*/ 
+#ifdef __AARCH64_SIMD__
+  static char bitbuffer[BITBUF_SIZE];
+#else
+  static char bitbuffer[BITBUF_SIZE] ALIGN(SIMD_LEN);
+#endif
 
-FORCE_INLINE static void print_binary(char *restrict _bptr, u64 num, const reg *r1) {
-  #define BYTE_TO_BITS(x) \
-    (x >> 0) & 1, (x >> 1) & 1, (x >> 2) & 1, (x >> 3) & 1,\
-    (x >> 4) & 1, (x >> 5) & 1, (x >> 6) & 1, (x >> 7) & 1
+#ifdef __AARCH64_SIMD__
+  static void print_binary(char *restrict _bptr, u64 num) {
+    // Copying bit masks to high and low halves
+    // 72624976668147840 == {128, 64, 32, 16, 8, 4, 2, 1}
+    const uint8x16_t masks = SIMD_COMBINE8(SIMD_CREATE8(72624976668147840), SIMD_CREATE8(72624976668147840));
+    const uint8x16_t zero = SIMD_SET8('0');
 
-  u8 a, b, c, d, e, f, g, h;
+    // Repeat all 8 bytes 8 times each, to fill up r1 with 64 bytes total
+    // Then we bitwise AND with masks to turn each byte into a 1 or 0
+    reg8q4 r1;
+    r1.val[0] = SIMD_COMBINE8(SIMD_MOV8((num >> 56) & 0xFF), SIMD_MOV8((num >> 48) & 0xFF));
+    r1.val[1] = SIMD_COMBINE8(SIMD_MOV8((num >> 40) & 0xFF), SIMD_MOV8((num >> 32) & 0xFF));
+    r1.val[2] = SIMD_COMBINE8(SIMD_MOV8((num >> 24) & 0xFF), SIMD_MOV8((num >> 16) & 0xFF));
+    r1.val[3] = SIMD_COMBINE8(SIMD_MOV8((num >> 8) & 0xFF), SIMD_MOV8(num & 0xFF));
 
-  LONG_TO_BYTES(num, a, b, c, d, e, f, g, h);
+    SIMD_AND4Q8(r1, r1, masks);
+    SIMD_CMP4QEQ8(r1, r1, masks);
+    SIMD_AND4Q8(r1, r1, SIMD_SET8(1));
+    // '0' = 48, '1' = 49. This is how we print the number
+    SIMD_ADD4Q8(r1, r1, zero);
 
-  reg r2 = SIMD_SETR8(BYTE_TO_BITS(a), BYTE_TO_BITS(b), BYTE_TO_BITS(c), BYTE_TO_BITS(d)
-                    #ifdef __AVX512F__
-                    , BYTE_TO_BITS(e), BYTE_TO_BITS(f), BYTE_TO_BITS(g), BYTE_TO_BITS(h)
-                    #endif
-                     );
-  r2 = SIMD_ADD8(r2, *r1);
-  SIMD_STOREBITS((reg*) _bptr, r2);
+    SIMD_STORE8x4(_bptr, r1);
+  }
+#else
+  static void print_binary(char *restrict _bptr, u64 num) {
+    #define BYTE_REPEAT(n) bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n]
+    #define BYTE_MASKS     128, 64, 32, 16, 8, 4, 2, 1
 
-  #ifndef __AVX512F__
-    r2 = SIMD_SETR8(BYTE_TO_BITS(e), BYTE_TO_BITS(f), BYTE_TO_BITS(g), BYTE_TO_BITS(h));
-    r2 = SIMD_ADD8(r2, *r1);
-    SIMD_STOREBITS((reg*) &_bptr[SIMD_LEN], r2);
-  #endif
-}
+    u8 bytes[sizeof(u64)];
+    
+    MEMCPY(bytes, &num, sizeof(u64));
+
+    const reg zeroes = SIMD_SET8('0');
+    const reg masks = SIMD_SETR8(BYTE_MASKS, BYTE_MASKS, BYTE_MASKS, BYTE_MASKS
+                               #ifdef __AVX512F__
+                               , BYTE_MASKS, BYTE_MASKS, BYTE_MASKS, BYTE_MASKS
+                               #endif    
+                               );
+
+    reg r1 = SIMD_SETR8(BYTE_REPEAT(7), BYTE_REPEAT(6), BYTE_REPEAT(5), BYTE_REPEAT(4)
+                      #ifdef __AVX512F__
+                      , BYTE_REPEAT(3), BYTE_REPEAT(2), BYTE_REPEAT(1), BYTE_REPEAT(0)
+                      #endif    
+                      );
+
+    r1 = SIMD_ANDBITS(r1, masks);
+    r1 = SIMD_CMPEQ8(r1, masks);
+    r1 = SIMD_ANDBITS(r1, SIMD_SET8(1));
+    r1 = SIMD_ADD8(r1, zeroes);
+    SIMD_STOREBITS((reg*) _bptr, r1);
+
+    #ifndef __AVX512F__
+      r1 = SIMD_SETR8(BYTE_REPEAT(3), BYTE_REPEAT(2), BYTE_REPEAT(1), BYTE_REPEAT(0));
+      r1 = SIMD_ANDBITS(r1, masks);
+      r1 = SIMD_CMPEQ8(r1, masks);
+      r1 = SIMD_ANDBITS(r1, SIMD_SET8(1));
+      r1 = SIMD_ADD8(r1, zeroes);
+      SIMD_STOREBITS((reg*) &_bptr[SIMD_LEN], r1);
+    #endif
+  }
+#endif
 
 // prints all bits in a buffer as chunks of 1024 bits
-FORCE_INLINE static void print_chunks(FILE *fptr, char *restrict _bptr, const u64 *restrict _ptr, const reg *r1) {  
+FORCE_INLINE static void print_chunks(FILE *fptr, char *restrict _bptr, const u64 *restrict _ptr) {  
   register u8 i = 0;
 
   do {
     PRINT_4(0,   i + 0),
     PRINT_4(256, i + 4),
     PRINT_4(512, i + 8),
-    PRINT_4(768, i + 12);    
+    PRINT_4(768, i + 12);
 
     fwrite(_bptr, 1, BITBUF_SIZE, fptr);
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
@@ -216,14 +257,11 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 seed
 
   register double duration = 0.0, iter;
 
-  const reg r1 = SIMD_SET8('0');
-
   while (rate > 0) {
     duration += adam(_ptr, seed, nonce);
-    print_chunks(fptr, _bptr, _ptr, &r1);
+    print_chunks(fptr, _bptr, _ptr);
     --rate;
-    nonce = (nonce ^ ~_ptr[nonce & 0xFF] ^ GOLDEN_RATIO) - (_ptr[nonce & 0xFF] >> 32);
-    nonce ^= (u64) clock();
+    RENONCE_ADAM(nonce);
     RESEED_ADAM(seed);
   } 
 
@@ -247,7 +285,7 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 seed
       l = 0;
       do {
         num = *_ptr++;
-        print_binary(_bptr + l, num, &r1);
+        print_binary(_bptr + l, num);
       } while ((l += 64) < limit);
 
       fwrite(_bptr, 1, limit, fptr);
@@ -257,7 +295,7 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 seed
         goto print_leftovers;
   }
 
-  return printf("\n\e[1;36mWrote %lu bits to ASCII file (%lfs)\e[m\n", 
+  return printf("\n\033[1;36mWrote %lu bits to ASCII file (%lfs)\033[m\n", 
                 limit, duration);
 }
 
@@ -278,8 +316,7 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 seed
     duration += adam(_ptr, seed, nonce);
     fwrite(_ptr, 8, BUF_SIZE, fptr);
     --rate;
-    nonce = (nonce ^ ~_ptr[nonce & 0xFF] ^ GOLDEN_RATIO) - (_ptr[nonce & 0xFF] >> 32);
-    nonce ^= (u64) clock();
+    RENONCE_ADAM(nonce);
     RESEED_ADAM(seed);
   } 
 
@@ -289,7 +326,7 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 seed
     fwrite(_ptr, 8, (nums + !!(nums & 63)), fptr);
   }
 
-  return printf("\n\e[1;36mWrote %lu bits to BINARY file (%lfs)\e[m\n", 
+  return printf("\n\033[1;36mWrote %lu bits to BINARY file (%lfs)\033[m\n", 
                 limit, duration);
 }
 
@@ -302,33 +339,33 @@ u8 assess(u64 *restrict _ptr, const u16 limit, const u64 seed, const u64 nonce) 
   const char *file_type;
   u8 (*fn)(FILE*, u64 *restrict, const u64, u64, u64);
   char c;
-  char file_name[65];
+  char file_name[64];
 
   get_file_name:
-    printf("File name: \e[1;33m");
-    if (!scanf("%64s", &file_name)) {
-      fputs("\e[m\e[1;31mPlease enter a valid file name\e[m\n", stderr);
+    printf("File name: \033[1;33m");
+    if (!scanf("%64s", &file_name[0])) {
+      fputs("\033[m\033[1;31mPlease enter a valid file name\033[m\n", stderr);
       goto get_file_name;
     }
 
   get_file_type:  
-    printf("\e[mFile type (0 = ASCII, 1 = BINARY): \e[1;33m");
+    printf("\033[mFile type (0 = ASCII, 1 = BINARY): \033[1;33m");
     scanf(" %c", &c);
     if (c == '0')
       file_type = "w+", fn = &stream_ascii;
     else if (c == '1')
       file_type = "wb+", fn = &stream_bytes;
     else {
-      fputs("\e[1;31mValue must be 0 or 1\n", stderr);
+      fputs("\033[1;31mValue must be 0 or 1\n", stderr);
       goto get_file_type;
     }
 
   fptr = fopen(file_name, file_type);
-  fputs("\e[m", stdout);
+  fputs("\033[m", stdout);
   c = fn(fptr, _ptr, limit * ASSESS_BITS, seed, nonce);
 
   if (UNLIKELY(!c))
-    return fputs("\e[1;31mError while creating file. Exiting.\e[m\n", stderr);
+    return fputs("\033[1;31mError while creating file. Exiting.\033[m\n", stderr);
   
   return fclose(fptr);
 }
@@ -364,48 +401,48 @@ u8 infinite(u64 *restrict _ptr, u64 seed, u64 nonce) {
   #define LIVE_ITER   (BUF_SIZE - 31)
 
   const char* ADAM_ASCII = {
-    "%s\e[38;2;173;58;0m/\e[38;2;255;107;33m@@@@@@\e[38;2;173;58;0m\\\e[0m"
-    "%s\e[38;2;173;58;0m/(\e[38;2;255;107;33m@@\e[38;2;173;58;0m((((((((((((((((\e[38;2;255;107;33m@@\e[0m"
-    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m((((((((((((((((((((((((\e[38;2;255;107;33m@@@\e[0m"
-    "%s\e[38;2;173;58;0m(((((((((((((((((((((((((((((\e[38;2;255;107;33m#@##@@\e[0m"
-    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m(((((((((((((\e[38;2;255;107;33m@#####&\e[38;2;173;58;0m(((((((((((((((\e[38;2;255;107;33m@@@@\e[0m"
-    "%s\e[38;2;173;58;0m((((((((((((((\e[38;2;255;107;33m#@@\e[38;2;173;58;0m((((\e[38;2;255;107;33m@@@@@\e[38;2;173;58;0m((((((((((((((\e[38;2;255;107;33m@@\e[0m"
-    "%s\e[38;2;173;58;0m((((((((\e[38;2;255;107;33m@@\e[38;2;173;58;0m(((((((((\e[38;2;255;107;33m@\e[38;2;173;58;0m((((((((((((\e[38;2;255;107;33m@&#@\e[38;2;173;58;0m(((((((((((\e[38;2;255;107;33m#@@\e[0m"
-    "%s\e[38;2;173;58;0m(\e[38;2;255;107;33m@@@\e[38;2;173;58;0m(((\e[38;2;255;107;33m##\e[38;2;173;58;0m((((((((\e[38;2;255;107;33m@@\e[38;2;173;58;0m((((((((((((((\e[38;2;255;107;33m##@##\e[38;2;173;58;0m(((((((((\e[38;2;255;107;33m#@@\e[0m"
-    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m(((((\e[38;2;255;107;33m##\e[38;2;173;58;0m(((\e[38;2;255;107;33m@#####\e[38;2;173;58;0m(((((\e[38;2;255;107;33m######\e[38;2;173;58;0m((((\e[38;2;255;107;33m###@\e[38;2;173;58;0m(((((((((\e[38;2;255;107;33m@@@\e[0m"
-    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m((((((\e[38;2;255;107;33m@&#########\e[38;2;173;58;0m((((\e[38;2;255;107;33m###@@##\e[38;2;173;58;0m(((\e[38;2;255;107;33m@###@\e[38;2;173;58;0m((((((((\e[38;2;255;107;33m#@@\e[0m"
-    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m(((((((((\e[38;2;255;107;33m#&@@@#########@\e[38;2;173;58;0m(((((\e[38;2;255;107;33m@@\e[38;2;173;58;0m((((\e[38;2;255;107;33m#####@\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m#@@\e[0m"
-    "%s\e[38;2;255;107;33m@@@@\e[38;2;173;58;0m((((\e[38;2;255;107;33m&#\e[38;2;173;58;0m(\e[38;2;255;107;33m################&@@@####@###@\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m@&&\e[0m"
-    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m((((\e[38;2;255;107;33m#####\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m###########@&####\e[38;2;173;58;0m((((\e[38;2;255;107;33m@##@&\e[0m"
-    "%s\e[38;2;173;58;0m(\e[38;2;255;107;33m@\e[38;2;173;58;0m((((\e[38;2;255;107;33m@####@######@@###\e[38;2;173;58;0m(((\e[38;2;255;107;33m@######@\e[38;2;173;58;0m((((((\e[38;2;255;107;33m@#\e[0m"
-    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m((((((\e[38;2;255;107;33m##############@@##\e[38;2;173;58;0m((((((((((((((((((\e[38;2;255;107;33m@\e[0m"
-    "%s\e[38;2;255;107;33m@\e[0m"
-    "%s\e[38;2;173;58;0m/\e[38;2;255;107;33m@\e[38;2;173;58;0m((\e[38;2;255;107;33m@###\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m###@@@@@@@@@@@@@&@##@\e[38;2;173;58;0m((\e[38;2;255;107;33m@&\e[0m"
-    "%s\e[38;2;255;107;33m#@\e[0m"
-    "%s\e[38;2;173;58;0m(((\e[38;2;255;107;33m################@@@#########\e[0m"
-    "%s\e[38;2;173;58;0m/\e[38;2;255;107;33m#\e[38;2;173;58;0m)\e[0m"
-    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m(((\e[38;2;255;107;33m####\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m####&###\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m##@\e[0m"
-    "%s\e[38;2;255;107;33m@&@\e[0m"
-    "%s\e[38;2;255;107;33m.@\e[38;2;173;58;0m((((\e[38;2;255;107;33m##############@#@######@@@@@#####\e[0m"
-    "%s\e[38;2;255;107;33m@&@\e[0m"
-    "%s\e[38;2;255;107;33m@@@@\e[38;2;173;58;0m((\e[38;2;255;107;33m@####@\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m#####@@@#\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m&#@@\e[38;2;173;58;0m\\\e[0m"
-    "%s\e[38;2;255;107;33m@@#@\e[0m"
-    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m((\e[38;2;255;107;33m@#####@@#######@#################@\e[0m"
-    "%s\e[38;2;255;107;33m@@##@@\e[0m"
-    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m(((\e[38;2;255;107;33m@#####\e[38;2;173;58;0m(((((((\e[38;2;255;107;33m######@###@@@@@\e[0m"
-    "%s\e[38;2;255;107;33m@@#@##&#\e[0m"
-    "%s\e[38;2;255;107;33m@@\e[38;2;173;58;0m((\e[38;2;255;107;33m@@\e[38;2;173;58;0m((((\e[38;2;255;107;33m@##########&\e[38;2;173;58;0m((((\e[38;2;255;107;33m###@\e[0m"
-    "%s\e[38;2;255;107;33m@&&##@\e[38;2;173;58;0m))\e[38;2;255;107;33m@#@@\e[0m"
-    "%s\e[38;2;255;107;33m@@@\e[0m"
-    "%s\e[38;2;255;107;33m@\e[38;2;173;58;0m(((((\e[38;2;255;107;33m&#######\e[38;2;173;58;0m((\e[38;2;255;107;33m#@############&\e[38;2;173;58;0m)))))))\e[0m"
-    "%s\e[38;2;255;107;33m@#\e[38;2;173;58;0m(((((\e[38;2;255;107;33m#@##############@\e[38;2;173;58;0m((((((\e[38;2;255;107;33m#@#@\e[0m"
-    "%s\e[38;2;255;107;33m@@@@@@&@#\e[38;2;173;58;0m((((\e[38;2;255;107;33m##@@@@@#\e[38;2;173;58;0m((((((\e[38;2;255;107;33m#&#@#&\e[0m"
-    "%s\e[38;2;255;107;33m####\e[0m"
-    "%s\e[38;2;255;107;33m#&#\e[38;2;173;58;0m(\e[38;2;255;107;33m@@@@@\e[0m%s%s"
+    "%s\033[38;2;173;58;0m/\033[38;2;255;107;33m@@@@@@\033[38;2;173;58;0m\\\033[0m"
+    "%s\033[38;2;173;58;0m/(\033[38;2;255;107;33m@@\033[38;2;173;58;0m((((((((((((((((\033[38;2;255;107;33m@@\033[0m"
+    "%s\033[38;2;255;107;33m@\033[38;2;173;58;0m((((((((((((((((((((((((\033[38;2;255;107;33m@@@\033[0m"
+    "%s\033[38;2;173;58;0m(((((((((((((((((((((((((((((\033[38;2;255;107;33m#@##@@\033[0m"
+    "%s\033[38;2;255;107;33m@\033[38;2;173;58;0m(((((((((((((\033[38;2;255;107;33m@#####&\033[38;2;173;58;0m(((((((((((((((\033[38;2;255;107;33m@@@@\033[0m"
+    "%s\033[38;2;173;58;0m((((((((((((((\033[38;2;255;107;33m#@@\033[38;2;173;58;0m((((\033[38;2;255;107;33m@@@@@\033[38;2;173;58;0m((((((((((((((\033[38;2;255;107;33m@@\033[0m"
+    "%s\033[38;2;173;58;0m((((((((\033[38;2;255;107;33m@@\033[38;2;173;58;0m(((((((((\033[38;2;255;107;33m@\033[38;2;173;58;0m((((((((((((\033[38;2;255;107;33m@&#@\033[38;2;173;58;0m(((((((((((\033[38;2;255;107;33m#@@\033[0m"
+    "%s\033[38;2;173;58;0m(\033[38;2;255;107;33m@@@\033[38;2;173;58;0m(((\033[38;2;255;107;33m##\033[38;2;173;58;0m((((((((\033[38;2;255;107;33m@@\033[38;2;173;58;0m((((((((((((((\033[38;2;255;107;33m##@##\033[38;2;173;58;0m(((((((((\033[38;2;255;107;33m#@@\033[0m"
+    "%s\033[38;2;255;107;33m@\033[38;2;173;58;0m(((((\033[38;2;255;107;33m##\033[38;2;173;58;0m(((\033[38;2;255;107;33m@#####\033[38;2;173;58;0m(((((\033[38;2;255;107;33m######\033[38;2;173;58;0m((((\033[38;2;255;107;33m###@\033[38;2;173;58;0m(((((((((\033[38;2;255;107;33m@@@\033[0m"
+    "%s\033[38;2;255;107;33m@\033[38;2;173;58;0m((((((\033[38;2;255;107;33m@&#########\033[38;2;173;58;0m((((\033[38;2;255;107;33m###@@##\033[38;2;173;58;0m(((\033[38;2;255;107;33m@###@\033[38;2;173;58;0m((((((((\033[38;2;255;107;33m#@@\033[0m"
+    "%s\033[38;2;255;107;33m@\033[38;2;173;58;0m(((((((((\033[38;2;255;107;33m#&@@@#########@\033[38;2;173;58;0m(((((\033[38;2;255;107;33m@@\033[38;2;173;58;0m((((\033[38;2;255;107;33m#####@\033[38;2;173;58;0m(((((((\033[38;2;255;107;33m#@@\033[0m"
+    "%s\033[38;2;255;107;33m@@@@\033[38;2;173;58;0m((((\033[38;2;255;107;33m&#\033[38;2;173;58;0m(\033[38;2;255;107;33m################&@@@####@###@\033[38;2;173;58;0m(((((((\033[38;2;255;107;33m@&&\033[0m"
+    "%s\033[38;2;255;107;33m@\033[38;2;173;58;0m((((\033[38;2;255;107;33m#####\033[38;2;173;58;0m(((((((\033[38;2;255;107;33m###########@&####\033[38;2;173;58;0m((((\033[38;2;255;107;33m@##@&\033[0m"
+    "%s\033[38;2;173;58;0m(\033[38;2;255;107;33m@\033[38;2;173;58;0m((((\033[38;2;255;107;33m@####@######@@###\033[38;2;173;58;0m(((\033[38;2;255;107;33m@######@\033[38;2;173;58;0m((((((\033[38;2;255;107;33m@#\033[0m"
+    "%s\033[38;2;255;107;33m@\033[38;2;173;58;0m((((((\033[38;2;255;107;33m##############@@##\033[38;2;173;58;0m((((((((((((((((((\033[38;2;255;107;33m@\033[0m"
+    "%s\033[38;2;255;107;33m@\033[0m"
+    "%s\033[38;2;173;58;0m/\033[38;2;255;107;33m@\033[38;2;173;58;0m((\033[38;2;255;107;33m@###\033[38;2;173;58;0m(((((((\033[38;2;255;107;33m###@@@@@@@@@@@@@&@##@\033[38;2;173;58;0m((\033[38;2;255;107;33m@&\033[0m"
+    "%s\033[38;2;255;107;33m#@\033[0m"
+    "%s\033[38;2;173;58;0m(((\033[38;2;255;107;33m################@@@#########\033[0m"
+    "%s\033[38;2;173;58;0m/\033[38;2;255;107;33m#\033[38;2;173;58;0m)\033[0m"
+    "%s\033[38;2;255;107;33m@\033[38;2;173;58;0m(((\033[38;2;255;107;33m####\033[38;2;173;58;0m(((((((\033[38;2;255;107;33m####&###\033[38;2;173;58;0m(((((((\033[38;2;255;107;33m##@\033[0m"
+    "%s\033[38;2;255;107;33m@&@\033[0m"
+    "%s\033[38;2;255;107;33m.@\033[38;2;173;58;0m((((\033[38;2;255;107;33m##############@#@######@@@@@#####\033[0m"
+    "%s\033[38;2;255;107;33m@&@\033[0m"
+    "%s\033[38;2;255;107;33m@@@@\033[38;2;173;58;0m((\033[38;2;255;107;33m@####@\033[38;2;173;58;0m(((((((\033[38;2;255;107;33m#####@@@#\033[38;2;173;58;0m(((((((\033[38;2;255;107;33m&#@@\033[38;2;173;58;0m\\\033[0m"
+    "%s\033[38;2;255;107;33m@@#@\033[0m"
+    "%s\033[38;2;255;107;33m@\033[38;2;173;58;0m((\033[38;2;255;107;33m@#####@@#######@#################@\033[0m"
+    "%s\033[38;2;255;107;33m@@##@@\033[0m"
+    "%s\033[38;2;255;107;33m@\033[38;2;173;58;0m(((\033[38;2;255;107;33m@#####\033[38;2;173;58;0m(((((((\033[38;2;255;107;33m######@###@@@@@\033[0m"
+    "%s\033[38;2;255;107;33m@@#@##&#\033[0m"
+    "%s\033[38;2;255;107;33m@@\033[38;2;173;58;0m((\033[38;2;255;107;33m@@\033[38;2;173;58;0m((((\033[38;2;255;107;33m@##########&\033[38;2;173;58;0m((((\033[38;2;255;107;33m###@\033[0m"
+    "%s\033[38;2;255;107;33m@&&##@\033[38;2;173;58;0m))\033[38;2;255;107;33m@#@@\033[0m"
+    "%s\033[38;2;255;107;33m@@@\033[0m"
+    "%s\033[38;2;255;107;33m@\033[38;2;173;58;0m(((((\033[38;2;255;107;33m&#######\033[38;2;173;58;0m((\033[38;2;255;107;33m#@############&\033[38;2;173;58;0m)))))))\033[0m"
+    "%s\033[38;2;255;107;33m@#\033[38;2;173;58;0m(((((\033[38;2;255;107;33m#@##############@\033[38;2;173;58;0m((((((\033[38;2;255;107;33m#@#@\033[0m"
+    "%s\033[38;2;255;107;33m@@@@@@&@#\033[38;2;173;58;0m((((\033[38;2;255;107;33m##@@@@@#\033[38;2;173;58;0m((((((\033[38;2;255;107;33m#&#@#&\033[0m"
+    "%s\033[38;2;255;107;33m####\033[0m"
+    "%s\033[38;2;255;107;33m#&#\033[38;2;173;58;0m(\033[38;2;255;107;33m@@@@@\033[0m%s%s"
   };
 
   // set window dimensions for live stream
-  printf("\e[8;29;64t");
+  printf("\033[8;29;64t");
   // no buffering
   setbuf(stdout, NULL);
   
@@ -452,7 +489,7 @@ u8 infinite(u64 *restrict _ptr, u64 seed, u64 nonce) {
       snprintf(lines[34], 29, "%llu%llu",                 GET_2(i + 61));
       snprintf(lines[35], 31, "%llu%llu",                 GET_2(i + 63));
       snprintf(lines[36], 38, "%llu%llu%llu",             GET_3(i + 65));
-      snprintf(lines[37], 3,  "%llu%llu",                 GET_1(i + 68));
+      snprintf(lines[37], 3,  "%llu",                     GET_1(i + 68));
       snprintf(lines[38], 26, "%llu%llu",                 GET_2(i + 69));
       snprintf(lines[39], 65, "%llu%llu%llu%llu",         GET_3(i + 71), GET_1(i + 74));
       printf(ADAM_ASCII,
@@ -468,7 +505,7 @@ u8 infinite(u64 *restrict _ptr, u64 seed, u64 nonce) {
               lines[36], lines[37], lines[38], lines[39]
       );
       sleep(1);
-      fwrite("\e[2J\r", 1, 5, stdout);
+      fwrite("\033[2J\r", 1, 5, stdout);
     } while ((i += 75 - (i == 181)) < LIVE_ITER);
 
     const u8 leftovers = (i == 225);
@@ -489,8 +526,7 @@ u8 infinite(u64 *restrict _ptr, u64 seed, u64 nonce) {
       snprintf(lines[12], 18, "%llu%llu",                 GET_2(i + 29)); 
     }
     i = ((leftovers) << 5) - (leftovers);
-    nonce = (nonce ^ ~_ptr[nonce & 0xFF] ^ GOLDEN_RATIO) - (_ptr[nonce & 0xFF] >> 32);
-    nonce ^= (u64) clock();
+    RENONCE_ADAM(nonce);
     RESEED_ADAM(seed);
     adam(_ptr, seed, nonce);
     goto live_adam; 
