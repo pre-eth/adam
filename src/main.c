@@ -1,4 +1,4 @@
-#include <getopt.h>
+#include <sys/random.h>   // getentropy()
 
 #include "adam.h"
 #include "cli.h"
