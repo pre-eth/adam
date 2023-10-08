@@ -1,5 +1,5 @@
 INSTALL_DIR = ~/.local
-CC = gcc
+CC = @gcc
 
 AVX512 = 0
 CFLAGS = -O3 -flto
