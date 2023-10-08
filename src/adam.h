@@ -1,6 +1,5 @@
 #ifndef ADAM_H
 #define ADAM_H
-
   #include "util.h"
 
   /* 
@@ -17,22 +16,17 @@
   #define GOLDEN_RATIO        0x9E3779B97F4A7C13UL
 
   #define ISAAC_MIX(a, b, c, d, e, f, g, h) { \
-   a-=e; f^=h>>9;  h+=a; \
-   b-=f; g^=a<<9;  a+=b; \
-   c-=g; h^=b>>23; b+=c; \
-   d-=h; a^=c<<15; c+=d; \
-   e-=a; b^=d>>14; d+=e; \
-   f-=b; c^=e<<20; e+=f; \
-   g-=c; d^=f>>17; f+=g; \
-   h-=d; e^=g<<14; g+=h; \
+    a-=e; f^=h>>9;  h+=a; \
+    b-=f; g^=a<<9;  a+=b; \
+    c-=g; h^=b>>23; b+=c; \
+    d-=h; a^=c<<15; c+=d; \
+    e-=a; b^=d>>14; d+=e; \
+    f-=b; c^=e<<20; e+=f; \
+    g-=c; d^=f>>17; f+=g; \
+    h-=d; e^=g<<14; g+=h; \
   }
 
   /* ADAM stuff */
-
-  #define SEED64              _rdseed64_step
-  
-  #define THREAD_EXP          3
-  #define THSEED(i, sd)       chdata[i].seed = *sd, *sd += (*sd / 100000000)
 
   /*
     The PRNG algorithm is based on the construction of three 
@@ -41,7 +35,7 @@
     using a chaotic function to scramble the used positions. The 
     chaotic function is given by this logistic function
   */
-  #define CHAOTIC_FN(x)       (3.9999 * (x) * (1 - (x)))
+  #define CHAOTIC_FN(x)         (3.9999 * (x) * (1 - (x)))
   
   /* 
     ROUNDS must satisfy k = T / 3 where T % 3 = 0, where k is 
@@ -66,18 +60,26 @@
     maximum double precision value of 15 with the seeds that it 
     generates. I'll let you check the math yourself to prove it :)
   */
-  #define ROUNDS              18
-  #define ITER                (ROUNDS / 3)
+  #define ROUNDS                18
+  #define ITER                  (ROUNDS / 3)
 
-  #define RESEED_ADAM(s)      seed ^= (seed + ((seed << (seed & 31)))) ^ _ptr[seed & 0xFF]
+  /* 
+    BETA is derived from the length of the significant digits
+    ADAM uses the max double accuracy length of 15
+  */
+  #define BETA                  10E15 
 
-  #define XOR_MAPS(i)         _ptr[0 + i] ^ (_ptr[0 + i + 256]) ^ (_ptr[0 + i + 512]),\
-                              _ptr[1 + i] ^ (_ptr[1 + i + 256]) ^ (_ptr[1 + i + 512]),\
-                              _ptr[2 + i] ^ (_ptr[2 + i + 256]) ^ (_ptr[2 + i + 512]),\
-                              _ptr[3 + i] ^ (_ptr[3 + i + 256]) ^ (_ptr[3 + i + 512])
+  #define RENONCE_ADAM(n)       n = (n ^ ~_ptr[n & 0xFF] ^ GOLDEN_RATIO) - (_ptr[n & 0xFF] >> 32), n ^= (u64) clock();
+  #define RESEED_ADAM(s)        s ^= (s + ((s << (s & 31)))) ^ _ptr[s & 0xFF]
+
+  #ifndef __AARCH64_SIMD_
+    #define XOR_MAPS(i)         _ptr[0 + i] ^ (_ptr[0 + i + 256]) ^ (_ptr[0 + i + 512]),\
+                                _ptr[1 + i] ^ (_ptr[1 + i + 256]) ^ (_ptr[1 + i + 512]),\
+                                _ptr[2 + i] ^ (_ptr[2 + i + 256]) ^ (_ptr[2 + i + 512]),\
+                                _ptr[3 + i] ^ (_ptr[3 + i + 256]) ^ (_ptr[3 + i + 512])
+  #endif
 
   // Initiates RNG algorithm with user provided seed and nonce
   // Returns duration of generation
   double adam(u64 *restrict _ptr, const u64 seed, const u64 nonce);
-
 #endif
