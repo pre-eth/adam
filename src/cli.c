@@ -307,14 +307,14 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 seed
     to write the bytes of an entire buffer directly
     (aka the SEQ_SIZE)
   */ 
-  register long int rate = limit >> 14;
-  register short leftovers = limit & (SEQ_SIZE - 1);
+  register long int rate = limit >> 11;
+  register short leftovers = limit & (BUF_SIZE * sizeof(u64) - 1);
 
   register double duration = 0.0;
 
   while (LIKELY(rate > 0)) {
     duration += adam(_ptr, seed, nonce);
-    fwrite(_ptr, 8, BUF_SIZE, fptr);
+    fwrite(_ptr, 1, BUF_SIZE * sizeof(u64), fptr);
     --rate;
     RENONCE_ADAM(nonce);
     RESEED_ADAM(seed);
@@ -323,7 +323,7 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 seed
   if (LIKELY(leftovers > 0)) {
     const u16 nums = leftovers >> 6; 
     duration += adam(_ptr, seed, nonce);
-    fwrite(_ptr, 8, (nums + !!(nums & 63)), fptr);
+    fwrite(_ptr, 1,  BUF_SIZE * sizeof(u64), fptr);
   }
 
   return printf("\n\033[1;36mWrote %lu bits to BINARY file (%lfs)\033[m\n", 
