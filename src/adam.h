@@ -26,7 +26,19 @@
     h-=d; e^=g<<14; g+=h; \
   }
 
+  // Slightly modified versions of macros from ISAAC for reseeding ADAM
+  #define ISAAC_IND(mm, x)  (*(u64*)((u8*)(mm) + ((x) & ((BUF_SIZE-1)<<3))))
+  #define ISAAC_RNGSTEP(mx, a, b, mm, m, m2, x, y) { \
+    *x = *m;  \
+    a = (a^(mx)) + *m2; \
+    *y = ISAAC_IND(mm,*x) + a + b; \
+    b = ISAAC_IND(mm,*y>>MAGNITUDE) + *x; \
+  }
+
   /* ADAM stuff */
+
+  #define RESEED                1U
+  #define NO_RESEED             0U
 
   /*
     The PRNG algorithm is based on the construction of three 
@@ -69,9 +81,6 @@
   */
   #define BETA                  10E15 
 
-  #define RENONCE_ADAM(n)       n = (n ^ ~_ptr[n & 0xFF] ^ GOLDEN_RATIO) - (_ptr[n & 0xFF] >> 32), n ^= (u64) clock();
-  #define RESEED_ADAM(s)        s ^= (s + ((s << (s & 31)))) ^ _ptr[s & 0xFF]
-
   #ifndef __AARCH64_SIMD_
     #define XOR_MAPS(i)         _ptr[0 + i] ^ (_ptr[0 + i + 256]) ^ (_ptr[0 + i + 512]),\
                                 _ptr[1 + i] ^ (_ptr[1 + i + 256]) ^ (_ptr[1 + i + 512]),\
@@ -81,5 +90,5 @@
 
   // Initiates RNG algorithm with user provided seed and nonce
   // Returns duration of generation
-  double adam(u64 *restrict _ptr, const u64 seed, const u64 nonce);
+  double adam(u64 *restrict _ptr, u64 *seed, u64 *nonce, u8 reseed);
 #endif
