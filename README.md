@@ -6,7 +6,7 @@
  ▄▀▀▀▀█▄   ██    ██  ▄▀▀▀▀█▄   █ ▀█▀ ██  
 ▄█▄  ▄██▄ ▄██▄▄▄█▀  ▄█▄  ▄██▄ ▄█▄ █ ▄██▄ 
 
-v1.3.0
+v1.3.5
 
 <b>Use at your own risk</b>. Criticism and suggestions are welcome.
 </pre>         
@@ -40,7 +40,6 @@ You can find a deeper dive into the algorithm behind the number generation proce
 ### Coming Soon!
 
 - Multithreading
-- ARM NEON support
 - Better performance, including benchmarks and self-benchmark ability
 - Examination option for exploring generated buffers based on ent and Bob Jenkins' own RNG tests!
 - Graphs and charts detailing statistical quality
@@ -48,7 +47,7 @@ You can find a deeper dive into the algorithm behind the number generation proce
 
 ## INSTALLATION
 
-ADAM was developed for macOS and Linux systems. It may be possible to run on other operating systems but I haven't checked or configured the program for other systems/distros. The macOS version makes use of ARM NEON Intrinsics, but the equivalent logic is implemented using AVX/AVX2 as well, which is required. AVX-512F is supported, but off by default; to enable it, you need to set the `AVX512` Makefile variable to `1` (assuming you have the proper CPUID flags).
+ADAM was developed for macOS and Linux systems. It may be possible to run on other operating systems but I haven't checked or configured the program for other systems/distros. The macOS version makes use of ARM NEON Intrinsics, but the equivalent logic is implemented using AVX/AVX2. Either way, support for at least one of these sets of intrinsics is required. AVX-512F is supported, but off by default; to enable it, you need to set the `AVX512` Makefile variable to `1` (assuming you have the proper CPUID flags).
 
 By default the executable is installed to `~/.local` but you can change this by tweaking the `INSTALL_DIR` variable in the Makefile.
 
@@ -95,7 +94,7 @@ The following options are available:
 
 “Proving” security is a very difficult thing to do, and a good deal of cryptanalysis is needed before domain wide recognition for the strength of any cryptographic algorithm is gained. That’s why the saying [“Don’t Roll Your Own Crypto”](https://security.stackexchange.com/questions/18197/why-shouldnt-we-roll-our-own) exists.
 
-ADAM has passed the [NIST Test Suite for Random Bit Generation SP 800-22](https://csrc.nist.gov/publications/detail/sp/800-22/rev-1a/final) just like the original algorithm in the paper, along with other test suites like [Dieharder](http://webhome.phy.duke.edu/~rgb/General/dieharder.php). However, conducting further testing is required before confident security guarantees can be made. This is just a toy RNG for now, and for production use I strongly recommend using something more thoroughly vetted by the field like [ChaCha20](https://datatracker.ietf.org/doc/html/rfc7539). 
+ADAM has passed the [NIST Test Suite for Random Bit Generation SP 800-22](https://csrc.nist.gov/publications/detail/sp/800-22/rev-1a/final) just like the original algorithm in the paper, along with other test suites like [Dieharder](http://webhome.phy.duke.edu/~rgb/General/dieharder.php) and [gjrand](https://gjrand.sourceforge.net). However, conducting further testing is required before confident security guarantees can be made. This is just a toy RNG for now, and for production use I strongly recommend using something more thoroughly vetted by the field like [ChaCha20](https://datatracker.ietf.org/doc/html/rfc7539). 
 
 While passing one or even all of these test suites doesn't guarantee that a RNG is cryptographically secure, it follows that a CSPRNG will pass these tests, so they nonetheless provide a measuring stick of sorts to reveal flaws in the design and various characteristics of the randomness of the generated numbers.
 
@@ -114,23 +113,12 @@ Click on a test to learn more.
 | ⌛ SOON | [chi.c](http://burtleburtle.net/bob/rand/testsfor.html) | From Bob Jenkins (author of ISAAC), calculates the distributions for the frequency, gap, and run tests exactly
 | ✅ **PASS**  | [NIST STS](https://csrc.nist.gov/projects/random-bit-generation/documentation-and-software) | Set of statistical tests of randomness for generators intended for cryptographic applications 
 | ⌛ SOON | [ent](https://www.fourmilab.ch/random) | Calculates various values for a supplied pseudo random sequence like entropy, arithmetic mean, Monte Carlo value for pi, and more.
-| ⌛ SOON | [gjrand](https://gjrand.sourceforge.net) | Test suites for uniform bits, uniform floating point numbers, and normally distributed numbers, along with some other minor tests. Supposedly pretty tough!
-| ✅ **PASS**  | [Dieharder](https://webhome.phy.duke.edu/~rgb/General/dieharder.php) | Cleaned up version of George Marsaglia's DIEHARD suite, with additional parameterizable tests 
-| ⌛ SOON  | [NIST FIPS 140-3](https://webhome.phy.duke.edu/~rgb/General/dieharder.php) | The standard provides four increasing, qualitative levels of security intended to cover a wide range of potential applications and environments.  
+| ✅ **PASS** | [gjrand](https://gjrand.sourceforge.net) | Test suites for uniform bits, uniform floating point numbers, and normally distributed numbers, along with some other minor tests. Supposedly pretty tough!
+| ✅ **PASS**  | [Dieharder](https://webhome.phy.duke.edu/~rgb/General/dieharder.php) | Cleaned up version of George Marsaglia's DIEHARD suite plus the STS tests from above and RGB tests. Mostly of historical interest.
 
 Testing with TestU01 will probably require some kind of port as it only accepts 32-bit inputs. PractRand is the crown jewel and will be taken on once all these other tests have been passed at all the bit sequence lengths.
 
-### NIST
-
-The STS can be downloaded from the link above. [This](https://www.slideshare.net/Muhammadhamid23/running-of-nist-test-109375052) is a good little quick start guide.
-
-Results for testing 10Mb, 100Mb, 200Mb, 250Mb, 500Mb, and 1Gb are available in the `tests` subdirectory. 
-
-### Dieharder
-
-`adam -b | dieharder -a -Y 1 -k 2 -g 200`
-
-Explanation of options can be found in Dieharder's [man page](https://linux.die.net/man/1/dieharder)
+For details on how to run the tests above, please refer to the `TESTING.md`.
 
 ## CONTRIBUTING
 
