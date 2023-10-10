@@ -48,9 +48,9 @@ You can find a deeper dive into the algorithm behind the number generation proce
 
 ## INSTALLATION
 
-ADAM was developed on Fedora for x86 64-bit Linux systems. It may be possible to run on other operating systems but I haven't checked or configured the program for other systems/distros. AVX/AVX2 is required, AVX-512F is supported, but off by default; to enable it, you need to set the `AVX512` Makefile variable to `1` (assuming you have the proper CPUID flags).
+ADAM was developed for macOS and Linux systems. It may be possible to run on other operating systems but I haven't checked or configured the program for other systems/distros. The macOS version makes use of ARM NEON Intrinsics, but the equivalent logic is implemented using AVX/AVX2 as well, which is required. AVX-512F is supported, but off by default; to enable it, you need to set the `AVX512` Makefile variable to `1` (assuming you have the proper CPUID flags).
 
-By default the executable is installed to `~/.local/bin` but you can change this by tweaking the `INSTALL_DIR` variable in the Makefile.
+By default the executable is installed to `~/.local` but you can change this by tweaking the `INSTALL_DIR` variable in the Makefile.
 
 ```
 git clone https://github.com/pre-eth/adam.git
