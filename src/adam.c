@@ -341,15 +341,38 @@ FORCE_INLINE static void mix(u64 *restrict _ptr) {
   } while (i < BUF_SIZE - 1);
 }
 
-double adam(u64 *restrict _ptr, const u64 seed, const u64 nonce) {
+// State variables
+static u64 aa = 0, bb = 0;
+
+double adam(u64 *restrict _ptr, u64 *seed, u64 *nonce, u8 reseed) {
+  #ifdef __AARCH64_SIMD__
+    double seeds[ROUNDS << 2] ALIGN(64);
+  #else
   double seeds[ROUNDS << 2] ALIGN(SIMD_LEN);
+  #endif
 
   clock_t start = clock();
 
-  accumulate(_ptr, seed, nonce, seeds);
-  diffuse(_ptr, nonce);
+  accumulate(_ptr, *seed, *nonce, seeds);
+  diffuse(_ptr, *nonce);
   apply(_ptr, seeds);
   mix(_ptr); 
 
-  return (double) (clock() - start) / CLOCKS_PER_SEC;
+  register double duration = (double)(clock() - start) / (double) CLOCKS_PER_SEC;
+
+  if (reseed) {
+    u8 i = *seed & 0x7F;
+    u8 j = i + (*nonce & 0xFF);
+    for (; i < BUF_SIZE - 1; ++i, --j) {
+      ISAAC_RNGSTEP(~(aa^(aa<<21)), aa, bb, _ptr, &_ptr[i], &_ptr[j], seed, nonce);
+      ISAAC_RNGSTEP(aa^(aa>>5) , aa, bb, _ptr, &_ptr[i], &_ptr[j], seed, nonce);
+      ISAAC_RNGSTEP(aa^(aa<<12), aa, bb, _ptr, &_ptr[i], &_ptr[j], seed, nonce);
+      ISAAC_RNGSTEP(aa^(aa>>33), aa, bb, _ptr, &_ptr[i], &_ptr[j], seed, nonce);
+    }
+
+    *seed = (*seed + aa) + ++bb; 
+    *nonce ^= (u64) clock();
+  }
+
+  return duration;
 }
