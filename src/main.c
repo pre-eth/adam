@@ -14,7 +14,7 @@
 */
 
 FORCE_INLINE static u8 err(const char *s) {
-  return fprintf(stderr, "\e[1;31m%s\e[m\n", s);
+  return fprintf(stderr, "\033[1;31m%s\033[m\n", s);
 }
 
 /* 
@@ -137,10 +137,10 @@ int main(int argc, char **argv) {
 
   show_params:
     if (UNLIKELY(show_seed))
-      printf("\e[1;36mSEED:\e[m %llu\n", seed);
+      printf("\033[1;36mSEED:\033[m %llu\n", seed);
 
     if (UNLIKELY(show_nonce))
-      printf("\e[1;36mNONCE:\e[m %llu\n", nonce);
+      printf("\033[1;36mNONCE:\033[m %llu\n", nonce);
 
   return 0;
 }
