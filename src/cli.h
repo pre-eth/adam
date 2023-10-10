@@ -9,7 +9,7 @@
 
   #define MAJOR           1
   #define MINOR           3
-  #define PATCH           0
+  #define PATCH           5
 
   #define VERSION         "v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH)
   #define VERSION_HELP    "Version of this software (" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH) ")"
@@ -30,11 +30,11 @@
   #define GET_2(i)        _ptr[i], _ptr[i + 1]
   #define GET_3(i)        _ptr[i], _ptr[i + 1], _ptr[i + 2]
 
-  u8  bits(u64 *restrict _ptr, const u64 seed, const u64 nonce);
-  u8  assess(u64 *restrict _ptr, const u16 limit, const u64 seed, const u64 nonce);
+  u8  bits(u64 *restrict _ptr, u64 *seed, u64 *nonce);
+  u8  assess(u64 *restrict _ptr, const u16 limit, u64 *seed, u64 *nonce);
   u64 a_to_u(const char *s, const u64 min, const u64 max);
   u8  help();
-  u8  uuid(u64 *restrict _ptr, const u8 limit, const u64 seed, const u64 nonce);
-  u8  examine(u64 *restrict _ptr, const u16 limit, u64 seed, u64 nonce);
-  u8  infinite(u64 *restrict _ptr, u64 seed, u64 nonce);
+  u8  uuid(u64 *restrict _ptr, const u8 limit, u64 *seed, u64 *nonce);
+  u8  examine(u64 *restrict _ptr, const u16 limit, u64 *seed, u64 *nonce);
+  u8  infinite(u64 *restrict _ptr, u64 *seed, u64 *nonce);
 #endif

@@ -121,8 +121,8 @@ u64 a_to_u(const char *s, const u64 min, const u64 max) {
   return (val >= min || val < max - 1) ? val : min;
 }
 
-u8 uuid(u64 *restrict _ptr, u8 limit, const u64 seed, const u64 nonce) {
-  adam(_ptr, seed, nonce);
+u8 uuid(u64 *restrict _ptr, u8 limit, u64 *seed, u64 *nonce) {
+  adam(_ptr, seed, nonce, NO_RESEED);
 
   u8 buf[16];
   u128 tmp;
@@ -242,7 +242,7 @@ FORCE_INLINE static void print_chunks(FILE *fptr, char *restrict _bptr, const u6
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
 }
 
-static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 seed, u64 nonce) {
+static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 *seed, u64 *nonce) {
   if (UNLIKELY(fptr == NULL)) return 0;
   
   /*
@@ -258,11 +258,9 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 seed
   register double duration = 0.0, iter;
 
   while (rate > 0) {
-    duration += adam(_ptr, seed, nonce);
+    duration += adam(_ptr, seed, nonce, RESEED);
     print_chunks(fptr, _bptr, _ptr);
     --rate;
-    RENONCE_ADAM(nonce);
-    RESEED_ADAM(seed);
   } 
 
   /*
@@ -278,7 +276,7 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 seed
     register u16 l, limit;
     register u64 num;
 
-    duration += adam(_ptr, seed, nonce);
+    duration += adam(_ptr, seed, nonce, RESEED);
     print_leftovers:
       limit = (leftovers < BITBUF_SIZE) ? leftovers : BITBUF_SIZE;
 
@@ -299,7 +297,7 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 seed
                 limit, duration);
 }
 
-static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 seed, u64 nonce) {   
+static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 *seed, u64 *nonce) {   
   if (UNLIKELY(fptr == NULL)) return 0;
 
   /*
@@ -312,15 +310,13 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 seed
   register double duration = 0.0;
 
   while (LIKELY(rate > 0)) {
-    duration += adam(_ptr, seed, nonce);
+    duration += adam(_ptr, seed, nonce, RESEED);
     fwrite(_ptr, 1, BUF_SIZE * sizeof(u64), fptr);
     --rate;
-    RENONCE_ADAM(nonce);
-    RESEED_ADAM(seed);
   } 
 
   if (LIKELY(leftovers > 0)) {
-    duration += adam(_ptr, seed, nonce);
+    duration += adam(_ptr, seed, nonce, RESEED);
     fwrite(_ptr, 1, BUF_SIZE * sizeof(u64), fptr);
   }
 
@@ -328,16 +324,16 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 seed
                 limit, duration);
 }
 
-u8 bits(u64 *restrict _ptr, const u64 seed, const u64 nonce) {
+u8 bits(u64 *restrict _ptr, u64 *seed, u64 *nonce) {
   return stream_bytes(stdout, _ptr, __UINT64_MAX__, seed, nonce);
 }
 
-u8 assess(u64 *restrict _ptr, const u16 limit, const u64 seed, const u64 nonce) {
+u8 assess(u64 *restrict _ptr, const u16 limit, u64 *seed, u64 *nonce) {
   FILE *fptr;
   const char *file_type;
-  u8 (*fn)(FILE*, u64 *restrict, const u64, u64, u64);
+  u8 (*fn)(FILE*, u64 *restrict, const u64, u64*, u64*);
   char c;
-  char file_name[64];
+  char file_name[65];
 
   get_file_name:
     printf("File name: \033[1;33m");
@@ -368,7 +364,7 @@ u8 assess(u64 *restrict _ptr, const u16 limit, const u64 seed, const u64 nonce) 
   return fclose(fptr);
 }
 
-u8 examine(u64 *restrict _ptr, const u16 limit, u64 seed, u64 nonce) {
+u8 examine(u64 *restrict _ptr, const u16 limit, u64 *seed, u64 *nonce) {
   double r_ent, r_chisq, r_mean, r_montepicalc, r_scc;
 
   u64 ones = 0;
@@ -378,7 +374,7 @@ u8 examine(u64 *restrict _ptr, const u16 limit, u64 seed, u64 nonce) {
   return 0;
 }
 
-u8 infinite(u64 *restrict _ptr, u64 seed, u64 nonce) {
+u8 infinite(u64 *restrict _ptr, u64 *seed, u64 *nonce) {
   /*
     There are 256 numbers per buffer. But we only need 75 to print one
     iteration. So 75 * 3 = 225. 256 - 225 = 31. Thus, for each buffer 31
@@ -447,7 +443,7 @@ u8 infinite(u64 *restrict _ptr, u64 seed, u64 nonce) {
   char lines[40][100];
 
   register u8 i = 0;
-  adam(_ptr, seed, nonce);
+  adam(_ptr, seed, nonce, RESEED);
   live_adam:
     do {
       snprintf(lines[0],  96, "%llu%llu%llu%llu%llu%llu", GET_3(i + 0), GET_3(i + 3));
@@ -524,9 +520,7 @@ u8 infinite(u64 *restrict _ptr, u64 seed, u64 nonce) {
       snprintf(lines[12], 18, "%llu%llu",                 GET_2(i + 29)); 
     }
     i = ((leftovers) << 5) - (leftovers);
-    RENONCE_ADAM(nonce);
-    RESEED_ADAM(seed);
-    adam(_ptr, seed, nonce);
+    adam(_ptr, seed, nonce, RESEED);
     goto live_adam; 
 
   return 0;
