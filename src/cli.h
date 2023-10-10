@@ -19,7 +19,7 @@
 
   #define BITBUF_SIZE     1024
   #define ASSESS_BITS     1000000
-  #define ASSESS_LIMIT    5000
+  #define ASSESS_LIMIT    10000
 
   #define PRINT_4(i, j)   print_binary(_bptr + i,       _ptr[(j) + 0]), \
                           print_binary(_bptr + 64 + i,  _ptr[(j) + 1]), \
