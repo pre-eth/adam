@@ -8,9 +8,9 @@ ifeq ($(UNAME_P), arm)
 	SIMD_FLAGS = -mcpu=native
 else
 	ifeq ($(AVX512), 0)
-		SIMD_FLAGS = -mrdseed -mavx -mavx2 
+		SIMD_FLAGS = -mavx -mavx2 
 	else
-		SIMD_FLAGS = -mrdseed -mavx512f -mno-vzeroupper
+		SIMD_FLAGS = -mavx512f -mno-vzeroupper
 	endif
 endif
 
