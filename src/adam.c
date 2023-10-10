@@ -1,14 +1,11 @@
-#include <threads.h>
-
 #include "adam.h"
 
-typedef struct thread_data {
-  u64 *start;
-  u64 *end;
-  double seed;
-} thdata;
-
-static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
+#ifdef __AARCH64_SIMD__
+  static double mod_table[BUF_SIZE] ALIGN(64) = 
+#else
+  static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = 
+#endif
+{
   72340172838076672.0,   72624976668147840.0,   72912031911895456.0,    73201365371863296.0, 
   73493004277727296.0,   73786976294838208.0,   74083309532970080.0,    74382032555280448.0, 
   74683174387488064.0,   74986764527274608.0,   75292832953916544.0,    75601410138153904.0, 
