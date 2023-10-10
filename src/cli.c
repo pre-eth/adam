@@ -305,7 +305,6 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 seed
   /*
     Split limit based on how many calls we need to make
     to write the bytes of an entire buffer directly
-    (aka the SEQ_SIZE)
   */ 
   register long int rate = limit >> 11;
   register short leftovers = limit & (BUF_SIZE * sizeof(u64) - 1);
@@ -349,14 +348,14 @@ u8 assess(u64 *restrict _ptr, const u16 limit, const u64 seed, const u64 nonce) 
     }
 
   get_file_type:  
-    printf("\033[mFile type (0 = ASCII, 1 = BINARY): \033[1;33m");
+    printf("\033[mFile type (1 = ASCII, 2 = BINARY): \033[1;33m");
     scanf(" %c", &c);
-    if (c == '0')
+    if (c == '1')
       file_type = "w+", fn = &stream_ascii;
-    else if (c == '1')
+    else if (c == '2')
       file_type = "wb+", fn = &stream_bytes;
     else {
-      fputs("\033[1;31mValue must be 0 or 1\n", stderr);
+      fputs("\033[1;31mValue must be 1 or 2\n", stderr);
       goto get_file_type;
     }
 
