@@ -1,3 +1,4 @@
+#include <getopt.h>        // arg parsing
 #include <sys/random.h>   // getentropy()
 
 #include "adam.h"
@@ -45,10 +46,10 @@ int main(int argc, char **argv) {
 
   register u64 mask = __UINT64_MAX__ - 1;
 
-  u64 seed;
+  u64 seed, nonce;
   getentropy(&seed, sizeof(u64));
 
-  register u64 nonce = ((u64) time(NULL)) ^ GOLDEN_RATIO ^ ~seed;
+  nonce = ((u64) time(NULL)) ^ GOLDEN_RATIO ^ ~seed;
 
   register short opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
@@ -58,15 +59,15 @@ int main(int argc, char **argv) {
       case 'v':
         return puts(VERSION);
       case 'l':
-        return infinite(buf_ptr, seed, nonce);
+        return infinite(buf_ptr, &seed, &nonce);
       case 'a':
         limit = a_to_u(optarg, 1, ASSESS_LIMIT);
         if (!limit)
           return err("Multiplier must be within range [1, 5000]");
-        assess(buf_ptr, limit, seed, nonce);
+        assess(buf_ptr, limit, &seed, &nonce);
         goto show_params;
       case 'b':
-        return bits(buf_ptr, seed, nonce);
+        return bits(buf_ptr, &seed, &nonce);
       case 'x':
         fmt = "0x%lX";
       break;
@@ -111,14 +112,14 @@ int main(int argc, char **argv) {
           if (!limit)
             return err("Invalid amount specified. Value must be within range [1, 128]");
         }
-        uuid(buf_ptr, limit, seed, nonce);
+        uuid(buf_ptr, limit, &seed, &nonce);
         goto show_params;
       default:
         return err("Option is invalid or missing required argument");             
     }
   }
 
-  adam(buf_ptr, seed, nonce);
+  adam(buf_ptr, &seed, &nonce, NO_RESEED);
 
   // Need to do this for default precision because 
   // we can't rely on overflow arithmetic :(
