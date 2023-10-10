@@ -253,69 +253,77 @@ FORCE_INLINE static void diffuse(u64 *restrict _ptr, const u64 nonce) {
   } while (i < BUF_SIZE - 1);
 }
 
-static double multi_thread(thdata *data) {
-  register double x = data->seed;
-  register u8 i = 0;
-  do {
-    // x = chaotic_iter(data->end, data->start, x);
+#ifdef __AARCH64_SIMD__
+  FORCE_INLINE static void apply(u64 *restrict _ptr, double *seeds) {
+    const dregq one = SIMD_SETQPD(1.0);
 
-  } while (++i < ITER);
-  
-  return x;
-}
+    const reg64q mask = SIMD_SET64(0xFFUL),
+                 inc = SIMD_SET64(4UL);
 
-/* FORCE_INLINE static void apply(u64 *restrict _ptr, double *restrict chseed) {
-  // Number of threads we will use
-  #define THREAD_COUNT  (1 << THREAD_EXP)
+    dreg2q d1, d2, d3;
+    reg64q2 r1, scale;
 
-  // Divide sequence bits by thread count, then divide that by 64 
-  // to get the increment value for _ptr and ctz to get shift count
-  #define THREAD_INC    CTZ((SEQ_SIZE / THREAD_COUNT) >> 6)
+    u64 *map_a = _ptr, *map_b = _ptr + BUF_SIZE;
 
-  register u8 i = 0;
-  register u16 start = 0, end = BUF_SIZE; 
+    register u8 rounds = 0, i = 0, j;
 
-  thrd_t threads[THREAD_COUNT];
-  thdata chdata[THREAD_COUNT];
+    u64 arr[4];
+    chaotic_iter:
+      d1 = SIMD_LOAD2PD(&seeds[rounds]);
+      j = 0;
+      
+      arr[0] = 1UL, arr[1] = 3UL, arr[2] = 2UL, arr[3] = 4UL;      
+      scale = SIMD_LOAD64x2(arr);
 
-  THSEED(0, chseed),
-  THSEED(1, chseed),
-  THSEED(2, chseed),
-  THSEED(3, chseed),
-  THSEED(4, chseed),
-  THSEED(5, chseed),
-  THSEED(6, chseed),
-  THSEED(7, chseed); 
+      do {
+        // 3.9999 * X * (1 - X) for all X in the register
+        SIMD_SUB2QPD(d2, one, d1);   
+        SIMD_SCALARMUL2PD(d2, 3.9999);
+        SIMD_MUL2RQPD(d1, d1, d2);
 
-  eval_fn:
-    for(; i < THREAD_COUNT; ++i) {
-      chdata[i].start = _ptr + start  + (i << THREAD_INC);
-      chdata[i].end   = _ptr + end + (i << THREAD_INC);
-      thrd_create(&threads[i], multi_thread, chdata);
-    }
+        // Multiply result of chaotic function by beta
+        // Then multiply result of that against values in mod reduction table
+        d2.val[0] = SIMD_SMULPD(d1.val[0], BETA);
+        d2.val[1] = SIMD_SMULPD(d1.val[1], BETA);
+        d3 = SIMD_LOAD2PD(&mod_table[j]);
+        SIMD_MUL2RQPD(d2, d2, d3);
 
-    i = 0;
-    for(; i < THREAD_COUNT; ++i)
-      thrd_join(threads[i], &chdata[i].seed);
-    
-    i = 0;
-    end += start += 256;
-    end *= (end <= 512);
-    if (start <= 512) goto eval_fn;
-} */
+        // Cast to u64, add the scaling factor
+        // Mask so idx stays in range of buffer
+        SIMD_CAST2Q64(r1, d2);
+        SIMD_ADD2RQ64(r1, r1, scale);
+        SIMD_AND2Q64(r1, r1, mask);
+        SIMD_STORE2Q64(arr, r1);   
 
+        map_b[j]     ^= map_a[arr[0]];
+        map_b[j + 1] ^= map_a[arr[1]];
+        map_b[j + 2] ^= map_a[arr[2]];
+        map_b[j + 3] ^= map_a[arr[3]];
+
+        scale.val[0] = SIMD_ADD64(scale.val[0], inc);
+        scale.val[1] = SIMD_ADD64(scale.val[1], inc);
+      } while ((j += 4 - (j == 252)) < BUF_SIZE - 1); 
+
+      rounds += 4;
+
+      if (++i < ITER) 
+        goto chaotic_iter;
+              
+      if (rounds < (ROUNDS << 2)) {
+        i = (rounds == (ITER << 3));
+        map_a += BUF_SIZE;
+        // reset to start if the third iteration is about to begin
+        // otherwise add 256 just like above
+        map_b += ((u16)!i << 8) - ((u16)i << 9); 
+        i = 0;    
+        goto chaotic_iter;
+      } 
+  }
+#else
 FORCE_INLINE static void apply(u64 *restrict _ptr, double *seeds) {
-  /* 
-    BETA is derived from the length of the significant digits
-    ADAM uses the max double accuracy length of 15
-  */
-  #define BETA                  10E15 
-
-  static u64 arr[SIMD_LEN >> 3] ALIGN(SIMD_LEN);
-  
-  const regd beta = SIMD_SETPD(BETA),
-             coefficient = SIMD_SETPD(3.9999),
-             one = SIMD_SETPD(1.0);
+    const regd beta = SIMD_SETQPD(BETA),
+              coefficient = SIMD_SETQPD(3.9999),
+              one = SIMD_SETQPD(1.0);
 
   const reg mask = SIMD_SET64(0xFFUL),
             inc  = SIMD_SET64(4UL);
@@ -328,14 +336,11 @@ FORCE_INLINE static void apply(u64 *restrict _ptr, double *seeds) {
 
   reg r1, scale;
 
+    u64 arr[4] ALIGN(SIMD_LEN);
   chaotic_iter:
     d1 = SIMD_LOADPD(&seeds[rounds]);
     j = 0;
-    scale = SIMD_SETR64(1UL, 2UL, 3UL, 4UL
-                     #ifdef __AVX512__  
-                      , 5UL, 6UL, 7UL, 8UL
-                     #endif 
-                       );
+      scale = SIMD_SETR64(1UL, 2UL, 3UL, 4UL);
 
     do {
       // 3.9999 * X * (1 - X) for all X in the register
@@ -361,19 +366,10 @@ FORCE_INLINE static void apply(u64 *restrict _ptr, double *seeds) {
       map_b[j + 2] ^= map_a[arr[2]];
       map_b[j + 3] ^= map_a[arr[3]];
 
-    #ifdef __AVX512__
-      map_b[j + 4] ^= map_a[arr[4]];
-      map_b[j + 5] ^= map_a[arr[5]];
-      map_b[j + 6] ^= map_a[arr[6]];
-      map_b[j + 7] ^= map_a[arr[7]];
-    #endif
-
       scale = SIMD_ADD64(scale, inc);
-      j += (SIMD_LEN >> 3) - (j == BUF_SIZE - (SIMD_LEN >> 3));
-    } while (j < BUF_SIZE - 1); 
+      } while ((j += 4 - (j == 252)) < BUF_SIZE - 1); 
 
-    // Use the next 4 (or 8 for AVX-512) seeds to start next iteration
-    rounds += (SIMD_LEN >> 3);
+      rounds += 4;
 
     if (++i < ITER) 
       goto chaotic_iter;
@@ -381,11 +377,14 @@ FORCE_INLINE static void apply(u64 *restrict _ptr, double *seeds) {
     if (rounds < (ROUNDS << 2)) {
       i = (rounds == (ITER << 3));
       map_a += BUF_SIZE;
+        // reset to start if the third iteration is about to begin
+        // otherwise add 256 just like above
       map_b += ((u16)!i << 8) - ((u16)i << 9); 
       i = 0;    
       goto chaotic_iter;
     } 
 }
+#endif
 
 FORCE_INLINE static void mix(u64 *restrict _ptr) {
   register u8 i = 0;
