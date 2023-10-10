@@ -306,8 +306,8 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 seed
     Split limit based on how many calls we need to make
     to write the bytes of an entire buffer directly
   */ 
-  register long int rate = limit >> 11;
-  register short leftovers = limit & (BUF_SIZE * sizeof(u64) - 1);
+  register long int rate = limit >> 14;
+  register short leftovers = limit & (SEQ_SIZE - 1);
 
   register double duration = 0.0;
 
@@ -320,9 +320,8 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 seed
   } 
 
   if (LIKELY(leftovers > 0)) {
-    const u16 nums = leftovers >> 6; 
     duration += adam(_ptr, seed, nonce);
-    fwrite(_ptr, 1,  BUF_SIZE * sizeof(u64), fptr);
+    fwrite(_ptr, 1, BUF_SIZE * sizeof(u64), fptr);
   }
 
   return printf("\n\033[1;36mWrote %lu bits to BINARY file (%lfs)\033[m\n", 
