@@ -29,16 +29,13 @@
   // Slightly modified versions of macros from ISAAC for reseeding ADAM
   #define ISAAC_IND(mm, x)  (*(u64*)((u8*)(mm) + ((x) & ((BUF_SIZE-1)<<3))))
   #define ISAAC_RNGSTEP(mx, a, b, mm, m, m2, x, y) { \
-    *x = *m;  \
+    x = *m;  \
     a = (a^(mx)) + *m2; \
-    *y = ISAAC_IND(mm,*x) + a + b; \
-    b = ISAAC_IND(mm,*y>>MAGNITUDE) + *x; \
+    y = ISAAC_IND(mm,x) + a + b; \
+    b = ISAAC_IND(mm,y>>MAGNITUDE) + x; \
   }
 
   /* ADAM stuff */
-
-  #define RESEED                1U
-  #define NO_RESEED             0U
 
   /*
     The PRNG algorithm is based on the construction of three 
@@ -88,7 +85,19 @@
                                 _ptr[3 + i] ^ (_ptr[3 + i + 256]) ^ (_ptr[3 + i + 512])
   #endif
 
+  // Data for RNG process
+  typedef struct rng_data {
+    u64 *restrict buffer;                       //  Where we store the results
+    u64 seed[4];                                //  256-bit seed/key
+    u64 nonce;                                  //  64-bit nonce
+    u64 aa;                                     //  State variable 1
+    u64 bb;                                     //  State variable 2
+    u8 reseed;                                  //  Is this one run or multiple? If so, reseed
+    double *restrict chseeds;                   //  Where we store seeds for each round of chaotic function
+    double durations[4];                        //  Total number of seconds spend on number generation
+  } ALIGN(SIMD_LEN) rng_data;
+
   // Initiates RNG algorithm with user provided seed and nonce
   // Returns duration of generation
-  double adam(u64 *restrict _ptr, u64 *seed, u64 *nonce, u8 reseed);
+  void adam(rng_data *data);
 #endif
