@@ -46,10 +46,15 @@ int main(int argc, char **argv) {
 
   register u64 mask = __UINT64_MAX__ - 1;
 
-  u64 seed, nonce;
-  getentropy(&seed, sizeof(u64));
+  u64 *restrict buf_ptr = &buffer[0];
 
-  nonce = ((u64) time(NULL)) ^ GOLDEN_RATIO ^ ~seed;
+  rng_data data;
+  data.buffer = buf_ptr;
+  getentropy(&data.seed[0], sizeof(u64) << 2); 
+  data.nonce = ((u64) time(NULL)) ^ GOLDEN_RATIO;
+  data.aa = data.bb = 0UL;
+  data.reseed = 0;
+  data.durations[0] = data.durations[1] = data.durations[2] = data.durations[3] = 0.0;
 
   register short opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
@@ -59,15 +64,18 @@ int main(int argc, char **argv) {
       case 'v':
         return puts(VERSION);
       case 'l':
-        return infinite(buf_ptr, &seed, &nonce);
+        data.reseed = 1;
+        return infinite(&data);
       case 'a':
         limit = a_to_u(optarg, 1, ASSESS_LIMIT);
         if (!limit)
-          return err("Multiplier must be within range [1, 5000]");
-        assess(buf_ptr, limit, &seed, &nonce);
+          return err("Multiplier must be within range [1, 8000]");
+        data.reseed = 1;
+        assess(limit, &data);
         goto show_params;
       case 'b':
-        return bits(buf_ptr, &seed, &nonce);
+        data.reseed = 1;
+        return bits(&data);
       case 'x':
         fmt = "0x%lX";
       break;
@@ -97,13 +105,13 @@ int main(int argc, char **argv) {
       break;
       case 's':
         show_seed = (optarg == NULL);
-        if (!show_seed)
-          seed = a_to_u(optarg, 1, __UINT64_MAX__);
+        // if (!show_seed)
+        //   seed = a_to_u(optarg, 1, __UINT64_MAX__);
       break;
       case 'n':
         show_nonce = (optarg == NULL);
         if (!show_nonce)
-          nonce = a_to_u(optarg, 1, __UINT64_MAX__);
+          data.nonce = a_to_u(optarg, 1, __UINT64_MAX__);
       break;
       case 'u':
         limit = 1;
@@ -112,14 +120,14 @@ int main(int argc, char **argv) {
           if (!limit)
             return err("Invalid amount specified. Value must be within range [1, 128]");
         }
-        uuid(buf_ptr, limit, &seed, &nonce);
+        uuid(limit, &data);
         goto show_params;
       default:
         return err("Option is invalid or missing required argument");             
     }
   }
 
-  adam(buf_ptr, &seed, &nonce, NO_RESEED);
+  adam(&data);
 
   // Need to do this for default precision because 
   // we can't rely on overflow arithmetic :(
@@ -141,7 +149,7 @@ int main(int argc, char **argv) {
       printf("\033[1;36mSEED:\033[m %llu\n", seed);
 
     if (UNLIKELY(show_nonce))
-      printf("\033[1;36mNONCE:\033[m %llu\n", nonce);
+      printf("\033[1;36mNONCE:\033[m %llu\n", data.nonce);
 
   return 0;
 }
