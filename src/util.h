@@ -21,6 +21,7 @@
     typedef float64x2x2_t     dreg2q;
     typedef float64x2x4_t     dreg4q;
 
+    #define SIMD_LEN          64
     #define SIMD_LOAD8x4      vld1q_u8_x4
     #define SIMD_STORE8x4     vst1q_u8_x4
     #define SIMD_MOV8         vmov_n_u8
