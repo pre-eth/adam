@@ -2,10 +2,10 @@ INSTALL_DIR = ~/.local
 CC = @gcc
 
 AVX512 = 0
-CFLAGS = -O3 -flto
+CFLAGS = -O3 -flto 
 UNAME_P := $(shell uname -p)
 ifeq ($(UNAME_P), arm)
-	SIMD_FLAGS = -mcpu=native
+	SIMD_FLAGS = -mtune=native -march=native
 else
 	ifeq ($(AVX512), 0)
 		SIMD_FLAGS = -mavx -mavx2 
