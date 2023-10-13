@@ -1,6 +1,7 @@
 #include <sys/ioctl.h>    // for pretty help printing
 #include <unistd.h>       // for sleep()
 
+#include "adam.h"
 #include "cli.h"
 #include "ent.h"
 
@@ -64,7 +65,7 @@ u8 help() {
     "Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8). No argument dumps entire buffer",
     "Desired size (u8, u16, u32, u64) of returned numbers (default width is u64)",
     "Just bits...literally",
-    "Assess a binary or ASCII sample of 1000000 bits (1 MB) written to a filename you provide. You can choose a multiplier within [1,5000]",
+    "Assess a binary or ASCII sample of 1000000 bits (1 Mb) written to a filename you provide. You can choose a multiplier within [1, 8000]",
     "Live stream of continuously generated numbers",
     "Print numbers in hexadecimal format with leading prefix",
     "Print numbers in octal format with leading prefix"
@@ -121,11 +122,12 @@ u64 a_to_u(const char *s, const u64 min, const u64 max) {
   return (val >= min || val < max - 1) ? val : min;
 }
 
-u8 uuid(u64 *restrict _ptr, u8 limit, u64 *seed, u64 *nonce) {
-  adam(_ptr, seed, nonce, NO_RESEED);
+u8 uuid(u8 limit, rng_data *data) {
+  adam(data);
 
   u8 buf[16];
   u128 tmp;
+  u64 *restrict _ptr = &data->buffer[0];
   print_uuid:
     // Fill buf with 16 random bytes
     tmp = ((u128)_ptr[0] << 64) | _ptr[1];
@@ -160,11 +162,7 @@ u8 uuid(u64 *restrict _ptr, u8 limit, u64 *seed, u64 *nonce) {
   number at a time, 16 numbers are parsed together and then
   written to stdout with 1 fwrite call.
 */ 
-#ifdef __AARCH64_SIMD__
-  static char bitbuffer[BITBUF_SIZE];
-#else
-  static char bitbuffer[BITBUF_SIZE] ALIGN(SIMD_LEN);
-#endif
+static char bitbuffer[BITBUF_SIZE] ALIGN(SIMD_LEN);
 
 #ifdef __AARCH64_SIMD__
   static void print_binary(char *restrict _bptr, u64 num) {
@@ -184,6 +182,7 @@ u8 uuid(u64 *restrict _ptr, u8 limit, u64 *seed, u64 *nonce) {
     SIMD_AND4Q8(r1, r1, masks);
     SIMD_CMP4QEQ8(r1, r1, masks);
     SIMD_AND4Q8(r1, r1, SIMD_SET8(1));
+
     // '0' = 48, '1' = 49. This is how we print the number
     SIMD_ADD4Q8(r1, r1, zero);
 
@@ -242,8 +241,8 @@ FORCE_INLINE static void print_chunks(FILE *fptr, char *restrict _bptr, const u6
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
 }
 
-static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 *seed, u64 *nonce) {
-  if (UNLIKELY(fptr == NULL)) return 0;
+static u8 stream_ascii(FILE *fptr, const u64 limit, rng_data *data) {
+  if (UNLIKELY(fptr == NULL)) return 1;
   
   /*
     Split limit based on how many calls (if needed)
@@ -254,11 +253,10 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 *see
   register short leftovers = limit & (SEQ_SIZE - 1);
 
   char *restrict _bptr = &bitbuffer[0];
-
-  register double duration = 0.0, iter;
+  u64 *restrict _ptr = &data->buffer[0];
 
   while (rate > 0) {
-    duration += adam(_ptr, seed, nonce, RESEED);
+    adam(data);
     print_chunks(fptr, _bptr, _ptr);
     --rate;
   } 
@@ -276,7 +274,7 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 *see
     register u16 l, limit;
     register u64 num;
 
-    duration += adam(_ptr, seed, nonce, RESEED);
+    adam(data);
     print_leftovers:
       limit = (leftovers < BITBUF_SIZE) ? leftovers : BITBUF_SIZE;
 
@@ -292,13 +290,10 @@ static u8 stream_ascii(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 *see
       if (LIKELY(leftovers > 0)) 
         goto print_leftovers;
   }
-
-  return printf("\n\033[1;36mWrote %lu bits to ASCII file (%lfs)\033[m\n", 
-                limit, duration);
 }
 
-static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 *seed, u64 *nonce) {   
-  if (UNLIKELY(fptr == NULL)) return 0;
+static u8 stream_bytes(FILE *fptr, const u64 limit, rng_data *data) {   
+  if (UNLIKELY(fptr == NULL)) return 1;
 
   /*
     Split limit based on how many calls we need to make
@@ -307,31 +302,28 @@ static u8 stream_bytes(FILE *fptr, u64 *restrict _ptr, const u64 limit, u64 *see
   register long int rate = limit >> 14;
   register short leftovers = limit & (SEQ_SIZE - 1);
 
-  register double duration = 0.0;
-
   while (LIKELY(rate > 0)) {
-    duration += adam(_ptr, seed, nonce, RESEED);
-    fwrite(_ptr, 1, BUF_SIZE * sizeof(u64), fptr);
+    adam(data);
+    fwrite(data->buffer, 1, BUF_SIZE * sizeof(u64), fptr);
     --rate;
   } 
 
   if (LIKELY(leftovers > 0)) {
-    duration += adam(_ptr, seed, nonce, RESEED);
-    fwrite(_ptr, 1, BUF_SIZE * sizeof(u64), fptr);
+    adam(data);
+    fwrite(data->buffer, 1, BUF_SIZE * sizeof(u64), fptr);
   }
 
-  return printf("\n\033[1;36mWrote %lu bits to BINARY file (%lfs)\033[m\n", 
-                limit, duration);
+  return 0;
 }
 
-u8 bits(u64 *restrict _ptr, u64 *seed, u64 *nonce) {
-  return stream_bytes(stdout, _ptr, __UINT64_MAX__, seed, nonce);
+u8 bits(rng_data *data) {
+  return stream_bytes(stdout, __UINT64_MAX__, data);
 }
 
-u8 assess(u64 *restrict _ptr, const u16 limit, u64 *seed, u64 *nonce) {
+u8 assess(const u16 limit, rng_data *data) {
   FILE *fptr;
   const char *file_type;
-  u8 (*fn)(FILE*, u64 *restrict, const u64, u64*, u64*);
+  u8 (*fn)(FILE*, const u64, rng_data*);
   char c;
   char file_name[65];
 
@@ -356,12 +348,23 @@ u8 assess(u64 *restrict _ptr, const u16 limit, u64 *seed, u64 *nonce) {
 
   fptr = fopen(file_name, file_type);
   fputs("\033[m", stdout);
-  c = fn(fptr, _ptr, limit * ASSESS_BITS, seed, nonce);
 
-  if (UNLIKELY(!c))
+  const u64 total = limit * ASSESS_BITS;
+
+  if (UNLIKELY(fn(fptr, total, data)))
     return fputs("\033[1;31mError while creating file. Exiting.\033[m\n", stderr);
-  
-  return fclose(fptr);
+
+  fclose(fptr);
+
+  register double duration = data->durations[0] + data->durations[1] + data->durations[2] + data->durations[3];
+
+  printf("Performance: ACC %lfs DIF %lfs APP %lfs MIX %lfs\n", data->durations[0], data->durations[1], 
+          data->durations[2], data->durations[3]);
+
+  printf("\n\033[1;36mWrote %llu bits to %s file (%lfs)\033[m\n", 
+                total, (c == '1') ? "ASCII" : "BINARY", duration);
+
+  return 0;
 }
 
 u8 examine(u64 *restrict _ptr, const u16 limit, u64 *seed, u64 *nonce) {
@@ -374,7 +377,7 @@ u8 examine(u64 *restrict _ptr, const u16 limit, u64 *seed, u64 *nonce) {
   return 0;
 }
 
-u8 infinite(u64 *restrict _ptr, u64 *seed, u64 *nonce) {
+u8 infinite(rng_data *data) {
   /*
     There are 256 numbers per buffer. But we only need 75 to print one
     iteration. So 75 * 3 = 225. 256 - 225 = 31. Thus, for each buffer 31
@@ -443,7 +446,8 @@ u8 infinite(u64 *restrict _ptr, u64 *seed, u64 *nonce) {
   char lines[40][100];
 
   register u8 i = 0;
-  adam(_ptr, seed, nonce, RESEED);
+  adam(data);
+  u64 *restrict _ptr = &data->buffer[0];
   live_adam:
     do {
       snprintf(lines[0],  96, "%llu%llu%llu%llu%llu%llu", GET_3(i + 0), GET_3(i + 3));
@@ -520,7 +524,7 @@ u8 infinite(u64 *restrict _ptr, u64 *seed, u64 *nonce) {
       snprintf(lines[12], 18, "%llu%llu",                 GET_2(i + 29)); 
     }
     i = ((leftovers) << 5) - (leftovers);
-    adam(_ptr, seed, nonce, RESEED);
+    adam(data);
     goto live_adam; 
 
   return 0;
