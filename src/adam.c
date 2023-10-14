@@ -212,19 +212,20 @@ static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
   }
 #endif
 
-FORCE_INLINE static void diffuse(u64 *restrict _ptr, const u64 nonce) {
+static void diffuse(u64 *restrict _ptr, const u64 nonce) {
   // Following code is derived from Bob Jenkins, author of ISAAC64
 
   register u64 a, b, c, d, e, f, g, h;
-  a = b = c = d = e = f = g = h = (_ptr[nonce & 0xFF] ^ (GOLDEN_RATIO ^ _ptr[(nonce >> (nonce & 31)) & 0xFF]));
-
-  // Scramble it
-  ISAAC_MIX(a, b, c, d, e, f, g, h);
-  ISAAC_MIX(a, b, c, d, e, f, g, h);
-  ISAAC_MIX(a, b, c, d, e, f, g, h);
-  ISAAC_MIX(a, b, c, d, e, f, g, h);
+  a = b = c = d = e = f = g = h = nonce ^ GOLDEN_RATIO;
 
   register u8 i = 0;
+
+  // Scramble it
+  for (; i < 4; ++i)
+  ISAAC_MIX(a, b, c, d, e, f, g, h);
+
+  i = 0;
+  
   do {
     a += _ptr[i];     b += _ptr[i + 1]; c += _ptr[i + 2]; d += _ptr[i + 3];
     e += _ptr[i + 4]; f += _ptr[i + 5]; g += _ptr[i + 6]; h += _ptr[i + 7];
@@ -233,9 +234,7 @@ FORCE_INLINE static void diffuse(u64 *restrict _ptr, const u64 nonce) {
 
     _ptr[i]     = a; _ptr[i + 1] = b; _ptr[i + 2] = c; _ptr[i + 3] = d;
     _ptr[i + 4] = e; _ptr[i + 5] = f; _ptr[i + 6] = g; _ptr[i + 7] = h;
-
-    i += 8 - (i == 248);
-  } while (i < BUF_SIZE - 1);
+  } while ((i += 8 - (i == 248)) < BUF_SIZE - 1);
 }
 
 #ifdef __AARCH64_SIMD__
