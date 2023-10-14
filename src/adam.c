@@ -238,59 +238,66 @@ static void diffuse(u64 *restrict _ptr, const u64 nonce) {
 }
 
 #ifdef __AARCH64_SIMD__
-  FORCE_INLINE static void apply(u64 *restrict _ptr, double *seeds) {
+  static void apply(u64 *restrict _ptr, double *chseeds) {
     const dregq one = SIMD_SETQPD(1.0);
 
-    const reg64q mask = SIMD_SET64(0xFFUL),
-                 inc = SIMD_SET64(4UL);
+    const uint64x2_t mask = SIMD_SET64(0xFFUL),
+                     inc = SIMD_SET64(0x08UL);
 
-    dreg2q d1, d2, d3;
-    reg64q2 r1, scale;
+    dreg4q  d1, d2, d3;
+    reg64q4 r1, scale;
 
     u64 *map_a = _ptr, *map_b = _ptr + BUF_SIZE;
 
     register u8 rounds = 0, i = 0, j;
 
-    u64 arr[4];
+    u64 arr[8] ALIGN(64);
     chaotic_iter:
-      d1 = SIMD_LOAD2PD(&seeds[rounds]);
       j = 0;
+      d1 = SIMD_LOAD4PD(&chseeds[rounds]);
       
-      arr[0] = 1UL, arr[1] = 3UL, arr[2] = 2UL, arr[3] = 4UL;      
-      scale = SIMD_LOAD64x2(arr);
+      arr[0] = 1UL, arr[1] = 3UL, arr[2] = 2UL, arr[3] = 4UL,     
+      arr[4] = 5UL, arr[5] = 6UL, arr[6] = 7UL, arr[7] = 8UL;      
+      scale = vld1q_u64_x4(arr);
 
       do {
         // 3.9999 * X * (1 - X) for all X in the register
         SIMD_SUB2QPD(d2, one, d1);   
-        SIMD_SCALARMUL2PD(d2, 3.9999);
+        SIMD_SCALARMUL2PD(d2, COEFFICIENT);
         SIMD_MUL2RQPD(d1, d1, d2);
 
         // Multiply result of chaotic function by beta
         // Then multiply result of that against values in mod reduction table
         d2.val[0] = SIMD_SMULPD(d1.val[0], BETA);
         d2.val[1] = SIMD_SMULPD(d1.val[1], BETA);
-        d3 = SIMD_LOAD2PD(&mod_table[j]);
+
+        d3 = SIMD_LOAD4PD(&mod_table[j]);
         SIMD_MUL2RQPD(d2, d2, d3);
 
         // Cast to u64, add the scaling factor
         // Mask so idx stays in range of buffer
         SIMD_CAST2Q64(r1, d2);
-        SIMD_ADD2RQ64(r1, r1, scale);
-        SIMD_AND2Q64(r1, r1, mask);
-        SIMD_STORE2Q64(arr, r1);   
+        SIMD_ADD4RQ64(r1, r1, scale);
+        SIMD_AND4Q64(r1, r1, mask);
+        vst1q_u64_x4(arr, r1);   
 
         map_b[j]     ^= map_a[arr[0]];
         map_b[j + 1] ^= map_a[arr[1]];
         map_b[j + 2] ^= map_a[arr[2]];
         map_b[j + 3] ^= map_a[arr[3]];
+        map_b[j + 4] ^= map_a[arr[4]];
+        map_b[j + 5] ^= map_a[arr[5]];
+        map_b[j + 6] ^= map_a[arr[6]];
+        map_b[j + 7] ^= map_a[arr[7]];
 
-        scale.val[0] = SIMD_ADD64(scale.val[0], inc);
-        scale.val[1] = SIMD_ADD64(scale.val[1], inc);
-      } while ((j += 4 - (j == 252)) < BUF_SIZE - 1); 
+        SIMD_ADD4Q64(scale, scale, inc);
+      } while ((j += 8 - (j == 248)) < BUF_SIZE - 1); 
 
-      rounds += 4;
+      // Using two sets of seeds at once
+      rounds += 8;
 
-      if (++i < ITER) 
+      // Processing 2 iterations at once, so halve ITER
+      if (++i < (ITER >> 1))
         goto chaotic_iter;
               
       if (rounds < (ROUNDS << 2)) {
@@ -304,13 +311,13 @@ static void diffuse(u64 *restrict _ptr, const u64 nonce) {
       } 
   }
 #else
-  FORCE_INLINE static void apply(u64 *restrict _ptr, double *seeds) {    
+  static void apply(u64 *restrict _ptr, double *chseeds) {    
     const regd beta = SIMD_SETQPD(BETA),
               coefficient = SIMD_SETQPD(3.9999),
               one = SIMD_SETQPD(1.0);
 
     const reg mask = SIMD_SET64(0xFFUL),
-              inc  = SIMD_SET64(4UL);
+              inc  = SIMD_SET64(8UL);
 
     u64 *map_a = _ptr, *map_b = _ptr + BUF_SIZE;
 
