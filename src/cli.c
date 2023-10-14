@@ -290,6 +290,8 @@ static u8 stream_ascii(FILE *fptr, const u64 limit, rng_data *data) {
       if (LIKELY(leftovers > 0)) 
         goto print_leftovers;
   }
+
+  return 0;
 }
 
 static u8 stream_bytes(FILE *fptr, const u64 limit, rng_data *data) {   
