@@ -42,9 +42,11 @@
     chaotic maps obtained by permuting and shuffling the elements
     of an initial input vector. The permutations are performed 
     using a chaotic function to scramble the used positions. The 
-    chaotic function is given by this logistic function
+    chaotic function is given by this logistic function:
+
+      3.9999 * (x) * (1 - (x))
   */
-  #define CHAOTIC_FN(x)         (3.9999 * (x) * (1 - (x)))
+  #define COEFFICIENT           3.9999      
   
   /* 
     ROUNDS must satisfy k = T / 3 where T % 3 = 0, where k is 
