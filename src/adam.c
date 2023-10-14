@@ -69,7 +69,7 @@ static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
 
 #ifdef __AARCH64_SIMD__
   static void accumulate(rng_data *data) {
-    /*
+    /*  
       8 64-bit IV's that correspond to the verse:
       "Be fruitful and multiply, and replenish the earth (Genesis 1:28)"
     */
@@ -222,7 +222,7 @@ static void diffuse(u64 *restrict _ptr, const u64 nonce) {
 
   // Scramble it
   for (; i < 4; ++i)
-  ISAAC_MIX(a, b, c, d, e, f, g, h);
+    ISAAC_MIX(a, b, c, d, e, f, g, h);
 
   i = 0;
   
@@ -255,7 +255,7 @@ static void diffuse(u64 *restrict _ptr, const u64 nonce) {
     chaotic_iter:
       j = 0;
       d1 = SIMD_LOAD4PD(&chseeds[rounds]);
-      
+
       arr[0] = 1UL, arr[1] = 3UL, arr[2] = 2UL, arr[3] = 4UL,     
       arr[4] = 5UL, arr[5] = 6UL, arr[6] = 7UL, arr[7] = 8UL;      
       scale = vld1q_u64_x4(arr);
@@ -305,8 +305,8 @@ static void diffuse(u64 *restrict _ptr, const u64 nonce) {
         map_a += BUF_SIZE;
         // reset to start if the third iteration is about to begin
         // otherwise add 256 just like above
-        map_b += ((u16)!i << 8) - ((u16)i << 9); 
-        i = 0;    
+        map_b += ((u16)!i << 8) - ((u16)i << 9);  
+        i = 0; 
         goto chaotic_iter;
       } 
   }
@@ -418,38 +418,36 @@ static void diffuse(u64 *restrict _ptr, const u64 nonce) {
   }
 #endif
 
-// State variables
-static u64 aa = 0, bb = 0;
+void adam(rng_data *data) {
+  double chseeds[ROUNDS << 2] ALIGN(64);
+  data->chseeds = &chseeds[0];
+  register clock_t start = clock();
 
-double adam(u64 *restrict _ptr, u64 *seed, u64 *nonce, u8 reseed) {
-  #ifdef __AARCH64_SIMD__
-    double seeds[ROUNDS << 2] ALIGN(64);
-  #else
-    double seeds[ROUNDS << 2] ALIGN(SIMD_LEN);
-  #endif
+  accumulate(data);
+  data->durations[0] += (double)(clock() - start) / (double) CLOCKS_PER_SEC;
+  start = clock();
+  diffuse(data->buffer, data->nonce);
+  data->durations[1] += (double)(clock() - start) / (double) CLOCKS_PER_SEC;
+  start = clock();
+  apply(data->buffer, data->chseeds);
+  data->durations[2] += (double)(clock() - start) / (double) CLOCKS_PER_SEC;
+  start = clock();
+  mix(data->buffer); 
+  data->durations[3] += (double)(clock() - start) / (double) CLOCKS_PER_SEC;
 
-  clock_t start = clock();
+  if (data->reseed) {
+    u64 aa = data->aa, bb = data->bb;
+    u64 *restrict _ptr = &data->buffer[0];
 
-  accumulate(_ptr, *seed, *nonce, seeds);
-  diffuse(_ptr, *nonce);
-  apply(_ptr, seeds);
-  mix(_ptr); 
+    u8 i = (data->seed[0] + data->seed[1] + data->seed[2] + data->seed[3]) & 0x7F;
+    u8 j = i + (data->nonce & 0xFF);
 
-  register double duration = (double)(clock() - start) / (double) CLOCKS_PER_SEC;
+    ISAAC_RNGSTEP(~(aa^(aa<<21)), aa, bb, _ptr, &_ptr[++i], &_ptr[--j], data->seed[0], data->nonce);
+    ISAAC_RNGSTEP(aa^(aa>>5) , aa, bb, _ptr, &_ptr[++i], &_ptr[--j], data->seed[1], data->nonce);
+    ISAAC_RNGSTEP(aa^(aa<<12), aa, bb, _ptr, &_ptr[++i], &_ptr[--j], data->seed[2], data->nonce);
+    ISAAC_RNGSTEP(aa^(aa>>33), aa, bb, _ptr, &_ptr[++i], &_ptr[--j], data->seed[3], data->nonce);
 
-  if (reseed) {
-    u8 i = *seed & 0x7F;
-    u8 j = i + (*nonce & 0xFF);
-    for (; i < BUF_SIZE - 1; ++i, --j) {
-      ISAAC_RNGSTEP(~(aa^(aa<<21)), aa, bb, _ptr, &_ptr[i], &_ptr[j], seed, nonce);
-      ISAAC_RNGSTEP(aa^(aa>>5) , aa, bb, _ptr, &_ptr[i], &_ptr[j], seed, nonce);
-      ISAAC_RNGSTEP(aa^(aa<<12), aa, bb, _ptr, &_ptr[i], &_ptr[j], seed, nonce);
-      ISAAC_RNGSTEP(aa^(aa>>33), aa, bb, _ptr, &_ptr[i], &_ptr[j], seed, nonce);
-    }
-
-    *seed = (*seed + aa) + ++bb; 
-    *nonce ^= (u64) clock();
+    data->aa = aa + data->seed[aa & 3];
+    data->bb = ++bb + data->nonce; 
   }
-
-  return duration;
 }
