@@ -232,7 +232,7 @@ static void diffuse(u64 *restrict _ptr, const u64 nonce) {
   // Following code is derived from Bob Jenkins, author of ISAAC64
 
   register u64 a, b, c, d, e, f, g, h;
-  a = b = c = d = e = f = g = h = nonce ^ GOLDEN_RATIO;
+  a = b = c = d = e = f = g = h = nonce;
 
   register u8 i = 0;
 
@@ -257,11 +257,11 @@ static void diffuse(u64 *restrict _ptr, const u64 nonce) {
   static void apply(u64 *restrict _ptr, double *chseeds) {
     const dregq one = SIMD_SETQPD(1.0);
 
-    const uint64x2_t mask = SIMD_SET64(0xFFUL),
-                     inc = SIMD_SET64(0x08UL);
+    const reg64q mask = SIMD_SETQ64(0xFFUL),
+                     inc = SIMD_SETQ64(0x08UL);
 
     dreg4q  d1, d2, d3;
-    reg64q4 r1, scale;
+    reg64q4 r1, r2, scale;
 
     u64 *map_a = _ptr, *map_b = _ptr + BUF_SIZE;
 
@@ -274,41 +274,36 @@ static void diffuse(u64 *restrict _ptr, const u64 nonce) {
 
       arr[0] = 1UL, arr[1] = 3UL, arr[2] = 2UL, arr[3] = 4UL,     
       arr[4] = 5UL, arr[5] = 6UL, arr[6] = 7UL, arr[7] = 8UL;      
-      scale = vld1q_u64_x4(arr);
+      scale = SIMD_LOAD64x4(arr);
 
       do {
         // 3.9999 * X * (1 - X) for all X in the register
-        SIMD_SUB2QPD(d2, one, d1);   
-        SIMD_SCALARMUL2PD(d2, COEFFICIENT);
-        SIMD_MUL2RQPD(d1, d1, d2);
+        SIMD_SUB4QPD(d2, one, d1);   
+        SIMD_SCALARMUL4PD(d2, d2, COEFFICIENT);
+        SIMD_MUL4RQPD(d1, d1, d2);
 
         // Multiply result of chaotic function by beta
         // Then multiply result of that against values in mod reduction table
-        d2.val[0] = SIMD_SMULPD(d1.val[0], BETA);
-        d2.val[1] = SIMD_SMULPD(d1.val[1], BETA);
-
+        SIMD_SCALARMUL4PD(d1, d1, BETA);
         d3 = SIMD_LOAD4PD(&mod_table[j]);
-        SIMD_MUL2RQPD(d2, d2, d3);
+        SIMD_MUL4RQPD(d2, d2, d3);
 
         // Cast to u64, add the scaling factor
         // Mask so idx stays in range of buffer
-        SIMD_CAST2Q64(r1, d2);
+        SIMD_CAST4Q64(r1, d2);
         SIMD_ADD4RQ64(r1, r1, scale);
         SIMD_AND4Q64(r1, r1, mask);
-        vst1q_u64_x4(arr, r1);   
+        SIMD_STORE64x4(arr, r1);   
 
-        map_b[j]     ^= map_a[arr[0]];
-        map_b[j + 1] ^= map_a[arr[1]];
-        map_b[j + 2] ^= map_a[arr[2]];
-        map_b[j + 3] ^= map_a[arr[3]];
-        map_b[j + 4] ^= map_a[arr[4]];
-        map_b[j + 5] ^= map_a[arr[5]];
-        map_b[j + 6] ^= map_a[arr[6]];
-        map_b[j + 7] ^= map_a[arr[7]];
+        // XOR and store
+        r1 = SIMD_LOAD64x4(&map_b[j]);
+        SIMD_COMBINE64x4(r2, map_a, arr);
+        SIMD_XOR4RQ64(r1, r1, r2);
+        SIMD_STORE64x4(&map_b[j], r1);
 
         SIMD_ADD4Q64(scale, scale, inc);
-      } while ((j += 8 - (j == 248)) < BUF_SIZE - 1); 
-
+      } while ((j += 8 - (j == 248)) < BUF_SIZE - 1);
+     
       // Using two sets of seeds at once
       rounds += 8;
 
@@ -435,8 +430,11 @@ static void diffuse(u64 *restrict _ptr, const u64 nonce) {
 #endif
 
 void adam(rng_data *data) {
+  data->buffer = &buffer[0];
+
   double chseeds[ROUNDS << 2] ALIGN(64);
   data->chseeds = &chseeds[0];
+  
   register clock_t start = clock();
 
   accumulate(data);
@@ -464,6 +462,6 @@ void adam(rng_data *data) {
     ISAAC_RNGSTEP(aa^(aa>>33), aa, bb, _ptr, &_ptr[++i], &_ptr[--j], data->seed[3], data->nonce);
 
     data->aa = aa + data->seed[aa & 3];
-    data->bb = ++bb + data->nonce; 
+    data->bb = ++bb + (data->nonce ^ GOLDEN_RATIO); 
   }
 }
