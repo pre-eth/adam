@@ -67,6 +67,15 @@ static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
   6148914691236516864.0, 9218868437227405312.0, 9223372036854775808.0,  18446744073709551616.0  
 };
 
+/* 
+  The algorithm requires at least the construction of 3 maps of size BUF_SIZE
+  Offsets logically represent each individual map, but it's all one buffer
+
+  static is necessary because otherwise buffer is initiated with junk that 
+  removes the deterministic nature of the algorithm
+*/
+static u64 buffer[BUF_SIZE * 3] ALIGN(64);
+
 #ifdef __AARCH64_SIMD__
   static void accumulate(rng_data *data) {
     /*  
@@ -101,17 +110,16 @@ static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
         SIMD_ADD4RQ64(r1, r1, r2);
       } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
 
-      ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
-      ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
-
       if (++maps_filled < 3) { 
+        ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
+        ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
         _ptr += BUF_SIZE;
         goto fill_the_earth;
       }
 
-    dreg2q seeds;
+    dreg4q seeds;
     i = 0;
-
+    SIMD_STORE64x4(IV, r1);
     do {
       IV[0] += _ptr[IV[7] & 0xFF], IV[1] += _ptr[IV[6] & 0xFF], 
       IV[2] += _ptr[IV[5] & 0xFF], IV[3] += _ptr[IV[4] & 0xFF],
@@ -121,12 +129,20 @@ static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
       seeds.val[0] = SIMD_COMBINEPD(SIMD_SETPD(IV[0] ^ IV[4]), SIMD_SETPD(IV[1] ^ IV[5]));
       seeds.val[1] = SIMD_COMBINEPD(SIMD_SETPD(IV[2] ^ IV[6]), SIMD_SETPD(IV[3] ^ IV[7])); 
 
-      // same as (D / (double) __UINT64_MAX__) * 0.5 for all values
-      SIMD_SCALARMUL2PD(seeds, 5.4210109E-20);
-      SIMD_SCALARMUL2PD(seeds, 0.5);
+      IV[0] += _ptr[IV[7] & 0xFF], IV[1] += _ptr[IV[6] & 0xFF], 
+      IV[2] += _ptr[IV[5] & 0xFF], IV[3] += _ptr[IV[4] & 0xFF],
+      IV[4] += _ptr[IV[3] & 0xFF], IV[5] += _ptr[IV[2] & 0xFF], 
+      IV[6] += _ptr[IV[1] & 0xFF], IV[7] += _ptr[IV[0] & 0xFF];
 
-      SIMD_STORE2PD(&data->chseeds[(i << 2)], seeds);
-    } while (++i < ROUNDS);
+      seeds.val[2] = SIMD_COMBINEPD(SIMD_SETPD(IV[4] ^ IV[1]), SIMD_SETPD(IV[5] ^ IV[2]));
+      seeds.val[3] = SIMD_COMBINEPD(SIMD_SETPD(IV[6] ^ IV[3]), SIMD_SETPD(IV[7] ^ IV[0])); 
+
+      // same as (D / (double) __UINT64_MAX__) * 0.5 for all values
+      SIMD_SCALARMUL4PD(seeds, seeds, 5.4210109E-20);
+      SIMD_SCALARMUL4PD(seeds, seeds, 0.5);
+
+      SIMD_STORE4PD(&data->chseeds[(i << 3)], seeds);
+    } while (++i < (ROUNDS >> 1));
   }
 #else
   static void accumulate(rng_data *data) {
