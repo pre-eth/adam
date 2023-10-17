@@ -89,14 +89,14 @@
 
   // Data for RNG process
   typedef struct rng_data {
-    u64 *restrict buffer;                       //  Where we store the results
-    u64 seed[4];                                //  256-bit seed/key
-    u64 nonce;                                  //  64-bit nonce
-    u64 aa;                                     //  State variable 1
-    u64 bb;                                     //  State variable 2
-    u8 reseed;                                  //  Is this one run or multiple? If so, reseed
-    double *restrict chseeds;                   //  Where we store seeds for each round of chaotic function
-    double durations[4];                        //  Total number of seconds spend on number generation
+    u64 *buffer;                       //  Where we store the results
+    u64 seed[4];                       //  256-bit seed/key
+    u64 nonce;                         //  64-bit nonce
+    u64 aa;                            //  State variable 1
+    u64 bb;                            //  State variable 2
+    u8 reseed;                         //  Is this one run or multiple? If so, reseed
+    double *restrict chseeds;          //  Where we store seeds for each round of chaotic function
+    double durations[4];               //  Total number of seconds spend on number generation
   } ALIGN(SIMD_LEN) rng_data;
 
   // Initiates RNG algorithm with user provided seed and nonce
