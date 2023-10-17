@@ -18,43 +18,29 @@ FORCE_INLINE static u8 err(const char *s) {
   return fprintf(stderr, "\033[1;31m%s\033[m\n", s);
 }
 
-/* 
-  The algorithm requires at least the construction of 3 maps of size BUF_SIZE
-  Offsets logically represent each individual map, but it's all one buffer
-
-  static is necessary because otherwise buffer is initiated with junk that 
-  removes the deterministic nature of the algorithm
-*/
-#ifdef __AARCH64_SIMD__
-  static u64 buffer[BUF_SIZE * 3] ALIGN(64);
-#else
-static u64 buffer[BUF_SIZE * 3] ALIGN(SIMD_LEN);
-#endif
+FORCE_INLINE static void rng_init(rng_data *data) {
+  getentropy(&data->seed[0], sizeof(u64) << 2); 
+  data->nonce = ((u64) time(NULL)) ^ GOLDEN_RATIO;
+  data->aa = data->bb = 0UL;
+  data->reseed = FALSE;
+  data->durations[0] = data->durations[1] = data->durations[2] = data->durations[3] = 0.0;
+}
 
 int main(int argc, char **argv) {
-  u64 *restrict buf_ptr = &buffer[0];
-
   const char *fmt = "%lu";
 
   register u8 precision  = 64,
               idx        = 0,
-              show_seed  = 0,
-              show_nonce = 0;
+              show_seed  = FALSE,
+              show_nonce = FALSE;
 
   register u16 results = 1, 
                limit   = 0;
 
   register u64 mask = __UINT64_MAX__ - 1;
 
-  u64 *restrict buf_ptr = &buffer[0];
-
   rng_data data;
-  data.buffer = buf_ptr;
-  getentropy(&data.seed[0], sizeof(u64) << 2); 
-  data.nonce = ((u64) time(NULL)) ^ GOLDEN_RATIO;
-  data.aa = data.bb = 0UL;
-  data.reseed = 0;
-  data.durations[0] = data.durations[1] = data.durations[2] = data.durations[3] = 0.0;
+  rng_init(&data);
 
   register short opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
@@ -64,17 +50,17 @@ int main(int argc, char **argv) {
       case 'v':
         return puts(VERSION);
       case 'l':
-        data.reseed = 1;
+        data.reseed = TRUE;
         return infinite(&data);
       case 'a':
         limit = a_to_u(optarg, 1, ASSESS_LIMIT);
         if (!limit)
           return err("Multiplier must be within range [1, 8000]");
-        data.reseed = 1;
+        data.reseed = TRUE;
         assess(limit, &data);
         goto show_params;
       case 'b':
-        data.reseed = 1;
+        data.reseed = TRUE;
         return bits(&data);
       case 'x':
         fmt = "0x%lX";
@@ -105,8 +91,14 @@ int main(int argc, char **argv) {
       break;
       case 's':
         show_seed = (optarg == NULL);
-        // if (!show_seed)
-        //   seed = a_to_u(optarg, 1, __UINT64_MAX__);
+        if (!show_seed) {
+          FILE *seed_file = fopen(optarg, "rb");
+          if (!seed_file)
+            return err("Couldn't read seed file");
+          fread(data.seed, sizeof(u64), 4, seed_file);
+          fclose(seed_file);
+        }
+          
       break;
       case 'n':
         show_nonce = (optarg == NULL);
@@ -128,6 +120,7 @@ int main(int argc, char **argv) {
   }
 
   adam(&data);
+  u64 *buf_ptr = data.buffer;
 
   // Need to do this for default precision because 
   // we can't rely on overflow arithmetic :(
@@ -145,8 +138,15 @@ int main(int argc, char **argv) {
   putchar('\n');
 
   show_params:
-    if (UNLIKELY(show_seed))
-      printf("\033[1;36mSEED:\033[m %llu\n", seed);
+    if (UNLIKELY(show_seed)) {
+      FILE *seed_file = fopen("seed.adam", "wb+");
+      if (!seed_file)
+        return err("Could not create file for writing seed.");
+      fwrite(data.seed, sizeof(u64), 4, seed_file);
+      fclose(seed_file);
+      printf("\033[1;36mSEED WRITTEN TO: \"seed.adam\"\033[m");
+    }
+      
 
     if (UNLIKELY(show_nonce))
       printf("\033[1;36mNONCE:\033[m %llu\n", data.nonce);
