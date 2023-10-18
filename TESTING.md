@@ -47,7 +47,7 @@ The size options are:
 --ten-tera      10TB
 ```
 
-Results for sizes up to 10GB are available in the `tests` subdirectory.
+Results for sizes up to 100GB are available in the `tests` subdirectory.
 
 Finally, here is a summary of the meaning of gjrand's P-values.
 
