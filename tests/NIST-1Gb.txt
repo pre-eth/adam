@@ -1,198 +1,198 @@
 ------------------------------------------------------------------------------
 RESULTS FOR THE UNIFORMITY OF P-VALUES AND THE PROPORTION OF PASSING SEQUENCES
 ------------------------------------------------------------------------------
-   generator is <data/chunky>
+   generator is <data/test1000>
 ------------------------------------------------------------------------------
  C1  C2  C3  C4  C5  C6  C7  C8  C9 C10  P-VALUE  PROPORTION  STATISTICAL TEST
 ------------------------------------------------------------------------------
- 85 111  88 101 114  86  98 103 109 105  0.348869    993/1000    Frequency
- 95  76  93  92 128 114  91 111 110  90  0.012829    991/1000    BlockFrequency
- 91 117  87 100  85  99 109 111 106  95  0.328297    992/1000    CumulativeSums
- 84 111 107  94  96  96 101 103 104 104  0.801865    993/1000    CumulativeSums
-107  94  92 102 108 104 109 108  89  87  0.670396    989/1000    Runs
-118  91 100 102 103  98 104  85 112  87  0.370262    989/1000    LongestRun
- 97 104  88  97  93  96 119 104 117  85  0.253122    992/1000    Rank
-113 114  91  94 105  79 113  90 111  90  0.109435    989/1000    FFT
- 98 100  96 113  88  87 104  97 114 103  0.603841    991/1000    NonOverlappingTemplate
-102  89  92 109  96 102 116  85 109 100  0.482707    991/1000    NonOverlappingTemplate
- 85 105  69  93  96 101 108 137  92 114  0.000493    995/1000    NonOverlappingTemplate
-103  93  93 111  89  95  98 105  88 125  0.229559    990/1000    NonOverlappingTemplate
-103 103 108 103 112  88  89 111  98  85  0.484646    990/1000    NonOverlappingTemplate
- 80  95 109  93 105 106 104 110 112  86  0.295391    988/1000    NonOverlappingTemplate
-101 119  89  99 100 105  95  91 111  90  0.498313    988/1000    NonOverlappingTemplate
- 89 106 116 102 105  89  98  90  95 110  0.542228    991/1000    NonOverlappingTemplate
-103  87  96 108 106  85  91 118 111  95  0.296834    992/1000    NonOverlappingTemplate
- 87 104 121 107  93 104 104 111 101  68  0.025023    987/1000    NonOverlappingTemplate
- 77 108 108 125  90  96 104 106  95  91  0.076658    991/1000    NonOverlappingTemplate
- 96  94 101  79 107 110 112  99  88 114  0.257004    989/1000    NonOverlappingTemplate
-114 101  92  84 112  84  97 109 101 106  0.316052    992/1000    NonOverlappingTemplate
-106  93 105 102 113  87  95  74  94 131  0.010606    989/1000    NonOverlappingTemplate
- 91 107  87  94 107 114 104  90 115  91  0.348869    993/1000    NonOverlappingTemplate
-111  94 101  92 114 104 114  91  80  99  0.267573    990/1000    NonOverlappingTemplate
-115 108 117  95  92 107 100  92  87  87  0.263572    997/1000    NonOverlappingTemplate
- 92 114 108  82 108 113 118  98  70  97  0.011875    991/1000    NonOverlappingTemplate
- 92 119 104 105 106  95  98 101  96  84  0.530120    993/1000    NonOverlappingTemplate
-102 101 108  93  99  97  88 102 106 104  0.952152    995/1000    NonOverlappingTemplate
- 83  80 108  97  97  85 114 107 105 124  0.030602    992/1000    NonOverlappingTemplate
- 96  92 115 107  87 111  91  99 106  96  0.556460    988/1000    NonOverlappingTemplate
- 94  91 104 108  97  93  93 115 111  94  0.651693    988/1000    NonOverlappingTemplate
-108  82 113  87  95 106 113  95 105  96  0.332970    993/1000    NonOverlappingTemplate
-115 111 103  86  98  89  99 100  97 102  0.647530    985/1000    NonOverlappingTemplate
- 90 100 107 102  79 101 107 104 108 102  0.607993    993/1000    NonOverlappingTemplate
- 98 102  89  94 114  98  96 105 107  97  0.864494    993/1000    NonOverlappingTemplate
- 96  84 107 108 104 112  96  80 105 108  0.311542    987/1000    NonOverlappingTemplate
-102 105 101  90 100  94  98  95 104 111  0.950247    987/1000    NonOverlappingTemplate
-110  99 120  92  86  94  94  93 109 103  0.373625    989/1000    NonOverlappingTemplate
- 96 101  97 102  93  94 106 108  94 109  0.950247    989/1000    NonOverlappingTemplate
- 96 117 105  95  95  94  94 117  88  99  0.450297    995/1000    NonOverlappingTemplate
-106 107 106 109  99 102  83  95  88 105  0.647530    988/1000    NonOverlappingTemplate
-105 101  90  93 106  89 107  97 104 108  0.859637    996/1000    NonOverlappingTemplate
-107  94  87  99 111  95 103 103  94 107  0.830808    984/1000    NonOverlappingTemplate
- 87 110 100  89  99 108  88 120 101  98  0.347257    994/1000    NonOverlappingTemplate
- 91  97 112 116 107 100 102  90  92  93  0.579021    994/1000    NonOverlappingTemplate
- 87  95  85 104 103  94 119 114 112  87  0.141256    993/1000    NonOverlappingTemplate
- 95  94 117  89 109  90  96 105  95 110  0.516113    996/1000    NonOverlappingTemplate
-104 103  88 109  99 102 108  88 100  99  0.864494    989/1000    NonOverlappingTemplate
-105  95  99  94 113  86 108  96 106  98  0.767582    988/1000    NonOverlappingTemplate
-105 102  93 102 112  99  82  96 106 103  0.727851    992/1000    NonOverlappingTemplate
-112 109  98  74 114  99 109 107  90  88  0.097743    993/1000    NonOverlappingTemplate
- 85 105  95 103  89  98  94 109 117 105  0.494392    991/1000    NonOverlappingTemplate
-103  99 109 106  97  84  93 115 100  94  0.635037    989/1000    NonOverlappingTemplate
- 99 104 104 106  93  96 113  99  89  97  0.887645    992/1000    NonOverlappingTemplate
-104  86 100 100  98 108  94 106  89 115  0.639202    989/1000    NonOverlappingTemplate
-125  87  96  88  97 108  86 124  94  95  0.028817    989/1000    NonOverlappingTemplate
- 92 104  97 126  84  97  86 107  94 113  0.096578    994/1000    NonOverlappingTemplate
-105  97 111  94  97 102 102  96  95 101  0.980883    986/1000    NonOverlappingTemplate
- 99  98 108  95  98  95  94 120 102  91  0.695200    995/1000    NonOverlappingTemplate
-107 102  97 101 103  87 115  98  99  91  0.786830    987/1000    NonOverlappingTemplate
-105  96  99  86 106  96 107 112  98  95  0.823725    994/1000    NonOverlappingTemplate
-110 106 107  75  98  93 103 118  89 101  0.154629    992/1000    NonOverlappingTemplate
-103 104  85 104  90 105 109  98 112  90  0.616305    988/1000    NonOverlappingTemplate
-103  93 100 104 100 111  95  97 103  94  0.973718    990/1000    NonOverlappingTemplate
-116 101 111  89  94 100 107  87  96  99  0.564639    985/1000    NonOverlappingTemplate
- 88  95  92  88 107 113  94 105 113 105  0.484646    992/1000    NonOverlappingTemplate
- 90 101 102 103  96  95 103  99 100 111  0.969588    989/1000    NonOverlappingTemplate
- 94  93 120  95 108 111 107  77 103  92  0.142872    985/1000    NonOverlappingTemplate
-108 101 110  84 105 112  92 109  82  97  0.298282    993/1000    NonOverlappingTemplate
- 96  94 107 120  96 101  91 102  93 100  0.686955    991/1000    NonOverlappingTemplate
-114 107  80  90 106 113  95 103  96  96  0.337688    989/1000    NonOverlappingTemplate
- 94 102 101 109 106  91 103  86 100 108  0.827279    995/1000    NonOverlappingTemplate
- 93  99 104 103  96  86  96 112 113  98  0.719747    995/1000    NonOverlappingTemplate
-108 102 110 100 104 109  94  96  94  83  0.697257    993/1000    NonOverlappingTemplate
-107 114 106  91 105 107  86  97  99  88  0.548314    988/1000    NonOverlappingTemplate
-107  87 118  76  97  93  99 112 104 107  0.127393    983/1000    NonOverlappingTemplate
-100  85  90 120 106 103 100  90  94 112  0.311542    991/1000    NonOverlappingTemplate
- 97 105 105 101  97  95 106 103 103  88  0.967382    992/1000    NonOverlappingTemplate
-100  96 102 120  95  99  97  84 101 106  0.587274    996/1000    NonOverlappingTemplate
- 86 101 104 108  96  98 108 110  96  93  0.811080    993/1000    NonOverlappingTemplate
- 97  88 108 112  94 103  97 129  78  94  0.038062    993/1000    NonOverlappingTemplate
-100  92  97 102 103 119  94  95 106  92  0.731886    985/1000    NonOverlappingTemplate
- 98 100  96 113  88  87 104  97 114 103  0.603841    991/1000    NonOverlappingTemplate
-101  95 111  98  90  89 112 101 106  97  0.777265    987/1000    NonOverlappingTemplate
-109  97 102 102  93  90  77 126  97 107  0.088226    989/1000    NonOverlappingTemplate
-112  88 119 114  96  96  89 105  93  88  0.204439    987/1000    NonOverlappingTemplate
-101  96  99 102 116  94  80  91 114 107  0.319084    991/1000    NonOverlappingTemplate
-100 100 103 105  92 116  96 101  90  97  0.851383    995/1000    NonOverlappingTemplate
- 85 111 111  95  90 107 107 102 102  90  0.536163    992/1000    NonOverlappingTemplate
- 95 111  96  92  96 103 113  97  96 101  0.878618    995/1000    NonOverlappingTemplate
- 98  95  95 100 101  96  99  99 110 107  0.987492    992/1000    NonOverlappingTemplate
-102 100  91 111  93 113 105 101  96  88  0.729870    991/1000    NonOverlappingTemplate
-102 106 110 104 108  80  95  99  98  98  0.684890    987/1000    NonOverlappingTemplate
-130 100  84 115  90  91 100  93  87 110  0.026948    987/1000    NonOverlappingTemplate
- 92  95  97 106  98 108 101  94 100 109  0.955835    993/1000    NonOverlappingTemplate
-110 102 102  95  81 112  97  84 111 106  0.304126    984/1000    NonOverlappingTemplate
- 88 116  96  95  81  89 102 106 109 118  0.134172    992/1000    NonOverlappingTemplate
-107  91  97 106  97  89 111  95 102 105  0.851383    990/1000    NonOverlappingTemplate
- 94  87 103  91  89 112 104 103 119  98  0.392456    987/1000    NonOverlappingTemplate
- 96 103  91  87  97 108  94 124  95 105  0.342451    989/1000    NonOverlappingTemplate
-103  96 101 103 108  93  94  96 106 100  0.984415    993/1000    NonOverlappingTemplate
-105  89 114  98  85  99  94 103 111 102  0.593478    992/1000    NonOverlappingTemplate
-121  89 104 101 101  95  94  90  95 110  0.469232    993/1000    NonOverlappingTemplate
-100  93  97  96  98 111  85 102 118 100  0.583145    989/1000    NonOverlappingTemplate
- 88  95 111  97 102 110 119  82  97  99  0.277082    994/1000    NonOverlappingTemplate
- 79 111  94  99  98 104  97 116 102 100  0.448424    991/1000    NonOverlappingTemplate
- 84  87 119 103  95  87  93 126 103 103  0.043934    990/1000    NonOverlappingTemplate
-110 103 106 111  95 123  94  80  80  98  0.055361    989/1000    NonOverlappingTemplate
- 92 114  88 108  90 102 103  98  98 107  0.701366    994/1000    NonOverlappingTemplate
-121 114 106  90  73 105 102  95 101  93  0.065639    994/1000    NonOverlappingTemplate
- 99  98  97  91  96 100 119 101  89 110  0.643366    990/1000    NonOverlappingTemplate
-108 113  97  90  87 107  93  90 101 114  0.431754    982/1000    NonOverlappingTemplate
- 88 110 103 107  97  96  94  86 111 108  0.591409    994/1000    NonOverlappingTemplate
-101 104  93  91 106  96  89 105 107 108  0.869278    988/1000    NonOverlappingTemplate
- 95  98 111 112  97 100 108  93 115  71  0.096000    993/1000    NonOverlappingTemplate
- 83  90  94  97  89 109 127  99 108 104  0.106877    990/1000    NonOverlappingTemplate
-107 102  96 106  88  91 103 104  90 113  0.715679    991/1000    NonOverlappingTemplate
-106 105 100 102  97  96 101  93 108  92  0.975644    992/1000    NonOverlappingTemplate
- 93 124  91  99 117 100  91  92  94  99  0.225998    987/1000    NonOverlappingTemplate
- 89  90  83 113  95  84 114 108 102 122  0.047478    992/1000    NonOverlappingTemplate
- 93  94  96 122  95 105  83 105  97 110  0.305599    989/1000    NonOverlappingTemplate
- 87 106 106  96  89 103 109  96 107 101  0.803720    990/1000    NonOverlappingTemplate
- 89 105 110 113  98 100 108  99  88  90  0.607993    990/1000    NonOverlappingTemplate
-104  91  97  97 105 108  99  90 111  98  0.890582    990/1000    NonOverlappingTemplate
- 94 104  94  97  90 112  92 106 107 104  0.829047    993/1000    NonOverlappingTemplate
- 99 109  98 117 104 103  98  79  98  95  0.461612    992/1000    NonOverlappingTemplate
- 93 100  97  83  97 109 103 105 102 111  0.743915    990/1000    NonOverlappingTemplate
-103  87 110  73 100 128  98  95 104 102  0.030806    986/1000    NonOverlappingTemplate
-111 103 101 110 102  80 104  85 106  98  0.422638    994/1000    NonOverlappingTemplate
- 97 106 100  82 111  91 100  96 103 114  0.542228    990/1000    NonOverlappingTemplate
-103  96  80 106  95 102 102 101 113 102  0.670396    987/1000    NonOverlappingTemplate
-119  87  88 115  97 106 101  94  88 105  0.242986    990/1000    NonOverlappingTemplate
- 84 109  93 105 107  96 109 101  95 101  0.755819    988/1000    NonOverlappingTemplate
-107 103  91 100 109  89 109  90 102 100  0.811080    991/1000    NonOverlappingTemplate
- 93  90 115 100 126 100 111  79 102  84  0.027682    990/1000    NonOverlappingTemplate
-109 105  87  93  92  94 123  92  91 114  0.165340    992/1000    NonOverlappingTemplate
-104 100 106  85  83  83 115 103 108 113  0.152902    989/1000    NonOverlappingTemplate
- 93 112  89 105  94 107  91  93 113 103  0.603841    989/1000    NonOverlappingTemplate
- 98  93  91  95  90  97 117 122 105  92  0.255705    992/1000    NonOverlappingTemplate
-102  92  93 108  85 102 118  93  91 116  0.262249    987/1000    NonOverlappingTemplate
- 75 100  99 125  90 107 103  94 105 102  0.098330    992/1000    NonOverlappingTemplate
- 92  93 113  89 102 100  99 104 103 105  0.869278    990/1000    NonOverlappingTemplate
- 97  90  85 114  94 102 100 107 122  89  0.200115    988/1000    NonOverlappingTemplate
-111  90 108 107  96  91 100  94  97 106  0.823725    985/1000    NonOverlappingTemplate
-107  96  87 109 101  89 111  89 100 111  0.534146    991/1000    NonOverlappingTemplate
-110 110 119  89  73  97  98  92 109 103  0.071620    986/1000    NonOverlappingTemplate
- 91 112 111  84  95  97  86 114  87 123  0.044797    991/1000    NonOverlappingTemplate
-103  95 100 101  88  93 102 102 104 112  0.914025    987/1000    NonOverlappingTemplate
- 92  99  86  98  96  98  94 112 106 119  0.473064    988/1000    NonOverlappingTemplate
-101 100 117  78 103 100 102  96  86 117  0.168112    991/1000    NonOverlappingTemplate
-107  89 110 104 102 101  87 111 102  87  0.581082    988/1000    NonOverlappingTemplate
-100 102  93 104  83  93 115  97 111 102  0.568739    992/1000    NonOverlappingTemplate
- 80 115  93 105  86 115 102  88 117  99  0.076187    990/1000    NonOverlappingTemplate
-101  88 105  98 106 112  92  83 121  94  0.222480    988/1000    NonOverlappingTemplate
-107  85 101  91 106 116  86 117  82 109  0.081013    989/1000    NonOverlappingTemplate
-100  92  98 101 103 120  92  95 107  92  0.657933    985/1000    NonOverlappingTemplate
-101 112 111  88 101  91 122  99  79  96  0.110734    990/1000    OverlappingTemplate
-119  89  92  98 102 100 112  82 105 101  0.313041    985/1000    Universal
- 90 111 102 112  98  77  92 105 109 104  0.284024    989/1000    ApproximateEntropy
- 62  59  71  53  81  55  74  57  65  63  0.258961    634/640     RandomExcursions
- 66  55  61  59  70  59  71  67  60  72  0.837024    631/640     RandomExcursions
- 66  68  61  48  63  60  69  65  73  67  0.685794    638/640     RandomExcursions
- 58  52  78  55  60  64  73  67  72  61  0.355569    638/640     RandomExcursions
- 56  60  65  60  74  68  66  55  63  73  0.746157    634/640     RandomExcursions
- 47  74  59  62  64  61  68  73  70  62  0.454759    638/640     RandomExcursions
- 64  55  59  71  60  59  63  82  67  60  0.481618    637/640     RandomExcursions
- 70  55  63  56  71  80  64  57  63  61  0.481618    631/640     RandomExcursions
- 49  69  69  60  66  58  80  57  56  76  0.154304    636/640     RandomExcursionsVariant
- 58  69  54  75  56  62  57  66  74  69  0.509162    637/640     RandomExcursionsVariant
- 64  67  54  50  75  60  65  71  84  50  0.048716    635/640     RandomExcursionsVariant
- 63  74  56  56  47  72  57  64  70  81  0.092667    634/640     RandomExcursionsVariant
- 64  70  59  54  67  50  65  67  68  76  0.496841    636/640     RandomExcursionsVariant
- 62  69  60  60  66  66  59  56  74  68  0.891946    634/640     RandomExcursionsVariant
- 60  64  70  61  49  56  65  79  67  69  0.389747    636/640     RandomExcursionsVariant
- 56  71  68  62  66  78  62  64  53  60  0.594901    638/640     RandomExcursionsVariant
- 58  62  67  70  74  55  54  72  59  69  0.585209    636/640     RandomExcursionsVariant
- 56  68  69  69  65  67  61  66  53  66  0.887367    637/640     RandomExcursionsVariant
- 58  58  60  83  48  80  72  56  59  66  0.041862    637/640     RandomExcursionsVariant
- 53  58  64  61  66  63  70  65  67  73  0.863186    635/640     RandomExcursionsVariant
- 52  55  62  80  72  53  70  63  73  60  0.183422    634/640     RandomExcursionsVariant
- 53  65  66  64  69  76  66  56  63  62  0.764655    634/640     RandomExcursionsVariant
- 62  76  63  57  60  62  65  72  54  69  0.701879    638/640     RandomExcursionsVariant
- 68  68  65  58  62  66  66  51  68  67  0.876153    638/639     RandomExcursionsVariant
- 60  81  70  53  57  57  62  70  59  70  0.302727    637/639     RandomExcursionsVariant
- 58  84  55  70  68  63  54  60  65  62  0.269237    636/639     RandomExcursionsVariant
-105 102  94 111  91 100 103 112  87  95  0.725829    983/1000    Serial
-105 108  93 107  83 115  95  99 101  94  0.570792    984/1000    Serial
-111  97  89  87 107  91 102 111 108  97  0.587274    987/1000    LinearComplexity
+ 85  91  93 128  97 120 111  94  92  89  0.026057    993/1000    Frequency
+104 106  94  96  91 105  92 110  98 104  0.915317    993/1000    BlockFrequency
+ 88  84 109  96  99 105  96 119  98 106  0.401199    997/1000    CumulativeSums
+ 87 101 111 100  95 110  94 111  98  93  0.713641    990/1000    CumulativeSums
+ 95  78 128  93  93 109  88 100 103 113  0.035876    991/1000    Runs
+ 97  90 111 114 104  98 106  96  97  87  0.662091    989/1000    LongestRun
+108 107 112 100  79  86 111  94 103 100  0.304126    990/1000    Rank
+103 110 108  88 106 102  90  90 116  87  0.365253    984/1000    FFT
+106 100  96  92  97  95 109  98 107 100  0.970302    988/1000    NonOverlappingTemplate
+ 94 112  72  94 109 114 113  87 105 100  0.058984    994/1000    NonOverlappingTemplate
+ 98 109 100  99 100  96  85 109  93 111  0.761719    988/1000    NonOverlappingTemplate
+114  97  93 107 103  86  86 103 116  95  0.355364    989/1000    NonOverlappingTemplate
+105  93  97 100 104  93  87 108 111 102  0.829047    986/1000    NonOverlappingTemplate
+103  91  96 102 107  90 115  88 106 102  0.670396    992/1000    NonOverlappingTemplate
+108  94 101  97  95  95 109  92 109 100  0.920383    990/1000    NonOverlappingTemplate
+110  97 105  92 108  92  84  95 111 106  0.570792    988/1000    NonOverlappingTemplate
+ 91  83  97  95 107 112 105 100 109 101  0.632955    989/1000    NonOverlappingTemplate
+113  96  98  99  93 108 112  94 105  82  0.502247    986/1000    NonOverlappingTemplate
+ 95  94 105  98  86 102 104 116 112  88  0.484646    995/1000    NonOverlappingTemplate
+ 97 105 104 102  98 107  96  82 104 105  0.844641    991/1000    NonOverlappingTemplate
+ 90 104  95  96 104  97 109 112 108  85  0.641284    989/1000    NonOverlappingTemplate
+ 87 108 104  98  90 109  89  99 101 115  0.552383    990/1000    NonOverlappingTemplate
+109 102  89  96 107 102  98  75 110 112  0.244236    991/1000    NonOverlappingTemplate
+121 102 111 112 102  94  90  87  99  82  0.143686    990/1000    NonOverlappingTemplate
+ 88 103  94  83  91 100 111 101 110 119  0.248014    994/1000    NonOverlappingTemplate
+113  95 102  85  90  96 119  95 106  99  0.382115    993/1000    NonOverlappingTemplate
+102 104 111 109  98  96 100  92  97  91  0.914025    991/1000    NonOverlappingTemplate
+ 93 103  97 104  94 101  98 103 102 105  0.996155    994/1000    NonOverlappingTemplate
+ 96  96  88 108 105 106  89 113  92 107  0.632955    994/1000    NonOverlappingTemplate
+ 87 135 108  90  84  91  95 110 112  88  0.006019    990/1000    NonOverlappingTemplate
+ 93 113 101  78 110 100  94 117  96  98  0.244236    996/1000    NonOverlappingTemplate
+ 92  88  88 103 114 112  96 114  88 105  0.288249    988/1000    NonOverlappingTemplate
+119  98  88  98 109  96 103  99  81 109  0.302657    987/1000    NonOverlappingTemplate
+ 86 112  92  87 107  92 104  97  90 133  0.025193    994/1000    NonOverlappingTemplate
+114  86  99 112  97  94 106 106  83 103  0.390721    991/1000    NonOverlappingTemplate
+102  97 100 108 108  97  87  95  96 110  0.867692    994/1000    NonOverlappingTemplate
+106 101 122  92  97 116  95  76  93 102  0.089843    986/1000    NonOverlappingTemplate
+107  96 114  96  98 110 106  90  76 107  0.248014    987/1000    NonOverlappingTemplate
+101  94  90  95  96  94 104  91 105 130  0.193767    991/1000    NonOverlappingTemplate
+ 94 104 100 111  88  88  89 104 111 111  0.494392    996/1000    NonOverlappingTemplate
+109  89 115  91 108 109  91  87 103  98  0.422638    992/1000    NonOverlappingTemplate
+112  87  88  88  91 112  97 101 109 115  0.248014    987/1000    NonOverlappingTemplate
+104  91  96 108  95 117 100  83  89 117  0.219006    986/1000    NonOverlappingTemplate
+104 110  87 108  98  97 102  97  94 103  0.897763    993/1000    NonOverlappingTemplate
+102  76 115 118  92 100 104  89  85 119  0.023866    994/1000    NonOverlappingTemplate
+ 83 104 110  94  97 111  92 106 105  98  0.637119    994/1000    NonOverlappingTemplate
+108  97 109  90  96 119 106  98  85  92  0.383827    989/1000    NonOverlappingTemplate
+113  95  97 106 103 112  85 108  97  84  0.395940    988/1000    NonOverlappingTemplate
+102 107  97 105 106  88 101  87 102 105  0.862883    985/1000    NonOverlappingTemplate
+ 89  97 110 111 102 113 102 104  81  91  0.361938    988/1000    NonOverlappingTemplate
+100 101 110  94  92  90 107 100 109  97  0.883171    993/1000    NonOverlappingTemplate
+ 93 111  99 100 104 112  89  90  79 123  0.085068    993/1000    NonOverlappingTemplate
+107 117 112  89  82  95  98 100 104  96  0.360287    990/1000    NonOverlappingTemplate
+105 107 105 101 104 104  82  92  99 101  0.814724    991/1000    NonOverlappingTemplate
+ 99 114  90  96 108 104 105  98  99  87  0.747898    992/1000    NonOverlappingTemplate
+ 88 110  99 116 110  99  94  85 113  86  0.197981    993/1000    NonOverlappingTemplate
+ 99 109  93 117 106  94  97  97 103  85  0.591409    990/1000    NonOverlappingTemplate
+114 111 100  89  93 111  94  93  95 100  0.618385    989/1000    NonOverlappingTemplate
+ 98  84 109  87  93 106 105  93 118 107  0.317565    989/1000    NonOverlappingTemplate
+107  96  94  99 119  91 105 107  87  95  0.522100    988/1000    NonOverlappingTemplate
+ 92 107 101 111 106 101  92 105  89  96  0.836048    989/1000    NonOverlappingTemplate
+ 91  98  81 111 108  94 102 104 123  88  0.137282    991/1000    NonOverlappingTemplate
+ 98  87  88 108 113 102  97  99 108 100  0.711601    991/1000    NonOverlappingTemplate
+110  80 104  86 101 108 107  97  99 108  0.437274    995/1000    NonOverlappingTemplate
+116  89 111  91 112  94  88  97 104  98  0.408275    992/1000    NonOverlappingTemplate
+ 97 108 101 116 103 101 100  90  99  85  0.672470    987/1000    NonOverlappingTemplate
+ 93 115 100  93 102 103 114  78 103  99  0.329850    992/1000    NonOverlappingTemplate
+108 111  95 107  90 104  88  98  93 106  0.731886    997/1000    NonOverlappingTemplate
+ 79 104  93 102 107 101 115  95 102 102  0.516113    991/1000    NonOverlappingTemplate
+ 95  93 118  79 108  92 107 114 107  87  0.112047    993/1000    NonOverlappingTemplate
+ 90 115  97 106  85  92  91 105 113 106  0.375313    995/1000    NonOverlappingTemplate
+106  92  97  95  95 108 103  91 110 103  0.896345    995/1000    NonOverlappingTemplate
+104  99  87 104  96 109 101  80 122  98  0.220159    991/1000    NonOverlappingTemplate
+ 99  99  97 114 112 108  84 100 109  78  0.193767    995/1000    NonOverlappingTemplate
+ 93 106  91 115  97  83 116 103  98  98  0.382115    995/1000    NonOverlappingTemplate
+103 108  86  91  92 107 107  85 111 110  0.385543    989/1000    NonOverlappingTemplate
+ 90 118  90 100  93 102 100  98 100 109  0.676615    986/1000    NonOverlappingTemplate
+102  98 116 100  99  77 111 108 103  86  0.222480    989/1000    NonOverlappingTemplate
+103  91 109 102  99  95  95  97 106 103  0.971699    989/1000    NonOverlappingTemplate
+101 105  97 115 106  96  85 104  93  98  0.733899    990/1000    NonOverlappingTemplate
+101 105 108 108 108  81  98  97 114  80  0.220159    991/1000    NonOverlappingTemplate
+103  82  89 112 102  98 102 107 107  98  0.624627    995/1000    NonOverlappingTemplate
+106  99  96  94  97  95 108  98 106 101  0.986227    988/1000    NonOverlappingTemplate
+ 92  92  95 101  82  96 104 122 115 101  0.202268    988/1000    NonOverlappingTemplate
+ 96 109 105 106  88  91 114  81  96 114  0.241741    986/1000    NonOverlappingTemplate
+ 98 101 111  94 107  97  99 112  91  90  0.792508    992/1000    NonOverlappingTemplate
+106  98 103  97 111 106  88 104  95  92  0.864494    986/1000    NonOverlappingTemplate
+ 91 107 111 113  89  94 127  82  92  94  0.044220    994/1000    NonOverlappingTemplate
+120 101 104 104 100  99  99 118  76  79  0.038062    986/1000    NonOverlappingTemplate
+ 91  91 100  82 110 119 102  93 103 109  0.282626    991/1000    NonOverlappingTemplate
+123  77  89 104  97  92  99 110  92 117  0.045380    983/1000    NonOverlappingTemplate
+102  83 121  92  77  99 103 108  95 120  0.032274    989/1000    NonOverlappingTemplate
+101  95 104 111 101  99  98  87 108  96  0.899171    989/1000    NonOverlappingTemplate
+104 106  95 102  92  95 103 110  96  97  0.962688    990/1000    NonOverlappingTemplate
+101 115  99  96  78  94 113 109 114  81  0.073417    989/1000    NonOverlappingTemplate
+ 95 108  91 104  96  95 102  99 105 105  0.971006    992/1000    NonOverlappingTemplate
+105  80  94  97  87 119 101 109 109  99  0.234373    984/1000    NonOverlappingTemplate
+ 97 105  91 102  91  83  95 127 102 107  0.164425    992/1000    NonOverlappingTemplate
+ 93  96 105  99 101 106  94 102  93 111  0.947308    992/1000    NonOverlappingTemplate
+107 111  88  92 104  89  91 116  98 104  0.463512    991/1000    NonOverlappingTemplate
+ 83 107  99 106 105 115 107  88  86 104  0.326749    989/1000    NonOverlappingTemplate
+114 103 121  88  87 119  97  89  91  91  0.064418    991/1000    NonOverlappingTemplate
+ 91 102  98 105 101  97 100 101 116  89  0.832561    994/1000    NonOverlappingTemplate
+ 89  99  93  91 104 102 114 106  95 107  0.761719    985/1000    NonOverlappingTemplate
+ 89 106  96  93 112  99 101 109  95 100  0.856359    991/1000    NonOverlappingTemplate
+112 101  92  91 102 100 108 101  96  97  0.921624    991/1000    NonOverlappingTemplate
+ 95 107 119 108  88 110  85  83 104 101  0.174728    985/1000    NonOverlappingTemplate
+104  91 100 102 119 117 100 102  89  76  0.104993    989/1000    NonOverlappingTemplate
+101 102 106  90 105 107  97  97  87 108  0.862883    981/1000    NonOverlappingTemplate
+ 92 100 109  97 112  90 104  91 117  88  0.411840    991/1000    NonOverlappingTemplate
+119 117  93  92  80  90  95  96  96 122  0.034712    989/1000    NonOverlappingTemplate
+100  91 105  96 100 105  96 103  96 108  0.980341    987/1000    NonOverlappingTemplate
+ 94  94  99  89 111  98 105 114  98  98  0.790621    988/1000    NonOverlappingTemplate
+ 82 111  84  98 109  97 105 111  99 104  0.385543    989/1000    NonOverlappingTemplate
+107  99 112  92 107  89 102 103  99  90  0.796268    986/1000    NonOverlappingTemplate
+100 105 100 106 103  84 104 105 104  89  0.830808    989/1000    NonOverlappingTemplate
+124  95  97 103 104 105 108 109  66  89  0.013474    994/1000    NonOverlappingTemplate
+ 99 124  95 107 101 102  89  93  93  97  0.452173    992/1000    NonOverlappingTemplate
+ 93 111  94 106 103  91  93  97 103 109  0.851383    989/1000    NonOverlappingTemplate
+104 100 103 104  99  96 109 104  78 103  0.691081    987/1000    NonOverlappingTemplate
+ 93  98  91 101  92 113  93 109  96 114  0.626709    989/1000    NonOverlappingTemplate
+ 85  96  93 110 104  99 111 100  95 107  0.737915    988/1000    NonOverlappingTemplate
+ 90  91  95 110  93  99 110 115 112  85  0.311542    990/1000    NonOverlappingTemplate
+103  93 100  90 111  94 106 106  93 104  0.873987    986/1000    NonOverlappingTemplate
+ 98  97 109  92 102  87 105 105 114  91  0.680755    993/1000    NonOverlappingTemplate
+107  85  96  99 119 106  95  98 105  90  0.492436    987/1000    NonOverlappingTemplate
+100  92 121 114  95 100 103 108  76  91  0.103753    990/1000    NonOverlappingTemplate
+113 100  92  91  97 104 100 105  97 101  0.927677    990/1000    NonOverlappingTemplate
+ 97  97 110 113  94  89 104  95 106  95  0.792508    989/1000    NonOverlappingTemplate
+ 98 102  94 100  97  98 107 102 105  97  0.997568    985/1000    NonOverlappingTemplate
+116 100  95  95 102  98 108  83 104  99  0.653773    992/1000    NonOverlappingTemplate
+100 107  87  96  96 107  97  94 107 109  0.856359    992/1000    NonOverlappingTemplate
+104  74 109 111  90  95 107 117 102  91  0.108150    992/1000    NonOverlappingTemplate
+105 114  98 101 100 104  99  91  99  89  0.878618    996/1000    NonOverlappingTemplate
+100 120  96  92  89  95 103  97 117  91  0.339271    987/1000    NonOverlappingTemplate
+109 109  88 124 111  88  87  94 100  90  0.104993    994/1000    NonOverlappingTemplate
+ 85  97 105  95 111 125 101 101  87  93  0.186566    993/1000    NonOverlappingTemplate
+117 114  88 106 102  86  92  94  89 112  0.196920    986/1000    NonOverlappingTemplate
+102  91  89  89 105 113 102  90 127  92  0.116065    991/1000    NonOverlappingTemplate
+ 92 118  95 110  97 104  87  95 100 102  0.599693    987/1000    NonOverlappingTemplate
+108  99 101  99 107 118  85  87 104  92  0.424453    986/1000    NonOverlappingTemplate
+105  94  96  90  93  96 106 108 109 103  0.889118    993/1000    NonOverlappingTemplate
+ 92  86 103 110  94  89 101 118 104 103  0.459717    991/1000    NonOverlappingTemplate
+ 85  98  88  90 108 102 116 117 111  85  0.111389    992/1000    NonOverlappingTemplate
+ 82 115 105  99 101 109  87 113  97  92  0.298282    988/1000    NonOverlappingTemplate
+104 116  82 101  99 109  91  85 119  94  0.128874    985/1000    NonOverlappingTemplate
+ 98  84 107  95 126 112 105  79  89 105  0.039329    990/1000    NonOverlappingTemplate
+ 90 106 107 107 109  88 107  87 107  92  0.544254    991/1000    NonOverlappingTemplate
+112 112  97  98  80 101  99 107 106  88  0.408275    986/1000    NonOverlappingTemplate
+ 76 104 117 107  97 103 108  90  93 105  0.221317    987/1000    NonOverlappingTemplate
+110 107  96  96  91 107  90 104 107  92  0.798139    989/1000    NonOverlappingTemplate
+ 97  92 107  91 105 108  97 118 101  84  0.454053    994/1000    NonOverlappingTemplate
+105 120  92  99  99 104  95  87 112  87  0.339271    988/1000    NonOverlappingTemplate
+101 114 101 117  91  93  98  95  90 100  0.589341    983/1000    NonOverlappingTemplate
+ 97  95  98 109 117  96  99 116  80  93  0.255705    988/1000    NonOverlappingTemplate
+102  83  89 112 103  97 101 108 107  98  0.643366    995/1000    NonOverlappingTemplate
+ 98  95 103  93  92 112 103  95  95 114  0.788728    983/1000    OverlappingTemplate
+106  99 112 102 110  89 108  87 100  87  0.526105    991/1000    Universal
+109  91 103 102  90 124 103 101  82  95  0.207730    993/1000    ApproximateEntropy
+ 71  74  68  56  62  71  61  64  74  63  0.826313    654/664     RandomExcursions
+ 65  69  67  72  69  66  73  59  59  65  0.960581    654/664     RandomExcursions
+ 56  70  83  71  75  62  63  70  56  58  0.286238    659/664     RandomExcursions
+ 62  67  70  68  70  57  66  80  56  68  0.681194    657/664     RandomExcursions
+ 74  60  75  79  59  65  55  71  67  59  0.434482    654/664     RandomExcursions
+ 74  66  74  59  55  72  55  81  69  59  0.263452    656/664     RandomExcursions
+ 74  49  67  74  70  52  59  75  66  78  0.133520    659/664     RandomExcursions
+ 72  70  66  65  62  74  66  73  62  54  0.818179    654/664     RandomExcursions
+ 65  63  68  59  76  68  73  72  52  68  0.652891    652/664     RandomExcursionsVariant
+ 67  67  66  49  72  74  69  64  72  64  0.665490    655/664     RandomExcursionsVariant
+ 63  73  74  49  68  74  55  79  69  60  0.195163    656/664     RandomExcursionsVariant
+ 71  64  57  78  64  76  70  66  63  55  0.571166    656/664     RandomExcursionsVariant
+ 71  67  55  60  83  76  60  72  61  59  0.284109    655/664     RandomExcursionsVariant
+ 75  52  67  77  60  66  53  59  82  73  0.105144    656/664     RandomExcursionsVariant
+ 80  58  72  50  57  70  80  66  50  81  0.017360    653/664     RandomExcursionsVariant
+ 79  75  55  61  51  75  61  74  71  62  0.181257    654/664     RandomExcursionsVariant
+ 78  48  70  65  52  73  70  74  65  69  0.190435    652/664     RandomExcursionsVariant
+ 78  59  64  75  69  68  69  56  70  56  0.552568    654/664     RandomExcursionsVariant
+ 74  62  69  68  71  72  66  63  65  54  0.862344    655/664     RandomExcursionsVariant
+ 71  77  60  67  48  67  69  66  67  72  0.494985    657/664     RandomExcursionsVariant
+ 76  79  62  59  53  70  65  59  69  72  0.409785    657/664     RandomExcursionsVariant
+ 79  64  70  73  47  56  72  69  68  66  0.253551    651/664     RandomExcursionsVariant
+ 77  69  60  67  67  55  71  65  70  63  0.820905    652/664     RandomExcursionsVariant
+ 73  68  63  69  77  64  62  59  56  73  0.718515    655/664     RandomExcursionsVariant
+ 72  71  53  85  64  68  66  62  57  66  0.308156    657/664     RandomExcursionsVariant
+ 71  66  69  61  72  70  63  61  59  72  0.941944    659/664     RandomExcursionsVariant
+101 114 107 101  95 101 110  85  84 102  0.476911    992/1000    Serial
+ 89  99 107 123  96  78 119  95  89 105  0.043934    991/1000    Serial
+ 88 112  89 103 121 101  85  97 103 101  0.272977    988/1000    LinearComplexity
 
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -201,8 +201,1015 @@ random excursion (variant) test is approximately = 980 for a
 sample size = 1000 binary sequences.
 
 The minimum pass rate for the random excursion (variant) test
-is approximately = 625 for a sample size = 639 binary sequences.
+is approximately = 649 for a sample size = 664 binary sequences.
 
 For further guidelines construct a probability table using the MAPLE program
 provided in the addendum section of the documentation.
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+################################### FREQUENCY ###################################
+________________________________________________________________________________
+
+		FILE = data/test1000		ALPHA = 0.0100
+________________________________________________________________________________
+
+		BITSREAD = 1000000 0s = 500248 1s = 499752
+		BITSREAD = 1000000 0s = 499496 1s = 500504
+		BITSREAD = 1000000 0s = 499646 1s = 500354
+		BITSREAD = 1000000 0s = 500137 1s = 499863
+		BITSREAD = 1000000 0s = 499732 1s = 500268
+		BITSREAD = 1000000 0s = 498856 1s = 501144
+		BITSREAD = 1000000 0s = 499504 1s = 500496
+		BITSREAD = 1000000 0s = 501298 1s = 498702
+		BITSREAD = 1000000 0s = 500066 1s = 499934
+		BITSREAD = 1000000 0s = 499644 1s = 500356
+		BITSREAD = 1000000 0s = 500895 1s = 499105
+		BITSREAD = 1000000 0s = 500009 1s = 499991
+		BITSREAD = 1000000 0s = 500311 1s = 499689
+		BITSREAD = 1000000 0s = 499308 1s = 500692
+		BITSREAD = 1000000 0s = 500296 1s = 499704
+		BITSREAD = 1000000 0s = 499947 1s = 500053
+		BITSREAD = 1000000 0s = 500671 1s = 499329
+		BITSREAD = 1000000 0s = 500305 1s = 499695
+		BITSREAD = 1000000 0s = 499373 1s = 500627
+		BITSREAD = 1000000 0s = 499699 1s = 500301
+		BITSREAD = 1000000 0s = 499861 1s = 500139
+		BITSREAD = 1000000 0s = 501281 1s = 498719
+		BITSREAD = 1000000 0s = 499691 1s = 500309
+		BITSREAD = 1000000 0s = 499631 1s = 500369
+		BITSREAD = 1000000 0s = 500422 1s = 499578
+		BITSREAD = 1000000 0s = 500830 1s = 499170
+		BITSREAD = 1000000 0s = 499568 1s = 500432
+		BITSREAD = 1000000 0s = 500436 1s = 499564
+		BITSREAD = 1000000 0s = 500348 1s = 499652
+		BITSREAD = 1000000 0s = 500151 1s = 499849
+		BITSREAD = 1000000 0s = 500638 1s = 499362
+		BITSREAD = 1000000 0s = 500739 1s = 499261
+		BITSREAD = 1000000 0s = 499833 1s = 500167
+		BITSREAD = 1000000 0s = 499701 1s = 500299
+		BITSREAD = 1000000 0s = 500330 1s = 499670
+		BITSREAD = 1000000 0s = 500088 1s = 499912
+		BITSREAD = 1000000 0s = 500976 1s = 499024
+		BITSREAD = 1000000 0s = 500580 1s = 499420
+		BITSREAD = 1000000 0s = 500389 1s = 499611
+		BITSREAD = 1000000 0s = 500163 1s = 499837
+		BITSREAD = 1000000 0s = 499402 1s = 500598
+		BITSREAD = 1000000 0s = 500142 1s = 499858
+		BITSREAD = 1000000 0s = 499825 1s = 500175
+		BITSREAD = 1000000 0s = 500612 1s = 499388
+		BITSREAD = 1000000 0s = 500337 1s = 499663
+		BITSREAD = 1000000 0s = 499625 1s = 500375
+		BITSREAD = 1000000 0s = 499619 1s = 500381
+		BITSREAD = 1000000 0s = 499957 1s = 500043
+		BITSREAD = 1000000 0s = 500061 1s = 499939
+		BITSREAD = 1000000 0s = 499918 1s = 500082
+		BITSREAD = 1000000 0s = 499731 1s = 500269
+		BITSREAD = 1000000 0s = 499887 1s = 500113
+		BITSREAD = 1000000 0s = 499496 1s = 500504
+		BITSREAD = 1000000 0s = 500147 1s = 499853
+		BITSREAD = 1000000 0s = 500445 1s = 499555
+		BITSREAD = 1000000 0s = 499953 1s = 500047
+		BITSREAD = 1000000 0s = 500814 1s = 499186
+		BITSREAD = 1000000 0s = 499625 1s = 500375
+		BITSREAD = 1000000 0s = 500861 1s = 499139
+		BITSREAD = 1000000 0s = 499624 1s = 500376
+		BITSREAD = 1000000 0s = 500534 1s = 499466
+		BITSREAD = 1000000 0s = 499985 1s = 500015
+		BITSREAD = 1000000 0s = 499396 1s = 500604
+		BITSREAD = 1000000 0s = 499748 1s = 500252
+		BITSREAD = 1000000 0s = 500204 1s = 499796
+		BITSREAD = 1000000 0s = 499695 1s = 500305
+		BITSREAD = 1000000 0s = 499404 1s = 500596
+		BITSREAD = 1000000 0s = 500449 1s = 499551
+		BITSREAD = 1000000 0s = 500250 1s = 499750
+		BITSREAD = 1000000 0s = 498921 1s = 501079
+		BITSREAD = 1000000 0s = 499782 1s = 500218
+		BITSREAD = 1000000 0s = 499907 1s = 500093
+		BITSREAD = 1000000 0s = 499725 1s = 500275
+		BITSREAD = 1000000 0s = 500153 1s = 499847
+		BITSREAD = 1000000 0s = 500545 1s = 499455
+		BITSREAD = 1000000 0s = 499317 1s = 500683
+		BITSREAD = 1000000 0s = 500220 1s = 499780
+		BITSREAD = 1000000 0s = 500695 1s = 499305
+		BITSREAD = 1000000 0s = 499701 1s = 500299
+		BITSREAD = 1000000 0s = 500053 1s = 499947
+		BITSREAD = 1000000 0s = 499753 1s = 500247
+		BITSREAD = 1000000 0s = 499679 1s = 500321
+		BITSREAD = 1000000 0s = 500274 1s = 499726
+		BITSREAD = 1000000 0s = 500725 1s = 499275
+		BITSREAD = 1000000 0s = 499193 1s = 500807
+		BITSREAD = 1000000 0s = 499226 1s = 500774
+		BITSREAD = 1000000 0s = 500217 1s = 499783
+		BITSREAD = 1000000 0s = 500146 1s = 499854
+		BITSREAD = 1000000 0s = 500290 1s = 499710
+		BITSREAD = 1000000 0s = 499706 1s = 500294
+		BITSREAD = 1000000 0s = 499405 1s = 500595
+		BITSREAD = 1000000 0s = 500262 1s = 499738
+		BITSREAD = 1000000 0s = 500341 1s = 499659
+		BITSREAD = 1000000 0s = 500700 1s = 499300
+		BITSREAD = 1000000 0s = 499390 1s = 500610
+		BITSREAD = 1000000 0s = 500392 1s = 499608
+		BITSREAD = 1000000 0s = 499967 1s = 500033
+		BITSREAD = 1000000 0s = 499511 1s = 500489
+		BITSREAD = 1000000 0s = 500230 1s = 499770
+		BITSREAD = 1000000 0s = 500173 1s = 499827
+		BITSREAD = 1000000 0s = 499520 1s = 500480
+		BITSREAD = 1000000 0s = 499737 1s = 500263
+		BITSREAD = 1000000 0s = 499753 1s = 500247
+		BITSREAD = 1000000 0s = 499932 1s = 500068
+		BITSREAD = 1000000 0s = 500500 1s = 499500
+		BITSREAD = 1000000 0s = 499745 1s = 500255
+		BITSREAD = 1000000 0s = 500364 1s = 499636
+		BITSREAD = 1000000 0s = 500194 1s = 499806
+		BITSREAD = 1000000 0s = 499596 1s = 500404
+		BITSREAD = 1000000 0s = 499711 1s = 500289
+		BITSREAD = 1000000 0s = 500346 1s = 499654
+		BITSREAD = 1000000 0s = 499664 1s = 500336
+		BITSREAD = 1000000 0s = 499812 1s = 500188
+		BITSREAD = 1000000 0s = 500095 1s = 499905
+		BITSREAD = 1000000 0s = 500707 1s = 499293
+		BITSREAD = 1000000 0s = 500267 1s = 499733
+		BITSREAD = 1000000 0s = 500250 1s = 499750
+		BITSREAD = 1000000 0s = 499946 1s = 500054
+		BITSREAD = 1000000 0s = 500166 1s = 499834
+		BITSREAD = 1000000 0s = 500156 1s = 499844
+		BITSREAD = 1000000 0s = 500119 1s = 499881
+		BITSREAD = 1000000 0s = 499511 1s = 500489
+		BITSREAD = 1000000 0s = 499806 1s = 500194
+		BITSREAD = 1000000 0s = 500631 1s = 499369
+		BITSREAD = 1000000 0s = 499783 1s = 500217
+		BITSREAD = 1000000 0s = 500374 1s = 499626
+		BITSREAD = 1000000 0s = 500053 1s = 499947
+		BITSREAD = 1000000 0s = 499298 1s = 500702
+		BITSREAD = 1000000 0s = 498988 1s = 501012
+		BITSREAD = 1000000 0s = 500043 1s = 499957
+		BITSREAD = 1000000 0s = 499236 1s = 500764
+		BITSREAD = 1000000 0s = 500369 1s = 499631
+		BITSREAD = 1000000 0s = 499071 1s = 500929
+		BITSREAD = 1000000 0s = 500245 1s = 499755
+		BITSREAD = 1000000 0s = 500330 1s = 499670
+		BITSREAD = 1000000 0s = 499961 1s = 500039
+		BITSREAD = 1000000 0s = 499939 1s = 500061
+		BITSREAD = 1000000 0s = 500045 1s = 499955
+		BITSREAD = 1000000 0s = 500294 1s = 499706
+		BITSREAD = 1000000 0s = 499665 1s = 500335
+		BITSREAD = 1000000 0s = 499971 1s = 500029
+		BITSREAD = 1000000 0s = 499579 1s = 500421
+		BITSREAD = 1000000 0s = 499709 1s = 500291
+		BITSREAD = 1000000 0s = 500325 1s = 499675
+		BITSREAD = 1000000 0s = 500180 1s = 499820
+		BITSREAD = 1000000 0s = 500368 1s = 499632
+		BITSREAD = 1000000 0s = 499726 1s = 500274
+		BITSREAD = 1000000 0s = 499687 1s = 500313
+		BITSREAD = 1000000 0s = 500133 1s = 499867
+		BITSREAD = 1000000 0s = 500107 1s = 499893
+		BITSREAD = 1000000 0s = 500197 1s = 499803
+		BITSREAD = 1000000 0s = 500015 1s = 499985
+		BITSREAD = 1000000 0s = 499299 1s = 500701
+		BITSREAD = 1000000 0s = 499762 1s = 500238
+		BITSREAD = 1000000 0s = 499880 1s = 500120
+		BITSREAD = 1000000 0s = 500399 1s = 499601
+		BITSREAD = 1000000 0s = 500617 1s = 499383
+		BITSREAD = 1000000 0s = 499417 1s = 500583
+		BITSREAD = 1000000 0s = 500484 1s = 499516
+		BITSREAD = 1000000 0s = 499574 1s = 500426
+		BITSREAD = 1000000 0s = 500400 1s = 499600
+		BITSREAD = 1000000 0s = 499564 1s = 500436
+		BITSREAD = 1000000 0s = 499873 1s = 500127
+		BITSREAD = 1000000 0s = 499946 1s = 500054
+		BITSREAD = 1000000 0s = 500610 1s = 499390
+		BITSREAD = 1000000 0s = 499802 1s = 500198
+		BITSREAD = 1000000 0s = 500298 1s = 499702
+		BITSREAD = 1000000 0s = 500002 1s = 499998
+		BITSREAD = 1000000 0s = 499970 1s = 500030
+		BITSREAD = 1000000 0s = 500194 1s = 499806
+		BITSREAD = 1000000 0s = 500187 1s = 499813
+		BITSREAD = 1000000 0s = 498832 1s = 501168
+		BITSREAD = 1000000 0s = 499907 1s = 500093
+		BITSREAD = 1000000 0s = 500059 1s = 499941
+		BITSREAD = 1000000 0s = 499760 1s = 500240
+		BITSREAD = 1000000 0s = 500669 1s = 499331
+		BITSREAD = 1000000 0s = 499710 1s = 500290
+		BITSREAD = 1000000 0s = 499679 1s = 500321
+		BITSREAD = 1000000 0s = 500794 1s = 499206
+		BITSREAD = 1000000 0s = 500994 1s = 499006
+		BITSREAD = 1000000 0s = 499900 1s = 500100
+		BITSREAD = 1000000 0s = 500456 1s = 499544
+		BITSREAD = 1000000 0s = 499852 1s = 500148
+		BITSREAD = 1000000 0s = 499692 1s = 500308
+		BITSREAD = 1000000 0s = 499905 1s = 500095
+		BITSREAD = 1000000 0s = 499837 1s = 500163
+		BITSREAD = 1000000 0s = 500156 1s = 499844
+		BITSREAD = 1000000 0s = 499356 1s = 500644
+		BITSREAD = 1000000 0s = 499426 1s = 500574
+		BITSREAD = 1000000 0s = 500383 1s = 499617
+		BITSREAD = 1000000 0s = 500335 1s = 499665
+		BITSREAD = 1000000 0s = 499730 1s = 500270
+		BITSREAD = 1000000 0s = 500503 1s = 499497
+		BITSREAD = 1000000 0s = 498501 1s = 501499
+		BITSREAD = 1000000 0s = 499668 1s = 500332
+		BITSREAD = 1000000 0s = 499748 1s = 500252
+		BITSREAD = 1000000 0s = 500045 1s = 499955
+		BITSREAD = 1000000 0s = 499577 1s = 500423
+		BITSREAD = 1000000 0s = 498947 1s = 501053
+		BITSREAD = 1000000 0s = 499434 1s = 500566
+		BITSREAD = 1000000 0s = 500429 1s = 499571
+		BITSREAD = 1000000 0s = 500648 1s = 499352
+		BITSREAD = 1000000 0s = 500279 1s = 499721
+		BITSREAD = 1000000 0s = 499595 1s = 500405
+		BITSREAD = 1000000 0s = 500232 1s = 499768
+		BITSREAD = 1000000 0s = 500473 1s = 499527
+		BITSREAD = 1000000 0s = 499856 1s = 500144
+		BITSREAD = 1000000 0s = 500719 1s = 499281
+		BITSREAD = 1000000 0s = 499913 1s = 500087
+		BITSREAD = 1000000 0s = 499982 1s = 500018
+		BITSREAD = 1000000 0s = 500437 1s = 499563
+		BITSREAD = 1000000 0s = 500622 1s = 499378
+		BITSREAD = 1000000 0s = 499483 1s = 500517
+		BITSREAD = 1000000 0s = 499216 1s = 500784
+		BITSREAD = 1000000 0s = 500049 1s = 499951
+		BITSREAD = 1000000 0s = 499616 1s = 500384
+		BITSREAD = 1000000 0s = 500578 1s = 499422
+		BITSREAD = 1000000 0s = 500461 1s = 499539
+		BITSREAD = 1000000 0s = 500360 1s = 499640
+		BITSREAD = 1000000 0s = 500279 1s = 499721
+		BITSREAD = 1000000 0s = 500401 1s = 499599
+		BITSREAD = 1000000 0s = 500441 1s = 499559
+		BITSREAD = 1000000 0s = 500248 1s = 499752
+		BITSREAD = 1000000 0s = 499545 1s = 500455
+		BITSREAD = 1000000 0s = 499977 1s = 500023
+		BITSREAD = 1000000 0s = 499620 1s = 500380
+		BITSREAD = 1000000 0s = 500376 1s = 499624
+		BITSREAD = 1000000 0s = 500383 1s = 499617
+		BITSREAD = 1000000 0s = 499707 1s = 500293
+		BITSREAD = 1000000 0s = 500017 1s = 499983
+		BITSREAD = 1000000 0s = 500226 1s = 499774
+		BITSREAD = 1000000 0s = 500578 1s = 499422
+		BITSREAD = 1000000 0s = 499481 1s = 500519
+		BITSREAD = 1000000 0s = 500131 1s = 499869
+		BITSREAD = 1000000 0s = 499713 1s = 500287
+		BITSREAD = 1000000 0s = 499912 1s = 500088
+		BITSREAD = 1000000 0s = 500130 1s = 499870
+		BITSREAD = 1000000 0s = 499976 1s = 500024
+		BITSREAD = 1000000 0s = 500482 1s = 499518
+		BITSREAD = 1000000 0s = 499932 1s = 500068
+		BITSREAD = 1000000 0s = 499906 1s = 500094
+		BITSREAD = 1000000 0s = 499650 1s = 500350
+		BITSREAD = 1000000 0s = 500526 1s = 499474
+		BITSREAD = 1000000 0s = 500897 1s = 499103
+		BITSREAD = 1000000 0s = 499497 1s = 500503
+		BITSREAD = 1000000 0s = 499917 1s = 500083
+		BITSREAD = 1000000 0s = 499886 1s = 500114
+		BITSREAD = 1000000 0s = 500251 1s = 499749
+		BITSREAD = 1000000 0s = 499574 1s = 500426
+		BITSREAD = 1000000 0s = 499170 1s = 500830
+		BITSREAD = 1000000 0s = 499456 1s = 500544
+		BITSREAD = 1000000 0s = 499147 1s = 500853
+		BITSREAD = 1000000 0s = 499350 1s = 500650
+		BITSREAD = 1000000 0s = 499238 1s = 500762
+		BITSREAD = 1000000 0s = 500010 1s = 499990
+		BITSREAD = 1000000 0s = 500294 1s = 499706
+		BITSREAD = 1000000 0s = 500483 1s = 499517
+		BITSREAD = 1000000 0s = 499420 1s = 500580
+		BITSREAD = 1000000 0s = 500063 1s = 499937
+		BITSREAD = 1000000 0s = 500425 1s = 499575
+		BITSREAD = 1000000 0s = 499320 1s = 500680
+		BITSREAD = 1000000 0s = 500069 1s = 499931
+		BITSREAD = 1000000 0s = 500134 1s = 499866
+		BITSREAD = 1000000 0s = 499303 1s = 500697
+		BITSREAD = 1000000 0s = 500527 1s = 499473
+		BITSREAD = 1000000 0s = 499798 1s = 500202
+		BITSREAD = 1000000 0s = 499730 1s = 500270
+		BITSREAD = 1000000 0s = 500274 1s = 499726
+		BITSREAD = 1000000 0s = 498993 1s = 501007
+		BITSREAD = 1000000 0s = 500270 1s = 499730
+		BITSREAD = 1000000 0s = 500149 1s = 499851
+		BITSREAD = 1000000 0s = 500381 1s = 499619
+		BITSREAD = 1000000 0s = 499639 1s = 500361
+		BITSREAD = 1000000 0s = 499694 1s = 500306
+		BITSREAD = 1000000 0s = 500520 1s = 499480
+		BITSREAD = 1000000 0s = 499798 1s = 500202
+		BITSREAD = 1000000 0s = 499725 1s = 500275
+		BITSREAD = 1000000 0s = 500202 1s = 499798
+		BITSREAD = 1000000 0s = 499799 1s = 500201
+		BITSREAD = 1000000 0s = 498937 1s = 501063
+		BITSREAD = 1000000 0s = 500147 1s = 499853
+		BITSREAD = 1000000 0s = 500604 1s = 499396
+		BITSREAD = 1000000 0s = 499543 1s = 500457
+		BITSREAD = 1000000 0s = 499603 1s = 500397
+		BITSREAD = 1000000 0s = 499659 1s = 500341
+		BITSREAD = 1000000 0s = 500037 1s = 499963
+		BITSREAD = 1000000 0s = 499579 1s = 500421
+		BITSREAD = 1000000 0s = 499663 1s = 500337
+		BITSREAD = 1000000 0s = 500470 1s = 499530
+		BITSREAD = 1000000 0s = 500147 1s = 499853
+		BITSREAD = 1000000 0s = 500111 1s = 499889
+		BITSREAD = 1000000 0s = 500087 1s = 499913
+		BITSREAD = 1000000 0s = 500202 1s = 499798
+		BITSREAD = 1000000 0s = 499699 1s = 500301
+		BITSREAD = 1000000 0s = 499445 1s = 500555
+		BITSREAD = 1000000 0s = 500014 1s = 499986
+		BITSREAD = 1000000 0s = 499518 1s = 500482
+		BITSREAD = 1000000 0s = 499535 1s = 500465
+		BITSREAD = 1000000 0s = 500312 1s = 499688
+		BITSREAD = 1000000 0s = 499777 1s = 500223
+		BITSREAD = 1000000 0s = 500219 1s = 499781
+		BITSREAD = 1000000 0s = 500387 1s = 499613
+		BITSREAD = 1000000 0s = 499861 1s = 500139
+		BITSREAD = 1000000 0s = 500535 1s = 499465
+		BITSREAD = 1000000 0s = 499662 1s = 500338
+		BITSREAD = 1000000 0s = 499235 1s = 500765
+		BITSREAD = 1000000 0s = 499817 1s = 500183
+		BITSREAD = 1000000 0s = 499972 1s = 500028
+		BITSREAD = 1000000 0s = 499176 1s = 500824
+		BITSREAD = 1000000 0s = 499986 1s = 500014
+		BITSREAD = 1000000 0s = 500325 1s = 499675
+		BITSREAD = 1000000 0s = 500564 1s = 499436
+		BITSREAD = 1000000 0s = 500543 1s = 499457
+		BITSREAD = 1000000 0s = 500377 1s = 499623
+		BITSREAD = 1000000 0s = 499710 1s = 500290
+		BITSREAD = 1000000 0s = 500882 1s = 499118
+		BITSREAD = 1000000 0s = 500630 1s = 499370
+		BITSREAD = 1000000 0s = 499892 1s = 500108
+		BITSREAD = 1000000 0s = 499291 1s = 500709
+		BITSREAD = 1000000 0s = 499935 1s = 500065
+		BITSREAD = 1000000 0s = 500491 1s = 499509
+		BITSREAD = 1000000 0s = 499373 1s = 500627
+		BITSREAD = 1000000 0s = 499952 1s = 500048
+		BITSREAD = 1000000 0s = 501127 1s = 498873
+		BITSREAD = 1000000 0s = 500325 1s = 499675
+		BITSREAD = 1000000 0s = 500349 1s = 499651
+		BITSREAD = 1000000 0s = 500073 1s = 499927
+		BITSREAD = 1000000 0s = 500207 1s = 499793
+		BITSREAD = 1000000 0s = 501050 1s = 498950
+		BITSREAD = 1000000 0s = 500269 1s = 499731
+		BITSREAD = 1000000 0s = 499941 1s = 500059
+		BITSREAD = 1000000 0s = 499932 1s = 500068
+		BITSREAD = 1000000 0s = 499377 1s = 500623
+		BITSREAD = 1000000 0s = 500014 1s = 499986
+		BITSREAD = 1000000 0s = 499677 1s = 500323
+		BITSREAD = 1000000 0s = 499520 1s = 500480
+		BITSREAD = 1000000 0s = 500160 1s = 499840
+		BITSREAD = 1000000 0s = 499542 1s = 500458
+		BITSREAD = 1000000 0s = 499855 1s = 500145
+		BITSREAD = 1000000 0s = 500457 1s = 499543
+		BITSREAD = 1000000 0s = 500522 1s = 499478
+		BITSREAD = 1000000 0s = 499702 1s = 500298
+		BITSREAD = 1000000 0s = 499521 1s = 500479
+		BITSREAD = 1000000 0s = 499642 1s = 500358
+		BITSREAD = 1000000 0s = 499824 1s = 500176
+		BITSREAD = 1000000 0s = 498453 1s = 501547
+		BITSREAD = 1000000 0s = 499845 1s = 500155
+		BITSREAD = 1000000 0s = 500268 1s = 499732
+		BITSREAD = 1000000 0s = 501273 1s = 498727
+		BITSREAD = 1000000 0s = 499081 1s = 500919
+		BITSREAD = 1000000 0s = 500219 1s = 499781
+		BITSREAD = 1000000 0s = 500491 1s = 499509
+		BITSREAD = 1000000 0s = 499893 1s = 500107
+		BITSREAD = 1000000 0s = 500049 1s = 499951
+		BITSREAD = 1000000 0s = 500484 1s = 499516
+		BITSREAD = 1000000 0s = 500392 1s = 499608
+		BITSREAD = 1000000 0s = 499997 1s = 500003
+		BITSREAD = 1000000 0s = 499992 1s = 500008
+		BITSREAD = 1000000 0s = 499431 1s = 500569
+		BITSREAD = 1000000 0s = 499521 1s = 500479
+		BITSREAD = 1000000 0s = 499782 1s = 500218
+		BITSREAD = 1000000 0s = 499131 1s = 500869
+		BITSREAD = 1000000 0s = 500062 1s = 499938
+		BITSREAD = 1000000 0s = 499384 1s = 500616
+		BITSREAD = 1000000 0s = 500465 1s = 499535
+		BITSREAD = 1000000 0s = 500794 1s = 499206
+		BITSREAD = 1000000 0s = 499679 1s = 500321
+		BITSREAD = 1000000 0s = 499401 1s = 500599
+		BITSREAD = 1000000 0s = 500412 1s = 499588
+		BITSREAD = 1000000 0s = 499189 1s = 500811
+		BITSREAD = 1000000 0s = 499392 1s = 500608
+		BITSREAD = 1000000 0s = 499799 1s = 500201
+		BITSREAD = 1000000 0s = 499774 1s = 500226
+		BITSREAD = 1000000 0s = 500204 1s = 499796
+		BITSREAD = 1000000 0s = 500427 1s = 499573
+		BITSREAD = 1000000 0s = 500156 1s = 499844
+		BITSREAD = 1000000 0s = 499154 1s = 500846
+		BITSREAD = 1000000 0s = 499874 1s = 500126
+		BITSREAD = 1000000 0s = 500490 1s = 499510
+		BITSREAD = 1000000 0s = 499024 1s = 500976
+		BITSREAD = 1000000 0s = 499379 1s = 500621
+		BITSREAD = 1000000 0s = 499906 1s = 500094
+		BITSREAD = 1000000 0s = 500723 1s = 499277
+		BITSREAD = 1000000 0s = 500716 1s = 499284
+		BITSREAD = 1000000 0s = 500703 1s = 499297
+		BITSREAD = 1000000 0s = 500487 1s = 499513
+		BITSREAD = 1000000 0s = 499170 1s = 500830
+		BITSREAD = 1000000 0s = 499902 1s = 500098
+		BITSREAD = 1000000 0s = 499784 1s = 500216
+		BITSREAD = 1000000 0s = 500164 1s = 499836
+		BITSREAD = 1000000 0s = 499524 1s = 500476
+		BITSREAD = 1000000 0s = 501284 1s = 498716
+		BITSREAD = 1000000 0s = 500396 1s = 499604
+		BITSREAD = 1000000 0s = 499956 1s = 500044
+		BITSREAD = 1000000 0s = 499655 1s = 500345
+		BITSREAD = 1000000 0s = 499198 1s = 500802
+		BITSREAD = 1000000 0s = 499486 1s = 500514
+		BITSREAD = 1000000 0s = 500063 1s = 499937
+		BITSREAD = 1000000 0s = 499685 1s = 500315
+		BITSREAD = 1000000 0s = 499983 1s = 500017
+		BITSREAD = 1000000 0s = 499269 1s = 500731
+		BITSREAD = 1000000 0s = 500689 1s = 499311
+		BITSREAD = 1000000 0s = 499720 1s = 500280
+		BITSREAD = 1000000 0s = 500424 1s = 499576
+		BITSREAD = 1000000 0s = 499071 1s = 500929
+		BITSREAD = 1000000 0s = 499866 1s = 500134
+		BITSREAD = 1000000 0s = 500018 1s = 499982
+		BITSREAD = 1000000 0s = 498730 1s = 501270
+		BITSREAD = 1000000 0s = 499958 1s = 500042
+		BITSREAD = 1000000 0s = 499773 1s = 500227
+		BITSREAD = 1000000 0s = 500427 1s = 499573
+		BITSREAD = 1000000 0s = 501386 1s = 498614
+		BITSREAD = 1000000 0s = 499841 1s = 500159
+		BITSREAD = 1000000 0s = 500622 1s = 499378
+		BITSREAD = 1000000 0s = 500054 1s = 499946
+		BITSREAD = 1000000 0s = 498964 1s = 501036
+		BITSREAD = 1000000 0s = 499947 1s = 500053
+		BITSREAD = 1000000 0s = 500176 1s = 499824
+		BITSREAD = 1000000 0s = 499714 1s = 500286
+		BITSREAD = 1000000 0s = 499833 1s = 500167
+		BITSREAD = 1000000 0s = 500955 1s = 499045
+		BITSREAD = 1000000 0s = 499999 1s = 500001
+		BITSREAD = 1000000 0s = 499564 1s = 500436
+		BITSREAD = 1000000 0s = 499972 1s = 500028
+		BITSREAD = 1000000 0s = 500486 1s = 499514
+		BITSREAD = 1000000 0s = 499152 1s = 500848
+		BITSREAD = 1000000 0s = 500836 1s = 499164
+		BITSREAD = 1000000 0s = 500716 1s = 499284
+		BITSREAD = 1000000 0s = 499866 1s = 500134
+		BITSREAD = 1000000 0s = 500157 1s = 499843
+		BITSREAD = 1000000 0s = 500415 1s = 499585
+		BITSREAD = 1000000 0s = 499520 1s = 500480
+		BITSREAD = 1000000 0s = 499726 1s = 500274
+		BITSREAD = 1000000 0s = 499539 1s = 500461
+		BITSREAD = 1000000 0s = 499519 1s = 500481
+		BITSREAD = 1000000 0s = 499779 1s = 500221
+		BITSREAD = 1000000 0s = 500729 1s = 499271
+		BITSREAD = 1000000 0s = 499333 1s = 500667
+		BITSREAD = 1000000 0s = 499976 1s = 500024
+		BITSREAD = 1000000 0s = 500415 1s = 499585
+		BITSREAD = 1000000 0s = 499669 1s = 500331
+		BITSREAD = 1000000 0s = 500109 1s = 499891
+		BITSREAD = 1000000 0s = 500036 1s = 499964
+		BITSREAD = 1000000 0s = 499073 1s = 500927
+		BITSREAD = 1000000 0s = 500338 1s = 499662
+		BITSREAD = 1000000 0s = 500439 1s = 499561
+		BITSREAD = 1000000 0s = 500993 1s = 499007
+		BITSREAD = 1000000 0s = 499945 1s = 500055
+		BITSREAD = 1000000 0s = 500479 1s = 499521
+		BITSREAD = 1000000 0s = 499268 1s = 500732
+		BITSREAD = 1000000 0s = 500418 1s = 499582
+		BITSREAD = 1000000 0s = 499975 1s = 500025
+		BITSREAD = 1000000 0s = 499405 1s = 500595
+		BITSREAD = 1000000 0s = 501063 1s = 498937
+		BITSREAD = 1000000 0s = 499828 1s = 500172
+		BITSREAD = 1000000 0s = 500405 1s = 499595
+		BITSREAD = 1000000 0s = 500232 1s = 499768
+		BITSREAD = 1000000 0s = 499580 1s = 500420
+		BITSREAD = 1000000 0s = 500417 1s = 499583
+		BITSREAD = 1000000 0s = 499779 1s = 500221
+		BITSREAD = 1000000 0s = 499738 1s = 500262
+		BITSREAD = 1000000 0s = 500201 1s = 499799
+		BITSREAD = 1000000 0s = 499088 1s = 500912
+		BITSREAD = 1000000 0s = 499580 1s = 500420
+		BITSREAD = 1000000 0s = 499415 1s = 500585
+		BITSREAD = 1000000 0s = 499697 1s = 500303
+		BITSREAD = 1000000 0s = 500046 1s = 499954
+		BITSREAD = 1000000 0s = 499367 1s = 500633
+		BITSREAD = 1000000 0s = 500375 1s = 499625
+		BITSREAD = 1000000 0s = 499414 1s = 500586
+		BITSREAD = 1000000 0s = 499539 1s = 500461
+		BITSREAD = 1000000 0s = 499547 1s = 500453
+		BITSREAD = 1000000 0s = 499545 1s = 500455
+		BITSREAD = 1000000 0s = 498994 1s = 501006
+		BITSREAD = 1000000 0s = 499610 1s = 500390
+		BITSREAD = 1000000 0s = 499832 1s = 500168
+		BITSREAD = 1000000 0s = 499509 1s = 500491
+		BITSREAD = 1000000 0s = 500124 1s = 499876
+		BITSREAD = 1000000 0s = 499869 1s = 500131
+		BITSREAD = 1000000 0s = 500455 1s = 499545
+		BITSREAD = 1000000 0s = 500140 1s = 499860
+		BITSREAD = 1000000 0s = 499885 1s = 500115
+		BITSREAD = 1000000 0s = 500428 1s = 499572
+		BITSREAD = 1000000 0s = 500394 1s = 499606
+		BITSREAD = 1000000 0s = 499636 1s = 500364
+		BITSREAD = 1000000 0s = 499217 1s = 500783
+		BITSREAD = 1000000 0s = 499529 1s = 500471
+		BITSREAD = 1000000 0s = 500116 1s = 499884
+		BITSREAD = 1000000 0s = 499881 1s = 500119
+		BITSREAD = 1000000 0s = 500212 1s = 499788
+		BITSREAD = 1000000 0s = 499957 1s = 500043
+		BITSREAD = 1000000 0s = 499347 1s = 500653
+		BITSREAD = 1000000 0s = 500383 1s = 499617
+		BITSREAD = 1000000 0s = 499633 1s = 500367
+		BITSREAD = 1000000 0s = 499872 1s = 500128
+		BITSREAD = 1000000 0s = 498842 1s = 501158
+		BITSREAD = 1000000 0s = 499730 1s = 500270
+		BITSREAD = 1000000 0s = 499075 1s = 500925
+		BITSREAD = 1000000 0s = 499903 1s = 500097
+		BITSREAD = 1000000 0s = 499950 1s = 500050
+		BITSREAD = 1000000 0s = 499853 1s = 500147
+		BITSREAD = 1000000 0s = 499892 1s = 500108
+		BITSREAD = 1000000 0s = 500421 1s = 499579
+		BITSREAD = 1000000 0s = 499717 1s = 500283
+		BITSREAD = 1000000 0s = 500216 1s = 499784
+		BITSREAD = 1000000 0s = 500234 1s = 499766
+		BITSREAD = 1000000 0s = 500560 1s = 499440
+		BITSREAD = 1000000 0s = 500023 1s = 499977
+		BITSREAD = 1000000 0s = 499522 1s = 500478
+		BITSREAD = 1000000 0s = 499148 1s = 500852
+		BITSREAD = 1000000 0s = 500108 1s = 499892
+		BITSREAD = 1000000 0s = 500511 1s = 499489
+		BITSREAD = 1000000 0s = 500042 1s = 499958
+		BITSREAD = 1000000 0s = 500034 1s = 499966
+		BITSREAD = 1000000 0s = 500017 1s = 499983
+		BITSREAD = 1000000 0s = 500516 1s = 499484
+		BITSREAD = 1000000 0s = 499613 1s = 500387
+		BITSREAD = 1000000 0s = 500162 1s = 499838
+		BITSREAD = 1000000 0s = 499827 1s = 500173
+		BITSREAD = 1000000 0s = 499606 1s = 500394
+		BITSREAD = 1000000 0s = 499770 1s = 500230
+		BITSREAD = 1000000 0s = 499741 1s = 500259
+		BITSREAD = 1000000 0s = 499976 1s = 500024
+		BITSREAD = 1000000 0s = 501204 1s = 498796
+		BITSREAD = 1000000 0s = 499785 1s = 500215
+		BITSREAD = 1000000 0s = 499827 1s = 500173
+		BITSREAD = 1000000 0s = 499400 1s = 500600
+		BITSREAD = 1000000 0s = 499234 1s = 500766
+		BITSREAD = 1000000 0s = 499773 1s = 500227
+		BITSREAD = 1000000 0s = 499763 1s = 500237
+		BITSREAD = 1000000 0s = 500138 1s = 499862
+		BITSREAD = 1000000 0s = 499473 1s = 500527
+		BITSREAD = 1000000 0s = 499743 1s = 500257
+		BITSREAD = 1000000 0s = 500630 1s = 499370
+		BITSREAD = 1000000 0s = 499467 1s = 500533
+		BITSREAD = 1000000 0s = 499190 1s = 500810
+		BITSREAD = 1000000 0s = 500198 1s = 499802
+		BITSREAD = 1000000 0s = 499935 1s = 500065
+		BITSREAD = 1000000 0s = 499831 1s = 500169
+		BITSREAD = 1000000 0s = 499500 1s = 500500
+		BITSREAD = 1000000 0s = 500099 1s = 499901
+		BITSREAD = 1000000 0s = 500275 1s = 499725
+		BITSREAD = 1000000 0s = 500092 1s = 499908
+		BITSREAD = 1000000 0s = 499235 1s = 500765
+		BITSREAD = 1000000 0s = 500549 1s = 499451
+		BITSREAD = 1000000 0s = 500299 1s = 499701
+		BITSREAD = 1000000 0s = 500030 1s = 499970
+		BITSREAD = 1000000 0s = 499728 1s = 500272
+		BITSREAD = 1000000 0s = 501037 1s = 498963
+		BITSREAD = 1000000 0s = 500865 1s = 499135
+		BITSREAD = 1000000 0s = 500506 1s = 499494
+		BITSREAD = 1000000 0s = 499984 1s = 500016
+		BITSREAD = 1000000 0s = 499446 1s = 500554
+		BITSREAD = 1000000 0s = 499706 1s = 500294
+		BITSREAD = 1000000 0s = 499636 1s = 500364
+		BITSREAD = 1000000 0s = 499573 1s = 500427
+		BITSREAD = 1000000 0s = 499752 1s = 500248
+		BITSREAD = 1000000 0s = 500080 1s = 499920
+		BITSREAD = 1000000 0s = 499773 1s = 500227
+		BITSREAD = 1000000 0s = 500070 1s = 499930
+		BITSREAD = 1000000 0s = 499103 1s = 500897
+		BITSREAD = 1000000 0s = 499890 1s = 500110
+		BITSREAD = 1000000 0s = 500493 1s = 499507
+		BITSREAD = 1000000 0s = 499957 1s = 500043
+		BITSREAD = 1000000 0s = 499446 1s = 500554
+		BITSREAD = 1000000 0s = 499557 1s = 500443
+		BITSREAD = 1000000 0s = 500782 1s = 499218
+		BITSREAD = 1000000 0s = 499650 1s = 500350
+		BITSREAD = 1000000 0s = 500028 1s = 499972
+		BITSREAD = 1000000 0s = 499790 1s = 500210
+		BITSREAD = 1000000 0s = 499811 1s = 500189
+		BITSREAD = 1000000 0s = 499755 1s = 500245
+		BITSREAD = 1000000 0s = 500312 1s = 499688
+		BITSREAD = 1000000 0s = 499812 1s = 500188
+		BITSREAD = 1000000 0s = 500141 1s = 499859
+		BITSREAD = 1000000 0s = 499906 1s = 500094
+		BITSREAD = 1000000 0s = 500508 1s = 499492
+		BITSREAD = 1000000 0s = 499215 1s = 500785
+		BITSREAD = 1000000 0s = 499998 1s = 500002
+		BITSREAD = 1000000 0s = 499857 1s = 500143
+		BITSREAD = 1000000 0s = 500086 1s = 499914
+		BITSREAD = 1000000 0s = 500271 1s = 499729
+		BITSREAD = 1000000 0s = 500459 1s = 499541
+		BITSREAD = 1000000 0s = 498926 1s = 501074
+		BITSREAD = 1000000 0s = 500087 1s = 499913
+		BITSREAD = 1000000 0s = 500515 1s = 499485
+		BITSREAD = 1000000 0s = 500002 1s = 499998
+		BITSREAD = 1000000 0s = 499854 1s = 500146
+		BITSREAD = 1000000 0s = 499448 1s = 500552
+		BITSREAD = 1000000 0s = 499857 1s = 500143
+		BITSREAD = 1000000 0s = 499551 1s = 500449
+		BITSREAD = 1000000 0s = 499493 1s = 500507
+		BITSREAD = 1000000 0s = 499511 1s = 500489
+		BITSREAD = 1000000 0s = 499981 1s = 500019
+		BITSREAD = 1000000 0s = 499669 1s = 500331
+		BITSREAD = 1000000 0s = 500215 1s = 499785
+		BITSREAD = 1000000 0s = 499195 1s = 500805
+		BITSREAD = 1000000 0s = 499507 1s = 500493
+		BITSREAD = 1000000 0s = 499557 1s = 500443
+		BITSREAD = 1000000 0s = 500321 1s = 499679
+		BITSREAD = 1000000 0s = 500294 1s = 499706
+		BITSREAD = 1000000 0s = 500435 1s = 499565
+		BITSREAD = 1000000 0s = 500261 1s = 499739
+		BITSREAD = 1000000 0s = 499907 1s = 500093
+		BITSREAD = 1000000 0s = 499554 1s = 500446
+		BITSREAD = 1000000 0s = 499503 1s = 500497
+		BITSREAD = 1000000 0s = 500796 1s = 499204
+		BITSREAD = 1000000 0s = 500415 1s = 499585
+		BITSREAD = 1000000 0s = 500021 1s = 499979
+		BITSREAD = 1000000 0s = 500918 1s = 499082
+		BITSREAD = 1000000 0s = 499472 1s = 500528
+		BITSREAD = 1000000 0s = 499467 1s = 500533
+		BITSREAD = 1000000 0s = 499669 1s = 500331
+		BITSREAD = 1000000 0s = 500089 1s = 499911
+		BITSREAD = 1000000 0s = 500903 1s = 499097
+		BITSREAD = 1000000 0s = 499838 1s = 500162
+		BITSREAD = 1000000 0s = 499982 1s = 500018
+		BITSREAD = 1000000 0s = 499711 1s = 500289
+		BITSREAD = 1000000 0s = 500244 1s = 499756
+		BITSREAD = 1000000 0s = 500235 1s = 499765
+		BITSREAD = 1000000 0s = 499657 1s = 500343
+		BITSREAD = 1000000 0s = 499966 1s = 500034
+		BITSREAD = 1000000 0s = 500066 1s = 499934
+		BITSREAD = 1000000 0s = 500344 1s = 499656
+		BITSREAD = 1000000 0s = 499503 1s = 500497
+		BITSREAD = 1000000 0s = 500830 1s = 499170
+		BITSREAD = 1000000 0s = 500303 1s = 499697
+		BITSREAD = 1000000 0s = 500548 1s = 499452
+		BITSREAD = 1000000 0s = 499932 1s = 500068
+		BITSREAD = 1000000 0s = 500182 1s = 499818
+		BITSREAD = 1000000 0s = 499695 1s = 500305
+		BITSREAD = 1000000 0s = 499896 1s = 500104
+		BITSREAD = 1000000 0s = 500600 1s = 499400
+		BITSREAD = 1000000 0s = 499642 1s = 500358
+		BITSREAD = 1000000 0s = 500982 1s = 499018
+		BITSREAD = 1000000 0s = 500364 1s = 499636
+		BITSREAD = 1000000 0s = 499483 1s = 500517
+		BITSREAD = 1000000 0s = 499533 1s = 500467
+		BITSREAD = 1000000 0s = 499577 1s = 500423
+		BITSREAD = 1000000 0s = 500002 1s = 499998
+		BITSREAD = 1000000 0s = 499534 1s = 500466
+		BITSREAD = 1000000 0s = 500262 1s = 499738
+		BITSREAD = 1000000 0s = 498664 1s = 501336
+		BITSREAD = 1000000 0s = 500549 1s = 499451
+		BITSREAD = 1000000 0s = 500581 1s = 499419
+		BITSREAD = 1000000 0s = 500332 1s = 499668
+		BITSREAD = 1000000 0s = 499585 1s = 500415
+		BITSREAD = 1000000 0s = 499899 1s = 500101
+		BITSREAD = 1000000 0s = 499856 1s = 500144
+		BITSREAD = 1000000 0s = 499253 1s = 500747
+		BITSREAD = 1000000 0s = 500018 1s = 499982
+		BITSREAD = 1000000 0s = 500121 1s = 499879
+		BITSREAD = 1000000 0s = 499896 1s = 500104
+		BITSREAD = 1000000 0s = 499721 1s = 500279
+		BITSREAD = 1000000 0s = 498918 1s = 501082
+		BITSREAD = 1000000 0s = 500534 1s = 499466
+		BITSREAD = 1000000 0s = 500385 1s = 499615
+		BITSREAD = 1000000 0s = 498960 1s = 501040
+		BITSREAD = 1000000 0s = 500357 1s = 499643
+		BITSREAD = 1000000 0s = 500424 1s = 499576
+		BITSREAD = 1000000 0s = 499863 1s = 500137
+		BITSREAD = 1000000 0s = 500044 1s = 499956
+		BITSREAD = 1000000 0s = 500223 1s = 499777
+		BITSREAD = 1000000 0s = 500411 1s = 499589
+		BITSREAD = 1000000 0s = 499429 1s = 500571
+		BITSREAD = 1000000 0s = 500233 1s = 499767
+		BITSREAD = 1000000 0s = 500542 1s = 499458
+		BITSREAD = 1000000 0s = 500552 1s = 499448
+		BITSREAD = 1000000 0s = 499674 1s = 500326
+		BITSREAD = 1000000 0s = 500298 1s = 499702
+		BITSREAD = 1000000 0s = 500713 1s = 499287
+		BITSREAD = 1000000 0s = 500683 1s = 499317
+		BITSREAD = 1000000 0s = 499744 1s = 500256
+		BITSREAD = 1000000 0s = 499621 1s = 500379
+		BITSREAD = 1000000 0s = 499820 1s = 500180
+		BITSREAD = 1000000 0s = 500312 1s = 499688
+		BITSREAD = 1000000 0s = 500046 1s = 499954
+		BITSREAD = 1000000 0s = 499561 1s = 500439
+		BITSREAD = 1000000 0s = 500251 1s = 499749
+		BITSREAD = 1000000 0s = 500295 1s = 499705
+		BITSREAD = 1000000 0s = 499553 1s = 500447
+		BITSREAD = 1000000 0s = 500246 1s = 499754
+		BITSREAD = 1000000 0s = 499976 1s = 500024
+		BITSREAD = 1000000 0s = 500548 1s = 499452
+		BITSREAD = 1000000 0s = 500054 1s = 499946
+		BITSREAD = 1000000 0s = 500146 1s = 499854
+		BITSREAD = 1000000 0s = 499989 1s = 500011
+		BITSREAD = 1000000 0s = 500083 1s = 499917
+		BITSREAD = 1000000 0s = 499281 1s = 500719
+		BITSREAD = 1000000 0s = 499580 1s = 500420
+		BITSREAD = 1000000 0s = 499840 1s = 500160
+		BITSREAD = 1000000 0s = 499797 1s = 500203
+		BITSREAD = 1000000 0s = 499683 1s = 500317
+		BITSREAD = 1000000 0s = 499785 1s = 500215
+		BITSREAD = 1000000 0s = 499709 1s = 500291
+		BITSREAD = 1000000 0s = 500169 1s = 499831
+		BITSREAD = 1000000 0s = 501240 1s = 498760
+		BITSREAD = 1000000 0s = 498908 1s = 501092
+		BITSREAD = 1000000 0s = 500554 1s = 499446
+		BITSREAD = 1000000 0s = 499594 1s = 500406
+		BITSREAD = 1000000 0s = 500313 1s = 499687
+		BITSREAD = 1000000 0s = 499718 1s = 500282
+		BITSREAD = 1000000 0s = 500508 1s = 499492
+		BITSREAD = 1000000 0s = 500309 1s = 499691
+		BITSREAD = 1000000 0s = 500976 1s = 499024
+		BITSREAD = 1000000 0s = 499831 1s = 500169
+		BITSREAD = 1000000 0s = 499340 1s = 500660
+		BITSREAD = 1000000 0s = 499318 1s = 500682
+		BITSREAD = 1000000 0s = 499584 1s = 500416
+		BITSREAD = 1000000 0s = 500045 1s = 499955
+		BITSREAD = 1000000 0s = 499885 1s = 500115
+		BITSREAD = 1000000 0s = 499377 1s = 500623
+		BITSREAD = 1000000 0s = 500593 1s = 499407
+		BITSREAD = 1000000 0s = 500289 1s = 499711
+		BITSREAD = 1000000 0s = 500008 1s = 499992
+		BITSREAD = 1000000 0s = 498844 1s = 501156
+		BITSREAD = 1000000 0s = 500910 1s = 499090
+		BITSREAD = 1000000 0s = 500207 1s = 499793
+		BITSREAD = 1000000 0s = 500449 1s = 499551
+		BITSREAD = 1000000 0s = 499716 1s = 500284
+		BITSREAD = 1000000 0s = 500762 1s = 499238
+		BITSREAD = 1000000 0s = 500683 1s = 499317
+		BITSREAD = 1000000 0s = 498442 1s = 501558
+		BITSREAD = 1000000 0s = 500822 1s = 499178
+		BITSREAD = 1000000 0s = 499575 1s = 500425
+		BITSREAD = 1000000 0s = 499792 1s = 500208
+		BITSREAD = 1000000 0s = 500299 1s = 499701
+		BITSREAD = 1000000 0s = 500013 1s = 499987
+		BITSREAD = 1000000 0s = 500236 1s = 499764
+		BITSREAD = 1000000 0s = 500323 1s = 499677
+		BITSREAD = 1000000 0s = 500560 1s = 499440
+		BITSREAD = 1000000 0s = 499992 1s = 500008
+		BITSREAD = 1000000 0s = 499535 1s = 500465
+		BITSREAD = 1000000 0s = 500741 1s = 499259
+		BITSREAD = 1000000 0s = 500695 1s = 499305
+		BITSREAD = 1000000 0s = 500269 1s = 499731
+		BITSREAD = 1000000 0s = 500120 1s = 499880
+		BITSREAD = 1000000 0s = 499925 1s = 500075
+		BITSREAD = 1000000 0s = 499820 1s = 500180
+		BITSREAD = 1000000 0s = 500388 1s = 499612
+		BITSREAD = 1000000 0s = 499920 1s = 500080
+		BITSREAD = 1000000 0s = 500313 1s = 499687
+		BITSREAD = 1000000 0s = 499570 1s = 500430
+		BITSREAD = 1000000 0s = 499773 1s = 500227
+		BITSREAD = 1000000 0s = 498839 1s = 501161
+		BITSREAD = 1000000 0s = 499792 1s = 500208
+		BITSREAD = 1000000 0s = 500458 1s = 499542
+		BITSREAD = 1000000 0s = 500146 1s = 499854
+		BITSREAD = 1000000 0s = 499534 1s = 500466
+		BITSREAD = 1000000 0s = 500951 1s = 499049
+		BITSREAD = 1000000 0s = 499872 1s = 500128
+		BITSREAD = 1000000 0s = 500935 1s = 499065
+		BITSREAD = 1000000 0s = 499529 1s = 500471
+		BITSREAD = 1000000 0s = 499184 1s = 500816
+		BITSREAD = 1000000 0s = 500150 1s = 499850
+		BITSREAD = 1000000 0s = 500353 1s = 499647
+		BITSREAD = 1000000 0s = 500076 1s = 499924
+		BITSREAD = 1000000 0s = 499750 1s = 500250
+		BITSREAD = 1000000 0s = 499364 1s = 500636
+		BITSREAD = 1000000 0s = 499726 1s = 500274
+		BITSREAD = 1000000 0s = 500266 1s = 499734
+		BITSREAD = 1000000 0s = 500527 1s = 499473
+		BITSREAD = 1000000 0s = 499783 1s = 500217
+		BITSREAD = 1000000 0s = 499751 1s = 500249
+		BITSREAD = 1000000 0s = 499630 1s = 500370
+		BITSREAD = 1000000 0s = 500039 1s = 499961
+		BITSREAD = 1000000 0s = 500120 1s = 499880
+		BITSREAD = 1000000 0s = 499484 1s = 500516
+		BITSREAD = 1000000 0s = 499767 1s = 500233
+		BITSREAD = 1000000 0s = 499581 1s = 500419
+		BITSREAD = 1000000 0s = 499718 1s = 500282
+		BITSREAD = 1000000 0s = 500459 1s = 499541
+		BITSREAD = 1000000 0s = 500141 1s = 499859
+		BITSREAD = 1000000 0s = 499316 1s = 500684
+		BITSREAD = 1000000 0s = 499874 1s = 500126
+		BITSREAD = 1000000 0s = 499890 1s = 500110
+		BITSREAD = 1000000 0s = 500464 1s = 499536
+		BITSREAD = 1000000 0s = 500571 1s = 499429
+		BITSREAD = 1000000 0s = 500367 1s = 499633
+		BITSREAD = 1000000 0s = 499666 1s = 500334
+		BITSREAD = 1000000 0s = 500784 1s = 499216
+		BITSREAD = 1000000 0s = 500056 1s = 499944
+		BITSREAD = 1000000 0s = 500534 1s = 499466
+		BITSREAD = 1000000 0s = 499794 1s = 500206
+		BITSREAD = 1000000 0s = 499340 1s = 500660
+		BITSREAD = 1000000 0s = 499435 1s = 500565
+		BITSREAD = 1000000 0s = 499770 1s = 500230
+		BITSREAD = 1000000 0s = 499664 1s = 500336
+		BITSREAD = 1000000 0s = 499702 1s = 500298
+		BITSREAD = 1000000 0s = 500205 1s = 499795
+		BITSREAD = 1000000 0s = 500456 1s = 499544
+		BITSREAD = 1000000 0s = 499149 1s = 500851
+		BITSREAD = 1000000 0s = 500163 1s = 499837
+		BITSREAD = 1000000 0s = 499570 1s = 500430
+		BITSREAD = 1000000 0s = 499319 1s = 500681
+		BITSREAD = 1000000 0s = 499739 1s = 500261
+		BITSREAD = 1000000 0s = 499602 1s = 500398
+		BITSREAD = 1000000 0s = 500118 1s = 499882
+		BITSREAD = 1000000 0s = 499791 1s = 500209
+		BITSREAD = 1000000 0s = 499407 1s = 500593
+		BITSREAD = 1000000 0s = 500237 1s = 499763
+		BITSREAD = 1000000 0s = 499353 1s = 500647
+		BITSREAD = 1000000 0s = 499747 1s = 500253
+		BITSREAD = 1000000 0s = 499305 1s = 500695
+		BITSREAD = 1000000 0s = 500007 1s = 499993
+		BITSREAD = 1000000 0s = 500135 1s = 499865
+		BITSREAD = 1000000 0s = 500185 1s = 499815
+		BITSREAD = 1000000 0s = 499883 1s = 500117
+		BITSREAD = 1000000 0s = 499633 1s = 500367
+		BITSREAD = 1000000 0s = 499704 1s = 500296
+		BITSREAD = 1000000 0s = 499065 1s = 500935
+		BITSREAD = 1000000 0s = 500512 1s = 499488
+		BITSREAD = 1000000 0s = 499810 1s = 500190
+		BITSREAD = 1000000 0s = 499925 1s = 500075
+		BITSREAD = 1000000 0s = 500629 1s = 499371
+		BITSREAD = 1000000 0s = 500892 1s = 499108
+		BITSREAD = 1000000 0s = 500456 1s = 499544
+		BITSREAD = 1000000 0s = 499726 1s = 500274
+		BITSREAD = 1000000 0s = 499274 1s = 500726
+		BITSREAD = 1000000 0s = 499467 1s = 500533
+		BITSREAD = 1000000 0s = 500435 1s = 499565
+		BITSREAD = 1000000 0s = 499824 1s = 500176
+		BITSREAD = 1000000 0s = 500329 1s = 499671
+		BITSREAD = 1000000 0s = 499751 1s = 500249
+		BITSREAD = 1000000 0s = 500287 1s = 499713
+		BITSREAD = 1000000 0s = 500910 1s = 499090
+		BITSREAD = 1000000 0s = 499444 1s = 500556
+		BITSREAD = 1000000 0s = 500730 1s = 499270
+		BITSREAD = 1000000 0s = 500642 1s = 499358
+		BITSREAD = 1000000 0s = 499782 1s = 500218
+		BITSREAD = 1000000 0s = 499923 1s = 500077
+		BITSREAD = 1000000 0s = 500375 1s = 499625
+		BITSREAD = 1000000 0s = 499694 1s = 500306
+		BITSREAD = 1000000 0s = 499272 1s = 500728
+		BITSREAD = 1000000 0s = 499781 1s = 500219
+		BITSREAD = 1000000 0s = 500163 1s = 499837
+		BITSREAD = 1000000 0s = 500567 1s = 499433
+		BITSREAD = 1000000 0s = 500249 1s = 499751
+		BITSREAD = 1000000 0s = 499839 1s = 500161
+		BITSREAD = 1000000 0s = 499999 1s = 500001
+		BITSREAD = 1000000 0s = 500570 1s = 499430
+		BITSREAD = 1000000 0s = 499769 1s = 500231
+		BITSREAD = 1000000 0s = 499874 1s = 500126
+		BITSREAD = 1000000 0s = 500283 1s = 499717
+		BITSREAD = 1000000 0s = 500275 1s = 499725
+		BITSREAD = 1000000 0s = 500112 1s = 499888
+		BITSREAD = 1000000 0s = 499745 1s = 500255
+		BITSREAD = 1000000 0s = 499271 1s = 500729
+		BITSREAD = 1000000 0s = 500185 1s = 499815
+		BITSREAD = 1000000 0s = 500522 1s = 499478
+		BITSREAD = 1000000 0s = 500685 1s = 499315
+		BITSREAD = 1000000 0s = 500213 1s = 499787
+		BITSREAD = 1000000 0s = 500156 1s = 499844
+		BITSREAD = 1000000 0s = 499979 1s = 500021
+		BITSREAD = 1000000 0s = 500092 1s = 499908
+		BITSREAD = 1000000 0s = 500564 1s = 499436
+		BITSREAD = 1000000 0s = 500443 1s = 499557
+		BITSREAD = 1000000 0s = 500186 1s = 499814
+		BITSREAD = 1000000 0s = 500778 1s = 499222
+		BITSREAD = 1000000 0s = 500123 1s = 499877
+		BITSREAD = 1000000 0s = 499788 1s = 500212
+		BITSREAD = 1000000 0s = 499904 1s = 500096
+		BITSREAD = 1000000 0s = 499564 1s = 500436
+		BITSREAD = 1000000 0s = 499908 1s = 500092
+		BITSREAD = 1000000 0s = 500164 1s = 499836
+		BITSREAD = 1000000 0s = 500344 1s = 499656
+		BITSREAD = 1000000 0s = 500867 1s = 499133
+		BITSREAD = 1000000 0s = 499457 1s = 500543
+		BITSREAD = 1000000 0s = 500526 1s = 499474
+		BITSREAD = 1000000 0s = 500329 1s = 499671
+		BITSREAD = 1000000 0s = 499628 1s = 500372
+		BITSREAD = 1000000 0s = 499875 1s = 500125
+		BITSREAD = 1000000 0s = 500318 1s = 499682
+		BITSREAD = 1000000 0s = 499065 1s = 500935
+		BITSREAD = 1000000 0s = 499937 1s = 500063
+		BITSREAD = 1000000 0s = 500175 1s = 499825
+		BITSREAD = 1000000 0s = 499747 1s = 500253
+		BITSREAD = 1000000 0s = 499115 1s = 500885
+		BITSREAD = 1000000 0s = 499849 1s = 500151
+		BITSREAD = 1000000 0s = 500690 1s = 499310
+		BITSREAD = 1000000 0s = 500807 1s = 499193
+		BITSREAD = 1000000 0s = 500194 1s = 499806
+		BITSREAD = 1000000 0s = 500993 1s = 499007
+		BITSREAD = 1000000 0s = 500117 1s = 499883
+		BITSREAD = 1000000 0s = 500305 1s = 499695
+		BITSREAD = 1000000 0s = 499574 1s = 500426
+		BITSREAD = 1000000 0s = 500415 1s = 499585
+		BITSREAD = 1000000 0s = 500045 1s = 499955
+		BITSREAD = 1000000 0s = 499853 1s = 500147
+		BITSREAD = 1000000 0s = 500099 1s = 499901
+		BITSREAD = 1000000 0s = 499551 1s = 500449
+		BITSREAD = 1000000 0s = 499419 1s = 500581
+		BITSREAD = 1000000 0s = 500653 1s = 499347
+		BITSREAD = 1000000 0s = 500566 1s = 499434
+		BITSREAD = 1000000 0s = 499590 1s = 500410
+		BITSREAD = 1000000 0s = 499787 1s = 500213
+		BITSREAD = 1000000 0s = 499284 1s = 500716
+		BITSREAD = 1000000 0s = 499527 1s = 500473
+		BITSREAD = 1000000 0s = 499657 1s = 500343
+		BITSREAD = 1000000 0s = 500532 1s = 499468
+		BITSREAD = 1000000 0s = 500222 1s = 499778
+		BITSREAD = 1000000 0s = 499888 1s = 500112
+		BITSREAD = 1000000 0s = 499966 1s = 500034
+		BITSREAD = 1000000 0s = 499273 1s = 500727
+		BITSREAD = 1000000 0s = 499764 1s = 500236
+		BITSREAD = 1000000 0s = 499261 1s = 500739
+		BITSREAD = 1000000 0s = 500785 1s = 499215
+		BITSREAD = 1000000 0s = 500425 1s = 499575
+		BITSREAD = 1000000 0s = 499951 1s = 500049
+		BITSREAD = 1000000 0s = 500456 1s = 499544
+		BITSREAD = 1000000 0s = 499519 1s = 500481
+		BITSREAD = 1000000 0s = 500227 1s = 499773
+		BITSREAD = 1000000 0s = 499828 1s = 500172
+		BITSREAD = 1000000 0s = 499179 1s = 500821
+		BITSREAD = 1000000 0s = 499615 1s = 500385
+		BITSREAD = 1000000 0s = 499788 1s = 500212
+		BITSREAD = 1000000 0s = 500795 1s = 499205
+		BITSREAD = 1000000 0s = 499922 1s = 500078
+		BITSREAD = 1000000 0s = 499908 1s = 500092
+		BITSREAD = 1000000 0s = 499400 1s = 500600
+		BITSREAD = 1000000 0s = 499753 1s = 500247
+		BITSREAD = 1000000 0s = 499650 1s = 500350
+		BITSREAD = 1000000 0s = 500132 1s = 499868
+		BITSREAD = 1000000 0s = 499399 1s = 500601
+		BITSREAD = 1000000 0s = 499210 1s = 500790
+		BITSREAD = 1000000 0s = 499586 1s = 500414
+		BITSREAD = 1000000 0s = 500544 1s = 499456
+		BITSREAD = 1000000 0s = 499692 1s = 500308
+		BITSREAD = 1000000 0s = 499239 1s = 500761
+		BITSREAD = 1000000 0s = 499297 1s = 500703
+		BITSREAD = 1000000 0s = 500199 1s = 499801
+		BITSREAD = 1000000 0s = 499577 1s = 500423
+		BITSREAD = 1000000 0s = 500399 1s = 499601
+		BITSREAD = 1000000 0s = 499549 1s = 500451
+		BITSREAD = 1000000 0s = 499558 1s = 500442
+		BITSREAD = 1000000 0s = 500397 1s = 499603
+		BITSREAD = 1000000 0s = 499559 1s = 500441
+		BITSREAD = 1000000 0s = 499594 1s = 500406
+		BITSREAD = 1000000 0s = 500209 1s = 499791
+		BITSREAD = 1000000 0s = 499615 1s = 500385
+		BITSREAD = 1000000 0s = 499573 1s = 500427
+		BITSREAD = 1000000 0s = 500345 1s = 499655
+		BITSREAD = 1000000 0s = 500726 1s = 499274
+		BITSREAD = 1000000 0s = 500335 1s = 499665
+		BITSREAD = 1000000 0s = 499802 1s = 500198
+		BITSREAD = 1000000 0s = 499984 1s = 500016
+		BITSREAD = 1000000 0s = 499044 1s = 500956
+		BITSREAD = 1000000 0s = 499164 1s = 500836
+		BITSREAD = 1000000 0s = 499414 1s = 500586
+		BITSREAD = 1000000 0s = 499485 1s = 500515
+		BITSREAD = 1000000 0s = 500405 1s = 499595
+		BITSREAD = 1000000 0s = 499908 1s = 500092
+		BITSREAD = 1000000 0s = 499825 1s = 500175
+		BITSREAD = 1000000 0s = 500140 1s = 499860
+		BITSREAD = 1000000 0s = 500124 1s = 499876
+		BITSREAD = 1000000 0s = 500681 1s = 499319
+		BITSREAD = 1000000 0s = 499670 1s = 500330
+		BITSREAD = 1000000 0s = 499066 1s = 500934
+		BITSREAD = 1000000 0s = 500352 1s = 499648
+		BITSREAD = 1000000 0s = 500417 1s = 499583
+		BITSREAD = 1000000 0s = 500336 1s = 499664
+		BITSREAD = 1000000 0s = 500329 1s = 499671
+		BITSREAD = 1000000 0s = 501342 1s = 498658
+		BITSREAD = 1000000 0s = 499076 1s = 500924
+		BITSREAD = 1000000 0s = 500558 1s = 499442
+		BITSREAD = 1000000 0s = 501084 1s = 498916
+		BITSREAD = 1000000 0s = 500014 1s = 499986
+		BITSREAD = 1000000 0s = 500717 1s = 499283
+		BITSREAD = 1000000 0s = 500894 1s = 499106
+		BITSREAD = 1000000 0s = 500935 1s = 499065
+		BITSREAD = 1000000 0s = 499811 1s = 500189
+		BITSREAD = 1000000 0s = 500084 1s = 499916
+		BITSREAD = 1000000 0s = 500461 1s = 499539
+		BITSREAD = 1000000 0s = 500539 1s = 499461
+		BITSREAD = 1000000 0s = 500250 1s = 499750
+		BITSREAD = 1000000 0s = 500409 1s = 499591
+		BITSREAD = 1000000 0s = 500324 1s = 499676
+		BITSREAD = 1000000 0s = 500079 1s = 499921
+		BITSREAD = 1000000 0s = 499793 1s = 500207
+		BITSREAD = 1000000 0s = 500274 1s = 499726
+		BITSREAD = 1000000 0s = 499535 1s = 500465
+		BITSREAD = 1000000 0s = 499340 1s = 500660
+		BITSREAD = 1000000 0s = 499739 1s = 500261
+		BITSREAD = 1000000 0s = 499542 1s = 500458
+		BITSREAD = 1000000 0s = 499892 1s = 500108
+		BITSREAD = 1000000 0s = 499925 1s = 500075
+		BITSREAD = 1000000 0s = 500155 1s = 499845
+		BITSREAD = 1000000 0s = 500187 1s = 499813
+		BITSREAD = 1000000 0s = 499324 1s = 500676
+		BITSREAD = 1000000 0s = 499719 1s = 500281
+		BITSREAD = 1000000 0s = 499877 1s = 500123
+		BITSREAD = 1000000 0s = 499105 1s = 500895
+		BITSREAD = 1000000 0s = 499921 1s = 500079
+		BITSREAD = 1000000 0s = 500797 1s = 499203
+		BITSREAD = 1000000 0s = 500993 1s = 499007
+		BITSREAD = 1000000 0s = 500284 1s = 499716
+		BITSREAD = 1000000 0s = 500490 1s = 499510
+		BITSREAD = 1000000 0s = 499188 1s = 500812
+		BITSREAD = 1000000 0s = 499668 1s = 500332
+		BITSREAD = 1000000 0s = 499904 1s = 500096

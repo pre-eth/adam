@@ -6,12 +6,12 @@
  ▄▀▀▀▀█▄   ██    ██  ▄▀▀▀▀█▄   █ ▀█▀ ██  
 ▄█▄  ▄██▄ ▄██▄▄▄█▀  ▄█▄  ▄██▄ ▄█▄ █ ▄██▄ 
 
-v1.3.5
+v1.4.0
 
 <b>Use at your own risk</b>. Criticism and suggestions are welcome.
 </pre>         
 
-ADAM is an actively developed cryptographically secure pseudorandom number generator (CSPRNG) originally inspired by ISAAC64. At the heart of the generator is an implementation of the algorithm described in [François M et al. Pseudo-random number generator based on mixing of three chaotic maps. Commun Nonlinear Sci Numer Simulat (2013)](https://doi.org/10.1016/j.cnsns.2013.08.032), which uses a chaotic function over multiple iterations to produce random bits with strong cryptographic properties. ADAM incorporates parts of ISAAC’s logic into this algorithm where it is applicable to form a compact number generation scheme that’s easy to use, tune, and test.
+ADAM is an actively developed cryptographically secure pseudorandom number generator (CSPRNG) originally inspired by ISAAC64. At the heart of the generator is an optimized implementation of the algorithm described in [François M et al. Pseudo-random number generator based on mixing of three chaotic maps. Commun Nonlinear Sci Numer Simulat (2013)](https://doi.org/10.1016/j.cnsns.2013.08.032), which uses a chaotic function over multiple iterations to produce random bits with strong cryptographic properties. ADAM incorporates parts of ISAAC’s logic into this algorithm where it is applicable to form a compact number generation scheme that’s easy to use, tune, and test.
 
 Also, just like ISAAC, ADAM is a backronym that describes its steps:
 
@@ -25,17 +25,16 @@ You can find a deeper dive into the algorithm behind the number generation proce
 ## FEATURES
 
 - Avoids brute force and differential attacks
-- Only two (optional) input parameters: one 64-bit seed and one 64-bit nonce
+- Only two (optional) input parameters: one 256-bit seed and one 64-bit nonce
 - Space Complexity: O(N)
 - Output sequence is irreversible
-- Easy interface for bit generation in both ASCII and binary form. Output up to 5GB at a time.
+- Easy interface for bit generation in both ASCII and binary form. Output up to 1GB at a time.
 - Alternatively, stream bits directly to the `stdin` of your own programs, RNG test suites, etc.
 - Extract different widths of numbers from the buffer
 - Generate RFC 4122 compliant UUID’s
 - View all generated numbers at once
-- Reports execution time for number generation process
 - Continuously stream and regenerate random numbers
-- Uses SIMD acceleration where applicable (AVX2/AVX-512F)
+- Uses SIMD acceleration where applicable (ARM NEON or AVX2/AVX-512F)
 
 ### Coming Soon!
 
@@ -84,10 +83,11 @@ The following options are available:
     -w    Desired size (u8, u16, u32, u64) of returned numbers (default width is u64)
     -d    Dump the whole buffer
     -b    Just bits...literally
-    -a    Assess a binary or ASCII sample of 1000000 bits (1 MB) written to a
-          filename you provide. You can choose a multiplier within [1,5000]
+    -a    Assess a binary or ASCII sample of 1000000 bits (1 Mb) written to a
+          filename you provide. You can choose a multiplier within [1,8000]
     -l    Live stream of continuously generated numbers
     -x    Print numbers in hexadecimal format with leading prefix
+    -o    Print numbers in octal format with leading prefix
 
 
 ## But is it REALLY secure?
@@ -111,14 +111,14 @@ Click on a test to learn more.
 | Status            | Name        | Description | 
 | ------------------| ----------- | ----------- | 
 | ⌛ SOON | [chi.c](http://burtleburtle.net/bob/rand/testsfor.html) | From Bob Jenkins (author of ISAAC), calculates the distributions for the frequency, gap, and run tests exactly
-| ✅ **PASS**  | [NIST STS](https://csrc.nist.gov/projects/random-bit-generation/documentation-and-software) | Set of statistical tests of randomness for generators intended for cryptographic applications 
 | ⌛ SOON | [ent](https://www.fourmilab.ch/random) | Calculates various values for a supplied pseudo random sequence like entropy, arithmetic mean, Monte Carlo value for pi, and more.
+| ✅ **PASS**  | [NIST STS](https://csrc.nist.gov/projects/random-bit-generation/documentation-and-software) | Set of statistical tests of randomness for generators intended for cryptographic applications 
 | ✅ **PASS** | [gjrand](https://gjrand.sourceforge.net) | Test suites for uniform bits, uniform floating point numbers, and normally distributed numbers, along with some other minor tests. Supposedly pretty tough!
 | ✅ **PASS**  | [Dieharder](https://webhome.phy.duke.edu/~rgb/General/dieharder.php) | Cleaned up version of George Marsaglia's DIEHARD suite plus the STS tests from above and RGB tests. Mostly of historical interest.
 
 Testing with TestU01 will probably require some kind of port as it only accepts 32-bit inputs. PractRand is the crown jewel and will be taken on once all these other tests have been passed at all the bit sequence lengths.
 
-For details on how to run the tests above, please refer to the `TESTING.md`.
+For details on how to run the tests above, please refer to `TESTING.md`.
 
 ## CONTRIBUTING
 
