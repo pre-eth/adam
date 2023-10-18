@@ -13,6 +13,14 @@
   matrix
 
 */
+/* 
+  The algorithm requires at least the construction of 3 maps of size BUF_SIZE
+  Offsets logically represent each individual map, but it's all one buffer
+
+  static is necessary because otherwise buffer is initiated with junk that 
+  removes the deterministic nature of the algorithm
+*/
+static u64 buffer[BUF_SIZE * 3] ALIGN(64);
 
 FORCE_INLINE static u8 err(const char *s) {
   return fprintf(stderr, "\033[1;31m%s\033[m\n", s);
@@ -21,9 +29,9 @@ FORCE_INLINE static u8 err(const char *s) {
 FORCE_INLINE static void rng_init(rng_data *data) {
   getentropy(&data->seed[0], sizeof(u64) << 2); 
   data->nonce = ((u64) time(NULL)) ^ GOLDEN_RATIO;
+  data->buffer = &buffer[0];
   data->aa = data->bb = 0UL;
   data->reseed = FALSE;
-  data->durations[0] = data->durations[1] = data->durations[2] = data->durations[3] = 0.0;
 }
 
 int main(int argc, char **argv) {
@@ -120,18 +128,17 @@ int main(int argc, char **argv) {
   }
 
   adam(&data);
-  u64 *buf_ptr = data.buffer;
 
   // Need to do this for default precision because 
   // we can't rely on overflow arithmetic :(
   u8 inc = (precision == 64);
   print_buffer:
-    printf(fmt, buf_ptr[idx] & mask);
+    printf(fmt, buffer[idx] & mask);
 
     if (--results > 0) {
       printf(",\n");
-      buf_ptr[idx] >>= precision;
-      idx += (inc || !buf_ptr[idx]);
+      buffer[idx] >>= precision;
+      idx += (inc || !buffer[idx]);
       goto print_buffer;
     }
 

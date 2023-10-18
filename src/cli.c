@@ -253,11 +253,10 @@ static u8 stream_ascii(FILE *fptr, const u64 limit, rng_data *data) {
   register short leftovers = limit & (SEQ_SIZE - 1);
 
   char *restrict _bptr = &bitbuffer[0];
-  u64 *restrict _ptr = &data->buffer[0];
 
   while (rate > 0) {
     adam(data);
-    print_chunks(fptr, _bptr, _ptr);
+    print_chunks(fptr, _bptr, &data->buffer[0]);
     --rate;
   } 
 
@@ -280,7 +279,7 @@ static u8 stream_ascii(FILE *fptr, const u64 limit, rng_data *data) {
 
       l = 0;
       do {
-        num = *_ptr++;
+        num = *data->buffer++;
         print_binary(_bptr + l, num);
       } while ((l += 64) < limit);
 
@@ -306,13 +305,13 @@ static u8 stream_bytes(FILE *fptr, const u64 limit, rng_data *data) {
 
   while (LIKELY(rate > 0)) {
     adam(data);
-    fwrite(data->buffer, 1, BUF_SIZE * sizeof(u64), fptr);
+    fwrite(data->buffer, 8, BUF_SIZE, fptr);
     --rate;
   } 
 
   if (LIKELY(leftovers > 0)) {
     adam(data);
-    fwrite(data->buffer, 1, BUF_SIZE * sizeof(u64), fptr);
+    fwrite(data->buffer, 8, BUF_SIZE, fptr);
   }
 
   return 0;
@@ -340,9 +339,9 @@ u8 assess(const u16 limit, rng_data *data) {
     printf("\033[mFile type (1 = ASCII, 2 = BINARY): \033[1;33m");
     scanf(" %c", &c);
     if (c == '1')
-      file_type = "w+", fn = &stream_ascii;
+      file_type = "w+", fn = stream_ascii;
     else if (c == '2')
-      file_type = "wb+", fn = &stream_bytes;
+      file_type = "wb+", fn = stream_bytes;
     else {
       fputs("\033[1;31mValue must be 1 or 2\n", stderr);
       goto get_file_type;
@@ -358,13 +357,8 @@ u8 assess(const u16 limit, rng_data *data) {
 
   fclose(fptr);
 
-  register double duration = data->durations[0] + data->durations[1] + data->durations[2] + data->durations[3];
-
-  printf("Performance: ACC %lfs DIF %lfs APP %lfs MIX %lfs\n", data->durations[0], data->durations[1], 
-          data->durations[2], data->durations[3]);
-
-  printf("\n\033[1;36mWrote %llu bits to %s file (%lfs)\033[m\n", 
-                total, (c == '1') ? "ASCII" : "BINARY", duration);
+  printf("\n\033[1mWrote %llu bits to %s file \033[36m\"%s\"\033[m\n", 
+                total, (c == '1') ? "ASCII" : "BINARY", file_name);
 
   return 0;
 }
