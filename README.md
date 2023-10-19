@@ -11,11 +11,11 @@ v1.4.0
 <b>Use at your own risk</b>. Criticism and suggestions are welcome.
 </pre>         
 
-ADAM is an actively developed cryptographically secure pseudorandom number generator (CSPRNG) originally inspired by ISAAC64. At the heart of the generator is an optimized implementation of the algorithm described in [François M et al. Pseudo-random number generator based on mixing of three chaotic maps. Commun Nonlinear Sci Numer Simulat (2013)](https://doi.org/10.1016/j.cnsns.2013.08.032), which uses a chaotic function over multiple iterations to produce random bits with strong cryptographic properties. ADAM incorporates parts of ISAAC’s logic into this algorithm where it is applicable to form a compact number generation scheme that’s easy to use, tune, and test.
+ADAM is an actively developed cryptographically secure pseudorandom number generator (CSPRNG) originally inspired by ISAAC64. At the heart of the generator is an optimized implementation of the algorithm described in the paper [François M et al. Pseudo-random number generator based on mixing of three chaotic maps. Commun Nonlinear Sci Numer Simulat (2013)](https://doi.org/10.1016/j.cnsns.2013.08.032), which uses a chaotic function over multiple iterations to produce random bits with strong cryptographic properties. ADAM incorporates parts of ISAAC’s logic into this algorithm where it is applicable to form a compact number generation scheme that’s easy to use, tune, and test.
 
 Also, just like ISAAC, ADAM is a backronym that describes its steps:
 
-**A** ccumulate content for the input vector and set of seeds <br>
+**A** ccumulate content for the input vector and set of chaotic seeds <br>
 **D** iffuse the buffer with logic adapted from ISAAC <br>
 **A** pply the necessary iterations of the chaotic function <br>
 **M** ix the chaotic maps in the buffer together to produce the output vector

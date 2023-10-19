@@ -238,7 +238,6 @@ static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
 
 FORCE_INLINE static void diffuse(u64 *_ptr ,const u64 nonce) {
   // Following code is derived from Bob Jenkins, author of ISAAC64
-
   register u64 a, b, c, d, e, f, g, h;
   a = b = c = d = e = f = g = h = nonce;
 
