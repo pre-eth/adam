@@ -33,9 +33,6 @@
     #define SIMD_CMPEQ8       vceqq_u8
     #define SIMD_AND8         vandq_u8
     #define SIMD_LOAD64       vld1q_u64
-    #define SIMD_LOAD64x2     vld1q_u64_x2
-    #define SIMD_STORE2Q64    vst2q_u64
-    #define SIMD_STORE64x2    vst1q_u64_x2
     #define SIMD_LOAD64x4     vld1q_u64_x4
     #define SIMD_STORE64x4    vst1q_u64_x4
     #define SIMD_SET64        vdup_n_u64
@@ -45,15 +42,12 @@
     #define SIMD_XOR64        veorq_u64
     #define SIMD_CAST64       vreinterpretq_u64_f64
     #define SIMD_COMBINE64    vcombine_u64
-    #define SIMD_LOAD2PD      vld2q_f64
-    #define SIMD_STORE2PD     vst1q_f64_x2
     #define SIMD_STORE4PD     vst1q_f64_x4
     #define SIMD_LOAD4PD      vld1q_f64_x4
     #define SIMD_CREATEPD     vcreate_f64
     #define SIMD_COMBINEPD    vcombine_f64
     #define SIMD_SETPD        vdup_n_f64
     #define SIMD_SETQPD       vdupq_n_f64
-    #define SIMD_SET4PD       vld4q_dup_f64
     #define SIMD_ADDPD        vaddq_f64
     #define SIMD_SUBPD        vsubq_f64
     #define SIMD_MULPD        vmulq_f64
@@ -82,10 +76,6 @@
       s1.val[1] = SIMD_ADD64(s2.val[1], s3), \
       s1.val[2] = SIMD_ADD64(s2.val[2], s3), \
       s1.val[3] = SIMD_ADD64(s2.val[3], s3)
-
-    #define SIMD_ADD2RQ64(s1, s2, s3) \
-      s1.val[0] = SIMD_ADD64(s2.val[0], s3.val[0]), \
-      s1.val[1] = SIMD_ADD64(s2.val[1], s3.val[1]) \
 
     #define SIMD_ADD4RQ64(s1, s2, s3) \
       s1.val[0] = SIMD_ADD64(s2.val[0], s3.val[0]), \
@@ -123,10 +113,6 @@
       r.val[2] = SIMD_COMBINE64(SIMD_SET64(m[a[4]]), SIMD_SET64(m[a[5]])), \
       r.val[3] = SIMD_COMBINE64(SIMD_SET64(m[a[6]]), SIMD_SET64(m[a[7]]))
 
-    #define SIMD_SCALARMUL2PD(s1, d) \
-      s1.val[0] = SIMD_SMULPD(s1.val[0], d), \
-      s1.val[1] = SIMD_SMULPD(s1.val[1], d)
-
     #define SIMD_SCALARMUL4PD(s1, s2, d) \
       s1.val[0] = SIMD_SMULPD(s2.val[0], d), \
       s1.val[1] = SIMD_SMULPD(s2.val[1], d), \
@@ -138,10 +124,6 @@
       s1.val[1] = SIMD_SUBPD(s2, s3.val[1]), \
       s1.val[2] = SIMD_SUBPD(s2, s3.val[2]), \
       s1.val[3] = SIMD_SUBPD(s2, s3.val[3])
-
-    #define SIMD_MUL2RQPD(s1, s2, s3) \
-      s1.val[0] = SIMD_MULPD(s2.val[0], s3.val[0]), \
-      s1.val[1] = SIMD_MULPD(s2.val[1], s3.val[1])
 
     #define SIMD_MUL4RQPD(s1, s2, s3) \
       s1.val[0] = SIMD_MULPD(s2.val[0], s3.val[0]), \
