@@ -145,17 +145,20 @@ int main(int argc, char **argv) {
 
   show_params:
     if (UNLIKELY(show_seed)) {
-      FILE *seed_file = fopen("seed.adam", "wb+");
-      if (!seed_file)
-        return err("Could not create file for writing seed.");
-      fwrite(data.seed, sizeof(u64), 4, seed_file);
-      fclose(seed_file);
-      printf("\033[1;36mSEED WRITTEN TO: \"seed.adam\"\033[m");
+      char file_name[65];
+      open_file(&file_name[0], FALSE);    
+      FILE *fptr = fopen(file_name, "wb+");
+      if (UNLIKELY(fptr == NULL))
+        return fputs("\033[1;31mError while creating file. Exiting.\033[m\n", stderr);
+
+      fwrite(seed, sizeof(u64), 4, fptr);
+      fclose(fptr);
+
+      printf("\033[1;36mSEED\033[m: Written to file \033[36m%s\033[m\n", file_name);
     }
-      
 
     if (UNLIKELY(show_nonce))
-      printf("\033[1;36mNONCE:\033[m %llu\n", data.nonce);
+      printf("\033[1;36mNONCE\033[m: %llu\n", nonce);
 
   return 0;
 }
