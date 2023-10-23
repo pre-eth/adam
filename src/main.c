@@ -28,7 +28,8 @@ FORCE_INLINE static u8 err(const char *s) {
 
 FORCE_INLINE static void rng_init(rng_data *data) {
   getentropy(&data->seed[0], sizeof(u64) << 2); 
-  data->nonce = ((u64) time(NULL)) ^ GOLDEN_RATIO;
+  getentropy(&data->nonce, sizeof(u64));
+  data->nonce ^= ((u64) time(NULL)) ^ GOLDEN_RATIO;
   data->buffer = &buffer[0];
   data->aa = data->bb = 0UL;
   data->reseed = FALSE;
@@ -49,6 +50,9 @@ int main(int argc, char **argv) {
 
   rng_data data;
   rng_init(&data);
+  u64 nonce = data.nonce;
+  u64 seed[4];
+  __builtin_memcpy(&seed[0], &data.seed[0], sizeof(u64) << 2);
 
   register short opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
@@ -78,7 +82,8 @@ int main(int argc, char **argv) {
       break;      
       case 'w':
         precision = a_to_u(optarg, 8, 64);
-        if (LIKELY(!(precision & (precision - 1)))) {
+        if (UNLIKELY(precision & (precision - 1)))
+          return err("Width must be either 8, 16, 32, or 64 bits");
           mask = (1UL << precision) - 1;
           /*
             This line will basically "floor" results to the max value of results
@@ -87,15 +92,10 @@ int main(int argc, char **argv) {
           */
           const u8 max = SEQ_SIZE >> CTZ(precision);
           results -= (results > max) * (results - max);
-          break;  
-        } 
-        return err("Width must be either 8, 16, 32, or 64 bits");
       break;
       case 'r':
-        if (optarg)
-          results = a_to_u(optarg, 1, SEQ_SIZE >> CTZ(precision));   
-        else
-          results = SEQ_SIZE >> CTZ(precision);
+        // Return all results if option is set but no argument provided
+        results = (optarg) ? a_to_u(optarg, 1, SEQ_SIZE >> CTZ(precision)) : SEQ_SIZE >> CTZ(precision);  
       break;
       case 's':
         show_seed = (optarg == NULL);
@@ -106,7 +106,6 @@ int main(int argc, char **argv) {
           fread(data.seed, sizeof(u64), 4, seed_file);
           fclose(seed_file);
         }
-          
       break;
       case 'n':
         show_nonce = (optarg == NULL);
