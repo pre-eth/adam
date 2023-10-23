@@ -122,6 +122,27 @@ u64 a_to_u(const char *s, const u64 min, const u64 max) {
   return (val >= min || val < max - 1) ? val : min;
 }
 
+u8 open_file(char *file_name, u8 ask_type) {
+  get_file_name:
+    printf("File name: \033[1;33m");
+    if (!scanf("%64s", &file_name[0])) {
+      fputs("\033[m\033[1;31mPlease enter a valid file name\033[m\n", stderr);
+      goto get_file_name;
+    }
+  char c = '2';
+  if (ask_type) {
+    get_file_type:  
+      printf("\033[mFile type (1 = ASCII, 2 = BINARY): \033[1;33m");
+      scanf(" %c", &c);
+      if (c != '1' && c != '2') {
+        fputs("\033[1;31mValue must be 1 or 2\n", stderr);
+        goto get_file_type;
+      }
+  }
+
+  return (u8)c - 49;
+}
+
 u8 uuid(u8 limit, rng_data *data) {
   adam(data);
 
@@ -241,9 +262,7 @@ FORCE_INLINE static void print_chunks(FILE *fptr, char *restrict _bptr, const u6
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
 }
 
-static u8 stream_ascii(FILE *fptr, const u64 limit, rng_data *data) {
-  if (UNLIKELY(fptr == NULL)) return 1;
-  
+static u8 stream_ascii(FILE *fptr, const u64 limit, rng_data *data) { 
   /*
     Split limit based on how many calls (if needed)
     we make to print_chunks, which prints the bits of 
@@ -294,8 +313,6 @@ static u8 stream_ascii(FILE *fptr, const u64 limit, rng_data *data) {
 }
 
 static u8 stream_bytes(FILE *fptr, const u64 limit, rng_data *data) {   
-  if (UNLIKELY(fptr == NULL)) return 1;
-
   /*
     Split limit based on how many calls we need to make
     to write the bytes of an entire buffer directly
@@ -322,43 +339,24 @@ u8 bits(rng_data *data) {
 }
 
 u8 assess(const u16 limit, rng_data *data) {
-  FILE *fptr;
-  const char *file_type;
-  u8 (*fn)(FILE*, const u64, rng_data*);
-  char c;
-  char file_name[65];
-
-  get_file_name:
-    printf("File name: \033[1;33m");
-    if (!scanf("%64s", &file_name[0])) {
-      fputs("\033[m\033[1;31mPlease enter a valid file name\033[m\n", stderr);
-      goto get_file_name;
-    }
-
-  get_file_type:  
-    printf("\033[mFile type (1 = ASCII, 2 = BINARY): \033[1;33m");
-    scanf(" %c", &c);
-    if (c == '1')
-      file_type = "w+", fn = stream_ascii;
-    else if (c == '2')
-      file_type = "wb+", fn = stream_bytes;
-    else {
-      fputs("\033[1;31mValue must be 1 or 2\n", stderr);
-      goto get_file_type;
-    }
-
-  fptr = fopen(file_name, file_type);
-  fputs("\033[m", stdout);
-
   const u64 total = limit * ASSESS_BITS;
 
-  if (UNLIKELY(fn(fptr, total, data)))
+  u8 (*fn)(FILE*, const u64, rng_data*);
+  char file_name[65];
+
+  u8 res = open_file(&file_name[0], TRUE);    
+  FILE *fptr = fopen(file_name, res ? "wb+" : "w+");
+  if (UNLIKELY(fptr == NULL))
     return fputs("\033[1;31mError while creating file. Exiting.\033[m\n", stderr);
 
+  fn = res ? stream_bytes : stream_ascii;
+  
+  fputs("\033[m", stdout);
+  fn(fptr, total, data);
   fclose(fptr);
 
-  printf("\n\033[1mWrote %llu bits to %s file \033[36m\"%s\"\033[m\n", 
-                total, (c == '1') ? "ASCII" : "BINARY", file_name);
+  printf("\n\033[1mWrote \033[36m%llu\033[m bits to %s file \033[36m%s\033[m (%lfs)\n", 
+                total, res ? "BINARY" : "ASCII", file_name, data->duration);
 
   return 0;
 }

@@ -36,6 +36,7 @@
   u8  bits(rng_data *data);
   u8  assess(const u16 limit, rng_data *data);
   u64 a_to_u(const char *s, const u64 min, const u64 max);
+  u8  open_file(char *file_name, u8 ask_type);
   u8  help();
   u8  uuid(u8 limit, rng_data *data);
   u8  examine(u64 *restrict _ptr, const u16 limit, u64 *seed, u64 *nonce);
