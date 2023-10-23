@@ -100,6 +100,5 @@
   } ALIGN(SIMD_LEN) rng_data;
 
   // Initiates RNG algorithm with user provided seed and nonce
-  // Returns duration of generation
   void adam(rng_data *data);
 #endif
