@@ -1,6 +1,7 @@
 #ifndef UTIL_H
 #define UTIL_H
   #include <time.h>           // for clock_t, clock(), CLOCKS_PER_SEC
+  #include <stdbool.h>
   
   #ifdef __AARCH64_SIMD__
     #include <arm_acle.h>     // CORE
@@ -190,8 +191,6 @@
     #endif
   #endif
 
-  #define TRUE              1
-  #define FALSE             0
   #define ALIGN(x)          __attribute__ ((aligned (x)))
   #define FORCE_INLINE	    inline __attribute__((always_inline))
   #define CTZ               __builtin_ctz 
