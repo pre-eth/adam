@@ -23,7 +23,8 @@
 static u64 buffer[BUF_SIZE * 3] ALIGN(64);
 
 FORCE_INLINE static u8 err(const char *s) {
-  return fprintf(stderr, "\033[1;31m%s\033[m\n", s);
+  fprintf(stderr, "\033[1;31m%s\033[m\n", s);
+  return 1;
 }
 
 FORCE_INLINE static void rng_init(rng_data *data) {
