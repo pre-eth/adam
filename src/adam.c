@@ -269,14 +269,14 @@ FORCE_INLINE static void diffuse(u64 *_ptr ,const u64 nonce) {
     const dregq one = SIMD_SETQPD(1.0);
 
     const reg64q mask = SIMD_SETQ64(0xFFUL),
-                 inc = SIMD_SETQ64(0x08UL);
+                 inc  = SIMD_SETQ64(0x08UL);
 
     dreg4q  d1, d2, d3;
     reg64q4 r1, r2, scale;
 
     u64 *map_a = _ptr, *map_b = _ptr + BUF_SIZE;
 
-    register u8 rounds = 0, i = 0, j;
+    register u8 rounds = 0, j; 
 
     u64 arr[8] ALIGN(64);
     chaotic_iter:
@@ -318,18 +318,16 @@ FORCE_INLINE static void diffuse(u64 *_ptr ,const u64 nonce) {
      
       // Using two sets of seeds at once
       rounds += 8;
-
-      // Processing 2 iterations at once, so halve ITER
-      if (++i < (ITER >> 1))
-        goto chaotic_iter;
               
       if (rounds < (ROUNDS << 2)) {
-        i = (rounds == (ITER << 3));
+        j = (rounds == (ITER << 3));
+
         map_a += BUF_SIZE;
+
         // reset to start if the third iteration is about to begin
         // otherwise add 256 just like above
-        map_b += ((u16)!i << 8) - ((u16)i << 9);  
-        i = 0; 
+        map_b += ((u16)!j << 8) - ((u16)j << 9);  
+
         goto chaotic_iter;
       } 
   }
@@ -350,7 +348,7 @@ FORCE_INLINE static void diffuse(u64 *_ptr ,const u64 nonce) {
 
     reg r1, scale;
 
-    u64 arr[4] ALIGN(SIMD_LEN);
+    u64 arr[8] ALIGN(SIMD_LEN);
     chaotic_iter:
       d1 = SIMD_LOADPD(&seeds[rounds]);
       j = 0;
