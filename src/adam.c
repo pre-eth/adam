@@ -438,10 +438,12 @@ void adam(rng_data *data) {
   double chseeds[ROUNDS << 2] ALIGN(64);
   data->chseeds = &chseeds[0];
 
+  register clock_t start = clock();
   accumulate(data->buffer, data->seed, data->chseeds);
   diffuse(data->buffer, data->nonce);
   apply(data->buffer, data->chseeds);
   mix(data->buffer); 
+  data->duration += (double)(clock() - start) / (double) CLOCKS_PER_SEC;
 
   if (data->reseed) {
     u64 aa = data->aa, bb = data->bb;
@@ -449,13 +451,14 @@ void adam(rng_data *data) {
 
     u8 i = ((data->seed[0] + data->seed[1]) & 0x7F) ^ ((data->seed[2] + data->seed[3]) & 0x7F);
     u8 j = i + (data->nonce & 0xFF);
+    j += (i == j);
 
-    ISAAC_RNGSTEP(~(aa^(aa<<21)), aa, bb, _ptr, _ptr[i],     _ptr[j],     data->seed[0], data->nonce);
-    ISAAC_RNGSTEP(aa^(aa>>5) ,    aa, bb, _ptr, _ptr[i + 2], _ptr[j - 2], data->seed[1], data->nonce);
-    ISAAC_RNGSTEP(aa^(aa<<12),    aa, bb, _ptr, _ptr[i + 4], _ptr[j - 4], data->seed[2], data->nonce);
-    ISAAC_RNGSTEP(aa^(aa>>33),    aa, bb, _ptr, _ptr[i + 6], _ptr[j - 6], data->seed[3], data->nonce);
+    ISAAC_RNGSTEP(~(aa^(aa<<21)), aa, bb, data->buffer, _ptr[i],     _ptr[j],     data->seed[0], data->nonce);
+    ISAAC_RNGSTEP(aa^(aa>>5) ,    aa, bb, data->buffer, _ptr[i + 2], _ptr[j - 2], data->seed[1], data->nonce);
+    ISAAC_RNGSTEP(aa^(aa<<12),    aa, bb, data->buffer, _ptr[i + 4], _ptr[j - 4], data->seed[2], data->nonce);
+    ISAAC_RNGSTEP(aa^(aa>>33),    aa, bb, data->buffer, _ptr[i + 6], _ptr[j - 6], data->seed[3], data->nonce);
 
-    data->aa = aa + data->seed[aa & 3];
-    data->bb = ++bb + (data->nonce ^ GOLDEN_RATIO); 
+    data->aa = (aa - (aa & 1)) + data->seed[aa & 3];
+    data->bb = (bb + (bb & 1)) + (data->nonce ^ ((u64) time(NULL)) ^ GOLDEN_RATIO); 
   }
 }
