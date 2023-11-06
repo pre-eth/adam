@@ -396,11 +396,11 @@ FORCE_INLINE static void diffuse(u64 *_ptr, const u64 nonce) {
   }
 #endif
 
-#ifdef __AARCH64_SIMD__
-  FORCE_INLINE static void mix(u64 *_ptr) {
-    reg64q4 r1, r2, r3;
-    register u8 i = 0;
+FORCE_INLINE static void mix(u64 *_ptr) {
+  register u8 i = 0;
 
+#ifdef __AARCH64_SIMD__
+    reg64q4 r1, r2, r3;
     do {
       r1 = SIMD_LOAD64x4(&_ptr[i + 256]);
       r2 = SIMD_LOAD64x4(&_ptr[i + 512]);
@@ -408,11 +408,8 @@ FORCE_INLINE static void diffuse(u64 *_ptr, const u64 nonce) {
       SIMD_3XOR4Q64(r1, r2, r3);
       SIMD_STORE64x4(&_ptr[i], r3);   
     } while ((i += 8 - (i == 248)) < BUF_SIZE - 1);
-  }
 #else
-  FORCE_INLINE static void mix(u64 *_ptr) {
     reg r1, r2;
-    register u8 i = 0;
 
     do {
       r1 = SIMD_SETR64(
@@ -434,8 +431,8 @@ FORCE_INLINE static void diffuse(u64 *_ptr, const u64 nonce) {
 
       i += (SIMD_LEN >> 2) - (i == BUF_SIZE - (SIMD_LEN >> 2));
     } while (i < BUF_SIZE - 1);
-  }
 #endif
+}
 
 void adam(rng_data *data) {
   double chseeds[ROUNDS << 2] ALIGN(64);
