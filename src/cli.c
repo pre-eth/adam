@@ -270,11 +270,14 @@ static u8 stream_ascii(FILE *fptr, const u64 limit, rng_data *data) {
   */ 
   register long int rate = limit >> 14;
   register short leftovers = limit & (SEQ_SIZE - 1);
+  register clock_t start;
 
   char *restrict _bptr = &bitbuffer[0];
 
   while (rate > 0) {
+    start = clock();
     adam(data);
+    data->duration += (double)(clock() - start) / (double) CLOCKS_PER_SEC;
     print_chunks(fptr, _bptr, &data->buffer[0]);
     --rate;
   } 
@@ -292,7 +295,10 @@ static u8 stream_ascii(FILE *fptr, const u64 limit, rng_data *data) {
     register u16 l, limit;
     register u64 num;
 
+    start = clock();
     adam(data);
+    data->duration += (double)(clock() - start) / (double) CLOCKS_PER_SEC;
+    
     print_leftovers:
       limit = (leftovers < BITBUF_SIZE) ? leftovers : BITBUF_SIZE;
 
@@ -319,16 +325,21 @@ static u8 stream_bytes(FILE *fptr, const u64 limit, rng_data *data) {
   */ 
   register long int rate = limit >> 14;
   register short leftovers = limit & (SEQ_SIZE - 1);
+  register clock_t start;
 
   while (LIKELY(rate > 0)) {
+    start = clock();
     adam(data);
-    fwrite(data->buffer, 8, BUF_SIZE, fptr);
+    data->duration += (double)(clock() - start) / (double) CLOCKS_PER_SEC;
+    fwrite(data->buffer, sizeof(u64), BUF_SIZE, fptr);
     --rate;
   } 
 
   if (LIKELY(leftovers > 0)) {
+    start = clock();
     adam(data);
-    fwrite(data->buffer, 8, BUF_SIZE, fptr);
+    data->duration += (double)(clock() - start) / (double) CLOCKS_PER_SEC;
+    fwrite(data->buffer, sizeof(u64), BUF_SIZE, fptr);
   }
 
   return 0;
