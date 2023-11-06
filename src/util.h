@@ -114,6 +114,12 @@
       r.val[2] = SIMD_COMBINE64(SIMD_SET64(m[a[4]]), SIMD_SET64(m[a[5]])), \
       r.val[3] = SIMD_COMBINE64(SIMD_SET64(m[a[6]]), SIMD_SET64(m[a[7]]))
 
+    #define SIMD_ADD4RQPD(s1, s2, s3) \
+      s1.val[0] = SIMD_ADDPD(s2.val[0], s3.val[0]), \
+      s1.val[1] = SIMD_ADDPD(s2.val[1], s3.val[1]), \
+      s1.val[2] = SIMD_ADDPD(s2.val[2], s3.val[2]), \
+      s1.val[3] = SIMD_ADDPD(s2.val[3], s3.val[3])
+
     #define SIMD_SCALARMUL4PD(s1, s2, d) \
       s1.val[0] = SIMD_SMULPD(s2.val[0], d), \
       s1.val[1] = SIMD_SMULPD(s2.val[1], d), \

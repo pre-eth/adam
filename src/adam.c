@@ -78,14 +78,14 @@ static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
       "Be fruitful and multiply, and replenish the earth (Genesis 1:28)"
     */
     u64 IV[8] ALIGN(SIMD_LEN) = {
-      0x4265206672756974ULL ^  seed[0], 
-      0x66756C20616E6420ULL ^ ~seed[0], 
+      0x4265206672756974ULL ^  seed[2], 
+      0x66756C20616E6420ULL ^ ~seed[2], 
       0x6D756C7469706C79ULL ^  seed[1],
       0x2C20616E64207265ULL ^ ~seed[1], 
-      0x706C656E69736820ULL ^  seed[2],
-      0x7468652065617274ULL ^ ~seed[2], 
-      0x68202847656E6573ULL ^  seed[3],
-      0x697320313A323829ULL ^ ~seed[3]
+      0x706C656E69736820ULL ^  seed[3],
+      0x7468652065617274ULL ^ ~seed[3], 
+      0x68202847656E6573ULL ^  seed[0],
+      0x697320313A323829ULL ^ ~seed[0]
     };
 
     reg64q4 r1, r2;
@@ -103,7 +103,8 @@ static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
         SIMD_ADD4RQ64(r2, r1, r1);
         SIMD_XOR4RQ64(r2, r1, r2);
         SIMD_STORE64x4(&map[i + 8], r2);
-        SIMD_ADD4RQ64(r1, r1, r2);
+        SIMD_ADD4RQ64(r1, r2, r2);
+        SIMD_XOR4RQ64(r1, r1, r2);
       } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
 
       ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
@@ -122,16 +123,16 @@ static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
       IV[4] += _ptr[IV[3] & 0xFF], IV[5] += _ptr[IV[2] & 0xFF], 
       IV[6] += _ptr[IV[1] & 0xFF], IV[7] += _ptr[IV[0] & 0xFF];
 
-      seeds.val[0] = SIMD_COMBINEPD(SIMD_SETPD(IV[0] ^ IV[4] ^ GOLDEN_RATIO), SIMD_SETPD(IV[1] ^ IV[5] ^ GOLDEN_RATIO));
-      seeds.val[1] = SIMD_COMBINEPD(SIMD_SETPD(IV[2] ^ IV[6] ^ GOLDEN_RATIO), SIMD_SETPD(IV[3] ^ IV[7] ^ GOLDEN_RATIO)); 
+      seeds.val[0] = SIMD_COMBINEPD(SIMD_SETPD(IV[0] ^ IV[4]), SIMD_SETPD(IV[1] ^ IV[5]));
+      seeds.val[1] = SIMD_COMBINEPD(SIMD_SETPD(IV[2] ^ IV[6]), SIMD_SETPD(IV[3] ^ IV[7])); 
 
-      IV[0] += _ptr[IV[7] & 0xFF], IV[1] += _ptr[IV[6] & 0xFF], 
-      IV[2] += _ptr[IV[5] & 0xFF], IV[3] += _ptr[IV[4] & 0xFF],
-      IV[4] += _ptr[IV[3] & 0xFF], IV[5] += _ptr[IV[2] & 0xFF], 
-      IV[6] += _ptr[IV[1] & 0xFF], IV[7] += _ptr[IV[0] & 0xFF];
+      IV[0] += _ptr[IV[5] & 0xFF], IV[1] += _ptr[IV[4] & 0xFF], 
+      IV[2] += _ptr[IV[3] & 0xFF], IV[3] += _ptr[IV[2] & 0xFF],
+      IV[4] += _ptr[IV[1] & 0xFF], IV[5] += _ptr[IV[0] & 0xFF], 
+      IV[6] += _ptr[IV[7] & 0xFF], IV[7] += _ptr[IV[6] & 0xFF];
 
-      seeds.val[2] = SIMD_COMBINEPD(SIMD_SETPD(IV[0] ^ IV[4] ^ GOLDEN_RATIO), SIMD_SETPD(IV[1] ^ IV[5] ^ GOLDEN_RATIO));
-      seeds.val[3] = SIMD_COMBINEPD(SIMD_SETPD(IV[2] ^ IV[6] ^ GOLDEN_RATIO), SIMD_SETPD(IV[3] ^ IV[7] ^ GOLDEN_RATIO)); 
+      seeds.val[2] = SIMD_COMBINEPD(SIMD_SETPD(IV[1] ^ IV[4]), SIMD_SETPD(IV[0] ^ IV[5]));
+      seeds.val[3] = SIMD_COMBINEPD(SIMD_SETPD(IV[3] ^ IV[6]), SIMD_SETPD(IV[2] ^ IV[7])); 
 
       SIMD_SCALARMUL4PD(seeds, seeds, DIV * LIMIT);
 
@@ -153,14 +154,14 @@ static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
       "Be fruitful and multiply, and replenish the earth (Genesis 1:28)"
     */
     u64 IV[8] ALIGN(SIMD_LEN) = {
-      0x4265206672756974ULL ^  seed[0], 
-      0x66756C20616E6420ULL ^ ~seed[0], 
+      0x4265206672756974ULL ^  seed[2], 
+      0x66756C20616E6420ULL ^ ~seed[2], 
       0x6D756C7469706C79ULL ^  seed[1],
       0x2C20616E64207265ULL ^ ~seed[1], 
-      0x706C656E69736820ULL ^  seed[2],
-      0x7468652065617274ULL ^ ~seed[2], 
-      0x68202847656E6573ULL ^  seed[3],
-      0x697320313A323829ULL ^ ~seed[3]
+      0x706C656E69736820ULL ^  seed[3],
+      0x7468652065617274ULL ^ ~seed[3], 
+      0x68202847656E6573ULL ^  seed[0],
+      0x697320313A323829ULL ^ ~seed[0]
     };
 
     reg r1, r2;
@@ -182,17 +183,20 @@ static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
         r2 = SIMD_ADD64(r1, r1);
         r2 = SIMD_XORBITS(r1, r2);
         SIMD_STOREBITS((reg*) &_ptr[i + 8], r2);
-        r1 = SIMD_ADD64(r1, r2);
+        r1 = SIMD_ADD64(r2, r2);
+        r1 = SIMD_XORBITS(r1, r2);
       #else    
         SIMD_STOREBITS((reg*) &_ptr[i + 4],  r2);
         r3 = SIMD_ADD64(r1, r1);
         r3 = SIMD_XORBITS(r1, r3);
         SIMD_STOREBITS((reg*) &_ptr[i + 8],  r3);
-        r1 = SIMD_ADD64(r1, r3);
+        r1 = SIMD_ADD64(r3, r3);
+        r1 = SIMD_XORBITS(r1, r3);
         r3 = SIMD_ADD64(r2, r2);
         r3 = SIMD_XORBITS(r2, r3);
         SIMD_STOREBITS((reg*) &_ptr[i + 12], r3);
-        r2 = SIMD_ADD64(r2, r3);
+        r2 = SIMD_ADD64(r3, r3);
+        r2 = SIMD_XORBITS(r2, r3);
       #endif
       } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
 
@@ -215,20 +219,20 @@ static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
       IV[4] += _ptr[IV[3] & 0xFF], IV[5] += _ptr[IV[2] & 0xFF], 
       IV[6] += _ptr[IV[1] & 0xFF], IV[7] += _ptr[IV[0] & 0xFF];
 
-      s1 = _mm256_setr_pd((double)(IV[0] ^ IV[4] ^ GOLDEN_RATIO), 
-                          (double)(IV[1] ^ IV[5] ^ GOLDEN_RATIO),
-                          (double)(IV[2] ^ IV[6] ^ GOLDEN_RATIO),
-                          (double)(IV[3] ^ IV[7] ^ GOLDEN_RATIO));
+      s1 = _mm256_setr_pd((double)(IV[0] ^ IV[4]), 
+                          (double)(IV[1] ^ IV[5]),
+                          (double)(IV[2] ^ IV[6]),
+                          (double)(IV[3] ^ IV[7]));
 
-      IV[0] += _ptr[IV[7] & 0xFF], IV[1] += _ptr[IV[6] & 0xFF], 
-      IV[2] += _ptr[IV[5] & 0xFF], IV[3] += _ptr[IV[4] & 0xFF],
-      IV[4] += _ptr[IV[3] & 0xFF], IV[5] += _ptr[IV[2] & 0xFF], 
-      IV[6] += _ptr[IV[1] & 0xFF], IV[7] += _ptr[IV[0] & 0xFF];
+      IV[0] += _ptr[IV[5] & 0xFF], IV[1] += _ptr[IV[4] & 0xFF], 
+      IV[2] += _ptr[IV[3] & 0xFF], IV[3] += _ptr[IV[2] & 0xFF],
+      IV[4] += _ptr[IV[1] & 0xFF], IV[5] += _ptr[IV[0] & 0xFF], 
+      IV[6] += _ptr[IV[7] & 0xFF], IV[7] += _ptr[IV[6] & 0xFF];
 
-      s2 = _mm256_setr_pd((double)(IV[4] ^ IV[1] ^ GOLDEN_RATIO), 
-                          (double)(IV[5] ^ IV[2] ^ GOLDEN_RATIO),
-                          (double)(IV[6] ^ IV[3] ^ GOLDEN_RATIO),
-                          (double)(IV[7] ^ IV[0] ^ GOLDEN_RATIO));
+      s2 = _mm256_setr_pd((double)(IV[1] ^ IV[4]), 
+                          (double)(IV[0] ^ IV[5]),
+                          (double)(IV[3] ^ IV[6]),
+                          (double)(IV[2] ^ IV[7]));
 
       s1 = _mm256_mul_pd(s1, factor);
       s2 = _mm256_mul_pd(s2, factor);
@@ -250,7 +254,7 @@ FORCE_INLINE static void diffuse(u64 *_ptr, const u64 nonce) {
     ISAAC_MIX(a, b, c, d, e, f, g, h);
     
   i = 0;
-  
+
   do {
     a += _ptr[i];     b += _ptr[i + 1]; c += _ptr[i + 2]; d += _ptr[i + 3];
     e += _ptr[i + 4]; f += _ptr[i + 5]; g += _ptr[i + 6]; h += _ptr[i + 7];
@@ -277,13 +281,15 @@ FORCE_INLINE static void diffuse(u64 *_ptr, const u64 nonce) {
     register u8 rounds = 0, j; 
 
     u64 arr[8] ALIGN(64);
-    chaotic_iter:
-      j = 0;
-      d1 = SIMD_LOAD4PD(&chseeds[rounds]);
+    chaotic_iter:     
+      arr[0] = 1ULL, arr[1] = 3ULL, 
+      arr[2] = 2ULL, arr[3] = 4ULL,     
+      arr[4] = 5ULL, arr[5] = 6ULL, 
+      arr[6] = 7ULL, arr[7] = 8ULL;
 
-      arr[0] = 1UL, arr[1] = 3UL, arr[2] = 2UL, arr[3] = 4UL,     
-      arr[4] = 5UL, arr[5] = 6UL, arr[6] = 7UL, arr[7] = 8UL;      
       scale = SIMD_LOAD64x4(arr);
+      d1 = SIMD_LOAD4PD(&chseeds[rounds]);
+      j = 0;
 
       do {
         // 3.9999 * X * (1 - X) for all X in the register
@@ -295,6 +301,7 @@ FORCE_INLINE static void diffuse(u64 *_ptr, const u64 nonce) {
         // Then multiply result of that against values in mod reduction table
         SIMD_SCALARMUL4PD(d2, d1, BETA);
         d3 = SIMD_LOAD4PD(&mod_table[j]);
+        SIMD_ADD4RQPD(d3, d2, d3);
         SIMD_MUL4RQPD(d2, d2, d3);
 
         // Cast to u64, add the scaling factor
@@ -316,7 +323,7 @@ FORCE_INLINE static void diffuse(u64 *_ptr, const u64 nonce) {
      
       // Using two sets of seeds at once
       rounds += 8;
-              
+
       if (rounds < (ROUNDS << 2)) {
         j = (rounds == (ITER << 3));
 
@@ -336,7 +343,7 @@ FORCE_INLINE static void diffuse(u64 *_ptr, const u64 nonce) {
               one = SIMD_SETQPD(1.0);
 
     const reg mask = SIMD_SET64(0xFFUL),
-              inc  = SIMD_SET64(8UL);
+              inc  = SIMD_SET64(4UL);
 
     u64 *map_a = _ptr, *map_b = _ptr + BUF_SIZE;
 
@@ -344,7 +351,7 @@ FORCE_INLINE static void diffuse(u64 *_ptr, const u64 nonce) {
 
     regd d1, d2, d3;
 
-    reg r1, scale;
+    reg r1, r2, scale;
 
     u64 arr[8] ALIGN(SIMD_LEN);
     chaotic_iter:
@@ -362,6 +369,7 @@ FORCE_INLINE static void diffuse(u64 *_ptr, const u64 nonce) {
         // Then multiply result of that against values in mod reduction table
         d2 = SIMD_MULPD(d1, beta);
         d3 = SIMD_LOADPD(&mod_table[j]);
+        d3 = SIMD_ADDPD(d2, d3)
         d2 = SIMD_MULPD(d2, d3);
 
         // Cast to u64, add the scaling factor
@@ -400,37 +408,37 @@ FORCE_INLINE static void mix(u64 *_ptr) {
   register u8 i = 0;
 
 #ifdef __AARCH64_SIMD__
-    reg64q4 r1, r2, r3;
-    do {
-      r1 = SIMD_LOAD64x4(&_ptr[i + 256]);
-      r2 = SIMD_LOAD64x4(&_ptr[i + 512]);
-      r3 = SIMD_LOAD64x4(&_ptr[i]);
-      SIMD_3XOR4Q64(r1, r2, r3);
-      SIMD_STORE64x4(&_ptr[i], r3);   
-    } while ((i += 8 - (i == 248)) < BUF_SIZE - 1);
+  reg64q4 r1, r2, r3;
+  do {
+    r1 = SIMD_LOAD64x4(&_ptr[i + 256]);
+    r2 = SIMD_LOAD64x4(&_ptr[i + 512]);
+    r3 = SIMD_LOAD64x4(&_ptr[i]);
+    SIMD_3XOR4Q64(r1, r2, r3);
+    SIMD_STORE64x4(&_ptr[i], r3);   
+  } while ((i += 8 - (i == 248)) < BUF_SIZE - 1);
 #else
-    reg r1, r2;
+  reg r1, r2;
 
-    do {
-      r1 = SIMD_SETR64(
-                        XOR_MAPS(i)
-                    #ifdef __AVX512F__
-                      , XOR_MAPS(i + 4)
-                    #endif
-                      );
+  do {
+    r1 = SIMD_SETR64(
+                      XOR_MAPS(i)
+                  #ifdef __AVX512F__
+                    , XOR_MAPS(i + 4)
+                  #endif
+                    );
 
-      r2 = SIMD_SETR64(
-                        XOR_MAPS(i + (SIMD_LEN >> 3))
-                    #ifdef __AVX512F__
-                      , XOR_MAPS(i + (SIMD_LEN >> 3) + 4)
-                    #endif
-                      );
+    r2 = SIMD_SETR64(
+                      XOR_MAPS(i + (SIMD_LEN >> 3))
+                  #ifdef __AVX512F__
+                    , XOR_MAPS(i + (SIMD_LEN >> 3) + 4)
+                  #endif
+                    );
 
-      SIMD_STOREBITS((reg*) &_ptr[i], r1);   
-      SIMD_STOREBITS((reg*) &_ptr[i + (SIMD_LEN >> 3)], r2);   
+    SIMD_STOREBITS((reg*) &_ptr[i], r1);   
+    SIMD_STOREBITS((reg*) &_ptr[i + (SIMD_LEN >> 3)], r2);   
 
-      i += (SIMD_LEN >> 2) - (i == BUF_SIZE - (SIMD_LEN >> 2));
-    } while (i < BUF_SIZE - 1);
+    i += (SIMD_LEN >> 2) - (i == BUF_SIZE - (SIMD_LEN >> 2));
+  } while (i < BUF_SIZE - 1);
 #endif
 }
 
@@ -438,18 +446,16 @@ void adam(rng_data *data) {
   double chseeds[ROUNDS << 2] ALIGN(64);
   data->chseeds = &chseeds[0];
 
-  register clock_t start = clock();
   accumulate(data->buffer, data->seed, data->chseeds);
   diffuse(data->buffer, data->nonce);
   apply(data->buffer, data->chseeds);
   mix(data->buffer); 
-  data->duration += (double)(clock() - start) / (double) CLOCKS_PER_SEC;
-
+  
   if (data->reseed) {
     u64 aa = data->aa, bb = data->bb;
     u64 *_ptr = &data->buffer[0];
 
-    u8 i = ((data->seed[0] + data->seed[1]) & 0x7F) ^ ((data->seed[2] + data->seed[3]) & 0x7F);
+    u8 i = ((data->seed[0] + data->seed[2]) ^ (data->seed[1] + data->seed[3])) & 0xFF;
     u8 j = i + (data->nonce & 0xFF);
     j += (i == j);
 
@@ -458,7 +464,7 @@ void adam(rng_data *data) {
     ISAAC_RNGSTEP(aa^(aa<<12),    aa, bb, data->buffer, _ptr[i + 4], _ptr[j - 4], data->seed[2], data->nonce);
     ISAAC_RNGSTEP(aa^(aa>>33),    aa, bb, data->buffer, _ptr[i + 6], _ptr[j - 6], data->seed[3], data->nonce);
 
-    data->aa = (aa - (aa & 1)) + data->seed[aa & 3];
-    data->bb = (bb + (bb & 1)) + (data->nonce ^ ((u64) time(NULL)) ^ GOLDEN_RATIO); 
+    data->aa = aa + data->seed[aa & 3];
+    data->bb = ++bb + (data->nonce ^ GOLDEN_RATIO); 
   }
 }
