@@ -33,7 +33,7 @@ FORCE_INLINE static void rng_init(rng_data *data) {
   data->nonce ^= ((u64) time(NULL)) ^ GOLDEN_RATIO;
   data->buffer = &buffer[0];
   data->aa = data->bb = 0UL;
-  data->reseed = FALSE;
+  data->reseed = false;
 }
 
 int main(int argc, char **argv) {
@@ -41,8 +41,8 @@ int main(int argc, char **argv) {
 
   register u8 precision  = 64,
               idx        = 0,
-              show_seed  = FALSE,
-              show_nonce = FALSE;
+              show_seed  = false,
+              show_nonce = false;
 
   register u16 results = 1, 
                limit   = 0;
@@ -63,17 +63,17 @@ int main(int argc, char **argv) {
       case 'v':
         return puts(VERSION);
       case 'l':
-        data.reseed = TRUE;
+        data.reseed = true;
         return infinite(&data);
       case 'a':
         limit = a_to_u(optarg, 1, ASSESS_LIMIT);
         if (!limit)
           return err("Multiplier must be within range [1, 8000]");
-        data.reseed = TRUE;
+        data.reseed = true;
         assess(limit, &data);
         goto show_params;
       case 'b':
-        data.reseed = TRUE;
+        data.reseed = true;
         return bits(&data);
       case 'x':
         fmt = "0x%lX";
