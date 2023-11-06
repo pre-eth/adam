@@ -67,11 +67,10 @@
     above as well as the following formula used to calculate k:
       floor(256 / log2(5 x pow(10, c - 1) - 1)) + 1
 
-    ADAM uses a strict ROUNDS value of 18 because it always uses the 
-    maximum double precision value of 15 with the seeds that it 
-    generates. I'll let you check the math yourself to prove it :)
+    The rounds value is supposed to be generated from taking this 
+    function 3 times and computing the max, in this case 6
   */
-  #define ROUNDS                18
+  #define ROUNDS                6
   #define ITER                  (ROUNDS / 3)
 
   /* 
@@ -96,7 +95,7 @@
     u64 bb;                            //  State variable 2
     u8 reseed;                         //  Is this one run or multiple? If so, reseed
     double *restrict chseeds;          //  Where we store seeds for each round of chaotic function
-    // double duration;                   //  Total number of seconds spend on number generation
+    double duration;                   //  Total number of seconds spent on number generation
   } ALIGN(SIMD_LEN) rng_data;
 
   // Initiates RNG algorithm with user provided seed and nonce
