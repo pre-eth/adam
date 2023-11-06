@@ -147,10 +147,11 @@ int main(int argc, char **argv) {
   show_params:
     if (UNLIKELY(show_seed)) {
       char file_name[65];
-      open_file(&file_name[0], FALSE);    
+      open_file(&file_name[0], false);    
+
       FILE *fptr = fopen(file_name, "wb+");
       if (UNLIKELY(fptr == NULL))
-        return fputs("\033[1;31mError while creating file. Exiting.\033[m\n", stderr);
+        return err("Error while creating file. Exiting");
 
       fwrite(seed, sizeof(u64), 4, fptr);
       fclose(fptr);
