@@ -103,17 +103,11 @@ static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
         SIMD_ADD4RQ64(r2, r1, r1);
         SIMD_XOR4RQ64(r2, r1, r2);
         SIMD_STORE64x4(&map[i + 8], r2);
-        SIMD_ADD4RQ64(r1, r2, r2);
-        SIMD_XOR4RQ64(r1, r1, r2);
+    SIMD_ADD4RQ64(r1, r1, r2);
       } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
 
       ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
       ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
-
-      if (++maps_filled < 3) { 
-        map += BUF_SIZE;
-        goto fill_the_earth;
-      }
 
     dreg4q seeds;
     i = 0;
@@ -300,8 +294,7 @@ FORCE_INLINE static void diffuse(u64 *_ptr, const u64 nonce) {
         // Multiply result of chaotic function by beta
         // Then multiply result of that against values in mod reduction table
         SIMD_SCALARMUL4PD(d2, d1, BETA);
-        d3 = SIMD_LOAD4PD(&mod_table[j]);
-        SIMD_ADD4RQPD(d3, d2, d3);
+    d3 = SIMD_LOAD4PD(&mod_table[i]);
         SIMD_MUL4RQPD(d2, d2, d3);
 
         // Cast to u64, add the scaling factor
@@ -455,16 +448,24 @@ void adam(rng_data *data) {
     u64 aa = data->aa, bb = data->bb;
     u64 *_ptr = &data->buffer[0];
 
-    u8 i = ((data->seed[0] + data->seed[2]) ^ (data->seed[1] + data->seed[3])) & 0xFF;
-    u8 j = i + (data->nonce & 0xFF);
+    register u8 i = ((data->seed[0] + data->seed[2]) ^ (data->seed[1] + data->seed[3])) & 0xFF;
+    register u8 j = i + (data->nonce & 0xFF);
     j += (i == j);
 
-    ISAAC_RNGSTEP(~(aa^(aa<<21)), aa, bb, data->buffer, _ptr[i],     _ptr[j],     data->seed[0], data->nonce);
-    ISAAC_RNGSTEP(aa^(aa>>5) ,    aa, bb, data->buffer, _ptr[i + 2], _ptr[j - 2], data->seed[1], data->nonce);
-    ISAAC_RNGSTEP(aa^(aa<<12),    aa, bb, data->buffer, _ptr[i + 4], _ptr[j - 4], data->seed[2], data->nonce);
-    ISAAC_RNGSTEP(aa^(aa>>33),    aa, bb, data->buffer, _ptr[i + 6], _ptr[j - 6], data->seed[3], data->nonce);
+    u64 k, l, m;
+    k = (data->nonce << 16) | (data->nonce & 0xFFFF000000000000),
+    l = (data->nonce << 32) | (data->nonce & 0xFFFFFFFF00000000),
+    m = (data->nonce << 48) | (data->nonce & 0xFFFFFFFFFFFF0000);
 
-    data->aa = aa + data->seed[aa & 3];
-    data->bb = ++bb + (data->nonce ^ GOLDEN_RATIO); 
+    ISAAC_RNGSTEP(~(aa ^ (aa << 21)), aa, bb, data->buffer, _ptr[i], _ptr[j], data->seed[0], k);
+    ISAAC_RNGSTEP(aa ^ (aa >> 5), aa, bb, data->buffer, _ptr[i + 2], _ptr[j - 2], data->seed[1], l);
+    ISAAC_RNGSTEP(aa ^ (aa << 12), aa, bb, data->buffer, _ptr[i + 4], _ptr[j - 4], data->seed[2],
+                  m);
+    ISAAC_RNGSTEP(aa ^ (aa >> 33), aa, bb, data->buffer, _ptr[i + 6], _ptr[j - 6], data->seed[3],
+                  data->nonce);
+
+    data->aa = aa;
+    data->bb = ++bb;
+    data->nonce ^= k ^= l ^= m;
   }
 }
