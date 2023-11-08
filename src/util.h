@@ -39,6 +39,7 @@
     #define SIMD_SET64        vdup_n_u64
     #define SIMD_SETQ64       vdupq_n_u64
     #define SIMD_ADD64        vaddq_u64
+    #define SIMD_SUB64        vsubq_u64
     #define SIMD_AND64        vandq_u64
     #define SIMD_XOR64        veorq_u64
     #define SIMD_CAST64       vreinterpretq_u64_f64
@@ -77,6 +78,12 @@
       s1.val[1] = SIMD_ADD64(s2.val[1], s3), \
       s1.val[2] = SIMD_ADD64(s2.val[2], s3), \
       s1.val[3] = SIMD_ADD64(s2.val[3], s3)
+
+    #define SIMD_SUB4Q64(s1, s2, s3) \
+      s1.val[0] = SIMD_SUB64(s2.val[0], s3), \
+      s1.val[1] = SIMD_SUB64(s2.val[1], s3), \
+      s1.val[2] = SIMD_SUB64(s2.val[2], s3), \
+      s1.val[3] = SIMD_SUB64(s2.val[3], s3)
 
     #define SIMD_ADD4RQ64(s1, s2, s3) \
       s1.val[0] = SIMD_ADD64(s2.val[0], s3.val[0]), \

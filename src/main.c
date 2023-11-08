@@ -39,13 +39,9 @@ FORCE_INLINE static void rng_init(rng_data *data) {
 int main(int argc, char **argv) {
   const char *fmt = "%lu";
 
-  register u8 precision  = 64,
-              idx        = 0,
-              show_seed  = false,
-              show_nonce = false;
+  register u8 precision = 64, idx = 0, show_seed = false, show_nonce = false;
 
-  register u16 results = 1, 
-               limit   = 0;
+  register u16 results = 1, limit = 0;
 
   register u64 mask = __UINT64_MAX__ - 1;
 
@@ -96,7 +92,8 @@ int main(int argc, char **argv) {
       break;
       case 'r':
         // Return all results if option is set but no argument provided
-        results = (optarg) ? a_to_u(optarg, 1, SEQ_SIZE >> CTZ(precision)) : SEQ_SIZE >> CTZ(precision);  
+      results =
+          (optarg) ? a_to_u(optarg, 1, SEQ_SIZE >> CTZ(precision)) : SEQ_SIZE >> CTZ(precision);
       break;
       case 's':
         show_seed = (optarg == NULL);
