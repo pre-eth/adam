@@ -21,7 +21,6 @@
 
   typedef struct rng_cli {
     rng_data *data;             //  Pointer to RNG buffer and state
-    double duration;            //  Total number of seconds spent on number generation
     u8 width;                   //  Number of bits in results (8, 16, 32, 64)
     const char *fmt;            //  Format string for displaying results
     u16 results;                //  Number of results to return to user (varies based on width, max 2048 u8)

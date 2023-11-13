@@ -14,12 +14,12 @@
 
     typedef struct rng_data rng_data;
 
-    u8  err(const char *s);
-    u8  rwseed(u64 *seed, const char *strseed);
-    u8  rwnonce(u64 *nonce, const char *strnonce);
-    u64 a_to_u(const char *s, const u64 min, const u64 max);
-    u8  gen_uuid(u64 *_ptr, u8 *buf);
-    u8  stream_ascii(const u64 limit, rng_data *data);
-    u8  stream_bytes(const u64 limit, rng_data *data);
-    u8  examine(rng_data *data, double *duration, const u16 limit);
+    u8      err(const char *s);
+    u8      rwseed(u64 *seed, const char *strseed);
+    u8      rwnonce(u64 *nonce, const char *strnonce);
+    u64     a_to_u(const char *s, const u64 min, const u64 max);
+    u8      gen_uuid(u64 *_ptr, u8 *buf);
+    double  stream_ascii(const u64 limit, rng_data *data);
+    double  stream_bytes(const u64 limit, rng_data *data);
+    double  examine(rng_data *data, const u16 limit);
 #endif

@@ -208,82 +208,6 @@ FORCE_INLINE static void print_chunks(char *restrict _bptr,
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
 }
 
-u8 stream_ascii(const u64 limit, rng_data *data)
-{
-  /*
-    Split limit based on how many calls (if needed)
-    we make to print_chunks, which prints the bits of
-    an entire buffer (aka the SEQ_SIZE)
-  */
-  register long int rate = limit >> 14;
-  register short leftovers = limit & (SEQ_SIZE - 1);
-  register clock_t start;
-
-  char *restrict _bptr = &bitbuffer[0];
-
-  while (rate > 0) {
-    adam(data);
-    print_chunks(_bptr, &data->buffer[0]);
-    --rate;
-  }
-
-  /*
-    Since there are SEQ_SIZE (16384) bits in every
-    buffer, adam_bits is designed to print up to SEQ_SIZE
-    bits per call, so any leftovers must be processed
-    independently.
-
-    Most users probably won't enter powers of 2, especially
-    if assessing bits, so this branch has been marked as LIKELY.
-  */
-  if (LIKELY(leftovers > 0)) {
-    register u16 l, limit;
-    register u64 num;
-
-    adam(data);
-
-  print_leftovers:
-    limit = (leftovers < BITBUF_SIZE) ? leftovers : BITBUF_SIZE;
-
-    l = 0;
-    do {
-      num = *data->buffer++;
-      print_binary(_bptr + l, num);
-    } while ((l += 64) < limit);
-
-    fwrite(_bptr, 1, limit, stdout);
-    leftovers -= limit;
-
-    if (LIKELY(leftovers > 0))
-      goto print_leftovers;
-  }
-
-  return 0;
-}
-
-u8 stream_bytes(const u64 limit, rng_data *data)
-{
-  /*
-    Split limit based on how many calls we need to make
-    to write the bytes of an entire buffer directly
-  */
-  register long int rate = limit >> 14;
-  register short leftovers = limit & (SEQ_SIZE - 1);
-  register clock_t start;
-
-  while (LIKELY(rate > 0)) {
-    adam(data);
-    fwrite(&data->buffer[0], sizeof(u64), BUF_SIZE, stdout);
-    --rate;
-  }
-
-  if (LIKELY(leftovers > 0)) {
-    adam(data);
-    fwrite(&data->buffer[0], sizeof(u64), BUF_SIZE, stdout);
-  }
-
-  return 0;
-}
 
 u8 gen_uuid(u64 *_ptr, u8 *buf)
 {
@@ -308,7 +232,95 @@ u8 gen_uuid(u64 *_ptr, u8 *buf)
   return 0;
 }
 
-u8 examine(rng_data *data, double *duration, const u16 limit)
+
+double stream_ascii(const u64 limit, rng_data *data)
+{
+  /*
+    Split limit based on how many calls (if needed)
+    we make to print_chunks, which prints the bits of
+    an entire buffer (aka the SEQ_SIZE)
+  */
+  register long int rate = limit >> 14;
+  register short leftovers = limit & (SEQ_SIZE - 1);
+  register clock_t start;
+  register double duration = 0.0;
+
+  char *restrict _bptr = &bitbuffer[0];
+
+  while (rate > 0) {
+    start = clock();
+    adam(data);
+    duration += (double)(clock() - start) / CLOCKS_PER_SEC;
+    print_chunks(_bptr, &data->buffer[0]);
+    --rate;
+  }
+
+  /*
+    Since there are SEQ_SIZE (16384) bits in every
+    buffer, adam_bits is designed to print up to SEQ_SIZE
+    bits per call, so any leftovers must be processed
+    independently.
+
+    Most users probably won't enter powers of 2, especially
+    if assessing bits, so this branch has been marked as LIKELY.
+  */
+  if (LIKELY(leftovers > 0)) {
+    register u16 l, limit;
+    register u64 num;
+
+    start = clock();
+    adam(data);
+    duration += (double)(clock() - start) / CLOCKS_PER_SEC;
+
+  print_leftovers:
+    limit = (leftovers < BITBUF_SIZE) ? leftovers : BITBUF_SIZE;
+
+    l = 0;
+    do {
+      num = *data->buffer++;
+      print_binary(_bptr + l, num);
+    } while ((l += 64) < limit);
+
+    fwrite(_bptr, 1, limit, stdout);
+    leftovers -= limit;
+
+    if (LIKELY(leftovers > 0))
+      goto print_leftovers;
+  }
+
+  return duration;
+}
+
+double stream_bytes(const u64 limit, rng_data *data)
+{
+  /*
+    Split limit based on how many calls we need to make
+    to write the bytes of an entire buffer directly
+  */
+  register long int rate = limit >> 14;
+  register short leftovers = limit & (SEQ_SIZE - 1);
+  register clock_t start;
+  register double duration = 0.0;
+
+  while (LIKELY(rate > 0)) {
+    start = clock();
+    adam(data);
+    duration += (double)(clock() - start) / CLOCKS_PER_SEC;
+    fwrite(&data->buffer[0], sizeof(u64), BUF_SIZE, stdout);
+    --rate;
+  }
+
+  if (LIKELY(leftovers > 0)) {
+    start = clock();
+    adam(data);
+    duration += (double)(clock() - start) / CLOCKS_PER_SEC;
+    fwrite(&data->buffer[0], sizeof(u64), BUF_SIZE, stdout);
+  }
+
+  return duration;
+}
+
+double examine(rng_data *data, const u16 limit)
 {
   ent_report rsl;
   rsl.data = data;
@@ -318,9 +330,9 @@ u8 examine(rng_data *data, double *duration, const u16 limit)
 
   register clock_t start = clock();
   ent_test(&rsl);
-  *duration = (double)(clock() - start) / (double)CLOCKS_PER_SEC;
+  double duration = (double)(clock() - start) / (double)CLOCKS_PER_SEC;
 
-  printf("𝗘𝘅𝗮𝗺𝗶𝗻𝗮𝘁𝗶𝗼𝗻 𝗰𝗼𝗺𝗽𝗹𝗲𝘁𝗲! (%lfs)\n", *duration);
+  printf("𝗘𝘅𝗮𝗺𝗶𝗻𝗮𝘁𝗶𝗼𝗻 𝗰𝗼𝗺𝗽𝗹𝗲𝘁𝗲! (%lfs)\n", duration);
 
-  return 0;
+  return duration;
 }
