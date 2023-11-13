@@ -308,3 +308,19 @@ u8 gen_uuid(u64 *_ptr, u8 *buf)
   return 0;
 }
 
+u8 examine(rng_data *data, double *duration, const u16 limit)
+{
+  ent_report rsl;
+  rsl.data = data;
+  rsl.limit = (u64)limit * TESTING_BITS;
+
+  printf("𝐄𝐱𝐚𝐦𝐢𝐧𝐢𝐧𝐠 %llu 𝐛𝐢𝐭𝐬 𝐨𝐟 𝐀𝐃𝐀𝐌\n\n", rsl.limit);
+
+  register clock_t start = clock();
+  ent_test(&rsl);
+  *duration = (double)(clock() - start) / (double)CLOCKS_PER_SEC;
+
+  printf("𝗘𝘅𝗮𝗺𝗶𝗻𝗮𝘁𝗶𝗼𝗻 𝗰𝗼𝗺𝗽𝗹𝗲𝘁𝗲! (%lfs)\n", *duration);
+
+  return 0;
+}
