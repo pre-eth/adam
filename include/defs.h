@@ -1,8 +1,5 @@
 #ifndef UTIL_H
-#define UTIL_H
-  #include <time.h>           // for clock_t, clock(), CLOCKS_PER_SEC
-  #include <stdbool.h>
-  
+#define UTIL_H  
   #ifdef __AARCH64_SIMD__
     #include <arm_acle.h>     // CORE
     #include <arm_neon.h>     // SIMD
@@ -202,6 +199,7 @@
       #define SIMD_SUBPD       _mm256_sub_pd
       #define SIMD_MULPD       _mm256_mul_pd
     #endif
+    
   #endif
 
   #define ALIGN(x)          __attribute__ ((aligned (x)))

@@ -1,6 +1,6 @@
 #ifndef ADAM_H
 #define ADAM_H
-  #include "util.h"
+  #include "defs.h"
 
   /* 
     Sizes of the buffer and bit vector for the binary sequence
@@ -95,9 +95,8 @@
     u64 bb;                     //  State variable 2
     u8 reseed;                  //  Is this one run or multiple? If so, reseed
     double *restrict chseeds;   //  Where we store seeds for each round of chaotic function
-    double duration;            //  Total number of seconds spent on number generation
   } ALIGN(SIMD_LEN) rng_data;
 
-  // Initiates RNG algorithm with user provided seed and nonce
+  void adam_init(rng_data *data);
   void adam(rng_data *data);
 #endif
