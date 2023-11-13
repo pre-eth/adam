@@ -1,22 +1,37 @@
-#include <sys/ioctl.h> // for pretty help printing
-#include <unistd.h>    // for sleep()
+#include <stdio.h> // for output
+#include <sys/ioctl.h> // for pretty printing
+#include <time.h> // for clock_t, clock(), CLOCKS_PER_SEC
+#include <unistd.h> // for sleep()
 
-#include "adam.h"
-#include "cli.h"
-#include "ent.h"
+#include "../include/adam.h"
+#include "../include/cli.h"
+#include "../include/support.h"
 
-FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent) {
+u8 cli_init(rng_cli *cli)
+{
+  cli->duration = 0.0;
+  cli->fmt = "%llu";
+  cli->width = 64;
+  cli->results = 1;
+}
+
+u8 version()
+{
+  return puts("v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH));
+}
+
+FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent)
+{
 #define SUMM_PIECES 7
 
-  const char *pieces[SUMM_PIECES] = {"\033[1madam \033[m[-h|-v|-l|-b|-x|-o]",
-                                     "[-w \033[1mwidth\033[m]",
-                                     "[-a \033[1mmultiplier\033[m]",
-                                     "[-r \033[3mresults?\033[m]",
-                                     "[-s \033[3mseed?\033[m]",
-                                     "[-n \033[3mnonce?\033[m]",
-                                     "[-u \033[3mamount?\033[m]"};
+  const char *pieces[SUMM_PIECES] = {
+    "\033[1madam \033[m[-h|-v|-l|-b|-x|-o]", "[-w \033[1mwidth\033[m]",
+    "[-a \033[1mmultiplier?\033[m]",
+    "[-r \033[3mresults?\033[m]", "[-s \033[3mseed?\033[m]",
+    "[-n \033[3mnonce?\033[m]", "[-u \033[3mamount?\033[m]"
+  };
 
-  const u8 sizes[SUMM_PIECES + 1] = {24, 10, 15, 13, 10, 11, 12, 0};
+  const u8 sizes[SUMM_PIECES + 1] = { 21, 10, 15, 13, 10, 11, 12, 0 };
 
   u8 i = 0, running_length = indent;
 
@@ -27,7 +42,8 @@ FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent) {
     // add one for space
     running_length += sizes[i] + 1;
     if (running_length + sizes[i + 1] + 1 >= swidth) {
-      // add 5 for "adam " to create hanging indent for succeeding lines
+      // add 5 for "adam " to create hanging indent for
+      // succeeding lines
       printf("\n\033[%uC", indent + 5);
       running_length = 0;
     }
@@ -36,7 +52,8 @@ FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent) {
   putchar('\n'), putchar('\n');
 }
 
-u8 help() {
+u8 help()
+{
   struct winsize wsize;
   ioctl(0, TIOCGWINSZ, &wsize);
   register u8 SWIDTH = wsize.ws_col;
@@ -53,32 +70,40 @@ u8 help() {
 
   printf("\033[%uC[OPTIONS]\n", CENTER);
 
-  const char ARGS[ARG_COUNT] = {'h', 'v', 's', 'n', 'u', 'r', 'w', 'b', 'a', 'l', 'x', 'o'};
+  const char ARGS[ARG_COUNT] = { 'h', 'v', 's', 'n', 'u', 'r',
+    'w', 'b', 'a', 'l', 'x', 'o' };
   const char *ARGSHELP[ARG_COUNT] = {
       "Get command summary and all available options",
-      VERSION_HELP,
-      "Get the seed for the generated buffer (no parameter) or provide your "
+    "Version of this software (" STRINGIFY(MAJOR) "." STRINGIFY(
+        MINOR) "." STRINGIFY(PATCH) ")",
+    "Get the seed for the generated buffer (no parameter) or provide "
+    "your "
       "own. Seeds are reusable but should be kept secret.",
-      "Get the nonce for the generated buffer (no parameter) or provide your "
+    "Get the nonce for the generated buffer (no parameter) or provide "
+    "your "
       "own. Nonces should ALWAYS be unique and secret.",
-      "Generate a universally unique identifier (UUID). Optionally specify a "
+    "Generate a universally unique identifier (UUID). Optionally "
+    "specify a "
       "number of UUID's to generate (max 128)",
-      "Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 "
-      "u8). No argument dumps entire buffer",
-      "Desired size (u8, u16, u32, u64) of returned numbers (default width is "
-      "u64)",
-      "Just bits...literally",
-      "Assess a binary or ASCII sample of 1000000 bits (1 Mb) written to a "
-      "filename you provide. You can choose a multiplier within [1, 8000]",
+    "Number of results to return (up to 256 u64, 512 u32, 1024 u16, or "
+    "2048 "
+    "u8). "
+    "No argument dumps entire buffer",
+    "Desired alternative size (u8, u16, u32) of returned numbers. Default width is u64",
+    "Just bits... literally",
+    "Assess an ASCII or binary sample of 1000000 bits (1 Mb) written to stdout. "
+    "You can choose a multiplier within [1, 8000]",
       "Live stream of continuously generated numbers",
       "Print numbers in hexadecimal format with leading prefix",
-      "Print numbers in octal format with leading prefix"};
-  const u8 lengths[ARG_COUNT] = {25, 32, 119, 117, 108, 107, 75, 21, 133, 45, 55, 49};
+    "Print numbers in octal format with leading prefix"
+  };
+  const u8 lengths[ARG_COUNT] = { 25, 32, 119, 117, 108, 107,
+    81, 22, 109, 45, 55, 49 };
 
   register short len;
   for (u8 i = 0; i < ARG_COUNT; ++i) {
-    printf("\033[%uC\033[1;33m-%c\033[m\033[%uC%.*s\n", INDENT, ARGS[i], INDENT, HELP_WIDTH,
-           ARGSHELP[i]);
+    printf("\033[%uC\033[1;33m-%c\033[m\033[%uC%.*s\n", INDENT, ARGS[i], INDENT,
+        HELP_WIDTH, ARGSHELP[i]);
     len = lengths[i] - HELP_WIDTH;
     while (len > 0) {
       ARGSHELP[i] += HELP_WIDTH + (ARGSHELP[i][HELP_WIDTH] == ' ');
@@ -89,83 +114,60 @@ u8 help() {
   return 0;
 }
 
-u64 a_to_u(const char *s, const u64 min, const u64 max) {
-  if (UNLIKELY(s[0] == '-'))
-    return min;
+u8 set_width(rng_cli *cli, const char *strwidth)
+{
+  cli->width = a_to_u(strwidth, 8, 32);
+  if (UNLIKELY(cli->width & (cli->width - 1)))
+    return 1;
 
-  register u8 len = 0;
-  register u64 val = 0;
+  /*
+    This line will basically "floor" results to the max value of results
+    possible for this new precision in case it exceeds the possible limit
+    This can be avoided by ordering your arguments so that -w comes first
+  */
+  const u8 max = SEQ_SIZE >> CTZ(cli->width);
+  cli->results -= (cli->results > max) * (cli->results - max);
 
-  for (; s[len] != '\0'; ++len) {
-    if (UNLIKELY(s[len] < '0' || s[len] > '9'))
       return 0;
-  };
-
-  switch (len) {
-  case 20:
-    val += 10000000000000000000LU;
-  case 19:
-    val += (s[len - 19] - '0') * 1000000000000000000LU;
-  case 18:
-    val += (s[len - 18] - '0') * 100000000000000000LU;
-  case 17:
-    val += (s[len - 17] - '0') * 10000000000000000LU;
-  case 16:
-    val += (s[len - 16] - '0') * 1000000000000000LU;
-  case 15:
-    val += (s[len - 15] - '0') * 100000000000000LU;
-  case 14:
-    val += (s[len - 14] - '0') * 10000000000000LU;
-  case 13:
-    val += (s[len - 13] - '0') * 1000000000000LU;
-  case 12:
-    val += (s[len - 12] - '0') * 100000000000LU;
-  case 11:
-    val += (s[len - 11] - '0') * 10000000000LU;
-  case 10:
-    val += (s[len - 10] - '0') * 1000000000LU;
-  case 9:
-    val += (s[len - 9] - '0') * 100000000LU;
-  case 8:
-    val += (s[len - 8] - '0') * 10000000LU;
-  case 7:
-    val += (s[len - 7] - '0') * 1000000LU;
-  case 6:
-    val += (s[len - 6] - '0') * 100000LU;
-  case 5:
-    val += (s[len - 5] - '0') * 10000LU;
-  case 4:
-    val += (s[len - 4] - '0') * 1000LU;
-  case 3:
-    val += (s[len - 3] - '0') * 100LU;
-  case 2:
-    val += (s[len - 2] - '0') * 10LU;
-  case 1:
-    val += (s[len - 1] - '0');
-    break;
-  }
-  return (val >= min || val < max - 1) ? val : min;
 }
 
-u8 open_file(char *file_name, u8 ask_type) {
-get_file_name:
-  printf("File name: \033[1;33m");
-  if (!scanf("%64s", &file_name[0])) {
-    fputs("\033[m\033[1;31mPlease enter a valid file name\033[m\n", stderr);
-    goto get_file_name;
-  }
-  char c = '2';
-  if (ask_type) {
-  get_file_type:
-    printf("\033[mFile type (1 = ASCII, 2 = BINARY): \033[1;33m");
-    scanf(" %c", &c);
-    if (c != '1' && c != '2') {
-      fputs("\033[1;31mValue must be 1 or 2\n", stderr);
-      goto get_file_type;
-    }
+u8 set_results(rng_cli *cli, const char *strsl)
+{
+  if (strsl == NULL)
+    cli->results = SEQ_SIZE >> CTZ(cli->width);
+  else
+    cli->results = a_to_u(optarg, 1, SEQ_SIZE >> CTZ(cli->width));
+
+  return 0;
+}
+
+u8 print_buffer(rng_cli *cli)
+{
+  register u64 mask;
+
+  if (cli->width == 64)
+    mask = __UINT64_MAX__ - 1;
+  else
+    mask = (1UL << cli->width) - 1;
+
+  rng_data *data = cli->data;
+
+  // Need to do this for default precision because
+  // we can't rely on overflow arithmetic :(
+  register u8 inc = (cli->width == 64), idx = 0;
+
+  printf(cli->fmt, data->buffer[idx] & mask);
+
+  while (--cli->results > 0) {
+    printf(",\n");
+    data->buffer[idx] >>= cli->width;
+    idx += (inc || !data->buffer[idx]);
+    printf(cli->fmt, data->buffer[idx] & mask);
   }
 
-  return (u8)c - 49;
+  putchar('\n');
+
+  return 0;
 }
 
 u8 uuid(u8 limit, rng_data *data) {
