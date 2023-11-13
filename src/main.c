@@ -1,55 +1,18 @@
-#include <getopt.h>        // arg parsing
-#include <sys/random.h>   // getentropy()
+#include <getopt.h> // arg parsing
 
-#include "adam.h"
-#include "cli.h"
+#include "../include/adam.h"
+#include "../include/cli.h"
+#include "../include/support.h"
 
-/*
-  TODO
 
-  Multi-threading
-  -e (ent with bob's tests (chi.c and est.c))
-  gjrand
-  matrix
-
-*/
-/* 
-  The algorithm requires at least the construction of 3 maps of size BUF_SIZE
-  Offsets logically represent each individual map, but it's all one buffer
-
-  static is necessary because otherwise buffer is initiated with junk that 
-  removes the deterministic nature of the algorithm
-*/
-static u64 buffer[BUF_SIZE * 3] ALIGN(64);
-
-FORCE_INLINE static u8 err(const char *s) {
-  fprintf(stderr, "\033[1;31m%s\033[m\n", s);
-  return 1;
-}
-
-FORCE_INLINE static void rng_init(rng_data *data) {
-  getentropy(&data->seed[0], sizeof(u64) << 2); 
-  getentropy(&data->nonce, sizeof(u64));
-  data->nonce ^= ((u64) time(NULL)) ^ GOLDEN_RATIO;
-  data->buffer = &buffer[0];
-  data->aa = data->bb = 0UL;
-  data->reseed = false;
-}
-
-int main(int argc, char **argv) {
-  const char *fmt = "%lu";
-
-  register u8 precision = 64, idx = 0, show_seed = false, show_nonce = false;
-
-  register u16 results = 1, limit = 0;
-
-  register u64 mask = __UINT64_MAX__ - 1;
-
+int main(int argc, char **argv)
+{
   rng_data data;
-  rng_init(&data);
-  u64 nonce = data.nonce;
-  u64 seed[4];
-  __builtin_memcpy(&seed[0], &data.seed[0], sizeof(u64) << 2);
+  adam_init(&data);
+
+  rng_cli cli;
+  cli.data = &data;
+  cli_init(&cli);
 
   register short opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
@@ -57,68 +20,40 @@ int main(int argc, char **argv) {
       case 'h':
         return help();
       case 'v':
-        return puts(VERSION);
+      return version();
       case 'l':
-        data.reseed = true;
         return infinite(&data);
       case 'a':
-        limit = a_to_u(optarg, 1, ASSESS_LIMIT);
-        if (!limit)
-          return err("Multiplier must be within range [1, 8000]");
-        data.reseed = true;
-        assess(limit, &data);
-        goto show_params;
+      return assess(optarg, &cli);
       case 'b':
-        data.reseed = true;
-        return bits(&data);
+      stream_bytes(__UINT64_MAX__, &data);
+      return 0;
       case 'x':
-        fmt = "0x%lX";
+      cli.fmt = "0x%lX";
       break;
       case 'o':
-        fmt = "0o%lo";
+      cli.fmt = "0o%lo";
       break;      
       case 'w':
-        precision = a_to_u(optarg, 8, 64);
-        if (UNLIKELY(precision & (precision - 1)))
-          return err("Width must be either 8, 16, 32, or 64 bits");
-          mask = (1UL << precision) - 1;
-          /*
-            This line will basically "floor" results to the max value of results
-            possible for this new precision in case it exceeds the possible limit
-            This can be avoided by ordering your arguments so that -p comes first
-          */
-          const u8 max = SEQ_SIZE >> CTZ(precision);
-          results -= (results > max) * (results - max);
+      if (set_width(&cli, optarg))
+        return err("Width must be either 8, 16, 32");
       break;
       case 'r':
-        // Return all results if option is set but no argument provided
-      results =
-          (optarg) ? a_to_u(optarg, 1, SEQ_SIZE >> CTZ(precision)) : SEQ_SIZE >> CTZ(precision);
+      // Returns all results if option is set but no argument
+      // provided
+      set_results(&cli, optarg);
+      if (cli.results == 0)
+        return err("Invalid number of results "
+                   "specified for desired width");
       break;
       case 's':
-        show_seed = (optarg == NULL);
-        if (!show_seed) {
-          FILE *seed_file = fopen(optarg, "rb");
-          if (!seed_file)
-            return err("Couldn't read seed file");
-          fread(data.seed, sizeof(u64), 4, seed_file);
-          fclose(seed_file);
-        }
+      rwseed(&data.seed[0], optarg);
       break;
       case 'n':
-        show_nonce = (optarg == NULL);
-        if (!show_nonce)
-          data.nonce = a_to_u(optarg, 1, __UINT64_MAX__);
+      rwnonce(&data.nonce, optarg);
       break;
       case 'u':
-        limit = 1;
-        if (optarg) {
-          limit = a_to_u(optarg, 1, 128);
-          if (!limit)
-            return err("Invalid amount specified. Value must be within range [1, 128]");
-        }
-        uuid(limit, &data);
-        goto show_params;
+      return uuid(optarg, &data);
       default:
         return err("Option is invalid or missing required argument");             
     }
@@ -126,38 +61,7 @@ int main(int argc, char **argv) {
 
   adam(&data);
 
-  // Need to do this for default precision because 
-  // we can't rely on overflow arithmetic :(
-  u8 inc = (precision == 64);
-  print_buffer:
-    printf(fmt, buffer[idx] & mask);
-
-    if (--results > 0) {
-      printf(",\n");
-      buffer[idx] >>= precision;
-      idx += (inc || !buffer[idx]);
-      goto print_buffer;
-    }
-
-  putchar('\n');
-
-  show_params:
-    if (UNLIKELY(show_seed)) {
-      char file_name[65];
-      open_file(&file_name[0], false);    
-
-      FILE *fptr = fopen(file_name, "wb+");
-      if (UNLIKELY(fptr == NULL))
-        return err("Error while creating file. Exiting");
-
-      fwrite(seed, sizeof(u64), 4, fptr);
-      fclose(fptr);
-
-      printf("\033[1;36mSEED\033[m: Written to file \033[36m%s\033[m\n", file_name);
-    }
-
-    if (UNLIKELY(show_nonce))
-      printf("\033[1;36mNONCE\033[m: %llu\n", nonce);
+  print_buffer(&cli);
 
   return 0;
 }
