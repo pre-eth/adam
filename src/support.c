@@ -285,3 +285,26 @@ u8 stream_bytes(const u64 limit, rng_data *data)
   return 0;
 }
 
+u8 gen_uuid(u64 *_ptr, u8 *buf)
+{
+  u128 tmp;
+
+  // Fill buf with 16 random bytes
+  tmp = ((u128)_ptr[0] << 64) | _ptr[1];
+  MEMCPY(buf, &tmp, sizeof(u128));
+
+  /*
+    CODE AND COMMENT PULLED FROM CRYPTOSYS
+    (https://www.cryptosys.net/pki/Uuid.c.html)
+
+    Adjust certain bits according to RFC 4122 section 4.4.
+    This just means do the following
+    (a) set the high nibble of the 7th byte equal to 4 and
+    (b) set the two most significant bits of the 9th byte to 10'B,
+        so the high nibble will be one of {8,9,A,B}.
+  */
+  buf[6] = 0x40 | (buf[6] & 0xf);
+  buf[8] = 0x80 | (buf[8] & 0x3f);
+  return 0;
+}
+
