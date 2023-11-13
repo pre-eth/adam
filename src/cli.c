@@ -170,179 +170,31 @@ u8 print_buffer(rng_cli *cli)
   return 0;
 }
 
-u8 uuid(u8 limit, rng_data *data) {
-  adam(data);
+u8 uuid(const char *strlimit, rng_data *data)
+{
+  register u8 limit = a_to_u(optarg, 1, __UINT64_MAX__);
+  if (!limit)
+    return err("Invalid amount specified. Value must be within "
+               "range [1, 128]");
 
   u8 buf[16];
-  u128 tmp;
+
+  adam(data);
   u64 *restrict _ptr = &data->buffer[0];
-print_uuid:
-  // Fill buf with 16 random bytes
-  tmp = ((u128)_ptr[0] << 64) | _ptr[1];
-  __builtin_memcpy(buf, &tmp, sizeof(u128));
-
-  // CODE AND COMMENT PULLED FROM CRYPTOSYS
-  // (https://www.cryptosys.net/pki/Uuid.c.html)
-  //
-  // Adjust certain bits according to RFC 4122 section 4.4.
-  // This just means do the following
-  // (a) set the high nibble of the 7th byte equal to 4 and
-  // (b) set the two most significant bits of the 9th byte to 10'B,
-  //     so the high nibble will be one of {8,9,A,B}.
-  buf[6] = 0x40 | (buf[6] & 0xf);
-  buf[8] = 0x80 | (buf[8] & 0x3f);
-
-  // Print the UUID
-  printf("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", buf[0], buf[1],
-         buf[2], buf[3], buf[4], buf[5], buf[6], buf[7], buf[8], buf[9], buf[10], buf[11], buf[12],
-         buf[13], buf[14], buf[15]);
-
-  if (--limit > 0) {
-    printf(",\n");
-    _ptr += 2;
-    goto print_uuid;
-  }
-
-  return putchar('\n');
-}
-
-/*
-  To make writes more efficient, rather than writing one
-  number at a time, 16 numbers are parsed together and then
-  written to stdout with 1 fwrite call.
-*/
-static char bitbuffer[BITBUF_SIZE] ALIGN(SIMD_LEN);
-
-#ifdef __AARCH64_SIMD__
-static void print_binary(char *restrict _bptr, u64 num) {
-  // Copying bit masks to high and low halves
-  // 72624976668147840 == {128, 64, 32, 16, 8, 4, 2, 1}
-  const uint8x16_t masks =
-      SIMD_COMBINE8(SIMD_CREATE8(72624976668147840), SIMD_CREATE8(72624976668147840));
-  const uint8x16_t zero = SIMD_SET8('0');
-
-  // Repeat all 8 bytes 8 times each, to fill up r1 with 64 bytes total
-  // Then we bitwise AND with masks to turn each byte into a 1 or 0
-  reg8q4 r1;
-  r1.val[0] = SIMD_COMBINE8(SIMD_MOV8((num >> 56) & 0xFF), SIMD_MOV8((num >> 48) & 0xFF));
-  r1.val[1] = SIMD_COMBINE8(SIMD_MOV8((num >> 40) & 0xFF), SIMD_MOV8((num >> 32) & 0xFF));
-  r1.val[2] = SIMD_COMBINE8(SIMD_MOV8((num >> 24) & 0xFF), SIMD_MOV8((num >> 16) & 0xFF));
-  r1.val[3] = SIMD_COMBINE8(SIMD_MOV8((num >> 8) & 0xFF), SIMD_MOV8(num & 0xFF));
-
-  SIMD_AND4Q8(r1, r1, masks);
-  SIMD_CMP4QEQ8(r1, r1, masks);
-  SIMD_AND4Q8(r1, r1, SIMD_SET8(1));
-
-  // '0' = 48, '1' = 49. This is how we print the number
-  SIMD_ADD4Q8(r1, r1, zero);
-
-  SIMD_STORE8x4(_bptr, r1);
-}
-#else
-static void print_binary(char *restrict _bptr, u64 num) {
-#define BYTE_REPEAT(n)                                                                             \
-  bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n]
-#define BYTE_MASKS 128, 64, 32, 16, 8, 4, 2, 1
-
-  u8 bytes[sizeof(u64)];
-
-  MEMCPY(bytes, &num, sizeof(u64));
-
-  const reg zeroes = SIMD_SET8('0');
-  const reg masks = SIMD_SETR8(BYTE_MASKS, BYTE_MASKS, BYTE_MASKS, BYTE_MASKS
-#ifdef __AVX512F__
-                               ,
-                               BYTE_MASKS, BYTE_MASKS, BYTE_MASKS, BYTE_MASKS
-#endif
-  );
-
-  reg r1 = SIMD_SETR8(BYTE_REPEAT(7), BYTE_REPEAT(6), BYTE_REPEAT(5), BYTE_REPEAT(4)
-#ifdef __AVX512F__
-                                                                          ,
-                      BYTE_REPEAT(3), BYTE_REPEAT(2), BYTE_REPEAT(1), BYTE_REPEAT(0)
-#endif
-  );
-
-  r1 = SIMD_ANDBITS(r1, masks);
-  r1 = SIMD_CMPEQ8(r1, masks);
-  r1 = SIMD_ANDBITS(r1, SIMD_SET8(1));
-  r1 = SIMD_ADD8(r1, zeroes);
-  SIMD_STOREBITS((reg *)_bptr, r1);
-
-#ifndef __AVX512F__
-  r1 = SIMD_SETR8(BYTE_REPEAT(3), BYTE_REPEAT(2), BYTE_REPEAT(1), BYTE_REPEAT(0));
-  r1 = SIMD_ANDBITS(r1, masks);
-  r1 = SIMD_CMPEQ8(r1, masks);
-  r1 = SIMD_ANDBITS(r1, SIMD_SET8(1));
-  r1 = SIMD_ADD8(r1, zeroes);
-  SIMD_STOREBITS((reg *)&_bptr[SIMD_LEN], r1);
-#endif
-}
-#endif
-
-// prints all bits in a buffer as chunks of 1024 bits
-FORCE_INLINE static void print_chunks(FILE *fptr, char *restrict _bptr, const u64 *restrict _ptr) {
   register u8 i = 0;
 
   do {
-    PRINT_4(0, i + 0), PRINT_4(256, i + 4), PRINT_4(512, i + 8), PRINT_4(768, i + 12);
+    gen_uuid(&data->buffer[(i & 0x7F) << 1], &buf[0]);
 
-    fwrite(_bptr, 1, BITBUF_SIZE, fptr);
-  } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
-}
+    // Print the UUID
+    printf("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%"
+           "02x%02x%02x%02x",
+        buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7],
+        buf[8], buf[9], buf[10], buf[11], buf[12], buf[13], buf[14],
+        buf[15]);
 
-static u8 stream_ascii(FILE *fptr, const u64 limit, rng_data *data) {
-  /*
-    Split limit based on how many calls (if needed)
-    we make to print_chunks, which prints the bits of
-    an entire buffer (aka the SEQ_SIZE)
-  */
-  register long int rate = limit >> 14;
-  register short leftovers = limit & (SEQ_SIZE - 1);
-  register clock_t start;
-
-  char *restrict _bptr = &bitbuffer[0];
-
-  while (rate > 0) {
-    start = clock();
-    adam(data);
-    data->duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
-    print_chunks(fptr, _bptr, &data->buffer[0]);
-    --rate;
-  }
-
-  /*
-    Since there are SEQ_SIZE (16384) bits in every
-    buffer, adam_bits is designed to print up to SEQ_SIZE
-    bits per call, so any leftovers must be processed
-    independently.
-
-    Most users probably won't enter powers of 2, especially
-    if assessing bits, so this branch has been marked as LIKELY.
-  */
-  if (LIKELY(leftovers > 0)) {
-    register u16 l, limit;
-    register u64 num;
-
-    start = clock();
-    adam(data);
-    data->duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
-
-  print_leftovers:
-    limit = (leftovers < BITBUF_SIZE) ? leftovers : BITBUF_SIZE;
-
-    l = 0;
-    do {
-      num = *data->buffer++;
-      print_binary(_bptr + l, num);
-    } while ((l += 64) < limit);
-
-    fwrite(_bptr, 1, limit, fptr);
-    leftovers -= limit;
-
-    if (LIKELY(leftovers > 0))
-      goto print_leftovers;
-  }
+    putchar('\n');
+  } while (++i < limit);
 
   return 0;
 }
