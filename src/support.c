@@ -70,3 +70,47 @@ u64 a_to_u(const char *s, const u64 min, const u64 max)
   return (val >= min || val < max - 1) ? val : min;
 }
 
+static u8 load_seed(u64 *seed, const char *strseed)
+{
+  FILE *seed_file = fopen(strseed, "rb");
+  if (!seed_file)
+    return err("Couldn't read seed file");
+  fread(seed, sizeof(u64), 4, seed_file);
+  fclose(seed_file);
+
+  return 0;
+}
+
+static u8 store_seed(u64 *seed)
+{
+  char file_name[65];
+  while (!scanf("File name: \033[1;93m%64s", &file_name[0]))
+    err("Please enter a valid file name");
+
+  FILE *seed_file = fopen(file_name, "rb");
+  if (!seed_file)
+    return err("Couldn't read seed file");
+  fread(seed, sizeof(u64), 4, seed_file);
+  fclose(seed_file);
+
+  return 0;
+}
+
+u8 rwseed(u64 *seed, const char *strseed)
+{
+  if (strseed != NULL)
+    return load_seed(seed, strseed);
+
+  return store_seed(seed);
+}
+
+u8 rwnonce(u64 *nonce, const char *strnonce)
+{
+  if (strnonce != NULL)
+    *nonce = a_to_u(strnonce, 0, __UINT64_MAX__);
+  else
+    fprintf(stderr, "\033[1;96mNONCE:\033[m %llu", *nonce);
+
+  return 0;
+}
+
