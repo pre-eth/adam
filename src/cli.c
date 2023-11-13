@@ -11,6 +11,8 @@ u8 cli_init(rng_cli *cli)
   cli->fmt = "%llu";
   cli->width = 64;
   cli->results = 1;
+
+  return 0;
 }
 
 u8 version()
@@ -205,12 +207,12 @@ u8 assess(const char *strlimit, rng_cli *cli)
         "Multiplier must be within range [1, " STRINGIFY(TESTING_LIMIT) "]");
 
   char c = '2';
-  get_file_type:
-    scanf("\033[mSample type (1 = ASCII, 2 = BINARY): \033[1;93m %c\n", &c);
-    if (c != '1' && c != '2') {
-      err("Value must be 1 or 2");
-      goto get_file_type;
-    }
+get_file_type:
+  scanf("\033[mSample type (1 = ASCII, 2 = BINARY): \033[1;93m %c\n", &c);
+  if (c != '1' && c != '2') {
+    err("Value must be 1 or 2");
+    goto get_file_type;
+  }
 
   const u64 total = limit * TESTING_BITS;
   double duration;
