@@ -27,12 +27,13 @@
     u16 results;                //  Number of results to return to user (varies based on width, max 2048 u8)
   } rng_cli;
   
+  u8  cli_init(rng_cli *cli);
   u8  version(void);
   u8  help(void);
   u8  set_width(rng_cli *cli, const char *strwidth);
   u8  set_results(rng_cli *cli, const char* strsl);
   u8  print_buffer(rng_cli *cli);
   u8  uuid(const char *strlimit, rng_data *data);
-  u8  assess(const char *strlimit, rng_cli *cli, u8 (*fn)(const u64, rng_data *));
+  u8  assess(const char *strlimit, rng_cli *cli);
   u8  infinite(rng_data *data);
 #endif
