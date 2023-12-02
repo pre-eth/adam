@@ -88,22 +88,20 @@ static u8 load_seed(u64 *seed, const char *strseed)
     return err("Couldn't read seed file");
   fread(seed, sizeof(u64), 4, seed_file);
   fclose(seed_file);
-
   return 0;
 }
 
 static u8 store_seed(u64 *seed)
 {
   char file_name[65];
-  while (!scanf("File name: \033[1;93m%64s", &file_name[0]))
+  printf("File name: \033[1;93m");
+  while (!scanf(" %64s", &file_name[0]))
     err("Please enter a valid file name");
-
   FILE *seed_file = fopen(file_name, "rb");
   if (!seed_file)
     return err("Couldn't read seed file");
   fread(seed, sizeof(u64), 4, seed_file);
   fclose(seed_file);
-
   return 0;
 }
 

@@ -10,7 +10,7 @@
   #define PATCH           0
 
   #define OPTSTR          ":hvlbexow:a:r::u::s::n::"
-  #define ARG_COUNT       12
+  #define ARG_COUNT       13
 
   #define GET_1(i)        _ptr[i]
   #define GET_2(i)        _ptr[i], _ptr[i + 1]

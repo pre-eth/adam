@@ -1,5 +1,4 @@
 #include <stdio.h> // for output
-#include <sys/ioctl.h> // for pretty printing
 #include <unistd.h> // for sleep()
 
 #include "../include/adam.h"
@@ -11,6 +10,7 @@ u8 cli_init(rng_cli *cli)
   cli->fmt = "%llu";
   cli->width = 64;
   cli->results = 1;
+  // cli->precision = 0;
 
   return 0;
 }
@@ -22,16 +22,16 @@ u8 version()
 
 FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent)
 {
-#define SUMM_PIECES 7
+#define SUMM_PIECES 8
 
   const char *pieces[SUMM_PIECES] = {
     "\033[1madam \033[m[-h|-v|-l|-b|-x|-o]", "[-w \033[1mwidth\033[m]",
-    "[-a \033[1mmultiplier?\033[m]",
+    "[-a \033[1mmultiplier?\033[m]", "[-e \033[1mmultiplier?\033[m]",
     "[-r \033[3mresults?\033[m]", "[-s \033[3mseed?\033[m]",
     "[-n \033[3mnonce?\033[m]", "[-u \033[3mamount?\033[m]"
   };
 
-  const u8 sizes[SUMM_PIECES + 1] = { 21, 10, 15, 13, 10, 11, 12, 0 };
+  const u8 sizes[SUMM_PIECES + 1] = { 21, 10, 16, 16, 13, 10, 11, 12, 0 };
 
   u8 i = 0, running_length = indent;
 
@@ -54,51 +54,47 @@ FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent)
 
 u8 help()
 {
-  struct winsize wsize;
-  ioctl(0, TIOCGWINSZ, &wsize);
-  register u8 SWIDTH = wsize.ws_col;
+  u16 center, indent, swidth;
+  get_print_metrics(&center, &indent, &swidth);
 
-  const u8 CENTER = (SWIDTH >> 1) - 4;
+  const u8 CENTER = center - 4;
   // subtract 1 because it is half of width for arg (ex. "-d")
-  const u8 INDENT = (SWIDTH >> 4) - 1;
+  const u8 INDENT = indent - 1;
   // total indent for help descriptions if they have to go to next line
   const u8 HELP_INDENT = INDENT + INDENT + 2;
   // max length for help description in COL 2 before it needs to wrap
-  const u8 HELP_WIDTH = SWIDTH - HELP_INDENT;
+  const u8 HELP_WIDTH = swidth - (HELP_INDENT << 1);
 
-  print_summary(SWIDTH, INDENT);
+  print_summary(swidth, INDENT);
 
   printf("\033[%uC[OPTIONS]\n", CENTER);
 
   const char ARGS[ARG_COUNT] = { 'h', 'v', 's', 'n', 'u', 'r',
-    'w', 'b', 'a', 'l', 'x', 'o' };
+    'w', 'b', 'a', 'e', 'l', 'x', 'o' };
   const char *ARGSHELP[ARG_COUNT] = {
     "Get command summary and all available options",
     "Version of this software (" STRINGIFY(MAJOR) "." STRINGIFY(
         MINOR) "." STRINGIFY(PATCH) ")",
     "Get the seed for the generated buffer (no parameter) or provide "
-    "your "
-    "own. Seeds are reusable but should be kept secret.",
+    "your own. Seeds are reusable but should be kept secret.",
     "Get the nonce for the generated buffer (no parameter) or provide "
-    "your "
-    "own. Nonces should ALWAYS be unique and secret.",
+    "your own. Nonces should ALWAYS be unique and secret",
     "Generate a universally unique identifier (UUID). Optionally "
-    "specify a "
-    "number of UUID's to generate (max 128)",
-    "Number of results to return (up to 256 u64, 512 u32, 1024 u16, or "
-    "2048 "
-    "u8). "
+    "specify a number of UUID's to generate (max 128)",
+    "Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8). "
     "No argument dumps entire buffer",
     "Desired alternative size (u8, u16, u32) of returned numbers. Default width is u64",
     "Just bits... literally",
-    "Assess an ASCII or binary sample of 1000000 bits (1 Mb) written to stdout. "
-    "You can choose a multiplier within [1, 8000]",
+    "Write an ASCII or binary sample of 1000000 bits (1 Mb) to file for external assessment with your favorite tests. "
+    "You can choose a multiplier within [1, 8000] to output up to 1GB at a time",
+    "Examine a sample of 1000000 bits (1 Mb) with the ENT framework as well as some other in-house statistical tests. "
+    "You can choose a multiplier within [1, 8000] to output up to 1GB at a time",
     "Live stream of continuously generated numbers",
     "Print numbers in hexadecimal format with leading prefix",
     "Print numbers in octal format with leading prefix"
   };
   const u8 lengths[ARG_COUNT] = { 25, 32, 119, 117, 108, 107,
-    81, 22, 109, 45, 55, 49 };
+    81, 22, 187, 178, 45, 55, 49 };
 
   register short len;
   for (u8 i = 0; i < ARG_COUNT; ++i) {
@@ -119,7 +115,6 @@ u8 set_width(rng_cli *cli, const char *strwidth)
   cli->width = a_to_u(strwidth, 8, 32);
   if (UNLIKELY(cli->width & (cli->width - 1)))
     return 1;
-
   /*
     This line will basically "floor" results to the max value of results
     possible for this new precision in case it exceeds the possible limit
@@ -127,17 +122,12 @@ u8 set_width(rng_cli *cli, const char *strwidth)
   */
   const u8 max = SEQ_SIZE >> CTZ(cli->width);
   cli->results -= (cli->results > max) * (cli->results - max);
-
   return 0;
 }
 
 u8 set_results(rng_cli *cli, const char *strsl)
 {
-  if (strsl == NULL)
-    cli->results = SEQ_SIZE >> CTZ(cli->width);
-  else
-    cli->results = a_to_u(optarg, 1, SEQ_SIZE >> CTZ(cli->width));
-
+  cli->results = (strsl == NULL) ? SEQ_SIZE >> CTZ(cli->width) : a_to_u(optarg, 1, SEQ_SIZE >> CTZ(cli->width));
   return 0;
 }
 
@@ -206,23 +196,31 @@ u8 assess(const char *strlimit, rng_cli *cli)
     return err(
         "Multiplier must be within range [1, " STRINGIFY(TESTING_LIMIT) "]");
 
+  const u64 total = limit * TESTING_BITS;
+  register double duration = 0.0;
+
+  char file_name[65];
+  printf("File name: \033[1;93m");
+  while (!scanf(" %64s", &file_name[0]))
+    err("Please enter a valid file name");
+
   char c = '2';
 get_file_type:
-  scanf("\033[mSample type (1 = ASCII, 2 = BINARY): \033[1;93m %c\n", &c);
-  if (c != '1' && c != '2') {
+  fprintf(stderr, "\033[mSample type (1 = ASCII, 2 = BINARY): \033[1;33m");
+  scanf(" %c", &c);
+  if (c == '1') {
+    freopen(file_name, "w+", stdout);
+    duration = stream_ascii(total, cli->data);
+  } else if (c == '2') {
+    freopen(file_name, "wb+", stdout);
+    duration = stream_bytes(total, cli->data);
+  } else {
     err("Value must be 1 or 2");
     goto get_file_type;
   }
 
-  const u64 total = limit * TESTING_BITS;
-  double duration;
-  if (c == '1')
-    duration = stream_ascii(total, cli->data);
-  else
-    duration = stream_bytes(total, cli->data);
-
   fprintf(stderr,
-      "\n\033[1mWrote \033[96m%llu\033[m bits in \033[96m%lfs\033[m\n",
+      "\n\033[0;1mWrote \033[36m%llu\033[m bits in \033[36m%lfs\033[m\n",
       total, duration);
 
   return 0;
