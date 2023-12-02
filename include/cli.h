@@ -9,7 +9,7 @@
   #define MINOR           4
   #define PATCH           0
 
-  #define OPTSTR          ":hvlbexow:a:r::u::s::n::"
+  #define OPTSTR          ":hvlbxow:a:e:r::u::s::n::"
   #define ARG_COUNT       13
 
   #define GET_1(i)        _ptr[i]
