@@ -327,19 +327,91 @@ double stream_bytes(const u64 limit, rng_data *data)
   return duration;
 }
 
-double examine(rng_data *data, const u16 limit)
+double examine(const char *strlimit, rng_data *data)
 {
   ent_report rsl;
   rsl.data = data;
-  rsl.limit = (u64)limit * TESTING_BITS;
+  rsl.limit = TESTING_BITS;
+  if (strlimit != NULL)
+    rsl.limit *= a_to_u(strlimit, 1, TESTING_LIMIT);
 
-  printf("𝐄𝐱𝐚𝐦𝐢𝐧𝐢𝐧𝐠 %llu 𝐛𝐢𝐭𝐬 𝐨𝐟 𝐀𝐃𝐀𝐌\n\n", rsl.limit);
+  u64 init_values[7];
+  MEMCPY(&init_values[0], &data->seed, sizeof(u64) << 2);
+  init_values[4] = data->nonce;
+  init_values[5] = data->aa;
+  init_values[6] = data->bb;
 
+  printf("\033[1;33mExamining %llu bits of ADAM...\033[m\n", rsl.limit);
   register clock_t start = clock();
   ent_test(&rsl);
   double duration = (double)(clock() - start) / (double)CLOCKS_PER_SEC;
+  printf("\033[1;33mExamination Complete! (%lfs)\033[m\n\n", duration);
 
-  printf("𝗘𝘅𝗮𝗺𝗶𝗻𝗮𝘁𝗶𝗼𝗻 𝗰𝗼𝗺𝗽𝗹𝗲𝘁𝗲! (%lfs)\n", duration);
+  u16 center, indent, swidth;
+  get_print_metrics(&center, &indent, &swidth);
 
+  u64 bytes = rsl.limit;
+  const char *unit = " BYTES\0KB\0MB\0GB\0TB";
+
+  if (bytes > 8000000000000UL) {
+    bytes /= 8000000000000;
+    unit += 16;
+  } else if (bytes > 8000000000UL) {
+    bytes /= 8000000000;
+    unit += 13;
+  } else if (bytes > 8000000) {
+    bytes /= 8000000;
+    unit += 10;
+  } else if (bytes > 8000) {
+    bytes /= 8000;
+    unit += 7;
+  }
+
+  printf("\033[%uC[RESULTS]\n\n", center - 4);
+  const u64 sequences = (rsl.limit >> 14) + !!(rsl.limit & (SEQ_SIZE - 1));
+  const u64 output = sequences << 8;
+  printf("\033[1;34m            Total Output: \033[m%llu u64 (%llu u32, %llu u16, %llu u8)\n", output, output << 1, output << 2, output << 3);
+  printf("\033[1;34m     Sequences Generated: \033[m%llu \n", sequences);
+  printf("\033[1;34m             Sample Size: \033[m%llu BITS (%llu%s)\n", rsl.limit, bytes, unit);
+  const u64 zeroes = rsl.limit - rsl.mfreq;
+  const u64 diff = (zeroes > rsl.mfreq) ? zeroes - rsl.mfreq : rsl.mfreq - zeroes;
+  printf("\033[1;34m       Monobit Frequency: \033[m%llu ONES, %llu ZEROES (+%llu %s)\n", rsl.mfreq, zeroes, diff, (zeroes > rsl.mfreq) ? "ZEROES" : "ONES");
+  printf("\033[1;34m           Minimum Value: \033[m%llu\n", rsl.min);
+  printf("\033[1;34m           Maximum Value: \033[m%llu\n", rsl.max);
+  printf("\033[1;34m                   Range: \033[m%llu\n", rsl.max - rsl.min);
+  printf("\033[1;34m        Zeroes in Buffer: \033[m%llu\n", rsl.zeroes);
+  printf("\033[1;34m            256-bit Seed: \033[m0x%llX,\n", init_values[0]);
+  printf("                          0x%llX,\n", init_values[1]);
+  printf("                          0x%llX,\n", init_values[2]);
+  printf("                          0x%llX\n", init_values[3]);
+  printf("\033[1;34m            64-bit Nonce: \033[m0x%llX\n", init_values[4]);
+  printf("\033[1;34m         Initial State 1: \033[m0x%llX\n", init_values[5]);
+  printf("\033[1;34m         Initial State 2: \033[m0x%llX\n", init_values[6]);
+  printf("\033[1;34m                 Entropy: \033[m%.5lf bits per byte\n", rsl.ent);
+  char *chi_str;
+  char chi_tmp[6];
+  register u8 suspect_level = 32;
+  if (rsl.pochisq < 0.0001) {
+    chi_str = "<= 0.01";
+    --suspect_level;
+  } else if (rsl.pochisq > 0.9999) {
+    chi_str = ">= 99.99";
+    --suspect_level;
+  } else {
+    const double pochisq = rsl.pochisq * 100;
+    snprintf(&chi_tmp[0], 5, "%1.2f", pochisq);
+    if (pochisq < 5.0 || pochisq > 95.0)
+      ++suspect_level;
+    else if (pochisq < 10.0 || pochisq > 90.0)
+      suspect_level += 61;
+    chi_str = &chi_tmp[0];
+  }
+  printf("\033[1;34m              Chi square: \033[m%1.2lf (randomly exceeded \033[1;%um%s%%\033[m of the time) \n", rsl.chisq, suspect_level, chi_str);
+  printf("\033[1;34m         Arithmetic Mean: \033[m%1.4lf (127.5 = random)\n", rsl.mean);
+  printf("\033[1;34mMonte Carlo Value for Pi: \033[m%1.9lf (error: %1.2f%%)\n", rsl.montepicalc, rsl.monterr);
+  if (rsl.scc >= -99999)
+    printf("\033[1;34m      Serial correlation: \033[m%1.6f (totally uncorrelated = 0.0).\n", rsl.scc);
+  else
+    printf("\033[1;34m      Serial correlation: \033[1;31mUNDEFINED\033[m (all values equal!).\n");
   return duration;
 }

@@ -54,13 +54,14 @@ int main(int argc, char **argv)
       break;
       case 'u':
       return uuid(optarg, &data);
+    case 'e':
+      return examine(optarg, &data);
       default:
         return err("Option is invalid or missing required argument");             
     }
   }
 
   adam(&data);
-
   print_buffer(&cli);
 
   return 0;
