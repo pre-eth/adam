@@ -123,35 +123,37 @@ FORCE_INLINE static void accumulate(u64 *seed)
 
   reg64q4 r1, r2;
 
-  register u8 i = 0;
+  u64 *restrict _ptr = &buffer[0];
+
+  register u8 i = 0, maps_filled = 0;
   r1 = SIMD_LOAD64x4(IV);
 
+  // fill_the_earth:
   do {
-    SIMD_STORE64x4(&buffer[i], r1);
+    SIMD_STORE64x4(&_ptr[i], r1);
     SIMD_ADD4RQ64(r2, r1, r1);
     SIMD_XOR4RQ64(r2, r1, r2);
-    SIMD_STORE64x4(&buffer[i + 8], r2);
+    SIMD_STORE64x4(&_ptr[i + 8], r2);
     SIMD_ADD4RQ64(r1, r1, r2);
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
 
-  ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
-  ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
+  SIMD_STORE64x4(&IV[0], r1);
 
   dreg4q seeds;
   i = 0;
   do {
-    IV[0] += buffer[IV[7] & 0xFF], IV[1] += buffer[IV[6] & 0xFF],
-        IV[2] += buffer[IV[5] & 0xFF], IV[3] += buffer[IV[4] & 0xFF],
-        IV[4] += buffer[IV[3] & 0xFF], IV[5] += buffer[IV[2] & 0xFF],
-        IV[6] += buffer[IV[1] & 0xFF], IV[7] += buffer[IV[0] & 0xFF];
+    IV[0] += buffer[IV[7] & 0xFF], IV[1] += buffer[IV[6] & 0xFF];
+    IV[2] += buffer[IV[5] & 0xFF], IV[3] += buffer[IV[4] & 0xFF];
+    IV[4] += buffer[IV[3] & 0xFF], IV[5] += buffer[IV[2] & 0xFF];
+    IV[6] += buffer[IV[1] & 0xFF], IV[7] += buffer[IV[0] & 0xFF];
 
     seeds.val[0] = SIMD_COMBINEPD(SIMD_SETPD(IV[0] ^ IV[4]), SIMD_SETPD(IV[1] ^ IV[5]));
     seeds.val[1] = SIMD_COMBINEPD(SIMD_SETPD(IV[2] ^ IV[6]), SIMD_SETPD(IV[3] ^ IV[7]));
 
-    IV[0] += buffer[IV[5] & 0xFF], IV[1] += buffer[IV[4] & 0xFF],
-        IV[2] += buffer[IV[3] & 0xFF], IV[3] += buffer[IV[2] & 0xFF],
-        IV[4] += buffer[IV[1] & 0xFF], IV[5] += buffer[IV[0] & 0xFF],
-        IV[6] += buffer[IV[7] & 0xFF], IV[7] += buffer[IV[6] & 0xFF];
+    IV[0] += buffer[IV[5] & 0xFF], IV[1] += buffer[IV[4] & 0xFF];
+    IV[2] += buffer[IV[3] & 0xFF], IV[3] += buffer[IV[2] & 0xFF];
+    IV[4] += buffer[IV[1] & 0xFF], IV[5] += buffer[IV[0] & 0xFF];
+    IV[6] += buffer[IV[7] & 0xFF], IV[7] += buffer[IV[6] & 0xFF];
 
     seeds.val[2] = SIMD_COMBINEPD(SIMD_SETPD(IV[3] ^ IV[7]), SIMD_SETPD(IV[0] ^ IV[4]));
     seeds.val[3] = SIMD_COMBINEPD(SIMD_SETPD(IV[1] ^ IV[5]), SIMD_SETPD(IV[2] ^ IV[6]));
@@ -160,6 +162,12 @@ FORCE_INLINE static void accumulate(u64 *seed)
 
     SIMD_STORE4PD(&chseeds[(i << 3)], seeds);
   } while (++i < (ROUNDS >> 1));
+
+  for (int i = 0; i < 256; ++i) {
+    if (buffer[i] == 0) {
+      __builtin_printf("Index %i is zero\n", i);
+    }
+  }
 }
 #else
 FORCE_INLINE static void accumulate(u64 *seed)
@@ -467,7 +475,8 @@ void adam_init(rng_data *data)
   getentropy(&data->seed[0], sizeof(u64) << 2);
   getentropy(&data->nonce, sizeof(u64));
   data->buffer = &buffer[0];
-  data->aa = data->bb = 0UL;
+  data->aa = (data->nonce & 0xFFFFFFFF00000000) | (data->seed[data->nonce & 3] & 0xFFFFFFFF);
+  data->bb = (data->seed[data->aa & 3] & 0xFFFFFFFF00000000) | (data->nonce & 0xFFFFFFFF);
 }
 
 void adam(rng_data *data)
@@ -480,14 +489,13 @@ void adam(rng_data *data)
   u64 aa = data->aa, bb = data->bb;
   u64 *_ptr = &data->buffer[0];
 
-  register u8 i = ((data->seed[0] + data->seed[2]) ^ (data->seed[1] + data->seed[3])) & 0xFF;
+  register u8 i = (((data->seed[0] + data->seed[2])) ^ ((data->seed[1] + data->seed[3]))) & 0xFF;
   register u8 j = i + (data->nonce & 0xFF);
   j += (i == j);
 
-  u64 k, l, m;
-  k = (data->nonce << 16) | (data->nonce & 0xFFFF000000000000),
-  l = (data->nonce << 32) | (data->nonce & 0xFFFFFFFF00000000),
-  m = (data->nonce << 48) | (data->nonce & 0xFFFFFFFFFFFF0000);
+  u64 k = ((data->nonce << 16) | (data->nonce & 0xFFFF000000000000)) + 1;
+  u64 l = ((data->nonce << 32) | (data->nonce & 0xFFFFFFFF00000000)) + 1;
+  u64 m = ((data->nonce << 48) | (data->nonce & 0xFFFFFFFFFFFF0000)) + 1;
 
   ISAAC_RNGSTEP(~(aa ^ (aa << 21)), aa, bb, data->buffer, _ptr[i], _ptr[j],
       data->seed[0], k);
@@ -498,7 +506,9 @@ void adam(rng_data *data)
   ISAAC_RNGSTEP(aa ^ (aa >> 33), aa, bb, data->buffer, _ptr[i + 6], _ptr[j - 6],
       data->seed[3], data->nonce);
 
-  data->aa = aa;
+  data->aa = aa + j;
   data->bb = ++bb;
-  data->nonce ^= k ^= l ^= m;
+
+  k = (k + l ^ m) | (m & 0xFFFFFF);
+  data->nonce ^= ((k << (k & 63)) | ~((u32)mod_table[i + 8] & (1UL << (k & 63))));
 }
