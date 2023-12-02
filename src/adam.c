@@ -506,9 +506,9 @@ void adam(rng_data *data)
   ISAAC_RNGSTEP(aa ^ (aa >> 33), aa, bb, data->buffer, _ptr[i + 6], _ptr[j - 6],
       data->seed[3], data->nonce);
 
-  data->aa = aa + j;
+  data->aa = aa;
   data->bb = ++bb;
 
   k = (k + l ^ m) | (m & 0xFFFFFF);
-  data->nonce ^= ((k << (k & 63)) | ~((u32)mod_table[i + 8] & (1UL << (k & 63))));
+  data->nonce ^= ((k << (k & 31)) | (l & 0xFFFFFFFFFF));
 }
