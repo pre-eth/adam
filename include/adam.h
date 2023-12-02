@@ -29,10 +29,10 @@
   // Slightly modified versions of macros from ISAAC for reseeding ADAM
   #define ISAAC_IND(mm, x)  (*(u64*)((u8*)(mm) + ((x) & ((BUF_SIZE-1)<<3))))
   #define ISAAC_RNGSTEP(mx, a, b, mm, m, m2, x, y) { \
-    x = m ^ (u64)mod_table[(u64)mod_table[x & 0xFF] & 0xFF];  \
+    x = (m << 24) | ((u64)mod_table[(u64)mod_table[(u64)mod_table[x & 0xFF] & 0xFF] & 0xFF] & 0xFFFFFF);  \
     a = (a^(mx)) + m2; \
     m = ~(y = ISAAC_IND(mm,x) + a + b); \
-    y += b = ISAAC_IND(mm,y>>MAGNITUDE) + x; \
+    y ^= b = ISAAC_IND(mm,y>>MAGNITUDE) + x; \
   }
 
   /* ADAM stuff */
@@ -93,7 +93,6 @@
     u64 nonce;                  //  64-bit nonce
     u64 aa;                     //  State variable 1
     u64 bb;                     //  State variable 2
-    u8 reseed;                  //  Is this one run or multiple? If so, reseed
     double *restrict chseeds;   //  Where we store seeds for each round of chaotic function
   } ALIGN(SIMD_LEN) rng_data;
 
