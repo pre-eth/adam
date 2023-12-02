@@ -1,17 +1,28 @@
 #include <stdio.h> // for output
+#include <sys/ioctl.h> // for pretty printing
 #include <time.h> // for clock_t, clock(), CLOCKS_PER_SEC
 
 #include "../include/adam.h"
 #include "../include/ent.h"
 #include "../include/support.h"
 
+FORCE_INLINE u8 get_print_metrics(u16 *center, u16 *indent, u16 *swidth)
+{
+  struct winsize wsize;
+  ioctl(0, TIOCGWINSZ, &wsize);
+  *center = (wsize.ws_col >> 1);
+  *indent = (wsize.ws_col >> 4);
+  *swidth = wsize.ws_col;
+  return 0;
+}
+
 FORCE_INLINE u8 err(const char *s)
 {
-  fprintf(stderr, "\033[1;91m%s\033[m\n", s);
+  fprintf(stderr, "\033[1;31m%s\033[m\n", s);
   return 1;
 }
 
-u64 a_to_u(const char *s, const u64 min, const u64 max)
+FORCE_INLINE u64 a_to_u(const char *s, const u64 min, const u64 max)
 {
   if (UNLIKELY(s == NULL || s[0] == '-'))
     return min;
@@ -96,21 +107,19 @@ static u8 store_seed(u64 *seed)
   return 0;
 }
 
-u8 rwseed(u64 *seed, const char *strseed)
+FORCE_INLINE u8 rwseed(u64 *seed, const char *strseed)
 {
   if (strseed != NULL)
     return load_seed(seed, strseed);
-
   return store_seed(seed);
 }
 
-u8 rwnonce(u64 *nonce, const char *strnonce)
+FORCE_INLINE u8 rwnonce(u64 *nonce, const char *strnonce)
 {
   if (strnonce != NULL)
     *nonce = a_to_u(strnonce, 0, __UINT64_MAX__);
   else
     fprintf(stderr, "\033[1;96mNONCE:\033[m %llu", *nonce);
-
   return 0;
 }
 
@@ -208,7 +217,6 @@ FORCE_INLINE static void print_chunks(char *restrict _bptr,
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
 }
 
-
 u8 gen_uuid(u64 *_ptr, u8 *buf)
 {
   u128 tmp;
@@ -231,7 +239,6 @@ u8 gen_uuid(u64 *_ptr, u8 *buf)
   buf[8] = 0x80 | (buf[8] & 0x3f);
   return 0;
 }
-
 
 double stream_ascii(const u64 limit, rng_data *data)
 {
@@ -297,8 +304,8 @@ double stream_bytes(const u64 limit, rng_data *data)
     Split limit based on how many calls we need to make
     to write the bytes of an entire buffer directly
   */
+  const short leftovers = limit & (SEQ_SIZE - 1);
   register long int rate = limit >> 14;
-  register short leftovers = limit & (SEQ_SIZE - 1);
   register clock_t start;
   register double duration = 0.0;
 

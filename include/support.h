@@ -9,11 +9,12 @@
                             print_binary(_bptr + 128 + i, _ptr[(j) + 2]), \
                             print_binary(_bptr + 192 + i, _ptr[(j) + 3])  
 
-    #define TESTING_BITS     1000000ULL
-    #define TESTING_LIMIT    8000
+    #define TESTING_BITS    1000000ULL
+    #define TESTING_LIMIT   8000UL
 
     typedef struct rng_data rng_data;
 
+    u8      get_print_metrics(u16 *center, u16 *indent, u16 *swidth);
     u8      err(const char *s);
     u8      rwseed(u64 *seed, const char *strseed);
     u8      rwnonce(u64 *nonce, const char *strnonce);
@@ -21,5 +22,5 @@
     u8      gen_uuid(u64 *_ptr, u8 *buf);
     double  stream_ascii(const u64 limit, rng_data *data);
     double  stream_bytes(const u64 limit, rng_data *data);
-    double  examine(rng_data *data, const u16 limit);
+    double  examine(const char *strlimit, rng_data *data);
 #endif

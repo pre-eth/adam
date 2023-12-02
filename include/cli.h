@@ -9,7 +9,7 @@
   #define MINOR           4
   #define PATCH           0
 
-  #define OPTSTR          ":hvlexow:a:b:r::u::s::n::"
+  #define OPTSTR          ":hvlbexow:a:r::u::s::n::"
   #define ARG_COUNT       12
 
   #define GET_1(i)        _ptr[i]
@@ -24,6 +24,7 @@
     u8 width;                   //  Number of bits in results (8, 16, 32, 64)
     const char *fmt;            //  Format string for displaying results
     u16 results;                //  Number of results to return to user (varies based on width, max 2048 u8)
+    // u8 precision;
   } rng_cli;
   
   u8  cli_init(rng_cli *cli);
