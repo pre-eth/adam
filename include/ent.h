@@ -21,16 +21,7 @@
   #define I_SQRT_PI       0.5641895835477562869480795       /* 1 / sqrt (pi) */
   #define BIGX            20.0                              /* max value to represent exp (x) */
   
-  typedef struct rng_data rng_data;
-
   typedef struct ent_report {
-    rng_data *data;
-    u64 limit;
-    u64 mfreq;
-    u64 max;
-    u64 min;
-    u64 zeroes;
-    u64 dupes;
     double ent;
     double chisq;
     double pochisq;
@@ -38,7 +29,9 @@
     double montepicalc;
     double monterr;
     double scc;
+    double sccu0;
   } ent_report ALIGN(SIMD_LEN);
 
-  void ent_test(ent_report *rsl);
+  void ent_test(u8 *num);
+  void ent_results(ent_report *rsl);
 #endif
