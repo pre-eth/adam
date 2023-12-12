@@ -9,8 +9,8 @@
   #define MINOR           4
   #define PATCH           0
 
-  #define OPTSTR          ":hvlbxow:a:e:r::u::s::n::"
-  #define ARG_COUNT       13
+  #define OPTSTR          ":hvbxow:a:e:r::u::s::n::"
+  #define ARG_COUNT       12
 
   #define GET_1(i)        _ptr[i]
   #define GET_2(i)        _ptr[i], _ptr[i + 1]
@@ -27,7 +27,7 @@
     // u8 precision;
   } rng_cli;
   
-  u8  cli_init(rng_cli *cli);
+  u8  cli_init(rng_cli *cli, rng_data *data);
   u8  version(void);
   u8  help(void);
   u8  set_width(rng_cli *cli, const char *strwidth);
@@ -35,5 +35,4 @@
   u8  print_buffer(rng_cli *cli);
   u8  uuid(const char *strlimit, rng_data *data);
   u8  assess(const char *strlimit, rng_cli *cli);
-  u8  infinite(rng_data *data);
 #endif
