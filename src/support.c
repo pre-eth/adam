@@ -423,6 +423,39 @@ static void print_chseed_results(const u16 indent, const u32 sequences, u64 *chs
   printf("\033[2m\033[%uC             e. [0.4, 0.5): \033[m%llu (%llu expected)\n", indent, chseed_dist[4], expected_chseeds);
 }
 
+double examine(const char *strlimit, rng_data *data)
+{
+  rng_test rsl;
+  ent_report ent;
+
+  rsl.data = data;
+  rsl.ent = &ent;
+
+  register u64 limit = TESTING_BITS;
+  if (strlimit != NULL)
+    limit *= a_to_u(strlimit, 1, TESTING_LIMIT);
+
+  printf("\033[1;33mExamining %llu bits of ADAM...\033[m\n", limit);
+
+  register clock_t start = clock();
+  adam_test(limit, &rsl);
+  register double duration = (double)(clock() - start) / (double)CLOCKS_PER_SEC;
+
+  printf("\033[1;33mExamination Complete! (%lfs)\033[m\n\n", duration);
+
+  u16 center, indent, swidth;
+  get_print_metrics(&center, &indent, &swidth);
+  indent <<= 1;
+
+  printf("\033[%uC[RESULTS]\n\n", center - 4);
+
+  const u32 sequences = (limit >> 14) + !!(limit & (SEQ_SIZE - 1));
+
+  print_basic_results(indent, sequences, limit, &rsl);
+  print_ent_results(indent, &ent);
+  print_chseed_results(indent, sequences, rsl.chseed_dist, rsl.avg_chseed);
+
+  // HISTOGRAM
 
   return duration;
 }
