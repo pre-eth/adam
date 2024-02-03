@@ -401,5 +401,28 @@ static void print_ent_results(const u16 indent, ent_report *ent)
     printf("\033[1;34m\033[%uC        Serial Correlation: \033[1;31mUNDEFINED\033[m (all values equal!).\n", indent);
 }
 
+static void print_chseed_results(const u16 indent, const u32 sequences, u64 *chseed_dist, const double avg_chseed)
+{
+  #define CHSEED_CRITICAL_VALUE   13.277     
+
+  register double chi_calc = 0.0;
+  const u64 expected_chseeds = (u64)((sequences * (ROUNDS << 2)) * 0.2);
+
+  register u8 i = 0;
+  for (; i < 5; ++i)
+    chi_calc += pow(((double)chseed_dist[i] - (double)expected_chseeds), 2) / (double)expected_chseeds;
+
+  register u8 suspect_level = 32 - (CHSEED_CRITICAL_VALUE <= chi_calc);
+
+  printf("\033[1;34m\033[%uC   Chaotic Seed Chi-Square: \033[m\033[1;%um%1.2lf\n", indent, suspect_level, chi_calc);
+  printf("\033[1;34m\033[%uC        Average Seed Value: \033[m%1.15lf (ideal = 0.25)\n", indent, avg_chseed / (sequences * (ROUNDS << 2)));
+  printf("\033[2m\033[%uC             a. (0.0, 0.1): \033[m%llu (%llu expected)\n", indent, chseed_dist[0], expected_chseeds);
+  printf("\033[2m\033[%uC             b. [0.1, 0.2): \033[m%llu (%llu expected)\n", indent, chseed_dist[1], expected_chseeds);
+  printf("\033[2m\033[%uC             c. [0.2, 0.3): \033[m%llu (%llu expected)\n", indent, chseed_dist[2], expected_chseeds);
+  printf("\033[2m\033[%uC             d. [0.3, 0.4): \033[m%llu (%llu expected)\n", indent, chseed_dist[3], expected_chseeds);
+  printf("\033[2m\033[%uC             e. [0.4, 0.5): \033[m%llu (%llu expected)\n", indent, chseed_dist[4], expected_chseeds);
+}
+
+
   return duration;
 }
