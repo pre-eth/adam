@@ -105,14 +105,14 @@ static u8 store_seed(u64 *seed)
   return 0;
 }
 
-FORCE_INLINE u8 rwseed(u64 *seed, const char *strseed)
+u8 rwseed(u64 *seed, const char *strseed)
 {
   if (strseed != NULL)
     return load_seed(seed, strseed);
   return store_seed(seed);
 }
 
-FORCE_INLINE u8 rwnonce(u64 *nonce, const char *strnonce)
+u8 rwnonce(u64 *nonce, const char *strnonce)
 {
   if (strnonce != NULL)
     *nonce = a_to_u(strnonce, 0, __UINT64_MAX__);
