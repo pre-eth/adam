@@ -330,32 +330,14 @@ double stream_bytes(const u64 limit, rng_data *data)
   return duration;
 }
 
-double examine(const char *strlimit, rng_data *data)
+static void print_basic_results(const u16 indent, const u32 sequences, const u64 limit, rng_test *rsl)
 {
-  ent_report rsl;
-  rsl.data = data;
-  rsl.limit = TESTING_BITS;
-  if (strlimit != NULL)
-    rsl.limit *= a_to_u(strlimit, 1, TESTING_LIMIT);
+  const u64 output = sequences << 8;
+  const u32 zeroes = (output << 6) - rsl->mfreq;
+  const u32 diff = (zeroes > rsl->mfreq) ? zeroes - rsl->mfreq : rsl->mfreq - zeroes;
 
-  u64 init_values[7];
-  MEMCPY(&init_values[0], &data->seed, sizeof(u64) << 2);
-  init_values[4] = data->nonce;
-  init_values[5] = data->aa;
-  init_values[6] = data->bb;
-
-  printf("\033[1;33mExamining %llu bits of ADAM...\033[m\n", rsl.limit);
-  register clock_t start = clock();
-  ent_test(&rsl);
-  double duration = (double)(clock() - start) / (double)CLOCKS_PER_SEC;
-  printf("\033[1;33mExamination Complete! (%lfs)\033[m\n\n", duration);
-
-  u16 center, indent, swidth;
-  get_print_metrics(&center, &indent, &swidth);
-
-  u64 bytes = rsl.limit;
+  register u64 bytes = limit;
   const char *unit = " BYTES\0KB\0MB\0GB\0TB";
-
   if (bytes > 8000000000000UL) {
     bytes /= 8000000000000;
     unit += 16;
@@ -370,27 +352,28 @@ double examine(const char *strlimit, rng_data *data)
     unit += 7;
   }
 
-  printf("\033[%uC[RESULTS]\n\n", center - 4);
-  const u64 sequences = (rsl.limit >> 14) + !!(rsl.limit & (SEQ_SIZE - 1));
-  const u64 output = sequences << 8;
-  printf("\033[1;34m            Total Output: \033[m%llu u64 (%llu u32, %llu u16, %llu u8)\n", output, output << 1, output << 2, output << 3);
-  printf("\033[1;34m     Sequences Generated: \033[m%llu \n", sequences);
-  printf("\033[1;34m             Sample Size: \033[m%llu BITS (%llu%s)\n", rsl.limit, bytes, unit);
-  const u64 zeroes = rsl.limit - rsl.mfreq;
-  const u64 diff = (zeroes > rsl.mfreq) ? zeroes - rsl.mfreq : rsl.mfreq - zeroes;
-  printf("\033[1;34m       Monobit Frequency: \033[m%llu ONES, %llu ZEROES (+%llu %s)\n", rsl.mfreq, zeroes, diff, (zeroes > rsl.mfreq) ? "ZEROES" : "ONES");
-  printf("\033[1;34m           Minimum Value: \033[m%llu\n", rsl.min);
-  printf("\033[1;34m           Maximum Value: \033[m%llu\n", rsl.max);
-  printf("\033[1;34m                   Range: \033[m%llu\n", rsl.max - rsl.min);
-  printf("\033[1;34m        Zeroes in Buffer: \033[m%llu\n", rsl.zeroes);
-  printf("\033[1;34m            256-bit Seed: \033[m0x%llX,\n", init_values[0]);
-  printf("                          0x%llX,\n", init_values[1]);
-  printf("                          0x%llX,\n", init_values[2]);
-  printf("                          0x%llX\n", init_values[3]);
-  printf("\033[1;34m            64-bit Nonce: \033[m0x%llX\n", init_values[4]);
-  printf("\033[1;34m         Initial State 1: \033[m0x%llX\n", init_values[5]);
-  printf("\033[1;34m         Initial State 2: \033[m0x%llX\n", init_values[6]);
-  printf("\033[1;34m                 Entropy: \033[m%.5lf bits per byte\n", rsl.ent);
+  printf("\033[1;34m\033[%uC              Total Output: \033[m%llu u64 (%llu u32 | %llu u16 | %llu u8)\n", indent, output, output << 1, output << 2, output << 3);
+  printf("\033[1;34m\033[%uC       Sequences Generated: \033[m%u\n", indent, sequences);
+  printf("\033[1;34m\033[%uC               Sample Size: \033[m%llu BITS (%llu%s)\n", indent, limit, bytes, unit);
+  printf("\033[1;34m\033[%uC         Monobit Frequency: \033[m%u ONES, %u ZEROES (+%u %s)\n", indent, rsl->mfreq, zeroes, diff, (zeroes > rsl->mfreq) ? "ZEROES" : "ONES");
+  printf("\033[1;34m\033[%uC             Minimum Value: \033[m%llu\n", indent, rsl->min);
+  printf("\033[1;34m\033[%uC             Maximum Value: \033[m%llu\n", indent, rsl->max);
+  printf("\033[1;34m\033[%uC                     Range: \033[m%llu\n", indent, rsl->max - rsl->min);
+  printf("\033[1;34m\033[%uC              Even Numbers: \033[m%llu (%u%%)\n", indent, output - rsl->odd, (u8)(((double)(output - rsl->odd) / (double)output) * 100));
+  printf("\033[1;34m\033[%uC               Odd Numbers: \033[m%u (%u%%)\n", indent, rsl->odd, (u8)(((double)rsl->odd / (double)output) * 100));
+  printf("\033[1;34m\033[%uC          Zeroes Generated: \033[m%u\n", indent, rsl->zeroes);
+  printf("\033[1;34m\033[%uC    256-bit Seed (u64 x 4): \033[m0x%llX, 0x%llX,\n", indent, rsl->init_values[0], rsl->init_values[1]);
+  printf("\033[%uC                            0x%llX, 0x%llX\n", indent, rsl->init_values[2], rsl->init_values[3]);
+  printf("\033[1;34m\033[%uC              64-bit Nonce: \033[m0x%llX\n", indent, rsl->init_values[4]);
+  printf("\033[1;34m\033[%uC           Initial State 1: \033[m0x%llX\n", indent, rsl->init_values[5]);
+  printf("\033[1;34m\033[%uC           Initial State 2: \033[m0x%llX\n", indent, rsl->init_values[6]);
+  printf("\033[1;34m\033[%uC      Total Number of Runs: \033[m%u\n", indent, rsl->up_runs + rsl->down_runs);
+  printf("\033[2m\033[%uC            a.  Increasing: \033[m%u\n", indent, rsl->up_runs);
+  printf("\033[2m\033[%uC            b.  Decreasing: \033[m%u\n", indent, rsl->down_runs);
+  printf("\033[2m\033[%uC            c. Longest Run: \033[m%u (INCREASING)\n", indent, rsl->longest_up);
+  printf("\033[2m\033[%uC            d. Longest Run: \033[m%u (DECREASING)\n", indent, rsl->longest_down);
+}
+
   char *chi_str;
   char chi_tmp[6];
   register u8 suspect_level = 32;
