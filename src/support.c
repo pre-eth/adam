@@ -1,19 +1,19 @@
-#include <stdio.h> // for output
-#include <sys/ioctl.h> // for pretty printing
-#include <time.h> // for clock_t, clock(), CLOCKS_PER_SEC
+#include <math.h>
+#include <stdio.h>
+#include <sys/ioctl.h>
+#include <time.h>
 
 #include "../include/adam.h"
-#include "../include/ent.h"
 #include "../include/support.h"
+#include "../include/test.h"
 
-FORCE_INLINE u8 get_print_metrics(u16 *center, u16 *indent, u16 *swidth)
+void get_print_metrics(u16 *center, u16 *indent, u16 *swidth)
 {
   struct winsize wsize;
   ioctl(0, TIOCGWINSZ, &wsize);
   *center = (wsize.ws_col >> 1);
   *indent = (wsize.ws_col >> 4);
   *swidth = wsize.ws_col;
-  return 0;
 }
 
 FORCE_INLINE u8 err(const char *s)
@@ -22,7 +22,7 @@ FORCE_INLINE u8 err(const char *s)
   return 1;
 }
 
-FORCE_INLINE u64 a_to_u(const char *s, const u64 min, const u64 max)
+u64 a_to_u(const char *s, const u64 min, const u64 max)
 {
   if (UNLIKELY(s == NULL || s[0] == '-'))
     return min;
