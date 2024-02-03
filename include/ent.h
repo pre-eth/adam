@@ -30,6 +30,7 @@
     double monterr;
     double scc;
     double sccu0;
+    u64 *freq;
   } ent_report ALIGN(SIMD_LEN);
 
   void ent_test(u8 *num);

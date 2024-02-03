@@ -19,7 +19,7 @@
 #define LOG2(x) (log2of10 * log10(x))
 #define ex(x) (((x) < -BIGX) ? 0.0 : exp(x))
 
-static u64 ccount[BUF_SIZE], // Bins to count occurrences of values
+static u64 ccount[BUF_SIZE] ALIGN(SIMD_LEN), // Bins to count occurrences of values
     totalc; // Total bytes counted
 
 static double prob[BUF_SIZE]; // Probabilities per bin for entropy
@@ -27,7 +27,8 @@ static double prob[BUF_SIZE]; // Probabilities per bin for entropy
 static u8 mp, ccfirst;
 static u64 monte[MONTEN];
 static u64 inmont, mcount;
-static double cexp, incirc, montex, montey, montepi, scc, sccun, sccu0, scclast,
+static double incirc = 2.8147494E14;
+static double cexp, montex, montey, montepi, scc, sccun, scclast,
     scct1, scct2, scct3, ent, chisq, datasum;
 
 /*
@@ -95,14 +96,13 @@ static double ent_pochisq(const double ax)
 {
   register double a, e, c, s, x, y, z;
 
-  x = ax;
-  if (x <= 0.0)
+  if (ax <= 0.0)
     return 1.0;
 
-  a = 0.5 * x;
+  a = 0.5 * ax;
   y = ex(-a);
 
-  s = 2.0 * ent_poz(-sqrt(x));
+  s = 2.0 * ent_poz(-sqrt(ax));
   x = 0.5 * 255;
   z = 0.5;
 
@@ -129,36 +129,28 @@ static double ent_pochisq(const double ax)
 
 // Need to do a little rewrite to make ent process 8 bytes at a time
 // since ADAM's default work unit is 64 bits
-static void ent_loop(u64 *_ptr, ent_report *rsl)
+void ent_test(u8 *byte)
 {
-  register u8 num;
-  register u16 size = 0;
-  register u64 mask = 0xFFFFFFFFFFFFFFFF, dupe;
+  // Update counters for each bin, and then total
+  ++ccount[byte[0]];
+  ++ccount[byte[1]];
+  ++ccount[byte[2]];
+  ++ccount[byte[3]];
+  ++ccount[byte[4]];
+  ++ccount[byte[5]];
+  ++ccount[byte[6]];
+  ++ccount[byte[7]];
+  totalc += 8;
 
-  u8 *_ucptr = (u8 *)_ptr;
+  register u8 i = 0;
   do {
-    num = _ucptr[size];
-    rsl->mfreq += __builtin_popcount(num);
-
-    if (size & 7) {
-      const u64 full_num = _ptr[size >> 3];
-      rsl->zeroes += (full_num == 0);
-
-      // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
-      rsl->min = full_num ^ ((rsl->min ^ full_num) & -(rsl->min < full_num));
-      rsl->max = rsl->max ^ ((rsl->max ^ full_num) & -(rsl->max < full_num));
-    }
-    // Update counters for each bin, and then total
-    ++ccount[num];
-    ++totalc;
-
     /*
       Update inside / outside circle counts
       for Monte Carlo computation of PI
     */
 
     // Save 6 bytes for Monte Carlo
-    monte[mp++] = num;
+    monte[mp++] = byte[i];
     if (mp >= MONTEN) {
       // Calculate every MONTEN character
       mp = 0;
@@ -171,21 +163,20 @@ static void ent_loop(u64 *_ptr, ent_report *rsl)
       inmont += ((montex * montex + montey * montey) <= incirc);
     }
 
-    sccun = num;
+    sccun = byte[i];
     scct1 += scclast * sccun;
     scct2 += sccun;
     scct3 += (sccun * sccun);
     scclast = sccun;
-
-  } while (++size < (BUF_SIZE << 3));
+  } while (++i < 8);
 }
 
-static void ent_results(ent_report *rsl)
+void ent_results(ent_report *rsl)
 {
-  u16 i;
+  register u16 i;
 
   // Complete calculation of serial correlation coefficient
-  scct1 = scct1 + scclast * sccu0;
+  scct1 = scct1 + scclast * rsl->sccu0;
   scct2 *= scct2;
   scc = totalc * scct3 - scct2;
   scc = (scc == 0.0) ? -100000 : ((totalc * scct1 - scct2) / scc);
@@ -196,7 +187,7 @@ static void ent_results(ent_report *rsl)
     in the entropy calculation below.  While we're at it, we
     sum of all the data which will be used to compute the mean.
   */
-  double a;
+  register double a;
   cexp = totalc / 256.0; // Expected count per bin
   for (i = 0; i < BUF_SIZE; ++i) {
     a = ccount[i] - cexp;
@@ -207,7 +198,7 @@ static void ent_results(ent_report *rsl)
 
   for (i = 0; i < BUF_SIZE; ++i)
     if (prob[i] > 0.0)
-      ent += prob[i] * LOG2(1 / prob[i]);
+      ent += prob[i] * LOG2(1.0 / prob[i]); // change to (prob[i] > 0.0) * prob[i] * LOG2(1 / prob[i]);
 
   /*
     Calculate Monte Carlo value for PI from percentage of hits
@@ -222,32 +213,5 @@ static void ent_results(ent_report *rsl)
   rsl->montepicalc = montepi;
   rsl->monterr = 100.0 * (fabs(PI - montepi) / PI);
   rsl->scc = scc;
-}
-
-void ent_test(ent_report *rsl)
-{
-  ent = chisq = datasum = 0.0;
-  mp = mcount = inmont = totalc = 0;
-  incirc = 65535.0 * 65535.0;
-  scct1 = scct2 = scct3 = scclast = 0.0;
-
-  incirc = pow(pow(256.0, (double)(MONTEN >> 1)) - 1, 2.0);
-
-  totalc = rsl->mfreq = rsl->zeroes = 0;
-
-  register long int rate = rsl->limit >> 14;
-  register short leftovers = rsl->limit & (SEQ_SIZE - 1);
-
-  rng_data *data = rsl->data;
-  adam(data);
-  sccu0 = data->buffer[0] & 0xFF;
-  rsl->min = rsl->max = data->buffer[0];
-
-  do {
-    ent_loop(&data->buffer[0], rsl);
-    adam(data);
-    leftovers -= (u16)(rate <= 0) << 14;
-  } while (LIKELY(--rate > 0) || LIKELY(leftovers > 0));
-
-  ent_results(rsl);
+  rsl->freq = &ccount[0];
 }
