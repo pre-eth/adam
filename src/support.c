@@ -202,15 +202,20 @@ static void print_binary(char *restrict _bptr, u64 num)
 #endif
 
 // prints all bits in a buffer as chunks of 1024 bits
-FORCE_INLINE static void print_chunks(char *restrict _bptr,
+static void print_chunks(char *restrict _bptr,
     const u64 *restrict _ptr)
 {
+#define PRINT_4(i, j) print_binary(_bptr + i, _ptr[(j) + 0]),       \
+                      print_binary(_bptr + 64 + i, _ptr[(j) + 1]),  \
+                      print_binary(_bptr + 128 + i, _ptr[(j) + 2]), \
+                      print_binary(_bptr + 192 + i, _ptr[(j) + 3])
+
   register u8 i = 0;
-
   do {
-    PRINT_4(0, i + 0), PRINT_4(256, i + 4), PRINT_4(512, i + 8),
+    PRINT_4(0, i + 0);
+    PRINT_4(256, i + 4);
+    PRINT_4(512, i + 8);
         PRINT_4(768, i + 12);
-
     fwrite(_bptr, 1, BITBUF_SIZE, stdout);
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
 }
