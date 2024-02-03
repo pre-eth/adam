@@ -374,30 +374,32 @@ static void print_basic_results(const u16 indent, const u32 sequences, const u64
   printf("\033[2m\033[%uC            d. Longest Run: \033[m%u (DECREASING)\n", indent, rsl->longest_down);
 }
 
+static void print_ent_results(const u16 indent, ent_report *ent)
+{
   char *chi_str;
   char chi_tmp[6];
   register u8 suspect_level = 32;
-  if (rsl.pochisq < 0.0001) {
+
+  if (ent->pochisq < 0.001) {
     chi_str = "<= 0.01";
     --suspect_level;
-  } else if (rsl.pochisq > 0.9999) {
-    chi_str = ">= 99.99";
+  } else if (ent->pochisq > 0.99) {
+    chi_str = ">= 0.99";
     --suspect_level;
   } else {
-    const double pochisq = rsl.pochisq * 100;
-    snprintf(&chi_tmp[0], 5, "%1.2f", pochisq);
-    if (pochisq < 5.0 || pochisq > 95.0)
-      ++suspect_level;
-    else if (pochisq < 10.0 || pochisq > 90.0)
-      suspect_level += 61;
+    snprintf(&chi_tmp[0], 5, "%1.2f", ent->pochisq * 100);
     chi_str = &chi_tmp[0];
   }
-  printf("\033[1;34m              Chi square: \033[m%1.2lf (randomly exceeded \033[1;%um%s%%\033[m of the time) \n", rsl.chisq, suspect_level, chi_str);
-  printf("\033[1;34m         Arithmetic Mean: \033[m%1.4lf (127.5 = random)\n", rsl.mean);
-  printf("\033[1;34mMonte Carlo Value for Pi: \033[m%1.9lf (error: %1.2f%%)\n", rsl.montepicalc, rsl.monterr);
-  if (rsl.scc >= -99999)
-    printf("\033[1;34m      Serial correlation: \033[m%1.6f (totally uncorrelated = 0.0).\n", rsl.scc);
+
+  printf("\033[1;34m\033[%uC                   Entropy: \033[m%.5lf bits per byte\n", indent, ent->ent);
+  printf("\033[1;34m\033[%uC                Chi-Square: \033[m\033[1;%um%1.2lf\033[m (randomly exceeded %s%% of the time) \n", indent, suspect_level, ent->chisq, chi_str);
+  printf("\033[1;34m\033[%uC           Arithmetic Mean: \033[m%1.3lf (127.5 = random)\n", indent, ent->mean);
+  printf("\033[1;34m\033[%uC  Monte Carlo Value for Pi: \033[m%1.9lf (error: %1.2f%%)\n", indent, ent->montepicalc, ent->monterr);
+  if (ent->scc >= -99999)
+    printf("\033[1;34m\033[%uC        Serial Correlation: \033[m%1.6f (totally uncorrelated = 0.0).\n", indent, ent->scc);
   else
-    printf("\033[1;34m      Serial correlation: \033[1;31mUNDEFINED\033[m (all values equal!).\n");
+    printf("\033[1;34m\033[%uC        Serial Correlation: \033[1;31mUNDEFINED\033[m (all values equal!).\n", indent);
+}
+
   return duration;
 }
