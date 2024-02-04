@@ -1,25 +1,10 @@
+#include <getopt.h>
 #include <stdio.h>
 #include <unistd.h>
 
 #include "../include/adam.h"
 #include "../include/cli.h"
 #include "../include/support.h"
-
-u8 cli_init(rng_cli *cli, rng_data *data)
-{
-  cli->data = data;
-  cli->fmt = "%llu";
-  cli->width = 64;
-  cli->results = 1;
-  // cli->precision = 0;
-
-  return 0;
-}
-
-u8 version()
-{
-  return puts("v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH));
-}
 
 FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent)
 {
@@ -34,7 +19,7 @@ FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent)
 
   const u8 sizes[SUMM_PIECES + 1] = { 19, 10, 15, 15, 13, 10, 11, 12, 0 };
 
-  u8 i = 0, running_length = indent;
+  register u8 i = 0, running_length = indent;
 
   printf("\n\033[%uC", indent);
 
@@ -50,7 +35,7 @@ FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent)
     }
   }
 
-  putchar('\n'), putchar('\n');
+  printf("\n\n");
 }
 
 u8 help()
@@ -71,11 +56,11 @@ u8 help()
   printf("\033[%uC[OPTIONS]\n", CENTER);
 
   const char ARGS[ARG_COUNT] = { 'h', 'v', 's', 'n', 'u', 'r',
-    'w', 'b', 'a', 'e', 'x', 'o' };
+    'w', 'b', 'a', 'e', 'x', 'o', 'm' };
+
   const char *ARGSHELP[ARG_COUNT] = {
     "Get command summary and all available options",
-    "Version of this software (" STRINGIFY(MAJOR) "." STRINGIFY(
-        MINOR) "." STRINGIFY(PATCH) ")",
+    "Version of this software (" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH) ")",
     "Get the seed for the generated buffer (no parameter) or provide "
     "your own. Seeds are reusable but should be kept secret.",
     "Get the nonce for the generated buffer (no parameter) or provide "
@@ -98,8 +83,7 @@ u8 help()
 
   register short len;
   for (u8 i = 0; i < ARG_COUNT; ++i) {
-    printf("\033[%uC\033[1;33m-%c\033[m\033[%uC%.*s\n", INDENT, ARGS[i], INDENT,
-        HELP_WIDTH, ARGSHELP[i]);
+    printf("\033[%uC\033[1;33m-%c\033[m\033[%uC%.*s\n", INDENT, ARGS[i], INDENT, HELP_WIDTH, ARGSHELP[i]);
     len = lengths[i] - HELP_WIDTH;
     while (len > 0) {
       ARGSHELP[i] += HELP_WIDTH + (ARGSHELP[i][HELP_WIDTH] == ' ');
@@ -115,6 +99,7 @@ u8 set_width(rng_cli *cli, const char *strwidth)
   cli->width = a_to_u(strwidth, 8, 32);
   if (UNLIKELY(cli->width & (cli->width - 1)))
     return 1;
+
   /*
     This line will basically "floor" results to the max value of results
     possible for this new precision in case it exceeds the possible limit
@@ -122,29 +107,20 @@ u8 set_width(rng_cli *cli, const char *strwidth)
   */
   const u8 max = SEQ_SIZE >> CTZ(cli->width);
   cli->results -= (cli->results > max) * (cli->results - max);
-  return 0;
-}
 
-u8 set_results(rng_cli *cli, const char *strsl)
-{
-  cli->results = (strsl == NULL) ? SEQ_SIZE >> CTZ(cli->width) : a_to_u(optarg, 1, SEQ_SIZE >> CTZ(cli->width));
   return 0;
 }
 
 u8 print_buffer(rng_cli *cli)
 {
-  register u64 mask;
-
-  if (cli->width == 64)
-    mask = __UINT64_MAX__ - 1;
-  else
-    mask = (1UL << cli->width) - 1;
+  register u64 mask = (cli->width == 64) ? (__UINT64_MAX__ - 1) : ((1UL << cli->width) - 1);
 
   rng_data *data = cli->data;
 
   // Need to do this for default precision because
   // we can't rely on overflow arithmetic :(
-  register u8 inc = (cli->width == 64), idx = 0;
+  register u8 inc = (cli->width == 64);
+  register u8 idx = 0;
 
   printf(cli->fmt, data->buffer[idx] & mask);
 
@@ -222,6 +198,67 @@ get_file_type:
   fprintf(stderr,
       "\n\033[0;1mWrote \033[36m%llu\033[m bits in \033[36m%lfs\033[m\n",
       total, duration);
+
+  return 0;
+}
+
+u8 cli_runner(int argc, char **argv)
+{
+  rng_data data;
+  rng_cli cli;
+
+  adam_init(&data);
+  cli.data = &data;
+  cli.fmt = "%llu";
+  cli.width = 64;
+  cli.results = 1;
+
+  register short opt;
+  while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
+    switch (opt) {
+    case 'h':
+      return help();
+    case 'v':
+      return puts("v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH));
+    case 'a':
+      return assess(optarg, &cli);
+    case 'b':
+      stream_bytes(__UINT64_MAX__, &data);
+      return 0;
+    case 'x':
+      cli.fmt = "0x%lX";
+      break;
+    case 'o':
+      cli.fmt = "0o%lo";
+      break;
+    case 'w':
+      if (set_width(&cli, optarg))
+        return err("Width must be either 8, 16, 32");
+      break;
+    case 'r':
+      // Returns all results if no argument provided
+      cli.results = (optarg == NULL) ? SEQ_SIZE >> CTZ(cli.width) : a_to_u(optarg, 1, SEQ_SIZE >> CTZ(cli.width));
+      if (cli.results == 0)
+        return err("Invalid number of results "
+                   "specified for desired width");
+      break;
+    case 's':
+      rwseed(&data.seed[0], optarg);
+      break;
+    case 'n':
+      rwnonce(&data.nonce, optarg);
+      break;
+    case 'u':
+      return uuid(optarg, &data);
+    case 'e':
+      return examine(optarg, &data);
+    default:
+      return err("Option is invalid or missing required argument");
+    }
+  }
+
+  adam(&data);
+  print_buffer(&cli);
 
   return 0;
 }
