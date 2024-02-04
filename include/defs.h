@@ -213,6 +213,7 @@
   #define CTZ               __builtin_ctz 
   #define FLOOR             __builtin_floor
   #define MEMCPY            __builtin_memcpy
+  #define POPCNT            __builtin_popcountll
   #define LIKELY(x)         __builtin_expect((x), 1)
   #define UNLIKELY(x)       __builtin_expect((x), 0)
 #endif
