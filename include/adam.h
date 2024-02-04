@@ -27,11 +27,11 @@
   }
 
   // Slightly modified versions of macros from ISAAC for reseeding ADAM
-  #define ISAAC_IND(mm, x)  (*(u64*)((u8*)(mm) + ((x) & ((BUF_SIZE-1)<<3))))
+  #define ISAAC_IND(mm, x)    (*(u64*)((u8*)(mm) + ((x) & ((BUF_SIZE-1)<<3))))
   #define ISAAC_RNGSTEP(mx, a, b, mm, m, m2, x, y) { \
-    x = (m << 24) | ((u64)mod_table[(u64)mod_table[(u64)mod_table[x & 0xFF] & 0xFF] & 0xFF] & 0xFFFFFF);  \
+    x = (m << 24) | ((~(m >> 40) ^ __UINT64_MAX__)  & 0xFFFFFF);  \
     a = (a^(mx)) + m2; \
-    m = ~(y = ISAAC_IND(mm,x) + a + b); \
+    m = ~(ISAAC_IND(mm,x) + a + b); \
     y ^= b = ISAAC_IND(mm,y>>MAGNITUDE) + x; \
   }
 
@@ -78,13 +78,6 @@
     ADAM uses the max double accuracy length of 15
   */
   #define BETA                  10E15 
-
-  #ifndef __AARCH64_SIMD_
-    #define XOR_MAPS(i)         _ptr[0 + i] ^ (_ptr[0 + i + 256]) ^ (_ptr[0 + i + 512]),\
-                                _ptr[1 + i] ^ (_ptr[1 + i + 256]) ^ (_ptr[1 + i + 512]),\
-                                _ptr[2 + i] ^ (_ptr[2 + i + 256]) ^ (_ptr[2 + i + 512]),\
-                                _ptr[3 + i] ^ (_ptr[3 + i + 256]) ^ (_ptr[3 + i + 512])
-  #endif
 
   // Data for RNG process
   typedef struct rng_data {
