@@ -16,7 +16,7 @@ void get_print_metrics(u16 *center, u16 *indent, u16 *swidth)
   *swidth = wsize.ws_col;
 }
 
-FORCE_INLINE u8 err(const char *s)
+u8 err(const char *s)
 {
   fprintf(stderr, "\033[1;31m%s\033[m\n", s);
   return 1;
@@ -367,6 +367,7 @@ static void print_basic_results(const u16 indent, const u32 sequences, const u64
   printf("\033[1;34m\033[%uC              64-bit Nonce: \033[m0x%llX\n", indent, rsl->init_values[4]);
   printf("\033[1;34m\033[%uC           Initial State 1: \033[m0x%llX\n", indent, rsl->init_values[5]);
   printf("\033[1;34m\033[%uC           Initial State 2: \033[m0x%llX\n", indent, rsl->init_values[6]);
+  printf("\033[1;34m\033[%uC        Average Gap Length: \033[m%llu\n", indent, (u64)rsl->avg_gap);
   printf("\033[1;34m\033[%uC      Total Number of Runs: \033[m%u\n", indent, rsl->up_runs + rsl->down_runs);
   printf("\033[2m\033[%uC            a.  Increasing: \033[m%u\n", indent, rsl->up_runs);
   printf("\033[2m\033[%uC            b.  Decreasing: \033[m%u\n", indent, rsl->down_runs);
@@ -403,7 +404,7 @@ static void print_ent_results(const u16 indent, ent_report *ent)
 
 static void print_chseed_results(const u16 indent, const u32 sequences, u64 *chseed_dist, const double avg_chseed)
 {
-  #define CHSEED_CRITICAL_VALUE   13.277     
+#define CHSEED_CRITICAL_VALUE 13.277
 
   register double chi_calc = 0.0;
   const u64 expected_chseeds = (u64)((sequences * (ROUNDS << 2)) * 0.2);
