@@ -56,7 +56,7 @@ u8 help()
   printf("\033[%uC[OPTIONS]\n", CENTER);
 
   const char ARGS[ARG_COUNT] = { 'h', 'v', 's', 'n', 'u', 'r',
-    'w', 'b', 'a', 'e', 'x', 'o', 'm' };
+    'w', 'b', 'a', 'e', 'x', 'o', };
 
   const char *ARGSHELP[ARG_COUNT] = {
     "Get command summary and all available options",

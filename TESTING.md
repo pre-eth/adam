@@ -4,17 +4,19 @@ Everything you need to know for testing ADAM with different popular RNG test sui
 
 ## NIST
 
-The STS can be downloaded from the link above. [This](https://www.slideshare.net/Muhammadhamid23/running-of-nist-test-109375052) is a good little quick start guide.
+The STS can be downloaded [here](https://csrc.nist.gov/projects/random-bit-generation/documentation-and-software). [This](https://www.slideshare.net/Muhammadhamid23/running-of-nist-test-109375052) is a good little quick start guide.
 
 Results for testing 10Mb, 100Mb, 500Mb, and 1Gb are available in the `tests` subdirectory. 
 
 Some results for the NonOverlappingTemplate tests may be borderline - this is expected since the output should be random, which means some runs will probability wise be weaker than others. The overall is what's most important, and to confirm for yourself you can run the Dieharder test suite which includes the STS tests and retries any `WEAK` results until a conclusive verdict can be reached.
 
+NIST has created a [manual](https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-22r1a.pdf) detailing each of the different tests, available for free. 
+
 ## Dieharder
 
 `adam -b | dieharder -a -Y 1 -k 2 -g 200`
 
-Explanation of options can be found in Dieharder's [man page](https://linux.die.net/man/1/dieharder). I couldn't get the Dieharder binary working on macOS, so unfortunately this test may be limited to Linux users (if I'm wrong please let me know).
+Explanation of options can be found in Dieharder's [man page](https://linux.die.net/man/1/dieharder). I couldn't get the Dieharder binary working on macOS, so unfortunately this test may be limited to Linux users, unless you try using a Docker container (if I'm wrong please let me know).
 
 ## gjrand
 
@@ -35,7 +37,7 @@ cd ..
 adam -b | ./mcp --<SIZE_OPTION>
 ```
 
-The size options are:
+where SIZE_OPTION is one of:
 
 ```
 --tiny          10MB
