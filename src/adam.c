@@ -2,95 +2,6 @@
 
 #include "../include/adam.h"
 
-static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
-  72340172838076672.0, 72624976668147840.0, 72912031911895456.0,
-  73201365371863296.0, 73493004277727296.0, 73786976294838208.0,
-  74083309532970080.0, 74382032555280448.0, 74683174387488064.0,
-  74986764527274608.0, 75292832953916544.0, 75601410138153904.0,
-  75912527052302688.0, 76226215180617984.0, 76542506529915152.0,
-  76861433640456464.0, 77183029597111088.0, 77507328040796432.0,
-  77834363180209072.0, 78164169803854032.0, 78496783292381072.0,
-  78832239631237408.0, 79170575423646144.0, 79511827903920480.0,
-  79856034951123600.0, 80203235103085008.0, 80553467570784064.0,
-  80906772253112064.0, 81263189752024464.0, 81622761388095360.0,
-  81985529216486896.0, 82351536043346208.0, 82720825442643728.0,
-  83093441773466448.0, 83469430197780784.0, 83848836698679776.0,
-  84231708099130368.0, 84618092081236480.0, 85008037206034800.0,
-  85401592933840512.0, 85798809645160704.0, 86199738662194160.0,
-  86604432270936864.0, 87012943743912976.0, 87425327363552384.0,
-  87841638446235968.0, 88261933367031344.0, 88686269585142080.0,
-  89114705670094448.0, 89547301328687136.0, 89984117432729520.0,
-  90425216047595840.0, 90870660461623408.0, 91320515216383920.0,
-  91774846137858464.0, 92233720368547760.0, 92697206400550512.0,
-  93165374109644208.0, 93638294790403808.0, 94116041192395664.0,
-  94598687557484880.0, 95086309658296656.0, 95578984837873328.0,
-  96076792050570576.0, 96579811904238496.0, 97088126703734480.0,
-  97601820495817728.0, 98120979115476336.0, 98645690233740912.0,
-  99176043407040608.0, 99712130128159744.0, 100254043878856256.0,
-  100801880184205200.0, 101355736668733808.0, 101915713114417408.0,
-  102481911520608624.0, 103054436165975152.0, 103633393672525568.0,
-  104218893071805376.0, 104811045873349728.0, 105409966135483152.0,
-  106015770538560640.0, 106628578460748848.0, 107248512056450880.0,
-  107875696337482752.0, 108510259257115008.0, 109152331797097936.0,
-  109802048057794944.0, 110459545351554208.0, 111124964299455136.0,
-  111798448931573040.0, 112480146790911904.0, 113170209041162896.0,
-  113868790578454016.0, 114576050147264288.0, 115292150460684704.0,
-  116017258325217312.0, 116751544770313616.0, 117495185182863392.0,
-  118248359446856096.0, 119011252088448720.0, 119784052426685408.0,
-  120566954730127792.0, 121360158379668096.0, 122163868037811600.0,
-  122978293824730352.0, 123803651501406384.0, 124640162660199680.0,
-  125488054923194224.0, 126347562148695552.0, 127218924646272768.0,
-  128102389400760768.0, 128998210305661200.0, 129906648406405296.0,
-  130827972153968448.0, 131762457669353936.0, 132710389019493184.0,
-  133672058505141680.0, 134647766961383584.0, 135637824071393760.0,
-  136642548694144832.0, 137662269206787696.0, 138697323862477824.0,
-  139748061164466304.0, 140814840257324816.0, 141898031336227328.0,
-  142998016075267840.0, 144115188075855872.0, 145249953336295680.0,
-  146402730743726592.0, 147573952589676416.0, 148764065110560896.0,
-  149973529054549216.0, 151202820276307808.0, 152452430361235968.0,
-  153722867280912928.0, 155014656081592864.0, 156328339607708064.0,
-  157664479262474816.0, 159023655807840960.0, 160406470206170016.0,
-  161813544506224128.0, 163245522776190720.0, 164703072086692416.0,
-  166186883546932896.0, 167697673397359552.0, 169236184162472960.0,
-  170803185867681024.0, 172399477324388320.0, 174025887487825952.0,
-  175683276892471936.0, 177372539170284160.0, 179094602657374272.0,
-  180850432095191680.0, 182641030432767840.0, 184467440737095520.0,
-  186330748219288416.0, 188232082384791328.0, 190172619316593312.0,
-  192153584101141152.0, 194176253407468960.0, 196241958230952672.0,
-  198352086814081216.0, 200508087757712512.0, 202711473337467616.0,
-  204963823041217248.0, 207266787345051136.0, 209622091746699456.0,
-  212031541077121280.0, 214497024112901760.0, 217020518514230016.0,
-  219604096115589888.0, 222249928598910272.0, 224960293581823808.0,
-  227737581156908032.0, 230584300921369408.0, 233503089540627232.0,
-  236496718893712192.0, 239568104853370816.0, 242720316759336192.0,
-  245956587649460704.0, 249280325320399360.0, 252695124297391104.0,
-  256204778801521536.0, 259813296812810592.0, 263524915338707872.0,
-  267344117010283360.0, 271275648142787520.0, 275324538413575392.0,
-  279496122328932608.0, 283796062672454656.0, 288230376151711744.0,
-  292805461487453184.0, 297528130221121792.0, 302405640552615616.0,
-  307445734561825856.0, 312656679215416128.0, 318047311615681920.0,
-  323627089012448256.0, 329406144173384832.0, 335395346794719104.0,
-  341606371735362048.0, 348051774975651904.0, 354745078340568320.0,
-  361700864190383360.0, 368934881474191040.0, 376464164769582656.0,
-  384307168202282304.0, 392483916461905344.0, 401016175515425024.0,
-  409927646082434496.0, 419244183493398912.0, 428994048225803520.0,
-  439208192231179776.0, 449920587163647616.0, 461168601842738816.0,
-  472993437787424384.0, 485440633518672384.0, 498560650640798720.0,
-  512409557603043072.0, 527049830677415744.0, 542551296285575040.0,
-  558992244657865216.0, 576460752303423488.0, 595056260442243584.0,
-  614891469123651712.0, 636094623231363840.0, 658812288346769664.0,
-  683212743470724096.0, 709490156681136640.0, 737869762948382080.0,
-  768614336404564608.0, 802032351030850048.0, 838488366986797824.0,
-  878416384462359552.0, 922337203685477632.0, 970881267037344768.0,
-  1024819115206086144.0, 1085102592571150080.0, 1152921504606846976.0,
-  1229782938247303424.0, 1317624576693539328.0, 1418980313362273280.0,
-  1537228672809129216.0, 1676976733973595648.0, 1844674407370955264.0,
-  2049638230412172288.0, 2305843009213693952.0, 2635249153387078656.0,
-  3074457345618258432.0, 3689348814741910528.0, 4611686018427387904.0,
-  6148914691236516864.0, 9218868437227405312.0, 9223372036854775808.0,
-  18446744073709551615.0
-};
-
 /*
   The algorithm requires at least the construction of 3 maps of size BUF_SIZE
   Offsets logically represent each individual map, but it's all one buffer
@@ -98,13 +9,14 @@ static double mod_table[BUF_SIZE] ALIGN(SIMD_LEN) = {
   static is necessary because otherwise buffer is initiated with junk that
   removes the deterministic nature of the algorithm
 */
-static u64 buffer[BUF_SIZE * 3] ALIGN(64);
+static u64 buffer[BUF_SIZE * 3] ALIGN(SIMD_LEN);
 
 // Seeds supplied to each iteration of the chaotic function
-static double chseeds[ROUNDS << 2] ALIGN(64);
+// Per each round, 4 consecutive seeds are supplied
+static double chseeds[ROUNDS << 2] ALIGN(SIMD_LEN);
 
 #ifdef __AARCH64_SIMD__
-FORCE_INLINE static void accumulate(u64 *seed)
+static void accumulate(u64 *seed)
 {
 // To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random double D
 #define DIV 5.4210109E-20
@@ -123,17 +35,14 @@ FORCE_INLINE static void accumulate(u64 *seed)
 
   reg64q4 r1, r2;
 
-  u64 *restrict _ptr = &buffer[0];
-
-  register u8 i = 0, maps_filled = 0;
+  register u8 i = 0;
   r1 = SIMD_LOAD64x4(IV);
 
-  // fill_the_earth:
   do {
-    SIMD_STORE64x4(&_ptr[i], r1);
+    SIMD_STORE64x4(&buffer[i], r1);
     SIMD_ADD4RQ64(r2, r1, r1);
     SIMD_XOR4RQ64(r2, r1, r2);
-    SIMD_STORE64x4(&_ptr[i + 8], r2);
+    SIMD_STORE64x4(&buffer[i + 8], r2);
     SIMD_ADD4RQ64(r1, r1, r2);
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
 
@@ -150,27 +59,22 @@ FORCE_INLINE static void accumulate(u64 *seed)
     seeds.val[0] = SIMD_COMBINEPD(SIMD_SETPD(IV[0] ^ IV[4]), SIMD_SETPD(IV[1] ^ IV[5]));
     seeds.val[1] = SIMD_COMBINEPD(SIMD_SETPD(IV[2] ^ IV[6]), SIMD_SETPD(IV[3] ^ IV[7]));
 
-    IV[0] += buffer[IV[5] & 0xFF], IV[1] += buffer[IV[4] & 0xFF];
-    IV[2] += buffer[IV[3] & 0xFF], IV[3] += buffer[IV[2] & 0xFF];
-    IV[4] += buffer[IV[1] & 0xFF], IV[5] += buffer[IV[0] & 0xFF];
-    IV[6] += buffer[IV[7] & 0xFF], IV[7] += buffer[IV[6] & 0xFF];
+    IV[0] += buffer[IV[7] & 0xFF], IV[1] += buffer[IV[6] & 0xFF];
+    IV[2] += buffer[IV[5] & 0xFF], IV[3] += buffer[IV[4] & 0xFF];
+    IV[4] += buffer[IV[3] & 0xFF], IV[5] += buffer[IV[2] & 0xFF];
+    IV[6] += buffer[IV[1] & 0xFF], IV[7] += buffer[IV[0] & 0xFF];
 
-    seeds.val[2] = SIMD_COMBINEPD(SIMD_SETPD(IV[3] ^ IV[7]), SIMD_SETPD(IV[0] ^ IV[4]));
-    seeds.val[3] = SIMD_COMBINEPD(SIMD_SETPD(IV[1] ^ IV[5]), SIMD_SETPD(IV[2] ^ IV[6]));
+    seeds.val[2] = SIMD_COMBINEPD(SIMD_SETPD(IV[3] ^ IV[7]), SIMD_SETPD(IV[1] ^ IV[5]));
+    seeds.val[3] = SIMD_COMBINEPD(SIMD_SETPD(IV[2] ^ IV[6]), SIMD_SETPD(IV[0] ^ IV[4]));
 
+    // replace with const register
     SIMD_SCALARMUL4PD(seeds, seeds, DIV * LIMIT);
 
-    SIMD_STORE4PD(&chseeds[(i << 3)], seeds);
+    SIMD_STORE4PD(&chseeds[i << 3], seeds);
   } while (++i < (ROUNDS >> 1));
-
-  for (int i = 0; i < 256; ++i) {
-    if (buffer[i] == 0) {
-      __builtin_printf("Index %i is zero\n", i);
-    }
-  }
 }
 #else
-FORCE_INLINE static void accumulate(u64 *seed)
+static void accumulate(u64 *seed)
 {
   // To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random
   // double D
@@ -189,18 +93,16 @@ FORCE_INLINE static void accumulate(u64 *seed)
   };
 
   reg r1, r2;
-#ifndef __AVX512F__
-  reg r3;
-#endif
-  register u8 maps_filled = 0, i;
+
+  register u8 i;
 
   u64 *_ptr = &buffer[0];
 
-fill_the_earth:
   i = 0;
   r1 = SIMD_LOADBITS((reg *)IV);
 #ifndef __AVX512F__
   r2 = SIMD_LOADBITS((reg *)&IV[4]);
+  reg r3;
 #endif
 
   do {
@@ -209,25 +111,24 @@ fill_the_earth:
     r2 = SIMD_ADD64(r1, r1);
     r2 = SIMD_XORBITS(r1, r2);
     SIMD_STOREBITS((reg *)&_ptr[i + 8], r2);
-    r1 = SIMD_ADD64(r2, r2);
-    r1 = SIMD_XORBITS(r1, r2);
+    r1 = SIMD_ADD64(r1, r2);
 #else
     SIMD_STOREBITS((reg *)&_ptr[i + 4], r2);
     r3 = SIMD_ADD64(r1, r1);
     r3 = SIMD_XORBITS(r1, r3);
     SIMD_STOREBITS((reg *)&_ptr[i + 8], r3);
-    r1 = SIMD_ADD64(r3, r3);
-    r1 = SIMD_XORBITS(r1, r3);
+    r1 = SIMD_ADD64(r1, r3);
     r3 = SIMD_ADD64(r2, r2);
     r3 = SIMD_XORBITS(r2, r3);
     SIMD_STOREBITS((reg *)&_ptr[i + 12], r3);
-    r2 = SIMD_ADD64(r3, r3);
-    r2 = SIMD_XORBITS(r2, r3);
+    r2 = SIMD_ADD64(r2, r3);
 #endif
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
 
-  ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
-  ISAAC_MIX(IV[0], IV[1], IV[2], IV[3], IV[4], IV[5], IV[6], IV[7]);
+  r1 = SIMD_STOREBITS((reg *)IV);
+#ifndef __AVX512F__
+  r2 = SIMD_STOREBITS((reg *)&IV[4]);
+#endif
 
   // Calculation methodology for this part works best with AVX2
   const __m256d factor = SIMD_SETPD(DIV * LIMIT);
@@ -243,13 +144,13 @@ fill_the_earth:
     s1 = _mm256_setr_pd((double)(IV[0] ^ IV[4]), (double)(IV[1] ^ IV[5]),
         (double)(IV[2] ^ IV[6]), (double)(IV[3] ^ IV[7]));
 
-    IV[0] += buffer[IV[5] & 0xFF], IV[1] += buffer[IV[4] & 0xFF];
-    IV[2] += buffer[IV[3] & 0xFF], IV[3] += buffer[IV[2] & 0xFF];
-    IV[4] += buffer[IV[1] & 0xFF], IV[5] += buffer[IV[0] & 0xFF];
-    IV[6] += buffer[IV[7] & 0xFF], IV[7] += buffer[IV[6] & 0xFF];
+    IV[0] += buffer[IV[7] & 0xFF], IV[1] += buffer[IV[6] & 0xFF];
+    IV[2] += buffer[IV[5] & 0xFF], IV[3] += buffer[IV[4] & 0xFF];
+    IV[4] += buffer[IV[3] & 0xFF], IV[5] += buffer[IV[2] & 0xFF];
+    IV[6] += buffer[IV[1] & 0xFF], IV[7] += buffer[IV[0] & 0xFF];
 
-    s2 = _mm256_setr_pd((double)(IV[1] ^ IV[4]), (double)(IV[0] ^ IV[5]),
-        (double)(IV[3] ^ IV[6]), (double)(IV[2] ^ IV[7]));
+    s2 = _mm256_setr_pd((double)(IV[2] ^ IV[6]), (double)(IV[3] ^ IV[7]),
+        (double)(IV[0] ^ IV[4]), (double)(IV[1] ^ IV[5]));
 
     s1 = _mm256_mul_pd(s1, factor);
     s2 = _mm256_mul_pd(s2, factor);
@@ -260,7 +161,7 @@ fill_the_earth:
 }
 #endif
 
-FORCE_INLINE static void diffuse(const u64 nonce)
+static void diffuse(const u64 nonce)
 {
   register u64 a, b, c, d, e, f, g, h;
   a = b = c = d = e = f = g = h = nonce;
@@ -272,7 +173,6 @@ FORCE_INLINE static void diffuse(const u64 nonce)
     ISAAC_MIX(a, b, c, d, e, f, g, h);
 
   i = 0;
-
   do {
     a += buffer[i];
     b += buffer[i + 1];
@@ -297,13 +197,15 @@ FORCE_INLINE static void diffuse(const u64 nonce)
 }
 
 #ifdef __AARCH64_SIMD__
-FORCE_INLINE static void apply()
+static void apply()
 {
   const dregq one = SIMD_SETQPD(1.0);
+  const dregq coeff = SIMD_SETQPD(COEFFICIENT);
+  const dregq beta = SIMD_SETQPD(BETA);
 
   const reg64q mask = SIMD_SETQ64(0xFFUL), inc = SIMD_SETQ64(0x08UL);
 
-  dreg4q d1, d2, d3;
+  dreg4q d1, d2;
   reg64q4 r1, r2, scale;
 
   u64 *map_a = &buffer[0], *map_b = &buffer[BUF_SIZE];
@@ -322,15 +224,11 @@ chaotic_iter:
   do {
     // 3.9999 * X * (1 - X) for all X in the register
     SIMD_SUB4QPD(d2, one, d1);
-    SIMD_SCALARMUL4PD(d2, d2, COEFFICIENT);
+    SIMD_MUL4QPD(d2, d2, coeff);
     SIMD_MUL4RQPD(d1, d1, d2);
 
-    // Multiply result of chaotic function by beta
-    // Then multiply result of that against values in mod reduction
-    // table
-    SIMD_SCALARMUL4PD(d2, d1, BETA);
-    d3 = SIMD_LOAD4PD(&mod_table[i]);
-    SIMD_MUL4RQPD(d2, d2, d3);
+    // Multiply result of chaotic function by BETA
+    SIMD_MUL4QPD(d2, d1, beta);
 
     // Cast to u64, add the scaling factor
     // Mask so idx stays in range of buffer
@@ -349,7 +247,7 @@ chaotic_iter:
     SIMD_ADD4Q64(scale, scale, inc);
   } while ((i += 8 - (i == 248)) < BUF_SIZE - 1);
 
-  // Using two sets of seeds at once
+  // Using two sets of seeds at once (1 set = 4 seeds)
   rounds += 8;
 
   if (rounds < (ROUNDS << 2)) {
@@ -365,7 +263,7 @@ chaotic_iter:
   }
 }
 #else
-FORCE_INLINE static void apply()
+static void apply()
 {
   const regd beta = SIMD_SETQPD(BETA), coefficient = SIMD_SETQPD(3.9999),
              one = SIMD_SETQPD(1.0);
@@ -396,8 +294,8 @@ chaotic_iter:
     // Then multiply result of that against values in mod reduction
     // table
     d2 = SIMD_MULPD(d1, beta);
-    d3 = SIMD_LOADPD(&mod_table[j]);
-    d2 = SIMD_MULPD(d2, d3);
+    // d3 = SIMD_LOADPD(&mod_table[j]);
+    // d2 = SIMD_MULPD(d2, d3);
 
     // Cast to u64, add the scaling factor
     // Mask so idx stays in range of buffer
@@ -445,6 +343,10 @@ FORCE_INLINE static void mix()
     SIMD_STORE64x4(&buffer[i], r3);
   } while ((i += 8 - (i == 248)) < BUF_SIZE - 1);
 #else
+#define XOR_MAPS(i) _ptr[0 + i] ^ (_ptr[0 + i + 256]) ^ (_ptr[0 + i + 512]), \
+                    _ptr[1 + i] ^ (_ptr[1 + i + 256]) ^ (_ptr[1 + i + 512]), \
+                    _ptr[2 + i] ^ (_ptr[2 + i + 256]) ^ (_ptr[2 + i + 512]), \
+                    _ptr[3 + i] ^ (_ptr[3 + i + 256]) ^ (_ptr[3 + i + 512])
   reg r1, r2;
 
   do {
@@ -475,8 +377,9 @@ void adam_init(rng_data *data)
   getentropy(&data->seed[0], sizeof(u64) << 2);
   getentropy(&data->nonce, sizeof(u64));
   data->buffer = &buffer[0];
-  data->aa = (data->nonce & 0xFFFFFFFF00000000) | (data->seed[data->nonce & 3] & 0xFFFFFFFF);
-  data->bb = (data->seed[data->aa & 3] & 0xFFFFFFFF00000000) | (data->nonce & 0xFFFFFFFF);
+  data->chseeds = &chseeds[0];
+  data->aa = (data->nonce & 0xFFFFFFFF00000000) | (~data->seed[data->nonce & 3] & 0xFFFFFFFF);
+  data->bb = (data->seed[data->aa & 3] & 0xFFFFFFFF00000000) | (~data->nonce & 0xFFFFFFFF);
 }
 
 void adam(rng_data *data)
@@ -489,26 +392,25 @@ void adam(rng_data *data)
   u64 aa = data->aa, bb = data->bb;
   u64 *_ptr = &data->buffer[0];
 
-  register u8 i = (((data->seed[0] + data->seed[2])) ^ ((data->seed[1] + data->seed[3]))) & 0xFF;
+  register u8 i = ((data->seed[0] ^ data->seed[2]) ^ (data->seed[1] ^ data->seed[3])) & 0xFF;
   register u8 j = i + (data->nonce & 0xFF);
   j += (i == j);
 
-  u64 k = ((data->nonce << 16) | (data->nonce & 0xFFFF000000000000)) + 1;
-  u64 l = ((data->nonce << 32) | (data->nonce & 0xFFFFFFFF00000000)) + 1;
-  u64 m = ((data->nonce << 48) | (data->nonce & 0xFFFFFFFFFFFF0000)) + 1;
+  register u64 k = ((data->nonce << 16) | ((data->nonce >> 48) & 0xFFFF));
+  register u64 l = ((data->nonce << 32) | ((k >> 32) & 0xFFFFFFFF));
+  register u64 m = ((data->nonce << 48) | ((l >> 16) & 0xFFFFFFFFFF));
 
   ISAAC_RNGSTEP(~(aa ^ (aa << 21)), aa, bb, data->buffer, _ptr[i], _ptr[j],
       data->seed[0], k);
-  ISAAC_RNGSTEP(aa ^ (aa >> 5), aa, bb, data->buffer, _ptr[i + 2], _ptr[j - 2],
+  ISAAC_RNGSTEP(aa ^ (aa >> 5), aa, bb, data->buffer, _ptr[i + 2], _ptr[j - 6],
       data->seed[1], l);
   ISAAC_RNGSTEP(aa ^ (aa << 12), aa, bb, data->buffer, _ptr[i + 4], _ptr[j - 4],
       data->seed[2], m);
-  ISAAC_RNGSTEP(aa ^ (aa >> 33), aa, bb, data->buffer, _ptr[i + 6], _ptr[j - 6],
+  ISAAC_RNGSTEP(aa ^ (aa >> 33), aa, bb, data->buffer, _ptr[i + 6], _ptr[j - 2],
       data->seed[3], data->nonce);
 
-  data->aa = aa;
-  data->bb = ++bb;
+  data->aa = aa + (k + (l ^ m));
+  data->bb = ++bb ^ ((m ^ k) & 0xFFFFFF00FFFFFF00);
 
-  k = (k + l ^ m) | (m & 0xFFFFFF);
-  data->nonce ^= ((k << (k & 31)) | (l & 0xFFFFFFFFFF));
+  data->nonce ^= ((k << (k & 31)) | ~l & ((1UL << (k & 31)) - 1));
 }
