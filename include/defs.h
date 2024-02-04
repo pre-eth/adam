@@ -136,6 +136,12 @@
       s1.val[2] = SIMD_SUBPD(s2, s3.val[2]), \
       s1.val[3] = SIMD_SUBPD(s2, s3.val[3])
 
+    #define SIMD_MUL4QPD(s1, s2, s3) \
+      s1.val[0] = SIMD_MULPD(s2.val[0], s3), \
+      s1.val[1] = SIMD_MULPD(s2.val[1], s3), \
+      s1.val[2] = SIMD_MULPD(s2.val[2], s3), \
+      s1.val[3] = SIMD_MULPD(s2.val[3], s3)
+
     #define SIMD_MUL4RQPD(s1, s2, s3) \
       s1.val[0] = SIMD_MULPD(s2.val[0], s3.val[0]), \
       s1.val[1] = SIMD_MULPD(s2.val[1], s3.val[1]), \
