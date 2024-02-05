@@ -10,6 +10,7 @@
   #define MAGNITUDE           8  
   #define BUF_SIZE            (1U << MAGNITUDE)     
   #define SEQ_SIZE            (BUF_SIZE << 6)  
+  #define SEQ_BYTES           (BUF_SIZE << 3)  
 
   /* ISAAC64 stuff */
 
@@ -44,7 +45,7 @@
     using a chaotic function to scramble the used positions. The 
     chaotic function is given by this logistic function:
 
-      3.9999 * (x) * (1 - (x))
+      3.9999 * X * (1 - X)
   */
   #define COEFFICIENT           3.9999      
   
@@ -64,7 +65,7 @@
 
     However, the paper was written in 2014, and computing power has
     increased even more since then, so instead of 128, 256 is used 
-    above as well as the following formula used to calculate k:
+    above as well as the following formula used to calculate K:
       floor(256 / log2(5 x pow(10, c - 1) - 1)) + 1
 
     The rounds value is supposed to be generated from taking this 
@@ -81,14 +82,52 @@
 
   // Data for RNG process
   typedef struct rng_data {
-    u64 *buffer;                //  Where we store the results
+    bool dbl_mode;              //  Output type (0 = INT, 1 = DOUBLE)
+    u8 index;                   //  Current index in output vector
     u64 seed[4];                //  256-bit seed/key
     u64 nonce;                  //  64-bit nonce
     u64 aa;                     //  State variable 1
     u64 bb;                     //  State variable 2
     double *restrict chseeds;   //  Where we store seeds for each round of chaotic function
-  } ALIGN(SIMD_LEN) rng_data;
+  } rng_data;
 
-  void adam_init(rng_data *data);
-  void adam(rng_data *data);
+  /*
+    Initializes the rng_data struct and configures its initial state.
+    
+    Call this ONCE at the start of your program, before you generate any 
+    numbers. Set param "gen_dbls" to true to get double precision numbers.
+  */
+  void  adam_init(rng_data *data, bool gen_dbls);
+
+  /*
+
+    Automatically makes internal calls to the adam_run function 
+    when regeneration is needed to ensure that you can safely 
+    expect to call this function and always receive a randomly
+    generated number.
+
+    Param "width" must ALWAYS be either 8, 16, 32, or 64. Any other
+    value will make this function return 0 to let you know there's
+    an error with the width parameter.
+
+    Optional param "duration" can be used to accumulate the total
+    amount of time taken by the number generation process. Set 
+    this to NULL if you don't need this.
+
+    Returns a number of the given width.
+  */
+  u64   adam_get(rng_data *data, const u8 width, double *duration);
+
+
+  /*
+    Fills a given buffer with random integers or doubles.
+
+    Caller is responsible for ensuring param "buffer" is of at least
+    param "size" bytes in length, and that the pointer is not NULL. 
+
+    Optional param "duration" can be used to accumulate the total
+    amount of time taken by the number generation process. Set 
+    this to NULL if you don't need this.
+  */
+  void adam_fill(rng_data *data, void *buf, const u64 size, double *duration);
 #endif
