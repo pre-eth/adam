@@ -25,5 +25,5 @@
     u64 *permutations;
   } rng_test;
 
-  void adam_test(const u64 limit, rng_test *rsl);
+  void adam_test(const u64 limit, rng_test *rsl, double *duration);
 #endif

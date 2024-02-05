@@ -31,7 +31,7 @@
     double scc;
     double sccu0;
     u64 *freq;
-  } ent_report ALIGN(SIMD_LEN);
+  } ent_report;
 
   void ent_test(u8 *num);
   void ent_results(ent_report *rsl);

@@ -14,7 +14,7 @@
 	u8      rwseed(u64 *seed, const char *strseed);
 	u8      rwnonce(u64 *nonce, const char *strnonce);
 	u64     a_to_u(const char *s, const u64 min, const u64 max);
-	u8      gen_uuid(u64 *_ptr, u8 *buf);
+	u8      gen_uuid(const u64 higher, const u64 lower, u8 *buf);
 	double  stream_ascii(const u64 limit, rng_data *data);
 	double  stream_bytes(const u64 limit, rng_data *data);
 	double  examine(const char *strlimit, rng_data *data);
