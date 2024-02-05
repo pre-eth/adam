@@ -1,6 +1,8 @@
-#include <sys/random.h> // getentropy()
+#include <sys/random.h>
+#include <time.h>
 
 #include "../include/adam.h"
+#include "../include/simd.h"
 
 /*
   The algorithm requires at least the construction of 3 maps of size BUF_SIZE
@@ -48,6 +50,7 @@ static void accumulate(u64 *seed)
 
   SIMD_STORE64x4(&IV[0], r1);
 
+  const dregq range = SIMD_SETQPD(DIV * LIMIT);
   dreg4q seeds;
   i = 0;
   do {
@@ -68,7 +71,7 @@ static void accumulate(u64 *seed)
     seeds.val[3] = SIMD_COMBINEPD(SIMD_SETPD(IV[2] ^ IV[6]), SIMD_SETPD(IV[0] ^ IV[4]));
 
     // replace with const register
-    SIMD_SCALARMUL4PD(seeds, seeds, DIV * LIMIT);
+    SIMD_MUL4QPD(seeds, seeds, range);
 
     SIMD_STORE4PD(&chseeds[i << 3], seeds);
   } while (++i < (ROUNDS >> 1));
@@ -329,7 +332,7 @@ chaotic_iter:
 }
 #endif
 
-FORCE_INLINE static void mix()
+static void mix()
 {
   register u8 i = 0;
 
@@ -341,7 +344,13 @@ FORCE_INLINE static void mix()
     r3 = SIMD_LOAD64x4(&buffer[i]);
     SIMD_3XOR4Q64(r1, r2, r3);
     SIMD_STORE64x4(&buffer[i], r3);
-  } while ((i += 8 - (i == 248)) < BUF_SIZE - 1);
+
+    r1 = SIMD_LOAD64x4(&buffer[i + 256 + 8]);
+    r2 = SIMD_LOAD64x4(&buffer[i + 512 + 8]);
+    r3 = SIMD_LOAD64x4(&buffer[i + 8]);
+    SIMD_3XOR4Q64(r1, r2, r3);
+    SIMD_STORE64x4(&buffer[i + 8], r3);
+  } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
 #else
 #define XOR_MAPS(i) _ptr[0 + i] ^ (_ptr[0 + i + 256]) ^ (_ptr[0 + i + 512]), \
                     _ptr[1 + i] ^ (_ptr[1 + i + 256]) ^ (_ptr[1 + i + 512]), \
@@ -372,17 +381,7 @@ FORCE_INLINE static void mix()
 #endif
 }
 
-void adam_init(rng_data *data)
-{
-  getentropy(&data->seed[0], sizeof(u64) << 2);
-  getentropy(&data->nonce, sizeof(u64));
-  data->buffer = &buffer[0];
-  data->chseeds = &chseeds[0];
-  data->aa = (data->nonce & 0xFFFFFFFF00000000) | (~data->seed[data->nonce & 3] & 0xFFFFFFFF);
-  data->bb = (data->seed[data->aa & 3] & 0xFFFFFFFF00000000) | (~data->nonce & 0xFFFFFFFF);
-}
-
-void adam(rng_data *data)
+static void adam_run(rng_data *data)
 {
   accumulate(data->seed);
   diffuse(data->nonce);
@@ -390,9 +389,9 @@ void adam(rng_data *data)
   mix();
 
   u64 aa = data->aa, bb = data->bb;
-  u64 *_ptr = &data->buffer[0];
+  u64 *_ptr = &buffer[0];
 
-  register u8 i = ((data->seed[0] ^ data->seed[2]) ^ (data->seed[1] ^ data->seed[3])) & 0xFF;
+  register u8 i = ~((data->seed[0] ^ data->seed[2]) ^ (data->seed[1] ^ data->seed[3])) & 0xFF;
   register u8 j = i + (data->nonce & 0xFF);
   j += (i == j);
 
@@ -400,17 +399,78 @@ void adam(rng_data *data)
   register u64 l = ((data->nonce << 32) | ((k >> 32) & 0xFFFFFFFF));
   register u64 m = ((data->nonce << 48) | ((l >> 16) & 0xFFFFFFFFFF));
 
-  ISAAC_RNGSTEP(~(aa ^ (aa << 21)), aa, bb, data->buffer, _ptr[i], _ptr[j],
+  ISAAC_RNGSTEP(~(aa ^ (aa << 21)), aa, bb, buffer, _ptr[i], _ptr[j],
       data->seed[0], k);
-  ISAAC_RNGSTEP(aa ^ (aa >> 5), aa, bb, data->buffer, _ptr[i + 2], _ptr[j - 6],
+  ISAAC_RNGSTEP(aa ^ (aa >> 5), aa, bb, buffer, _ptr[i + 2], _ptr[j - 6],
       data->seed[1], l);
-  ISAAC_RNGSTEP(aa ^ (aa << 12), aa, bb, data->buffer, _ptr[i + 4], _ptr[j - 4],
+  ISAAC_RNGSTEP(aa ^ (aa << 12), aa, bb, buffer, _ptr[i + 4], _ptr[j - 4],
       data->seed[2], m);
-  ISAAC_RNGSTEP(aa ^ (aa >> 33), aa, bb, data->buffer, _ptr[i + 6], _ptr[j - 2],
+  ISAAC_RNGSTEP(aa ^ (aa >> 33), aa, bb, buffer, _ptr[i + 6], _ptr[j - 2],
       data->seed[3], data->nonce);
 
   data->aa = aa + (k + (l ^ m));
-  data->bb = ++bb ^ ((m ^ k) & 0xFFFFFF00FFFFFF00);
+  data->bb = ++bb ^ (~(m ^ k) & 0xFFFFFF00FFFFFF00);
 
   data->nonce ^= ((k << (k & 31)) | ~l & ((1UL << (k & 31)) - 1));
+}
+
+void adam_init(rng_data *data, bool gen_dbls)
+{
+  getentropy(&data->seed[0], sizeof(u64) << 2);
+  getentropy(&data->nonce, sizeof(u64));
+
+  data->index = __UINT8_MAX__; // flag to trigger initial generation
+  data->dbl_mode = gen_dbls;
+  data->chseeds = &chseeds[0];
+  data->aa = (data->nonce & 0xFFFFFFFF00000000) | (~data->seed[data->nonce & 3] & 0xFFFFFFFF);
+  data->bb = (data->seed[data->aa & 3] & 0xFFFFFFFF00000000) | (~data->nonce & 0xFFFFFFFF);
+}
+
+u64 adam_get(rng_data *data, const u8 width, double *duration)
+{
+  if (width != 8 || width != 16 || width != 32 || width != 64)
+    return 0;
+
+  register u64 mask = (width == 64) ? (__UINT64_MAX__ - 1) : ((1UL << width) - 1);
+
+  if (data->index == __UINT8_MAX__) {
+    if (duration != NULL) {
+      register clock_t start = clock();
+      adam_run(data);
+      *duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
+    } else {
+      adam_run(data);
+    }
+  }
+
+  register u64 out = buffer[data->index] & mask;
+
+  buffer[data->index] >>= width;
+  data->index += (!buffer[data->index]);
+
+  return out;
+}
+
+void adam_fill(rng_data *data, void *buf, const u64 size, double *duration)
+{
+  register long long limit = size / SEQ_BYTES;
+  register u64 leftovers = size & (SEQ_BYTES - 1);
+
+  void *_ptr = &buf[0];
+
+  while (limit > 0 || leftovers > 0) {
+    if (duration != NULL) {
+      register clock_t start = clock();
+      adam_run(data);
+      *duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
+    } else {
+      adam_run(data);
+    }
+
+    MEMCPY(_ptr, (void *)&buffer[0], (limit > 0) ? SEQ_BYTES : leftovers);
+
+    _ptr += SEQ_BYTES;
+    leftovers *= (limit > 0);
+    --limit;
+  }
 }
