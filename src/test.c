@@ -1,12 +1,12 @@
 /*
-  This is a collection of miscellaneous heuristics implemented 
+  This is a collection of miscellaneous heuristics implemented
   by me, just to log some properties of the generated sequence(s).
   It's nowhere near as important as the feedback from tried and true
   testing suites, but it's good for some quick information about the
   sequences you generate
 
   Additionally, the ENT framework is integrated into this collection,
-  for a total of 12 pieces of information (plus initial state) that 
+  for a total of 12 pieces of information (plus initial state) that
   are returned to the user:
 
     - monobit frequency
@@ -85,7 +85,7 @@ static void chseed_unif(double *chseeds, double *avg_chseed)
   } while (++i < (ROUNDS << 2));
 }
 
-static void test_loop(rng_test *rsl)
+void test_loop(rng_test *rsl, double *duration)
 {
   // Chaotic seeds all occur within (0.0, 0.5).
   // This function tracks their distribution and we check the uniformity at the end.
@@ -94,7 +94,7 @@ static void test_loop(rng_test *rsl)
   register u16 i = 0;
   u64 num;
   do {
-    num = rsl->data->buffer[i];
+    num = adam_get(rsl->data, 64, duration);
 
     // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
     rsl->min = num ^ ((rsl->min ^ num) & -(rsl->min < num));
@@ -110,23 +110,24 @@ static void test_loop(rng_test *rsl)
     // Checks gap lengths
     gap_lengths(num);
 
-
     // Calls into ENT framework, updating all the stuff there
     ent_test((u8 *)&num);
   } while (++i < BUF_SIZE);
 }
 
-void adam_test(const u64 limit, rng_test *rsl)
+void adam_test(const u64 limit, rng_test *rsl, double *duration)
 {
   rng_data *data = rsl->data;
-  adam(data);
+  u64 buffer[BUF_SIZE] ALIGN(64);
 
-  rsl->ent->sccu0 = data->buffer[0] & 0xFF;
+  adam_fill(data, (void *)&buffer[0], SEQ_BYTES, duration);
+
+  rsl->ent->sccu0 = buffer[0] & 0xFF;
 
   rsl->avg_chseed = 0.0;
 
   rsl->mfreq = rsl->zeroes = rsl->up_runs = rsl->longest_up = rsl->down_runs = rsl->longest_down = rsl->odd = 0;
-  rsl->min = rsl->max = data->buffer[0];
+  rsl->min = rsl->max = buffer[0];
 
   MEMCPY(&rsl->init_values[0], &data->seed, sizeof(u64) << 2);
   rsl->init_values[4] = data->nonce;
@@ -137,8 +138,8 @@ void adam_test(const u64 limit, rng_test *rsl)
   register short leftovers = limit & (SEQ_SIZE - 1);
 
   do {
-    test_loop(rsl);
-    adam(data);
+    test_loop(rsl, duration);
+    adam_fill(data, (void *)&buffer[0], SEQ_BYTES, duration);
     leftovers -= (u16)(rate <= 0) << 14;
   } while (LIKELY(--rate > 0) || LIKELY(leftovers > 0));
 
@@ -147,7 +148,7 @@ void adam_test(const u64 limit, rng_test *rsl)
   register double average_gaplength = 0.0;
 
   register u16 i = 0;
-  for (; i < BUF_SIZE; ++i) 
+  for (; i < BUF_SIZE; ++i)
     average_gaplength += ((double)gaplengths[i] / (double)(rsl->ent->freq[i] - 1));
 
   rsl->avg_gap = ((double)average_gaplength) / 256.0;

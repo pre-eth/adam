@@ -6,7 +6,7 @@
 #include "../include/cli.h"
 #include "../include/support.h"
 
-FORCE_INLINE static void print_summary(const u16 swidth, const u16 indent)
+static void print_summary(const u16 swidth, const u16 indent)
 {
 #define SUMM_PIECES 8
 
@@ -55,8 +55,20 @@ u8 help()
 
   printf("\033[%uC[OPTIONS]\n", CENTER);
 
-  const char ARGS[ARG_COUNT] = { 'h', 'v', 's', 'n', 'u', 'r',
-    'w', 'b', 'a', 'e', 'x', 'o', };
+  const char ARGS[ARG_COUNT] = {
+    'h',
+    'v',
+    's',
+    'n',
+    'u',
+    'r',
+    'w',
+    'b',
+    'a',
+    'e',
+    'x',
+    'o',
+  };
 
   const char *ARGSHELP[ARG_COUNT] = {
     "Get command summary and all available options",
@@ -111,24 +123,17 @@ u8 set_width(rng_cli *cli, const char *strwidth)
   return 0;
 }
 
-u8 print_buffer(rng_cli *cli)
+u8 dump_buffer(rng_cli *cli)
 {
-  register u64 mask = (cli->width == 64) ? (__UINT64_MAX__ - 1) : ((1UL << cli->width) - 1);
-
   rng_data *data = cli->data;
 
-  // Need to do this for default precision because
-  // we can't rely on overflow arithmetic :(
-  register u8 inc = (cli->width == 64);
-  register u8 idx = 0;
+  printf(cli->fmt, adam_get(data, cli->width, NULL));
 
-  printf(cli->fmt, data->buffer[idx] & mask);
-
+  // index = 0 means old buffer has finished printing,
+  // and new buffer has been generated.
   while (--cli->results > 0) {
     printf(",\n");
-    data->buffer[idx] >>= cli->width;
-    idx += (inc || !data->buffer[idx]);
-    printf(cli->fmt, data->buffer[idx] & mask);
+    printf(cli->fmt, adam_get(data, cli->width, NULL));
   }
 
   putchar('\n');
@@ -145,12 +150,10 @@ u8 uuid(const char *strlimit, rng_data *data)
 
   u8 buf[16];
 
-  adam(data);
-  u64 *restrict _ptr = &data->buffer[0];
   register u8 i = 0;
 
   do {
-    gen_uuid(&data->buffer[(i & 0x7F) << 1], &buf[0]);
+    gen_uuid(adam_get(data, 64, NULL), adam_get(data, 64, NULL), &buf[0]);
 
     // Print the UUID
     printf("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%"
@@ -207,11 +210,10 @@ u8 cli_runner(int argc, char **argv)
   rng_data data;
   rng_cli cli;
 
-  adam_init(&data);
+  adam_init(&data, false);
   cli.data = &data;
   cli.fmt = "%llu";
   cli.width = 64;
-  cli.results = 1;
 
   register short opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
@@ -250,6 +252,19 @@ u8 cli_runner(int argc, char **argv)
       break;
     case 'u':
       return uuid(optarg, &data);
+    case 'd':
+      data.dbl_mode = true;
+      cli.fmt = "%.*lf";
+      break;
+    case 'f':
+      data.dbl_mode = true;
+      cli.fmt = "%.*f";
+      cli.width = 32;
+      cli.precision = 7;
+      break;
+    case 'p':
+      cli.precision = a_to_u(optarg, 2, (cli.width == 32) ? 7 : 15);
+      break;
     case 'e':
       return examine(optarg, &data);
     default:
@@ -257,8 +272,7 @@ u8 cli_runner(int argc, char **argv)
     }
   }
 
-  adam(&data);
-  print_buffer(&cli);
+  dump_buffer(&cli);
 
   return 0;
 }

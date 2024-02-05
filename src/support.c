@@ -1,9 +1,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <sys/ioctl.h>
-#include <time.h>
 
 #include "../include/adam.h"
+#include "../include/simd.h"
 #include "../include/support.h"
 #include "../include/test.h"
 
@@ -91,7 +91,7 @@ static u8 load_seed(u64 *seed, const char *strseed)
   return 0;
 }
 
-static u8 store_seed(u64 *seed)
+static u8 store_seed(const u64 *seed)
 {
   char file_name[65];
   printf("File name: \033[1;93m");
@@ -202,30 +202,30 @@ static void print_binary(char *restrict _bptr, u64 num)
 #endif
 
 // prints all bits in a buffer as chunks of 1024 bits
-static void print_chunks(char *restrict _bptr,
-    const u64 *restrict _ptr)
+static double print_chunks(char *restrict _bptr, rng_data *data)
 {
-#define PRINT_4(i, j) print_binary(_bptr + i, _ptr[(j) + 0]),       \
-                      print_binary(_bptr + 64 + i, _ptr[(j) + 1]),  \
-                      print_binary(_bptr + 128 + i, _ptr[(j) + 2]), \
-                      print_binary(_bptr + 192 + i, _ptr[(j) + 3])
+#define PRINT_4(i, j) print_binary(_bptr + i, adam_get(data, 64, &duration)),       \
+                      print_binary(_bptr + 64 + i, adam_get(data, 64, &duration)),  \
+                      print_binary(_bptr + 128 + i, adam_get(data, 64, &duration)), \
+                      print_binary(_bptr + 192 + i, adam_get(data, 64, &duration))
 
   register u8 i = 0;
+  double duration = 0.0;
+
   do {
     PRINT_4(0, i + 0);
     PRINT_4(256, i + 4);
     PRINT_4(512, i + 8);
-        PRINT_4(768, i + 12);
+    PRINT_4(768, i + 12);
     fwrite(_bptr, 1, BITBUF_SIZE, stdout);
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
 }
 
-u8 gen_uuid(u64 *_ptr, u8 *buf)
+u8 gen_uuid(const u64 higher, const u64 lower, u8 *buf)
 {
-  u128 tmp;
-
   // Fill buf with 16 random bytes
-  tmp = ((u128)_ptr[0] << 64) | _ptr[1];
+  u128 tmp = ((u128)higher << 64) | lower;
+
   MEMCPY(buf, &tmp, sizeof(u128));
 
   /*
@@ -252,16 +252,13 @@ double stream_ascii(const u64 limit, rng_data *data)
   */
   register long int rate = limit >> 14;
   register short leftovers = limit & (SEQ_SIZE - 1);
-  register clock_t start;
-  register double duration = 0.0;
+
+  double duration = 0.0;
 
   char *restrict _bptr = &bitbuffer[0];
 
   while (rate > 0) {
-    start = clock();
-    adam(data);
-    duration += (double)(clock() - start) / CLOCKS_PER_SEC;
-    print_chunks(_bptr, &data->buffer[0]);
+    duration += print_chunks(_bptr, data);
     --rate;
   }
 
@@ -276,20 +273,14 @@ double stream_ascii(const u64 limit, rng_data *data)
   */
   if (LIKELY(leftovers > 0)) {
     register u16 l, limit;
-    register u64 num;
-
-    start = clock();
-    adam(data);
-    duration += (double)(clock() - start) / CLOCKS_PER_SEC;
 
   print_leftovers:
     limit = (leftovers < BITBUF_SIZE) ? leftovers : BITBUF_SIZE;
 
     l = 0;
-    do {
-      num = *data->buffer++;
-      print_binary(_bptr + l, num);
-    } while ((l += 64) < limit);
+    do
+      print_binary(_bptr + l, adam_get(data, 64, &duration));
+    while ((l += 64) < limit);
 
     fwrite(_bptr, 1, limit, stdout);
     leftovers -= limit;
@@ -309,22 +300,19 @@ double stream_bytes(const u64 limit, rng_data *data)
   */
   const short leftovers = limit & (SEQ_SIZE - 1);
   register long int rate = limit >> 14;
-  register clock_t start;
-  register double duration = 0.0;
+  double duration = 0.0;
+
+  static u64 buf[BUF_SIZE];
 
   while (LIKELY(rate > 0)) {
-    start = clock();
-    adam(data);
-    duration += (double)(clock() - start) / CLOCKS_PER_SEC;
-    fwrite(&data->buffer[0], sizeof(u64), BUF_SIZE, stdout);
+    adam_fill(data, &buf[0], sizeof(u64) * BUF_SIZE, &duration);
+    fwrite(&buf[0], sizeof(u64), BUF_SIZE, stdout);
     --rate;
   }
 
   if (LIKELY(leftovers > 0)) {
-    start = clock();
-    adam(data);
-    duration += (double)(clock() - start) / CLOCKS_PER_SEC;
-    fwrite(&data->buffer[0], sizeof(u64), BUF_SIZE, stdout);
+    adam_fill(data, &buf[0], sizeof(u64) * BUF_SIZE, &duration);
+    fwrite(&buf[0], sizeof(u64), BUF_SIZE, stdout);
   }
 
   return duration;
@@ -438,9 +426,8 @@ double examine(const char *strlimit, rng_data *data)
 
   printf("\033[1;33mExamining %llu bits of ADAM...\033[m\n", limit);
 
-  register clock_t start = clock();
-  adam_test(limit, &rsl);
-  register double duration = (double)(clock() - start) / (double)CLOCKS_PER_SEC;
+  double duration = 0.0;
+  adam_test(limit, &rsl, &duration);
 
   printf("\033[1;33mExamination Complete! (%lfs)\033[m\n\n", duration);
 

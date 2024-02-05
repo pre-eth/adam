@@ -19,7 +19,7 @@
 #define LOG2(x) (log2of10 * log10(x))
 #define ex(x) (((x) < -BIGX) ? 0.0 : exp(x))
 
-static u64 ccount[BUF_SIZE] ALIGN(SIMD_LEN), // Bins to count occurrences of values
+static u64 ccount[BUF_SIZE] ALIGN(64), // Bins to count occurrences of values
     totalc; // Total bytes counted
 
 static double prob[BUF_SIZE]; // Probabilities per bin for entropy
