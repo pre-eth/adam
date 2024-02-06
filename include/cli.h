@@ -9,7 +9,7 @@
   #define MINOR           4
   #define PATCH           0
 
-  #define OPTSTR          ":hvbxdfop:w:a:e:r::u::s::n::"
+  #define OPTSTR          ":hvdfbxop:w:a:e:r::u::s::n::"
   #define ARG_COUNT       15
 
   // Forward declaration - see adam.h for details
@@ -19,7 +19,8 @@
     rng_data *data;             //  Pointer to RNG buffer and state
     u8 width;                   //  Number of bits in results (8, 16, 32, 64)
     u8 precision;               //  Number of decimal places for floating point output (default 15 for double, 7 for float)
-    const char *fmt;            //  Format string for displaying results
+    bool hex;                   //  Print hex?
+    bool octal;                 //  Print octal?
     u16 results;                //  Number of results to return to user (varies based on width, max 2048 u8)
   } rng_cli;
   

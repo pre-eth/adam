@@ -12,7 +12,7 @@ IntegerLiteralSeparator:
   Decimal:         0
   DecimalMinDigits: 0
   Hex:             0
-  HexMinDigits:    0
+  HexMinDigits:    2
 KeepEmptyLinesAtTheStartOfBlocks: true
 KeepEmptyLinesAtEOF: false
 LineEnding:      DeriveLF

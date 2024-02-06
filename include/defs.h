@@ -1,5 +1,5 @@
-#ifndef UTIL_H
-#define UTIL_H  
+#ifndef DEFS_H
+#define DEFS_H  
   #include <stdbool.h>
 
   typedef __UINT8_TYPE__    u8;

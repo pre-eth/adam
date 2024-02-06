@@ -30,7 +30,7 @@
   // Slightly modified versions of macros from ISAAC for reseeding ADAM
   #define ISAAC_IND(mm, x)    (*(u64*)((u8*)(mm) + ((x) & ((BUF_SIZE-1)<<3))))
   #define ISAAC_RNGSTEP(mx, a, b, mm, m, m2, x, y) { \
-    x = (m << 24) | ((~(m >> 40) ^ __UINT64_MAX__)  & 0xFFFFFF);  \
+    x = (m << 24) | (~((m >> 16) ^ __UINT64_MAX__) & 0xFFFFFF);  \
     a = (a^(mx)) + m2; \
     m = ~(ISAAC_IND(mm,x) + a + b); \
     y ^= b = ISAAC_IND(mm,y>>MAGNITUDE) + x; \
@@ -100,24 +100,23 @@
   void  adam_init(rng_data *data, bool gen_dbls);
 
   /*
-
     Automatically makes internal calls to the adam_run function 
     when regeneration is needed to ensure that you can safely 
     expect to call this function and always receive a randomly
     generated number.
 
     Param "width" must ALWAYS be either 8, 16, 32, or 64. Any other
-    value will make this function return 0 to let you know there's
-    an error with the width parameter.
+    value will make this function return 1 to let you know there's
+    an error with the width parameter. When opting for double output,
+    providing a width of 32 will give you 32-bit floating point numbers.
 
     Optional param "duration" can be used to accumulate the total
     amount of time taken by the number generation process. Set 
     this to NULL if you don't need this.
 
-    Returns a number of the given width.
+    Returns 0 on success, 1 on error
   */
-  u64   adam_get(rng_data *data, const u8 width, double *duration);
-
+  int   adam_get(void *output, rng_data *data, const u8 width, double *duration);
 
   /*
     Fills a given buffer with random integers or doubles.
@@ -125,9 +124,13 @@
     Caller is responsible for ensuring param "buffer" is of at least
     param "size" bytes in length, and that the pointer is not NULL. 
 
+    If data->dbl_mode is set to true, size is taken as a LITERAL value,
+    meaning that an input of 10 for param "size" would write 10 doubles 
+    to destination "buf"
+
     Optional param "duration" can be used to accumulate the total
-    amount of time taken by the number generation process. Set 
-    this to NULL if you don't need this.
+    amount of time taken by the number generation process. Set this 
+    to NULL if you don't need this.
   */
-  void adam_fill(rng_data *data, void *buf, const u64 size, double *duration);
+  void  adam_fill(void *buf, rng_data *data, const u64 size, double *duration);
 #endif

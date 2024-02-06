@@ -1,4 +1,6 @@
 test
+bin
+lib
 .vscode
 .DS_Store
 Pseudo-random number generator based on mixing of three chaotic maps (2014).pdf

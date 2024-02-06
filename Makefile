@@ -1,4 +1,5 @@
-INSTALL_DIR = ~/.local/bin
+BINARY_DIR = ./bin
+LIBRARY_DIR = ./lib
 CC = @gcc
 
 CFLAGS = -Iinclude -O3 -flto #-Wall -Wextra -Wpedantic -Werror
@@ -26,7 +27,8 @@ OBJ = $(FILES:%=src/%.o)
 adam: $(OBJ)
 	@clang-format -i src/*.c
 	@echo "\033[1;36mBuilding ADAM...\033[m"
-	@mkdir -p ~/.local/bin
-	$(CC) -o $(INSTALL_DIR)/adam $(OBJ)
+	@mkdir -p bin lib
+	@ar rcs $(LIBRARY_DIR)/libadam.a src/adam.o
+	$(CC) -o $(BINARY_DIR)/adam $(OBJ)
 	@rm $(OBJ)
 	@echo "\033[1;32mFinished! Run adam -h to get started!\033[m"
