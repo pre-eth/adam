@@ -86,7 +86,7 @@ static u8 load_seed(u64 *seed, const char *strseed)
   FILE *seed_file = fopen(strseed, "rb");
   if (!seed_file)
     return err("Couldn't read seed file");
-  fread(seed, sizeof(u64), 4, seed_file);
+  fread((void *)seed, sizeof(u64), 4, seed_file);
   fclose(seed_file);
   return 0;
 }
@@ -97,10 +97,10 @@ static u8 store_seed(const u64 *seed)
   printf("File name: \033[1;93m");
   while (!scanf(" %64s", &file_name[0]))
     err("Please enter a valid file name");
-  FILE *seed_file = fopen(file_name, "rb");
+  FILE *seed_file = fopen(file_name, "wb+");
   if (!seed_file)
     return err("Couldn't read seed file");
-  fread(seed, sizeof(u64), 4, seed_file);
+  fwrite((void *)seed, sizeof(u64), 4, seed_file);
   fclose(seed_file);
   return 0;
 }
@@ -204,21 +204,30 @@ static void print_binary(char *restrict _bptr, u64 num)
 // prints all bits in a buffer as chunks of 1024 bits
 static double print_chunks(char *restrict _bptr, rng_data *data)
 {
-#define PRINT_4(i, j) print_binary(_bptr + i, adam_get(data, 64, &duration)),       \
-                      print_binary(_bptr + 64 + i, adam_get(data, 64, &duration)),  \
-                      print_binary(_bptr + 128 + i, adam_get(data, 64, &duration)), \
-                      print_binary(_bptr + 192 + i, adam_get(data, 64, &duration))
+#define PRINT_4(i, j) print_binary(_bptr + i, a),       \
+                      print_binary(_bptr + 64 + i, b),  \
+                      print_binary(_bptr + 128 + i, c), \
+                      print_binary(_bptr + 192 + i, d)
 
   register u8 i = 0;
   double duration = 0.0;
 
+  u64 a, b, c, d;
+
   do {
+    adam_get(&a, data, 64, &duration);
+    adam_get(&b, data, 64, &duration);
+    adam_get(&c, data, 64, &duration);
+    adam_get(&d, data, 64, &duration);
+
     PRINT_4(0, i + 0);
     PRINT_4(256, i + 4);
     PRINT_4(512, i + 8);
     PRINT_4(768, i + 12);
     fwrite(_bptr, 1, BITBUF_SIZE, stdout);
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
+
+  return duration;
 }
 
 u8 gen_uuid(const u64 higher, const u64 lower, u8 *buf)
@@ -278,9 +287,11 @@ double stream_ascii(const u64 limit, rng_data *data)
     limit = (leftovers < BITBUF_SIZE) ? leftovers : BITBUF_SIZE;
 
     l = 0;
-    do
-      print_binary(_bptr + l, adam_get(data, 64, &duration));
-    while ((l += 64) < limit);
+    u64 num;
+    do {
+      adam_get(&num, data, 64, &duration);
+      print_binary(_bptr + l, num);
+    } while ((l += 64) < limit);
 
     fwrite(_bptr, 1, limit, stdout);
     leftovers -= limit;
@@ -305,13 +316,13 @@ double stream_bytes(const u64 limit, rng_data *data)
   static u64 buf[BUF_SIZE];
 
   while (LIKELY(rate > 0)) {
-    adam_fill(data, &buf[0], sizeof(u64) * BUF_SIZE, &duration);
+    adam_fill(&buf[0], data, sizeof(u64) * BUF_SIZE, &duration);
     fwrite(&buf[0], sizeof(u64), BUF_SIZE, stdout);
     --rate;
   }
 
   if (LIKELY(leftovers > 0)) {
-    adam_fill(data, &buf[0], sizeof(u64) * BUF_SIZE, &duration);
+    adam_fill(&buf[0], data, sizeof(u64) * BUF_SIZE, &duration);
     fwrite(&buf[0], sizeof(u64), BUF_SIZE, stdout);
   }
 
