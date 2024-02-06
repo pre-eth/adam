@@ -200,7 +200,7 @@ static void diffuse(const u64 nonce)
 }
 
 #ifdef __AARCH64_SIMD__
-static void apply()
+static void apply(void)
 {
   const dregq one = SIMD_SETQPD(1.0);
   const dregq coeff = SIMD_SETQPD(COEFFICIENT);
@@ -266,7 +266,7 @@ chaotic_iter:
   }
 }
 #else
-static void apply()
+static void apply(void)
 {
   const regd beta = SIMD_SETQPD(BETA), coefficient = SIMD_SETQPD(3.9999),
              one = SIMD_SETQPD(1.0);
@@ -332,7 +332,7 @@ chaotic_iter:
 }
 #endif
 
-static void mix()
+static void mix(void)
 {
   register u8 i = 0;
 
@@ -391,27 +391,27 @@ static void adam_run(rng_data *data)
   u64 aa = data->aa, bb = data->bb;
   u64 *_ptr = &buffer[0];
 
-  register u8 i = ~((data->seed[0] ^ data->seed[2]) ^ (data->seed[1] ^ data->seed[3])) & 0xFF;
-  register u8 j = i + (data->nonce & 0xFF);
+  register u8 i = ((~data->seed[0] ^ data->seed[2])) & 0xFF;
+  register u8 j = i + ((data->seed[1] ^ ~data->seed[3]) & 0xFF);
   j += (i == j);
 
   register u64 k = ((data->nonce << 16) | ((data->nonce >> 48) & 0xFFFF));
   register u64 l = ((data->nonce << 32) | ((k >> 32) & 0xFFFFFFFF));
   register u64 m = ((data->nonce << 48) | ((l >> 16) & 0xFFFFFFFFFF));
 
-  ISAAC_RNGSTEP(~(aa ^ (aa << 21)), aa, bb, buffer, _ptr[i], _ptr[j],
+  ISAAC_RNGSTEP(~(aa ^ (aa << 21)), aa, bb, buffer, _ptr[_ptr[i] & 0xFF], _ptr[_ptr[j] & 0xFF],
       data->seed[0], k);
-  ISAAC_RNGSTEP(aa ^ (aa >> 5), aa, bb, buffer, _ptr[i + 2], _ptr[j - 6],
+  ISAAC_RNGSTEP(aa ^ (aa >> 5), aa, bb, buffer, _ptr[_ptr[i + 2] & 0xFF], _ptr[_ptr[j - 6] & 0xFF],
       data->seed[1], l);
-  ISAAC_RNGSTEP(aa ^ (aa << 12), aa, bb, buffer, _ptr[i + 4], _ptr[j - 4],
+  ISAAC_RNGSTEP(aa ^ (aa << 12), aa, bb, buffer, _ptr[_ptr[i + 4] & 0xFF], _ptr[_ptr[j - 4] & 0xFF],
       data->seed[2], m);
-  ISAAC_RNGSTEP(aa ^ (aa >> 33), aa, bb, buffer, _ptr[i + 6], _ptr[j - 2],
+  ISAAC_RNGSTEP(aa ^ (aa >> 33), aa, bb, buffer, _ptr[_ptr[i + 6] & 0xFF], _ptr[_ptr[j - 2] & 0xFF],
       data->seed[3], data->nonce);
 
-  data->aa = aa + (k + (l ^ m));
-  data->bb = ++bb ^ (~(m ^ k) & 0xFFFFFF00FFFFFF00);
+  data->aa = aa ^ (k + (l ^ m));
+  data->bb = ++bb;
 
-  data->nonce ^= ((k << (k & 31)) | ~l & ((1UL << (k & 31)) - 1));
+  data->nonce ^= ((k << (k & 31)) | (~k & ((1UL << (k & 31)) - 1)));
 }
 
 void adam_init(rng_data *data, bool gen_dbls)
@@ -426,10 +426,10 @@ void adam_init(rng_data *data, bool gen_dbls)
   data->bb = (data->seed[data->aa & 3] & 0xFFFFFFFF00000000) | (~data->nonce & 0xFFFFFFFF);
 }
 
-u64 adam_get(rng_data *data, const u8 width, double *duration)
+int adam_get(void *output, rng_data *data, const u8 width, double *duration)
 {
-  if (width != 8 || width != 16 || width != 32 || width != 64)
-    return 0;
+  if (width != 8 && width != 16 && width != 32 && width != 64)
+    return 1;
 
   register u64 mask = (width == 64) ? (__UINT64_MAX__ - 1) : ((1UL << width) - 1);
 
@@ -443,34 +443,49 @@ u64 adam_get(rng_data *data, const u8 width, double *duration)
     }
   }
 
-  register u64 out = buffer[data->index] & mask;
+  if (!data->dbl_mode) {
+    u64 out = buffer[data->index] & mask;
+    MEMCPY(output, &out, sizeof(width >> 3));
+    buffer[data->index] >>= width;
+    data->index += (!buffer[data->index]);
+  } else {
+    double out = ((double)buffer[data->index] / (double)__UINT64_MAX__);
+    ++data->index;
+    MEMCPY(output, &out, sizeof(double));
+  }
 
-  buffer[data->index] >>= width;
-  data->index += (!buffer[data->index]);
-
-  return out;
+  return 0;
 }
 
-void adam_fill(rng_data *data, void *buf, const u64 size, double *duration)
+void adam_fill(void *buf, rng_data *data, const u64 size, double *duration)
 {
-  register long long limit = size / SEQ_BYTES;
-  register u64 leftovers = size & (SEQ_BYTES - 1);
+  void *_ptr = buf;
 
-  void *_ptr = &buf[0];
+  if (!data->dbl_mode) {
+    register long long limit = size / SEQ_BYTES;
+    register u64 leftovers = size & (SEQ_BYTES - 1);
 
-  while (limit > 0 || leftovers > 0) {
-    if (duration != NULL) {
-      register clock_t start = clock();
-      adam_run(data);
-      *duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
-    } else {
-      adam_run(data);
+    while (limit > 0 || leftovers > 0) {
+      if (duration != NULL) {
+        register clock_t start = clock();
+        adam_run(data);
+        *duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
+      } else {
+        adam_run(data);
+      }
+      MEMCPY(buf, &buffer[0], (limit > 0) ? SEQ_BYTES : leftovers);
+      _ptr += SEQ_BYTES;
+      leftovers *= (limit > 0);
+      --limit;
     }
-
-    MEMCPY(_ptr, (void *)&buffer[0], (limit > 0) ? SEQ_BYTES : leftovers);
-
-    _ptr += SEQ_BYTES;
-    leftovers *= (limit > 0);
-    --limit;
+  } else {
+    double d;
+    register u64 out = 0;
+    while (out < size) {
+      adam_get(&d, data, 64, duration);
+      MEMCPY(buf, (void *)&d, sizeof(double));
+      _ptr += 8;
+      ++out;
+    }
   }
 }
