@@ -127,7 +127,7 @@ static u8 help(void)
   return 0;
 }
 
-u8 set_width(rng_cli *cli, const char *strwidth)
+static u8 set_width(rng_cli *cli, const char *strwidth)
 {
   cli->width = a_to_u(strwidth, 8, 32);
   if (UNLIKELY(cli->width & (cli->width - 1)))
@@ -163,7 +163,7 @@ static void print_dbl(rng_cli *cli)
   printf("%.*lf", cli->precision, d);
 }
 
-u8 dump_buffer(rng_cli *cli)
+static u8 dump_buffer(rng_cli *cli)
 {
   rng_data *data = cli->data;
   void (*write_fn)(rng_cli *cli) = (!data->dbl_mode) ? &print_int : &print_dbl;
@@ -182,7 +182,7 @@ u8 dump_buffer(rng_cli *cli)
   return 0;
 }
 
-u8 uuid(const char *strlimit, rng_data *data)
+static u8 uuid(const char *strlimit, rng_data *data)
 {
   register u8 limit = a_to_u(optarg, 1, __UINT64_MAX__);
   if (!limit)
@@ -213,7 +213,7 @@ u8 uuid(const char *strlimit, rng_data *data)
   return 0;
 }
 
-u8 assess(const char *strlimit, rng_cli *cli)
+static u8 assess(const char *strlimit, rng_cli *cli)
 {
   const u16 limit = a_to_u(strlimit, 1, TESTING_LIMIT);
   if (!limit)
