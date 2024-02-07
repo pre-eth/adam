@@ -26,16 +26,16 @@ typedef struct rng_cli {
 
 static void print_summary(const u16 swidth, const u16 indent)
 {
-#define SUMM_PIECES 8
+#define SUMM_PIECES 9
 
   const char *pieces[SUMM_PIECES] = {
-    "\033[1madam \033[m[-h|-v|-b|-x|-o]", "[-w \033[1mwidth\033[m]",
+    "\033[1madam \033[m[-h|-v|-b|-x|-o|-d|-f]", "[-w \033[1mwidth\033[m]",
     "[-a \033[1mmultiplier\033[m]", "[-e \033[1mmultiplier\033[m]",
-    "[-r \033[3mresults?\033[m]", "[-s \033[3mseed?\033[m]",
-    "[-n \033[3mnonce?\033[m]", "[-u \033[3mamount?\033[m]"
+    "[-p \033[1mprecision\033[m]", "[-r \033[1mresults\033[m]", "[-s[\033[3mseed?\033[m]]",
+    "[-n[\033[3mnonce?\033[m]]", "[-u[\033[3mamount?\033[m]]"
   };
 
-  const u8 sizes[SUMM_PIECES + 1] = { 19, 10, 15, 15, 13, 10, 11, 12, 0 };
+  const u8 sizes[SUMM_PIECES + 1] = { 25, 10, 15, 15, 14, 14, 11, 12, 13, 0 };
 
   register u8 i = 0, running_length = indent;
 
@@ -56,9 +56,8 @@ static void print_summary(const u16 swidth, const u16 indent)
   printf("\n\n");
 }
 
-u8 help()
+static u8 help(void)
 {
-#define ARG_COUNT 15
   u16 center, indent, swidth;
   get_print_metrics(&center, &indent, &swidth);
 
@@ -81,25 +80,27 @@ u8 help()
     'n',
     'u',
     'r',
+    'd',
     'w',
     'b',
     'a',
     'e',
     'x',
     'o',
+    'f',
+    'p'
   };
 
   const char *ARGSHELP[ARG_COUNT] = {
     "Get command summary and all available options",
-    "Version of this software (" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH) ")",
+    "Version of this software (v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH) ")",
     "Get the seed for the generated buffer (no parameter) or provide "
     "your own. Seeds are reusable but should be kept secret.",
     "Get the nonce for the generated buffer (no parameter) or provide "
     "your own. Nonces should ALWAYS be unique and secret",
-    "Generate a universally unique identifier (UUID). Optionally "
-    "specify a number of UUID's to generate (max 128)",
-    "Number of results to return (up to 256 u64, 512 u32, 1024 u16, or 2048 u8). "
-    "No argument dumps entire buffer",
+    "Generate a universally unique identifier (UUID). Optionally specify a number of UUID's to generate (max 128)",
+    "The amount of numbers to generate and return, written to stdout. Must be within [1, 1000]",
+    "Dump entire buffer using the specified width (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)",
     "Desired alternative size (u8, u16, u32) of returned numbers. Default width is u64",
     "Just bits... literally",
     "Write an ASCII or binary sample of 1000000 bits (1 Mb) to file for external assessment with your favorite tests. "
@@ -107,10 +108,11 @@ u8 help()
     "Examine a sample of 1000000 bits (1 Mb) with the ENT framework as well as some other in-house statistical tests. "
     "You can choose a multiplier within [1, 8000] to examine up to 1GB at a time",
     "Print numbers in hexadecimal format with leading prefix",
-    "Print numbers in octal format with leading prefix"
+    "Print numbers in octal format with leading prefix",
+    "Enable floating point mode to generate doubles in (0, 1) instead of integers",
+    "The number of decimal places to display when printing doubles. Must be within [1, 15]. Default is 15"
   };
-  const u8 lengths[ARG_COUNT] = { 25, 32, 119, 117, 108, 107,
-    81, 22, 187, 178, 55, 49 };
+  const u8 lengths[ARG_COUNT] = { 25, 33, 119, 117, 108, 89, 95, 81, 22, 187, 178, 55, 49, 83, 100 };
 
   register short len;
   for (u8 i = 0; i < ARG_COUNT; ++i) {
