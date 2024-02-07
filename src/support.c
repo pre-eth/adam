@@ -305,25 +305,30 @@ double stream_ascii(const u64 limit, rng_data *data)
 
 double stream_bytes(const u64 limit, rng_data *data)
 {
+// Minimum value for limit is 1000000
+// which is equal to 15,625 u64
+#define ARR_SIZE (TESTING_BITS >> 6)
+
   /*
     Split limit based on how many calls we need to make
     to write the bytes of an entire buffer directly
   */
   const short leftovers = limit & (SEQ_SIZE - 1);
-  register long int rate = limit >> 14;
+
+  register u64 rate = 0;
   double duration = 0.0;
 
-  static u64 buf[BUF_SIZE];
+  u64 arr[ARR_SIZE] ALIGN(64);
 
-  while (LIKELY(rate > 0)) {
-    adam_fill(&buf[0], data, sizeof(u64) * BUF_SIZE, &duration);
-    fwrite(&buf[0], sizeof(u64), BUF_SIZE, stdout);
-    --rate;
+  while (LIKELY(rate < limit)) {
+    adam_fill(&arr[0], data, ARR_SIZE, &duration);
+    fwrite(&arr[0], sizeof(u64), ARR_SIZE, stdout);
+    rate += TESTING_BITS;
   }
 
   if (LIKELY(leftovers > 0)) {
-    adam_fill(&buf[0], data, sizeof(u64) * BUF_SIZE, &duration);
-    fwrite(&buf[0], sizeof(u64), BUF_SIZE, stdout);
+    adam_fill(&arr[0], data, BUF_SIZE, &duration);
+    fwrite(&arr[0], sizeof(u64), BUF_SIZE, stdout);
   }
 
   return duration;
@@ -425,9 +430,9 @@ static void print_chseed_results(const u16 indent, const u32 sequences, u64 *chs
 
 double examine(const char *strlimit, rng_data *data)
 {
-  rng_test rsl;
   ent_report ent;
 
+  rng_test rsl;
   rsl.data = data;
   rsl.ent = &ent;
 

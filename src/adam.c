@@ -29,10 +29,10 @@ static void accumulate(u64 *seed)
     "Be fruitful and multiply, and replenish the earth (Genesis 1:28)"
   */
   u64 IV[8] ALIGN(SIMD_LEN) = {
-    0x4265206672756974ULL ^ seed[2], 0x66756C20616E6420ULL ^ ~seed[2],
-    0x6D756C7469706C79ULL ^ seed[1], 0x2C20616E64207265ULL ^ ~seed[1],
-    0x706C656E69736820ULL ^ seed[3], 0x7468652065617274ULL ^ ~seed[3],
-    0x68202847656E6573ULL ^ seed[0], 0x697320313A323829ULL ^ ~seed[0]
+    0x4265206672756974ULL ^ seed[2], 0x66756C20616E6420ULL ^ ~seed[1],
+    0x6D756C7469706C79ULL ^ seed[1], 0x2C20616E64207265ULL ^ ~seed[3],
+    0x706C656E69736820ULL ^ seed[3], 0x7468652065617274ULL ^ ~seed[0],
+    0x68202847656E6573ULL ^ seed[0], 0x697320313A323829ULL ^ ~seed[2]
   };
 
   reg64q4 r1, r2;
@@ -88,10 +88,10 @@ static void accumulate(u64 *seed)
     "Be fruitful and multiply, and replenish the earth (Genesis 1:28)"
   */
   u64 IV[8] ALIGN(SIMD_LEN) = {
-    0x4265206672756974ULL ^ seed[2], 0x66756C20616E6420ULL ^ ~seed[2],
-    0x6D756C7469706C79ULL ^ seed[1], 0x2C20616E64207265ULL ^ ~seed[1],
-    0x706C656E69736820ULL ^ seed[3], 0x7468652065617274ULL ^ ~seed[3],
-    0x68202847656E6573ULL ^ seed[0], 0x697320313A323829ULL ^ ~seed[0]
+    0x4265206672756974ULL ^ seed[2], 0x66756C20616E6420ULL ^ ~seed[1],
+    0x6D756C7469706C79ULL ^ seed[1], 0x2C20616E64207265ULL ^ ~seed[3],
+    0x706C656E69736820ULL ^ seed[3], 0x7468652065617274ULL ^ ~seed[0],
+    0x68202847656E6573ULL ^ seed[0], 0x697320313A323829ULL ^ ~seed[2]
   };
 
   reg r1, r2;
@@ -205,7 +205,8 @@ static void apply(void)
   const dregq coeff = SIMD_SETQPD(COEFFICIENT);
   const dregq beta = SIMD_SETQPD(BETA);
 
-  const reg64q mask = SIMD_SETQ64(0xFFUL), inc = SIMD_SETQ64(0x08UL);
+  const reg64q mask = SIMD_SETQ64(0xFFUL);
+  const reg64q inc = SIMD_SETQ64(0x08UL);
 
   dreg4q d1, d2;
   reg64q4 r1, r2, scale;
@@ -222,7 +223,6 @@ chaotic_iter:
   scale = SIMD_LOAD64x4(arr);
   d1 = SIMD_LOAD4PD(&chseeds[rounds]);
   i = 0;
-
   do {
     // 3.9999 * X * (1 - X) for all X in the register
     SIMD_SUB4QPD(d2, one, d1);
@@ -338,14 +338,8 @@ static void mix(void)
     r2 = SIMD_LOAD64x4(&buffer[i + 512]);
     r3 = SIMD_LOAD64x4(&buffer[i]);
     SIMD_3XOR4Q64(r1, r2, r3);
-    SIMD_STORE64x4(&buffer[i], r3);
-
-    r1 = SIMD_LOAD64x4(&buffer[i + 256 + 8]);
-    r2 = SIMD_LOAD64x4(&buffer[i + 512 + 8]);
-    r3 = SIMD_LOAD64x4(&buffer[i + 8]);
-    SIMD_3XOR4Q64(r1, r2, r3);
-    SIMD_STORE64x4(&buffer[i + 8], r3);
-  } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
+    SIMD_STORE64x4(&buffer[i], r1);
+  } while ((i += 8 - (i == 248)) < BUF_SIZE - 1);
 #else
 #define XOR_MAPS(i) _ptr[0 + i] ^ (_ptr[0 + i + 256]) ^ (_ptr[0 + i + 512]), \
                     _ptr[1 + i] ^ (_ptr[1 + i + 256]) ^ (_ptr[1 + i + 512]), \
@@ -386,36 +380,36 @@ static void adam_run(rng_data *data)
   u64 aa = data->aa, bb = data->bb;
   u64 *_ptr = &buffer[0];
 
-  register u8 i = ((~data->seed[0] ^ data->seed[2])) & 0xFF;
-  register u8 j = i + ((data->seed[1] ^ ~data->seed[3]) & 0xFF);
+  register u8 i = (~data->seed[0] ^ data->seed[2]) & 0xFF;
+  register u8 j = (data->seed[1] ^ ~data->seed[3]) & 0xFF;
   j += (i == j);
 
-  register u64 k = ((data->nonce << 16) | ((data->nonce >> 48) & 0xFFFF));
-  register u64 l = ((data->nonce << 32) | ((k >> 32) & 0xFFFFFFFF));
-  register u64 m = ((data->nonce << 48) | ((l >> 16) & 0xFFFFFFFFFF));
+  register u64 k = (data->nonce << 16) | ((data->nonce >> 48) & 0xFFFF);
+  register u64 l = (data->nonce << 32) | (~(k >> 32) & 0xFFFFFFFF);
+  register u64 m = (data->nonce << 48) | (~(l >> 16) & 0xFFFFFFFFFF);
 
-  ISAAC_RNGSTEP(~(aa ^ (aa << 21)), aa, bb, buffer, _ptr[_ptr[i] & 0xFF], _ptr[_ptr[j] & 0xFF],
+  ISAAC_RNGSTEP(~(aa ^ (aa << 21)), aa, bb, buffer, _ptr[i], _ptr[j - 6],
       data->seed[0], k);
-  ISAAC_RNGSTEP(aa ^ (aa >> 5), aa, bb, buffer, _ptr[_ptr[i + 2] & 0xFF], _ptr[_ptr[j - 6] & 0xFF],
+  ISAAC_RNGSTEP(aa ^ (aa >> 5), aa, bb, buffer, _ptr[i + 2], _ptr[j - 4],
       data->seed[1], l);
-  ISAAC_RNGSTEP(aa ^ (aa << 12), aa, bb, buffer, _ptr[_ptr[i + 4] & 0xFF], _ptr[_ptr[j - 4] & 0xFF],
+  ISAAC_RNGSTEP(aa ^ (aa << 12), aa, bb, buffer, _ptr[i + 4], _ptr[j - 2],
       data->seed[2], m);
-  ISAAC_RNGSTEP(aa ^ (aa >> 33), aa, bb, buffer, _ptr[_ptr[i + 6] & 0xFF], _ptr[_ptr[j - 2] & 0xFF],
+  ISAAC_RNGSTEP(aa ^ (aa >> 33), aa, bb, buffer, _ptr[i + 6], _ptr[j],
       data->seed[3], data->nonce);
 
-  data->aa = aa ^ (k + (l ^ m));
-  data->bb = ++bb;
-
-  data->nonce ^= ((k << (k & 31)) | (~k & ((1UL << (k & 31)) - 1)));
+  data->aa = aa - 1;
+  data->bb = bb + 1;
+  data->nonce ^= ((k << (l & 63)) | (m & ((1UL << (l & 63)) - 1)));
 }
 
-void adam_init(rng_data *data, bool gen_dbls)
+void adam_init(rng_data *data, bool generate_dbls)
 {
   getentropy(&data->seed[0], sizeof(u64) << 2);
   getentropy(&data->nonce, sizeof(u64));
 
-  data->index = __UINT8_MAX__; // flag to trigger initial generation
-  data->dbl_mode = gen_dbls;
+  // flag to trigger initial generation
+  data->index = __UINT8_MAX__;
+  data->dbl_mode = generate_dbls;
   data->chseeds = &chseeds[0];
   data->aa = (data->nonce & 0xFFFFFFFF00000000) | (~data->seed[data->nonce & 3] & 0xFFFFFFFF);
   data->bb = (data->seed[data->aa & 3] & 0xFFFFFFFF00000000) | (~data->nonce & 0xFFFFFFFF);
@@ -429,58 +423,59 @@ int adam_get(void *output, rng_data *data, const u8 width, double *duration)
   register u64 mask = (width == 64) ? (__UINT64_MAX__ - 1) : ((1UL << width) - 1);
 
   if (data->index == __UINT8_MAX__) {
-    if (duration != NULL) {
-      register clock_t start = clock();
-      adam_run(data);
+    register clock_t start = clock();
+    adam_run(data);
+    if (duration != NULL)
       *duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
-    } else {
-      adam_run(data);
-    }
   }
 
   if (!data->dbl_mode) {
     u64 out = buffer[data->index] & mask;
-    MEMCPY(output, &out, sizeof(width >> 3));
+    MEMCPY(output, &out, width >> 3);
     buffer[data->index] >>= width;
     data->index += (!buffer[data->index]);
   } else {
     double out = ((double)buffer[data->index] / (double)__UINT64_MAX__);
-    ++data->index;
     MEMCPY(output, &out, sizeof(double));
+    ++data->index;
   }
 
   return 0;
 }
 
-void adam_fill(void *buf, rng_data *data, const u64 size, double *duration)
+int adam_fill(void *buf, rng_data *data, const u32 amount, double *duration)
 {
+  if (amount > 1000000000)
+    return 1;
+
   void *_ptr = buf;
+  register clock_t start;
+  double _duration = 0.0;
 
   if (!data->dbl_mode) {
-    register long long limit = size / SEQ_BYTES;
-    register u64 leftovers = size & (SEQ_BYTES - 1);
+    register long long limit = ((u64)amount << 3) / SEQ_BYTES;
+    register u64 leftovers = ((u64)amount << 3) & (SEQ_BYTES - 1);
 
     while (limit > 0 || leftovers > 0) {
-      if (duration != NULL) {
-        register clock_t start = clock();
-        adam_run(data);
-        *duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
-      } else {
-        adam_run(data);
-      }
-      MEMCPY(buf, &buffer[0], (limit > 0) ? SEQ_BYTES : leftovers);
-      _ptr += SEQ_BYTES;
+      start = clock();
+      adam_run(data);
+      _duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
+      MEMCPY(_ptr, &buffer[0], (limit > 0) ? SEQ_BYTES : leftovers);
+      _ptr += (limit > 0) ? SEQ_BYTES : leftovers;
       leftovers *= (limit > 0);
       --limit;
     }
   } else {
-    double d;
-    register u64 out = 0;
-    while (out < size) {
-      adam_get(&d, data, 64, duration);
-      MEMCPY(buf, (void *)&d, sizeof(double));
-      _ptr += 8;
+    register u32 out = 0;
+    while (out < amount) {
+      adam_get(_ptr, data, 64, &_duration);
+      _ptr += sizeof(double);
       ++out;
     }
   }
+
+  if (duration != NULL)
+    *duration += _duration;
+
+  return 0;
 }

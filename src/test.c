@@ -120,7 +120,7 @@ void adam_test(const u64 limit, rng_test *rsl, double *duration)
   rng_data *data = rsl->data;
   u64 buffer[BUF_SIZE] ALIGN(64);
 
-  adam_fill(&buffer[0], data, SEQ_BYTES, duration);
+  adam_fill(&buffer[0], data, BUF_SIZE, duration);
 
   rsl->ent->sccu0 = buffer[0] & 0xFF;
 
@@ -139,7 +139,7 @@ void adam_test(const u64 limit, rng_test *rsl, double *duration)
 
   do {
     test_loop(rsl, &buffer[0], duration);
-    adam_fill(&buffer[0], data, SEQ_BYTES, duration);
+    adam_fill(&buffer[0], data, BUF_SIZE, duration);
     leftovers -= (u16)(rate <= 0) << 14;
   } while (LIKELY(--rate > 0) || LIKELY(leftovers > 0));
 
