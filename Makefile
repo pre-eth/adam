@@ -2,7 +2,7 @@ BINARY_DIR = ./bin
 LIBRARY_DIR = ./lib
 CC = @gcc
 
-CFLAGS = -Iinclude -O3 -flto #-Wall -Wextra -Wpedantic -Werror
+CFLAGS = -Iinclude -O3 -flto # -Wall -Wextra -Wpedantic -Werror
 UNAME_P := $(shell uname -p)
 
 ifeq ($(UNAME_P), arm)
@@ -16,13 +16,11 @@ else
 	endif
 endif
  
-DEPS = util adam support cli ent test
-HEADERS = $(DEPS:%=%.h)
-FILES = adam cli ent test support main 
+FILES = adam ent test support cli
 OBJ = $(FILES:%=src/%.o)
 
 %.o: src/%.c 
-	$(CC) $(CFLAGS) -c $^ $(HEADERS) $(SIMD_FLAGS)
+	$(CC) $(CFLAGS) -c $^ $(SIMD_FLAGS)
 
 adam: $(OBJ)
 	@clang-format -i src/*.c
