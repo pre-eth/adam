@@ -85,7 +85,7 @@ static void chseed_unif(double *chseeds, double *avg_chseed)
   } while (++i < (ROUNDS << 2));
 }
 
-void test_loop(rng_test *rsl, double *duration)
+static void test_loop(rng_test *rsl, u64 *_ptr, double *duration)
 {
   // Chaotic seeds all occur within (0.0, 0.5).
   // This function tracks their distribution and we check the uniformity at the end.
@@ -94,7 +94,7 @@ void test_loop(rng_test *rsl, double *duration)
   register u16 i = 0;
   u64 num;
   do {
-    num = adam_get(rsl->data, 64, duration);
+    num = _ptr[i];
 
     // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
     rsl->min = num ^ ((rsl->min ^ num) & -(rsl->min < num));
@@ -120,7 +120,7 @@ void adam_test(const u64 limit, rng_test *rsl, double *duration)
   rng_data *data = rsl->data;
   u64 buffer[BUF_SIZE] ALIGN(64);
 
-  adam_fill(data, (void *)&buffer[0], SEQ_BYTES, duration);
+  adam_fill(&buffer[0], data, SEQ_BYTES, duration);
 
   rsl->ent->sccu0 = buffer[0] & 0xFF;
 
@@ -138,8 +138,8 @@ void adam_test(const u64 limit, rng_test *rsl, double *duration)
   register short leftovers = limit & (SEQ_SIZE - 1);
 
   do {
-    test_loop(rsl, duration);
-    adam_fill(data, (void *)&buffer[0], SEQ_BYTES, duration);
+    test_loop(rsl, &buffer[0], duration);
+    adam_fill(&buffer[0], data, SEQ_BYTES, duration);
     leftovers -= (u16)(rate <= 0) << 14;
   } while (LIKELY(--rate > 0) || LIKELY(leftovers > 0));
 

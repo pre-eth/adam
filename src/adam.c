@@ -67,10 +67,9 @@ static void accumulate(u64 *seed)
     IV[4] += buffer[IV[3] & 0xFF], IV[5] += buffer[IV[2] & 0xFF];
     IV[6] += buffer[IV[1] & 0xFF], IV[7] += buffer[IV[0] & 0xFF];
 
-    seeds.val[2] = SIMD_COMBINEPD(SIMD_SETPD(IV[3] ^ IV[7]), SIMD_SETPD(IV[1] ^ IV[5]));
-    seeds.val[3] = SIMD_COMBINEPD(SIMD_SETPD(IV[2] ^ IV[6]), SIMD_SETPD(IV[0] ^ IV[4]));
+    seeds.val[2] = SIMD_COMBINEPD(SIMD_SETPD(IV[0] ^ IV[4]), SIMD_SETPD(IV[1] ^ IV[5]));
+    seeds.val[3] = SIMD_COMBINEPD(SIMD_SETPD(IV[2] ^ IV[6]), SIMD_SETPD(IV[3] ^ IV[7]));
 
-    // replace with const register
     SIMD_MUL4QPD(seeds, seeds, range);
 
     SIMD_STORE4PD(&chseeds[i << 3], seeds);
@@ -294,11 +293,7 @@ chaotic_iter:
     d1 = SIMD_MULPD(d1, d2);
 
     // Multiply result of chaotic function by beta
-    // Then multiply result of that against values in mod reduction
-    // table
     d2 = SIMD_MULPD(d1, beta);
-    // d3 = SIMD_LOADPD(&mod_table[j]);
-    // d2 = SIMD_MULPD(d2, d3);
 
     // Cast to u64, add the scaling factor
     // Mask so idx stays in range of buffer
