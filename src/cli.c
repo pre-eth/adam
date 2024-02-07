@@ -132,15 +132,6 @@ static u8 set_width(rng_cli *cli, const char *strwidth)
   cli->width = a_to_u(strwidth, 8, 32);
   if (UNLIKELY(cli->width & (cli->width - 1)))
     return 1;
-
-  /*
-    This line will basically "floor" results to the max value of results
-    possible for this new precision in case it exceeds the possible limit
-    This can be avoided by ordering your arguments so that -w comes first
-  */
-  const u8 max = BUF_SIZE * (64 >> CTZ(cli->width));
-  cli->results -= (cli->results > max) * (cli->results - max);
-
   return 0;
 }
 
@@ -170,8 +161,6 @@ static u8 dump_buffer(rng_cli *cli)
 
   write_fn(cli);
 
-  // index = 0 means old buffer has finished printing,
-  // and new buffer has been generated.
   while (--cli->results > 0) {
     printf(",\n");
     write_fn(cli);
@@ -250,17 +239,17 @@ get_file_type:
   return 0;
 }
 
-u8 cli_runner(int argc, char **argv)
+int main(int argc, char **argv)
 {
   rng_data data;
-  rng_cli cli;
-
   adam_init(&data, false);
+
+  rng_cli cli;
   cli.results = 1;
   cli.data = &data;
   cli.hex = false;
   cli.octal = false;
-  cli.precision = 15;
+  cli.precision = 0;
   cli.width = 64;
 
   register char opt;
@@ -286,8 +275,7 @@ u8 cli_runner(int argc, char **argv)
         return err("Width must be either 8, 16, 32");
       continue;
     case 'r':
-      // Returns all results if no argument provided
-      cli.results = (optarg == NULL) ? BUF_SIZE * (64 / cli.width) : a_to_u(optarg, 1, BUF_SIZE * (64 / cli.width));
+      cli.results = a_to_u(optarg, 1, 1000);
       if (cli.results == 0)
         return err("Invalid number of results specified for desired width");
       continue;
@@ -300,16 +288,16 @@ u8 cli_runner(int argc, char **argv)
     case 'u':
       return uuid(optarg, &data);
     case 'd':
-      data.dbl_mode = true;
-      continue;
+      cli.results = BUF_SIZE * (64 / cli.width);
+      dump_buffer(&cli);
+      return 0;
     case 'f':
       data.dbl_mode = true;
-      cli.width = 32;
-      cli.precision = 7;
+      cli.precision = 15;
       continue;
     case 'p':
       data.dbl_mode = true;
-      cli.precision = a_to_u(optarg, 2, (cli.width == 32) ? 7 : 15);
+      cli.precision = a_to_u(optarg, 1, 15);
       continue;
     case 'e':
       return examine(optarg, &data);
@@ -317,6 +305,16 @@ u8 cli_runner(int argc, char **argv)
       return err("Option is invalid or missing required argument");
     }
   }
+
+  // #include <time.h>
+
+  // register clock_t start = clock();
+  // adam_bench(&data, 1000000000ULL);
+  // double duration = (double)(clock() - start) / (double)CLOCKS_PER_SEC;
+  // printf("Time: %lfs\n", duration);
+  // printf("diffuse(): %lfs\n", b);
+  // printf("apply(): %lfs\n", c);
+  // printf("mix(): %lfs\n", d);
 
   dump_buffer(&cli);
 
