@@ -3,8 +3,26 @@
 #include <unistd.h>
 
 #include "../include/adam.h"
-#include "../include/cli.h"
 #include "../include/support.h"
+
+#define STRINGIZE(a) #a
+#define STRINGIFY(a) STRINGIZE(a)
+
+#define MAJOR 1
+#define MINOR 4
+#define PATCH 0
+
+#define OPTSTR ":hvdfbxop:w:a:e:r::u::s::n::"
+#define ARG_COUNT 15
+
+typedef struct rng_cli {
+  rng_data *data;             //  Pointer to RNG buffer and state
+  u8 width;                   //  Number of bits in results (8, 16, 32, 64)
+  u8 precision;               //  Number of decimal places for floating point output (default 15 for double, 7 for float)
+  bool hex;                   //  Print hex?
+  bool octal;                 //  Print octal?
+  u16 results;                //  Number of results to return to user (varies based on width, max 2048 u8)
+} rng_cli;
 
 static void print_summary(const u16 swidth, const u16 indent)
 {
