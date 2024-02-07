@@ -4,8 +4,9 @@
 
   /* 
     Sizes of the buffer and bit vector for the binary sequence
-    The buffer is of type [u64; 256] with size 256 * 8 = 6144 bytes;
-    Need to left shift by 6 because there are 64 bits per index
+    The buffer is of type [u64; 256] with size 256 * 8 = 2048 bytes
+
+    Need to left shift for SEQ_SIZE because there's 64 bits per index
   */
   #define MAGNITUDE           8  
   #define BUF_SIZE            (1U << MAGNITUDE)     
@@ -16,7 +17,7 @@
 
   #define GOLDEN_RATIO        0x9E3779B97F4A7C13UL
 
-  #define ISAAC_MIX(a, b, c, d, e, f, g, h) { \
+  #define ISAAC_MIX(a,b,c,d,e,f,g,h) { \
     a-=e; f^=h>>9;  h+=a; \
     b-=f; g^=a<<9;  a+=b; \
     c-=g; h^=b>>23; b+=c; \
@@ -28,11 +29,11 @@
   }
 
   // Slightly modified versions of macros from ISAAC for reseeding ADAM
-  #define ISAAC_IND(mm, x)    (*(u64*)((u8*)(mm) + ((x) & ((BUF_SIZE-1)<<3))))
-  #define ISAAC_RNGSTEP(mx, a, b, mm, m, m2, x, y) { \
-    x = (m << 24) | (~((m >> 16) ^ __UINT64_MAX__) & 0xFFFFFF);  \
+  #define ISAAC_IND(mm,x)    (*(u64*)((u8*)(mm) + ((x) & ((BUF_SIZE-1)<<3))))
+  #define ISAAC_RNGSTEP(mx,a,b,mm,m,m2,x,y) { \
+    x = (m << 24) | (~((m >> 40) ^ __UINT64_MAX__) & 0xFFFFFF);  \
     a = (a^(mx)) + m2; \
-    m = ~(ISAAC_IND(mm,x) + a + b); \
+    m = (ISAAC_IND(mm,x) + a + b); \
     y ^= b = ISAAC_IND(mm,y>>MAGNITUDE) + x; \
   }
 
@@ -45,7 +46,7 @@
     using a chaotic function to scramble the used positions. The 
     chaotic function is given by this logistic function:
 
-      3.9999 * X * (1 - X)
+    3.9999 * X * (1 - X)
   */
   #define COEFFICIENT           3.9999      
   
@@ -78,7 +79,7 @@
     BETA is derived from the length of the significant digits
     ADAM uses the max double accuracy length of 15
   */
-  #define BETA                  10E15 
+  #define BETA                  10E15
 
   // Data for RNG process
   typedef struct rng_data {
@@ -91,28 +92,33 @@
     double *restrict chseeds;   //  Where we store seeds for each round of chaotic function
   } rng_data;
 
+  /* LIBRARY API */
+
   /*
     Initializes the rng_data struct and configures its initial state.
     
     Call this ONCE at the start of your program, before you generate any 
     numbers. Set param "gen_dbls" to true to get double precision numbers.
   */
-  void  adam_init(rng_data *data, bool gen_dbls);
+  void  adam_init(rng_data *data, bool generate_dbls);
 
   /*
-    Automatically makes internal calls to the adam_run function 
-    when regeneration is needed to ensure that you can safely 
-    expect to call this function and always receive a randomly
-    generated number.
+    Automatically makes internal calls to the adam_run function when 
+    regeneration is needed to ensure that you can safely expect to call 
+    this function and always receive a randomly generated number.
 
-    Param "width" must ALWAYS be either 8, 16, 32, or 64. Any other
-    value will make this function return 1 to let you know there's
-    an error with the width parameter. When opting for double output,
-    providing a width of 32 will give you 32-bit floating point numbers.
+    Param <width> must ALWAYS be either 8, 16, 32, or 64. Any other
+    value will make this function return 1 to let you know there's an 
+    error with the width parameter. When floating point output mode is
+    enabled, this field is ignored.
 
-    Optional param "duration" can be used to accumulate the total
-    amount of time taken by the number generation process. Set 
-    this to NULL if you don't need this.
+    Caller must guarantee that param <output> is of at least (<width> / 8)
+    bytes in size, unless dbl_mode is set to true, in which case <output>
+    size is assumed to be of sizeof(double).
+
+    Optional param <duration> can be used to accumulate the total amount 
+    of time taken by the number generation process. Set this to NULL
+    if you don't need this.
 
     Returns 0 on success, 1 on error
   */
@@ -121,16 +127,18 @@
   /*
     Fills a given buffer with random integers or doubles.
 
-    Caller is responsible for ensuring param "buffer" is of at least
-    param "size" bytes in length, and that the pointer is not NULL. 
+    Caller is responsible for ensuring param <buffer> is of at least
+    param <amount> * sizeof(u64 || double) bytes in length, and that 
+    the pointer is not NULL.
 
-    If data->dbl_mode is set to true, size is taken as a LITERAL value,
-    meaning that an input of 10 for param "size" would write 10 doubles 
-    to destination "buf"
-
-    Optional param "duration" can be used to accumulate the total
+    Optional param <duration> can be used to accumulate the total
     amount of time taken by the number generation process. Set this 
     to NULL if you don't need this.
+
+    If param <amount> is greater than 1 billion, this function will 
+    return 1 as an error.
+
+    Returns 0 on success, 1 on error
   */
-  void  adam_fill(void *buf, rng_data *data, const u64 size, double *duration);
+  int   adam_fill(void *buf, rng_data *data, const u32 amount, double *duration);
 #endif

@@ -100,10 +100,10 @@
       s1.val[3] = SIMD_CAST64(s2.val[3])
 
     #define SIMD_3XOR4Q64(s1, s2, s3) \
-      s3.val[0] = veor3q_u64(s1.val[0], s2.val[0], s3.val[0]), \
-      s3.val[1] = veor3q_u64(s1.val[1], s2.val[1], s3.val[1]), \
-      s3.val[2] = veor3q_u64(s1.val[2], s2.val[2], s3.val[2]), \
-      s3.val[3] = veor3q_u64(s1.val[3], s2.val[3], s3.val[3])            
+      s1.val[0] = veor3q_u64(s1.val[0], s2.val[0], s3.val[0]), \
+      s1.val[1] = veor3q_u64(s1.val[1], s2.val[1], s3.val[1]), \
+      s1.val[2] = veor3q_u64(s1.val[2], s2.val[2], s3.val[2]), \
+      s1.val[3] = veor3q_u64(s1.val[3], s2.val[3], s3.val[3])            
 
     #define SIMD_COMBINE64x4(r, m, a) \
       r.val[0] = SIMD_COMBINE64(SIMD_SET64(m[a[0]]), SIMD_SET64(m[a[1]])), \
