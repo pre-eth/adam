@@ -83,13 +83,26 @@
 
   // Data for RNG process
   typedef struct rng_data {
-    bool dbl_mode;              //  Output type (0 = INT, 1 = DOUBLE)
-    u8 index;                   //  Current index in output vector
-    u64 seed[4];                //  256-bit seed/key
-    u64 nonce;                  //  64-bit nonce
-    u64 aa;                     //  State variable 1
-    u64 bb;                     //  State variable 2
-    double *restrict chseeds;   //  Where we store seeds for each round of chaotic function
+    //  Output type (0 = INT, 1 = DOUBLE)
+    bool dbl_mode; 
+
+    //  Current index in output vector
+    u8 index;       
+
+    //  256-bit seed/key
+    u64 seed[4];          
+
+    //  64-bit nonce      
+    u64 nonce;              
+
+    //  State variable 1    
+    u64 aa;      
+
+    //  State variable 2               
+    u64 bb;              
+
+    //  Where we store seeds for each round of chaotic function
+    double *restrict chseeds;   
   } rng_data;
 
   /* LIBRARY API */
@@ -129,14 +142,12 @@
 
     Caller is responsible for ensuring param <buffer> is of at least
     param <amount> * sizeof(u64 || double) bytes in length, and that 
-    the pointer is not NULL.
+    the pointer is not NULL. If <amount> is greater than 1 billion, 
+    this function will return 1 and terminate early.
 
     Optional param <duration> can be used to accumulate the total
     amount of time taken by the number generation process. Set this 
     to NULL if you don't need this.
-
-    If param <amount> is greater than 1 billion, this function will 
-    return 1 as an error.
 
     Returns 0 on success, 1 on error
   */

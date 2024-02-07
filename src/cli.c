@@ -16,12 +16,23 @@
 #define ARG_COUNT 15
 
 typedef struct rng_cli {
-  rng_data *data;             //  Pointer to RNG buffer and state
-  u8 width;                   //  Number of bits in results (8, 16, 32, 64)
-  u8 precision;               //  Number of decimal places for floating point output (default 15 for double, 7 for float)
-  bool hex;                   //  Print hex?
-  bool octal;                 //  Print octal?
-  u16 results;                //  Number of results to return to user (varies based on width, max 2048 u8)
+  //  Pointer to RNG buffer and state
+  rng_data *data;
+
+  //  Number of bits in results (8, 16, 32, 64)
+  u8 width;
+
+  //  Number of decimal places for floating point output (default 15)
+  u8 precision;
+
+  //  Print hex?
+  bool hex;
+
+  //  Print octal?
+  bool octal;
+
+  //  Number of results to return to user (max 1000)
+  u16 results;
 } rng_cli;
 
 static void print_summary(const u16 swidth, const u16 indent)
@@ -94,9 +105,9 @@ static u8 help(void)
   const char *ARGSHELP[ARG_COUNT] = {
     "Get command summary and all available options",
     "Version of this software (v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH) ")",
-    "Get the seed for the generated buffer (no parameter) or provide "
+    "Get the seed for the generated buffer (no parameter), or provide "
     "your own. Seeds are reusable but should be kept secret.",
-    "Get the nonce for the generated buffer (no parameter) or provide "
+    "Get the nonce for the generated buffer (no parameter), or provide "
     "your own. Nonces should ALWAYS be unique and secret",
     "Generate a universally unique identifier (UUID). Optionally specify a number of UUID's to generate (max 128)",
     "The amount of numbers to generate and return, written to stdout. Must be within [1, 1000]",
@@ -104,15 +115,15 @@ static u8 help(void)
     "Desired alternative size (u8, u16, u32) of returned numbers. Default width is u64",
     "Just bits... literally",
     "Write an ASCII or binary sample of 1000000 bits (1 Mb) to file for external assessment with your favorite tests. "
-    "You can choose a multiplier within [1, 8000] to output up to 1GB at a time",
+    "You can choose a multiplier within [1, " STRINGIFY(TESTING_LIMIT) "] to output up to 1GB at a time",
     "Examine a sample of 1000000 bits (1 Mb) with the ENT framework as well as some other in-house statistical tests. "
-    "You can choose a multiplier within [1, 8000] to examine up to 1GB at a time",
+    "You can choose a multiplier within [1, " STRINGIFY(TESTING_LIMIT) "] to examine up to 1GB at a time",
     "Print numbers in hexadecimal format with leading prefix",
     "Print numbers in octal format with leading prefix",
     "Enable floating point mode to generate doubles in (0, 1) instead of integers",
     "The number of decimal places to display when printing doubles. Must be within [1, 15]. Default is 15"
   };
-  const u8 lengths[ARG_COUNT] = { 25, 33, 119, 117, 108, 89, 95, 81, 22, 187, 178, 55, 49, 83, 100 };
+  const u8 lengths[ARG_COUNT] = { 25, 33, 120, 118, 108, 89, 95, 81, 22, 187, 178, 55, 49, 83, 100 };
 
   register short len;
   for (u8 i = 0; i < ARG_COUNT; ++i) {
@@ -232,8 +243,23 @@ get_file_type:
     goto get_file_type;
   }
 
+  /*
+    Based off some observed benchmarks, keeping track of CPU time
+    adds around latency to the entire program, so this should be
+    accounted for with <duration> to give a more accurate measure of
+    how much cpu time the number generation really took.
+
+    0.77 was chosen because to generate 1GB of random data, there is
+    ~0.15s of latency added on average, increasing the generation time
+    from 0.47s to around 0.62s on Mac. So this ratio was used to adjust
+    the duration calculations.
+
+    TODO: confirm offset validity on linux
+  */
+  duration *= 0.77;
+
   fprintf(stderr,
-      "\n\033[0;1mGenerated \033[36m%llu\033[m bits in \033[36m%lfs\033[m\n",
+      "\n\033[0mGenerated \033[36m%llu\033[m bits in \033[36m%lfs\033[m\n",
       total, duration);
 
   return 0;
@@ -258,7 +284,8 @@ int main(int argc, char **argv)
     case 'h':
       return help();
     case 'v':
-      return puts("v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH));
+      puts("v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH));
+      return 0;
     case 'a':
       return assess(optarg, &cli);
     case 'b':
