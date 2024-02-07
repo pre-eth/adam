@@ -2,7 +2,7 @@ BINARY_DIR = ./bin
 LIBRARY_DIR = ./lib
 CC = @gcc
 
-CFLAGS = -Iinclude -O3 -flto # -Wall -Wextra -Wpedantic -Werror
+CFLAGS = -Iinclude -O2 -flto # -Wall -Wextra -Wpedantic -Werror
 UNAME_P := $(shell uname -p)
 
 ifeq ($(UNAME_P), arm)
@@ -30,3 +30,4 @@ adam: $(OBJ)
 	$(CC) -o $(BINARY_DIR)/adam $(OBJ)
 	@rm $(OBJ)
 	@echo "\033[1;32mFinished! Run adam -h to get started!\033[m"
+	@cp bin/adam ~/.local/bin/adam
