@@ -31,4 +31,5 @@ adam: $(OBJ)
 	$(CC) -o $(BUILD_DIR)/adam $(OBJ)
 	@rm $(OBJ)
 	@echo "\033[1;32mFinished! Run adam -h to get started!\033[m"
+	@cp include/adam.h build/adam.h
 	@cp $(BUILD_DIR)/adam ~/.local/bin/adam
