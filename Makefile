@@ -1,8 +1,7 @@
-BINARY_DIR = ./bin
-LIBRARY_DIR = ./lib
+BUILD_DIR = ./build
 CC = @gcc
 
-CFLAGS = -Iinclude -O2 -flto # -Wall -Wextra -Wpedantic -Werror
+CFLAGS = -Iinclude -O2 -flto 	# -Wall -Wextra -Wpedantic -Werror
 UNAME_P := $(shell uname -p)
 
 ifeq ($(UNAME_P), arm)
@@ -16,8 +15,10 @@ else
 	endif
 endif
  
-FILES = adam ent test support cli
-OBJ = $(FILES:%=src/%.o)
+LIBRARY = rng adam 
+LIB_OBJ = $(LIBRARY:%=src/%.o)
+CLI = $(LIBRARY) ent test support cli
+OBJ = $(CLI:%=src/%.o)
 
 %.o: src/%.c 
 	$(CC) $(CFLAGS) -c $^ $(SIMD_FLAGS)
@@ -25,9 +26,9 @@ OBJ = $(FILES:%=src/%.o)
 adam: $(OBJ)
 	@clang-format -i src/*.c
 	@echo "\033[1;36mBuilding ADAM...\033[m"
-	@mkdir -p bin lib
-	@ar rcs $(LIBRARY_DIR)/libadam.a src/adam.o
-	$(CC) -o $(BINARY_DIR)/adam $(OBJ)
+	@mkdir -p $(BUILD_DIR)
+	@ar rcs $(BUILD_DIR)/libadam.a $(LIB_OBJ)
+	$(CC) -o $(BUILD_DIR)/adam $(OBJ)
 	@rm $(OBJ)
 	@echo "\033[1;32mFinished! Run adam -h to get started!\033[m"
-	@cp bin/adam ~/.local/bin/adam
+	@cp $(BUILD_DIR)/adam ~/.local/bin/adam
