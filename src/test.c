@@ -24,11 +24,11 @@
 */
 
 #include "../include/test.h"
-#include "../include/adam.h"
+#include "../include/rng.h"
 
 static u64 chseed_dist[5];
-static u64 gaps[BUF_SIZE + 1];
-static u64 gaplengths[BUF_SIZE];
+static u64 gaps[256];
+static u64 gaplengths[256];
 
 static void gap_lengths(u64 num)
 {
@@ -85,16 +85,16 @@ static void chseed_unif(double *chseeds, double *avg_chseed)
   } while (++i < (ROUNDS << 2));
 }
 
-static void test_loop(rng_test *rsl, u64 *_ptr, double *duration)
+static void test_loop(rng_test *rsl)
 {
   // Chaotic seeds all occur within (0.0, 0.5).
   // This function tracks their distribution and we check the uniformity at the end.
-  chseed_unif(rsl->data->chseeds, &rsl->avg_chseed);
+  chseed_unif(rsl->chseeds, &rsl->avg_chseed);
 
   register u16 i = 0;
   u64 num;
   do {
-    num = _ptr[i];
+    num = rsl->buffer[i];
 
     // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
     rsl->min = num ^ ((rsl->min ^ num) & -(rsl->min < num));
@@ -115,31 +115,18 @@ static void test_loop(rng_test *rsl, u64 *_ptr, double *duration)
   } while (++i < BUF_SIZE);
 }
 
-void adam_test(const u64 limit, rng_test *rsl, double *duration)
+void adam_test(const u64 limit, rng_test *rsl)
 {
-  rng_data *data = rsl->data;
-  u64 buffer[BUF_SIZE] ALIGN(64);
+  adam_run(rsl->seed, &rsl->nonce, &rsl->aa, &rsl->bb);
 
-  adam_fill(&buffer[0], data, BUF_SIZE, duration);
-
-  rsl->ent->sccu0 = buffer[0] & 0xFF;
-
-  rsl->avg_chseed = 0.0;
-
-  rsl->mfreq = rsl->zeroes = rsl->up_runs = rsl->longest_up = rsl->down_runs = rsl->longest_down = rsl->odd = 0;
-  rsl->min = rsl->max = buffer[0];
-
-  MEMCPY(&rsl->init_values[0], &data->seed, sizeof(u64) << 2);
-  rsl->init_values[4] = data->nonce;
-  rsl->init_values[5] = data->aa;
-  rsl->init_values[6] = data->bb;
+  rsl->min = rsl->max = rsl->buffer[0];
+  rsl->ent->sccu0 = rsl->buffer[0] & 0xFF;
 
   register long int rate = limit >> 14;
   register short leftovers = limit & (SEQ_SIZE - 1);
-
   do {
-    test_loop(rsl, &buffer[0], duration);
-    adam_fill(&buffer[0], data, BUF_SIZE, duration);
+    test_loop(rsl);
+    adam_run(rsl->seed, &rsl->nonce, &rsl->aa, &rsl->bb);
     leftovers -= (u16)(rate <= 0) << 14;
   } while (LIKELY(--rate > 0) || LIKELY(leftovers > 0));
 
@@ -148,11 +135,40 @@ void adam_test(const u64 limit, rng_test *rsl, double *duration)
   register double average_gaplength = 0.0;
 
   register u16 i = 0;
-  for (; i < BUF_SIZE; ++i)
-    average_gaplength += ((double)gaplengths[i] / (double)(rsl->ent->freq[i] - 1));
 
-  rsl->avg_gap = ((double)average_gaplength) / 256.0;
+  register u64 freq_max, freq_min, tmp;
+  freq_max = freq_min = rsl->ent->freq[0];
+  for (; i < BUF_SIZE; ++i) {
+    tmp = rsl->ent->freq[i];
+    average_gaplength += ((double)gaplengths[i] / (double)(tmp - 1));
+    freq_min = tmp ^ ((freq_min ^ tmp) & -(freq_min < tmp));
+    freq_max = freq_max ^ ((freq_max ^ tmp) & -(freq_max < tmp));
+  }
+
+  rsl->avg_gap = average_gaplength / 256.0;
 
   rsl->chseed_dist = &chseed_dist[0];
 }
 
+/*
+#   2000
+#
+#   1800                                              ▓▓▓▓
+#                                                     ▓▓▓▓
+#   1600                                              ▓▓▓▓
+#                                                     ▓▓▓▓
+#   1400                                              ▓▓▓▓
+#                                                     ▓▓▓▓
+#   1200                                              ▓▓▓▓
+#                                                ▓▓▓▓ ▓▓▓▓
+#   1000                               ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
+#                                 ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
+#    800                ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
+#        ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
+#    600 ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
+#        ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
+#    400 ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
+#        ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
+#    200 ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
+#        ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
+*/

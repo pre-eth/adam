@@ -13,16 +13,15 @@
 */
 #include <math.h>
 
-#include "../include/adam.h"
 #include "../include/ent.h"
 
 #define LOG2(x) (log2of10 * log10(x))
 #define ex(x) (((x) < -BIGX) ? 0.0 : exp(x))
 
-static u64 ccount[BUF_SIZE] ALIGN(64), // Bins to count occurrences of values
+static u64 ccount[256] ALIGN(64), // Bins to count occurrences of values
     totalc; // Total bytes counted
 
-static double prob[BUF_SIZE]; // Probabilities per bin for entropy
+static double prob[256]; // Probabilities per bin for entropy
 
 static u8 mp, ccfirst;
 static u64 monte[MONTEN];
@@ -189,14 +188,14 @@ void ent_results(ent_report *rsl)
   */
   register double a;
   cexp = totalc / 256.0; // Expected count per bin
-  for (i = 0; i < BUF_SIZE; ++i) {
+  for (i = 0; i < 256; ++i) {
     a = ccount[i] - cexp;
     prob[i] = ((double)ccount[i]) / totalc;
     chisq += (a * a) / cexp;
     datasum += ((double)i) * ccount[i];
   }
 
-  for (i = 0; i < BUF_SIZE; ++i)
+  for (i = 0; i < 256; ++i)
     if (prob[i] > 0.0)
       ent += prob[i] * LOG2(1.0 / prob[i]); // change to (prob[i] > 0.0) * prob[i] * LOG2(1 / prob[i]);
 
