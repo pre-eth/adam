@@ -1,8 +1,8 @@
-#include <math.h>
 #include <stdio.h>
 #include <sys/ioctl.h>
+#include <time.h>
 
-#include "../include/adam.h"
+#include "../include/rng.h"
 #include "../include/simd.h"
 #include "../include/support.h"
 #include "../include/test.h"
@@ -202,32 +202,21 @@ static void print_binary(char *restrict _bptr, u64 num)
 #endif
 
 // prints all bits in a buffer as chunks of 1024 bits
-static double print_chunks(char *restrict _bptr, rng_data *data)
+static void print_chunks(char *restrict _bptr, u64 *_ptr)
 {
-#define PRINT_4(i, j) print_binary(_bptr + i, a),       \
-                      print_binary(_bptr + 64 + i, b),  \
-                      print_binary(_bptr + 128 + i, c), \
-                      print_binary(_bptr + 192 + i, d)
+#define PRINT_4(i, j) print_binary(_bptr + i, _ptr[j]),           \
+                      print_binary(_bptr + 64 + i, _ptr[j + 1]),  \
+                      print_binary(_bptr + 128 + i, _ptr[j + 2]), \
+                      print_binary(_bptr + 192 + i, _ptr[j + 3])
 
   register u8 i = 0;
-  double duration = 0.0;
-
-  u64 a, b, c, d;
-
   do {
-    adam_get(&a, data, 64, &duration);
-    adam_get(&b, data, 64, &duration);
-    adam_get(&c, data, 64, &duration);
-    adam_get(&d, data, 64, &duration);
-
     PRINT_4(0, i + 0);
     PRINT_4(256, i + 4);
     PRINT_4(512, i + 8);
     PRINT_4(768, i + 12);
     fwrite(_bptr, 1, BITBUF_SIZE, stdout);
   } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
-
-  return duration;
 }
 
 u8 gen_uuid(const u64 higher, const u64 lower, u8 *buf)
@@ -252,7 +241,7 @@ u8 gen_uuid(const u64 higher, const u64 lower, u8 *buf)
   return 0;
 }
 
-double stream_ascii(const u64 limit, rng_data *data)
+double stream_ascii(const u64 limit, u64 *seed, u64 *nonce, u64 *aa, u64 *bb)
 {
   /*
     Split limit based on how many calls (if needed)
@@ -262,12 +251,19 @@ double stream_ascii(const u64 limit, rng_data *data)
   register long int rate = limit >> 14;
   register short leftovers = limit & (SEQ_SIZE - 1);
 
-  double duration = 0.0;
+  register clock_t start;
+  register double duration = 0.0;
 
   char *restrict _bptr = &bitbuffer[0];
 
+  u64 *buffer;
+  adam_data(&buffer, NULL);
+
   while (rate > 0) {
-    duration += print_chunks(_bptr, data);
+    start = clock();
+    adam_run(seed, nonce, aa, bb);
+    duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
+    print_chunks(_bptr, buffer);
     --rate;
   }
 
@@ -281,185 +277,67 @@ double stream_ascii(const u64 limit, rng_data *data)
     if assessing bits, so this branch has been marked as LIKELY.
   */
   if (LIKELY(leftovers > 0)) {
-    register u16 l, limit;
+    register u16 l = 0;
+    start = clock();
+    adam_run(seed, nonce, aa, bb);
+    duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
 
-  print_leftovers:
-    limit = (leftovers < BITBUF_SIZE) ? leftovers : BITBUF_SIZE;
-
-    l = 0;
-    u64 num;
     do {
-      adam_get(&num, data, 64, &duration);
-      print_binary(_bptr + l, num);
-    } while ((l += 64) < limit);
-
-    fwrite(_bptr, 1, limit, stdout);
-    leftovers -= limit;
-
-    if (LIKELY(leftovers > 0))
-      goto print_leftovers;
+      print_binary(_bptr, buffer[l >> 6]);
+      fwrite(_bptr, 1, 64, stdout);
+    } while ((l += 64) < leftovers);
   }
-
   return duration;
 }
 
-double stream_bytes(const u64 limit, rng_data *data)
+double stream_bytes(const u64 limit, u64 *seed, u64 *nonce, u64 *aa, u64 *bb)
 {
-// Minimum value for limit is 1000000
-// which is equal to 15,625 u64
-#define ARR_SIZE (TESTING_BITS >> 6)
-
   /*
     Split limit based on how many calls we need to make
     to write the bytes of an entire buffer directly
   */
-  const short leftovers = limit & (SEQ_SIZE - 1);
+  const u16 leftovers = limit & (SEQ_SIZE - 1);
 
-  register u64 rate = 0;
-  double duration = 0.0;
+  u64 *buffer;
 
-  u64 arr[ARR_SIZE] ALIGN(64);
+  adam_data(&buffer, NULL);
 
-  while (LIKELY(rate < limit)) {
-    adam_fill(&arr[0], data, ARR_SIZE, &duration);
-    fwrite(&arr[0], sizeof(u64), ARR_SIZE, stdout);
-    rate += TESTING_BITS;
+  register double duration = 0.0;
+  register clock_t start;
+  register u64 progress = 0;
+  while (LIKELY(progress < limit)) {
+    start = clock();
+    adam_run(seed, nonce, aa, bb);
+    duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
+    fwrite(&buffer[0], sizeof(u64), BUF_SIZE, stdout);
+    progress += SEQ_SIZE;
   }
 
   if (LIKELY(leftovers > 0)) {
-    adam_fill(&arr[0], data, BUF_SIZE, &duration);
-    fwrite(&arr[0], sizeof(u64), BUF_SIZE, stdout);
+    start = clock();
+    adam_run(seed, nonce, aa, bb);
+    duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
+    fwrite(&buffer[0], sizeof(u64), BUF_SIZE, stdout);
   }
 
   return duration;
 }
 
-static void print_basic_results(const u16 indent, const u32 sequences, const u64 limit, rng_test *rsl)
+u8 get_seq_properties(const u64 limit, rng_test *rsl)
 {
-  const u64 output = sequences << 8;
-  const u32 zeroes = (output << 6) - rsl->mfreq;
-  const u32 diff = (zeroes > rsl->mfreq) ? zeroes - rsl->mfreq : rsl->mfreq - zeroes;
+  // Connect internal integer and chaotic seed arrays to rng_test
+  adam_data(&rsl->buffer, &rsl->chseeds);
 
-  register u64 bytes = limit;
-  const char *unit = " BYTES\0KB\0MB\0GB\0TB";
-  if (bytes > 8000000000000UL) {
-    bytes /= 8000000000000;
-    unit += 16;
-  } else if (bytes > 8000000000UL) {
-    bytes /= 8000000000;
-    unit += 13;
-  } else if (bytes > 8000000) {
-    bytes /= 8000000;
-    unit += 10;
-  } else if (bytes > 8000) {
-    bytes /= 8000;
-    unit += 7;
-  }
+  rsl->sequences = (limit >> 14) + !!(limit & (SEQ_SIZE - 1));
+  rsl->expected_chseed = rsl->sequences * (ROUNDS << 2);
 
-  printf("\033[1;34m\033[%uC              Total Output: \033[m%llu u64 (%llu u32 | %llu u16 | %llu u8)\n", indent, output, output << 1, output << 2, output << 3);
-  printf("\033[1;34m\033[%uC       Sequences Generated: \033[m%u\n", indent, sequences);
-  printf("\033[1;34m\033[%uC               Sample Size: \033[m%llu BITS (%llu%s)\n", indent, limit, bytes, unit);
-  printf("\033[1;34m\033[%uC         Monobit Frequency: \033[m%u ONES, %u ZEROES (+%u %s)\n", indent, rsl->mfreq, zeroes, diff, (zeroes > rsl->mfreq) ? "ZEROES" : "ONES");
-  printf("\033[1;34m\033[%uC             Minimum Value: \033[m%llu\n", indent, rsl->min);
-  printf("\033[1;34m\033[%uC             Maximum Value: \033[m%llu\n", indent, rsl->max);
-  printf("\033[1;34m\033[%uC                     Range: \033[m%llu\n", indent, rsl->max - rsl->min);
-  printf("\033[1;34m\033[%uC              Even Numbers: \033[m%llu (%u%%)\n", indent, output - rsl->odd, (u8)(((double)(output - rsl->odd) / (double)output) * 100));
-  printf("\033[1;34m\033[%uC               Odd Numbers: \033[m%u (%u%%)\n", indent, rsl->odd, (u8)(((double)rsl->odd / (double)output) * 100));
-  printf("\033[1;34m\033[%uC          Zeroes Generated: \033[m%u\n", indent, rsl->zeroes);
-  printf("\033[1;34m\033[%uC    256-bit Seed (u64 x 4): \033[m0x%llX, 0x%llX,\n", indent, rsl->init_values[0], rsl->init_values[1]);
-  printf("\033[%uC                            0x%llX, 0x%llX\n", indent, rsl->init_values[2], rsl->init_values[3]);
-  printf("\033[1;34m\033[%uC              64-bit Nonce: \033[m0x%llX\n", indent, rsl->init_values[4]);
-  printf("\033[1;34m\033[%uC           Initial State 1: \033[m0x%llX\n", indent, rsl->init_values[5]);
-  printf("\033[1;34m\033[%uC           Initial State 2: \033[m0x%llX\n", indent, rsl->init_values[6]);
-  printf("\033[1;34m\033[%uC        Average Gap Length: \033[m%llu\n", indent, (u64)rsl->avg_gap);
-  printf("\033[1;34m\033[%uC      Total Number of Runs: \033[m%u\n", indent, rsl->up_runs + rsl->down_runs);
-  printf("\033[2m\033[%uC            a.  Increasing: \033[m%u\n", indent, rsl->up_runs);
-  printf("\033[2m\033[%uC            b.  Decreasing: \033[m%u\n", indent, rsl->down_runs);
-  printf("\033[2m\033[%uC            c. Longest Run: \033[m%u (INCREASING)\n", indent, rsl->longest_up);
-  printf("\033[2m\033[%uC            d. Longest Run: \033[m%u (DECREASING)\n", indent, rsl->longest_down);
-}
-
-static void print_ent_results(const u16 indent, ent_report *ent)
-{
-  char *chi_str;
-  char chi_tmp[6];
-  register u8 suspect_level = 32;
-
-  if (ent->pochisq < 0.001) {
-    chi_str = "<= 0.01";
-    --suspect_level;
-  } else if (ent->pochisq > 0.99) {
-    chi_str = ">= 0.99";
-    --suspect_level;
-  } else {
-    snprintf(&chi_tmp[0], 5, "%1.2f", ent->pochisq * 100);
-    chi_str = &chi_tmp[0];
-  }
-
-  printf("\033[1;34m\033[%uC                   Entropy: \033[m%.5lf bits per byte\n", indent, ent->ent);
-  printf("\033[1;34m\033[%uC                Chi-Square: \033[m\033[1;%um%1.2lf\033[m (randomly exceeded %s%% of the time) \n", indent, suspect_level, ent->chisq, chi_str);
-  printf("\033[1;34m\033[%uC           Arithmetic Mean: \033[m%1.3lf (127.5 = random)\n", indent, ent->mean);
-  printf("\033[1;34m\033[%uC  Monte Carlo Value for Pi: \033[m%1.9lf (error: %1.2f%%)\n", indent, ent->montepicalc, ent->monterr);
-  if (ent->scc >= -99999)
-    printf("\033[1;34m\033[%uC        Serial Correlation: \033[m%1.6f (totally uncorrelated = 0.0).\n", indent, ent->scc);
-  else
-    printf("\033[1;34m\033[%uC        Serial Correlation: \033[1;31mUNDEFINED\033[m (all values equal!).\n", indent);
-}
-
-static void print_chseed_results(const u16 indent, const u32 sequences, u64 *chseed_dist, const double avg_chseed)
-{
-#define CHSEED_CRITICAL_VALUE 13.277
-
-  register double chi_calc = 0.0;
-  const u64 expected_chseeds = (u64)((sequences * (ROUNDS << 2)) * 0.2);
-
-  register u8 i = 0;
-  for (; i < 5; ++i)
-    chi_calc += pow(((double)chseed_dist[i] - (double)expected_chseeds), 2) / (double)expected_chseeds;
-
-  register u8 suspect_level = 32 - (CHSEED_CRITICAL_VALUE <= chi_calc);
-
-  printf("\033[1;34m\033[%uC   Chaotic Seed Chi-Square: \033[m\033[1;%um%1.2lf\n", indent, suspect_level, chi_calc);
-  printf("\033[1;34m\033[%uC        Average Seed Value: \033[m%1.15lf (ideal = 0.25)\n", indent, avg_chseed / (sequences * (ROUNDS << 2)));
-  printf("\033[2m\033[%uC             a. (0.0, 0.1): \033[m%llu (%llu expected)\n", indent, chseed_dist[0], expected_chseeds);
-  printf("\033[2m\033[%uC             b. [0.1, 0.2): \033[m%llu (%llu expected)\n", indent, chseed_dist[1], expected_chseeds);
-  printf("\033[2m\033[%uC             c. [0.2, 0.3): \033[m%llu (%llu expected)\n", indent, chseed_dist[2], expected_chseeds);
-  printf("\033[2m\033[%uC             d. [0.3, 0.4): \033[m%llu (%llu expected)\n", indent, chseed_dist[3], expected_chseeds);
-  printf("\033[2m\033[%uC             e. [0.4, 0.5): \033[m%llu (%llu expected)\n", indent, chseed_dist[4], expected_chseeds);
-}
-
-double examine(const char *strlimit, rng_data *data)
-{
-  ent_report ent;
-
-  rng_test rsl;
-  rsl.data = data;
-  rsl.ent = &ent;
-
-  register u64 limit = TESTING_BITS;
-  if (strlimit != NULL)
-    limit *= a_to_u(strlimit, 1, TESTING_LIMIT);
-
+  // Start examination!
   printf("\033[1;33mExamining %llu bits of ADAM...\033[m\n", limit);
-
-  double duration = 0.0;
-  adam_test(limit, &rsl, &duration);
-
+  register clock_t start = clock();
+  adam_test(limit, rsl);
+  register double duration = (double)(clock() - start) / (double)CLOCKS_PER_SEC;
+  duration *= 0.77;
   printf("\033[1;33mExamination Complete! (%lfs)\033[m\n\n", duration);
 
-  u16 center, indent, swidth;
-  get_print_metrics(&center, &indent, &swidth);
-  indent <<= 1;
-
-  printf("\033[%uC[RESULTS]\n\n", center - 4);
-
-  const u32 sequences = (limit >> 14) + !!(limit & (SEQ_SIZE - 1));
-
-  print_basic_results(indent, sequences, limit, &rsl);
-  print_ent_results(indent, &ent);
-  print_chseed_results(indent, sequences, rsl.chseed_dist, rsl.avg_chseed);
-
-  // HISTOGRAM
-
-  return duration;
+  return 0;
 }
