@@ -384,13 +384,15 @@ static void mix(void)
   do {
     r1 = SIMD_SETR64(XOR_MAPS(i)
 #ifdef __AVX512F__
-        , XOR_MAPS(i + 4)
+                         ,
+        XOR_MAPS(i + 4)
 #endif
     );
 
     r2 = SIMD_SETR64(XOR_MAPS(i + (SIMD_LEN >> 3))
 #ifdef __AVX512F__
-      , XOR_MAPS(i + (SIMD_LEN >> 3) + 4)
+                         ,
+        XOR_MAPS(i + (SIMD_LEN >> 3) + 4)
 #endif
     );
 
@@ -436,8 +438,7 @@ void adam_run(unsigned long long *seed, unsigned long long *_nonce, unsigned lon
 
 void adam_data(unsigned long long **_ptr, double **_chptr)
 {
-  if (_ptr != NULL)
-    *_ptr = &buffer[0];
+  *_ptr = &buffer[0];
 
   if (_chptr != NULL)
     *_chptr = &chseeds[0];
