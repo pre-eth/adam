@@ -25,8 +25,6 @@
     unsigned long long bb;              
   } rng_data;
 
-  /* LIBRARY API */
-
   /*
     Initializes the rng_data struct and configures its initial state.
     
@@ -49,27 +47,22 @@
     bytes in size, unless dbl_mode is set to true, in which case <output>
     size is assumed to be of sizeof(double).
 
-    Optional param <duration> can be used to accumulate the total amount 
-    of time taken by the number generation process. Set this to NULL
-    if you don't need this.
-
     Returns 0 on success, 1 on error
   */
-  int   adam_get(void *output, rng_data *data, const unsigned char width, double *duration);
+  int   adam_get(rng_data *data, void *output, const unsigned char width);
 
   /*
     Fills a given buffer with random integers or doubles.
 
-    Caller is responsible for ensuring param <buffer> is of at least
-    param <amount> * sizeof(u64 || double) bytes in length, and that 
-    the pointer is not NULL. If <amount> is greater than 1 billion, 
-    this function will return 1 and terminate early.
+    The caller is responsible for ensuring param <buf> is of at least 
+    <amount> * sizeof(u64 || double) bytes in length, and that the 
+    pointer is not NULL. If <amount> is greater than 1 million, this
+    function will return 1 and terminate early.
 
-    Optional param <duration> can be used to accumulate the total
-    amount of time taken by the number generation process. Set this 
-    to NULL if you don't need this.
+    Just like adam_get(), param <width> must be 8, 16, 32, or 64. If you
+    have toggled floating point mode, this field is ignored.
 
     Returns 0 on success, 1 on error
   */
-  int   adam_fill(void *buf, rng_data *data, const unsigned int amount, double *duration);
+  int   adam_fill(rng_data *data, void *buf, const unsigned char width, const unsigned int amount);
 #endif

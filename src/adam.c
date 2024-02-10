@@ -1,5 +1,4 @@
 #include <sys/random.h>
-#include <time.h>
 
 #include "../include/adam.h"
 #include "../include/defs.h"
@@ -12,8 +11,7 @@ void adam_init(rng_data *data, bool generate_dbls)
   getentropy(&data->seed[0], sizeof(u64) << 2);
   getentropy(&data->nonce, sizeof(u64));
 
-  // flag to trigger initial generation
-  data->index = __UINT8_MAX__;
+  data->index = 0;
   data->dbl_mode = generate_dbls;
   data->aa = (data->nonce & 0xFFFFFFFF00000000) | (~data->seed[data->nonce & 3] & 0xFFFFFFFF);
   data->bb = (data->seed[data->aa & 3] & 0xFFFFFFFF00000000) | (~data->nonce & 0xFFFFFFFF);
@@ -22,19 +20,15 @@ void adam_init(rng_data *data, bool generate_dbls)
   adam_data(&buffer, NULL);
 }
 
-int adam_get(void *output, rng_data *data, const unsigned char width, double *duration)
+int adam_get(rng_data *data, void *output, const unsigned char width)
 {
   if (width != 8 && width != 16 && width != 32 && width != 64)
     return 1;
 
   register u64 mask = (width == 64) ? __UINT64_MAX__ : ((1UL << width) - 1);
 
-  if (data->index == __UINT8_MAX__) {
-    register clock_t start = clock();
+  if (buffer[BUF_SIZE - 1] == 0)
     adam_run(data->seed, &data->nonce, &data->aa, &data->bb);
-    if (duration != NULL)
-      *duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
-  }
 
   if (!data->dbl_mode) {
     u64 out = buffer[data->index] & mask;
@@ -50,45 +44,36 @@ int adam_get(void *output, rng_data *data, const unsigned char width, double *du
   return 0;
 }
 
-int adam_fill(void *buf, rng_data *data, const unsigned int amount, double *duration)
+int adam_fill(rng_data *data, void *buf, const unsigned char width, const unsigned int amount)
 {
-  if (amount > 1000000000)
+  if ((width != 8 && width != 16 && width != 32 && width != 64) || amount > 1000000)
     return 1;
 
-  void *_ptr = buf;
-  register clock_t start;
-  double _duration = 0.0;
+  const u16 one_run = BUF_SIZE * (64 / width);
+  const u32 leftovers = amount & (one_run - 1);
+
+  register long limit = amount >> CTZ(one_run);
 
   if (!data->dbl_mode) {
-    register long long limit = amount / BUF_SIZE;
-    register u64 leftovers = amount & (BUF_SIZE - 1);
-
     while (limit > 0) {
-      start = clock();
       adam_run(data->seed, &data->nonce, &data->aa, &data->bb);
-      _duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
-      MEMCPY(_ptr, &buffer[0], SEQ_BYTES);
-      _ptr += SEQ_BYTES;
+      MEMCPY(buf, &buffer[0], SEQ_BYTES);
+      buf += SEQ_BYTES;
       --limit;
     }
 
     if (leftovers > 0) {
-      start = clock();
       adam_run(data->seed, &data->nonce, &data->aa, &data->bb);
-      _duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
-      MEMCPY(_ptr, &buffer[0], leftovers * sizeof(u64));
+      MEMCPY(buf, &buffer[0], leftovers * (width >> 3));
     }
   } else {
     register u32 out = 0;
     while (out < amount) {
-      adam_get(_ptr, data, 64, &_duration);
-      _ptr += sizeof(double);
+      adam_get(buf, data, 64);
+      buf += sizeof(double);
       ++out;
     }
   }
-
-  if (duration != NULL)
-    *duration += _duration;
 
   return 0;
 }
