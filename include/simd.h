@@ -33,7 +33,7 @@
     #define SIMD_SUB64        vsubq_u64
     #define SIMD_AND64        vandq_u64
     #define SIMD_XOR64        veorq_u64
-    #define SIMD_CAST64       vreinterpretq_u64_f64
+    #define SIMD_CAST64       vcvtq_u64_f64
     #define SIMD_COMBINE64    vcombine_u64
     #define SIMD_STORE4PD     vst1q_f64_x4
     #define SIMD_LOAD4PD      vld1q_f64_x4
