@@ -151,7 +151,7 @@ static u8 set_width(rng_cli *cli, const char *strwidth)
 static void print_int(rng_cli *cli)
 {
   u64 num;
-  adam_get(&num, cli->data, cli->width, NULL);
+  adam_get(cli->data, &num, cli->width);
   if (cli->hex)
     printf("0x%llx", num);
   else if (cli->octal)
@@ -163,7 +163,7 @@ static void print_int(rng_cli *cli)
 static void print_dbl(rng_cli *cli)
 {
   double d;
-  adam_get(&d, cli->data, cli->width, NULL);
+  adam_get(cli->data, &d, cli->width);
   printf("%.*lf", cli->precision, d);
 }
 
@@ -198,8 +198,8 @@ static u8 uuid(const char *strlimit, rng_data *data)
   u64 lower, upper;
 
   do {
-    adam_get(&upper, data, 64, NULL);
-    adam_get(&lower, data, 64, NULL);
+    adam_get(data, &upper, 64);
+    adam_get(data, &lower, 64);
     gen_uuid(upper, lower, &buf[0]);
 
     // Print the UUID
