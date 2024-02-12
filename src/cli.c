@@ -17,6 +17,8 @@
 #define OPTSTR ":hvdfbxop:w:a:e:r::u::s::n::"
 #define ARG_COUNT 15
 
+#define R_LIMIT 1000
+
 typedef struct rng_cli {
   //  Pointer to RNG buffer and state
   rng_data *data;
@@ -361,6 +363,11 @@ static void print_chseed_results(const u16 indent, const u64 expected, const u64
   printf("\033[2m\033[%uC             e. [0.4, 0.5): \033[m%llu (%llu expected)\n", indent, chseed_dist[4], (u64)expected_chseeds);
 }
 
+static void print_histogram(const u16 center, const u64 *ent_freq, const u32 min, const u32 max)
+{
+  const u32 range = max - min;
+}
+
 u8 examine(const char *strlimit, rng_data *data)
 {
   // Initialize properties
@@ -385,7 +392,8 @@ u8 examine(const char *strlimit, rng_data *data)
   if (strlimit != NULL)
     limit *= a_to_u(strlimit, 1, TESTING_LIMIT);
 
-  get_seq_properties(limit, &rsl);
+  printf("\033[1;33mExamining %llu bits of ADAM...\033[m\n", limit);
+  register double duration = get_seq_properties(limit, &rsl);
 
   // Rest of this is just formatting and printing the results
   u16 center, indent, swidth;
@@ -396,9 +404,11 @@ u8 examine(const char *strlimit, rng_data *data)
   print_basic_results(indent, limit, &rsl, &init_values[0]);
   print_ent_results(indent, &ent);
   print_chseed_results(indent, rsl.expected_chseed, &rsl.chseed_dist[0], rsl.avg_chseed);
+  print_histogram(center, &ent.freq[0], rsl.freq_min, rsl.freq_max);
 
   // HISTOGRAM
 
+  printf("\n\033[1;33mExamination Complete! (%lfs)\033[m\n\n", duration);
   return 0;
 }
 
@@ -439,7 +449,7 @@ int main(int argc, char **argv)
         return err("Width must be either 8, 16, 32");
       continue;
     case 'r':
-      cli.results = a_to_u(optarg, 1, 1000);
+      cli.results = a_to_u(optarg, 1, R_LIMIT);
       if (cli.results == 0)
         return err("Invalid number of results specified for desired width");
       continue;
@@ -469,16 +479,6 @@ int main(int argc, char **argv)
       return err("Option is invalid or missing required argument");
     }
   }
-
-  // #include <time.h>
-
-  // register clock_t start = clock();
-  // adam_bench(&data, 1000000000ULL);
-  // double duration = (double)(clock() - start) / (double)CLOCKS_PER_SEC;
-  // printf("Time: %lfs\n", duration);
-  // printf("diffuse(): %lfs\n", b);
-  // printf("apply(): %lfs\n", c);
-  // printf("mix(): %lfs\n", d);
 
   dump_buffer(&cli);
 

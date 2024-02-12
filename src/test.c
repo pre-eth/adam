@@ -136,13 +136,13 @@ void adam_test(const u64 limit, rng_test *rsl)
 
   register u16 i = 0;
 
-  register u64 freq_max, freq_min, tmp;
-  freq_max = freq_min = rsl->ent->freq[0];
+  register u64 tmp;
+  rsl->freq_max = rsl->freq_min = rsl->ent->freq[0];
   for (; i < BUF_SIZE; ++i) {
     tmp = rsl->ent->freq[i];
     average_gaplength += ((double)gaplengths[i] / (double)(tmp - 1));
-    freq_min = tmp ^ ((freq_min ^ tmp) & -(freq_min < tmp));
-    freq_max = freq_max ^ ((freq_max ^ tmp) & -(freq_max < tmp));
+    rsl->freq_min = tmp ^ ((rsl->freq_min ^ tmp) & -(rsl->freq_min < tmp));
+    rsl->freq_max = rsl->freq_max ^ ((rsl->freq_max ^ tmp) & -(rsl->freq_max < tmp));
   }
 
   rsl->avg_gap = average_gaplength / 256.0;

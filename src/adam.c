@@ -25,12 +25,11 @@ int adam_get(rng_data *data, void *output, const unsigned char width)
   if (width != 8 && width != 16 && width != 32 && width != 64)
     return 1;
 
-  register u64 mask = (width == 64) ? __UINT64_MAX__ : ((1UL << width) - 1);
-
   if (buffer[BUF_SIZE - 1] == 0)
     adam_run(data->seed, &data->nonce, &data->aa, &data->bb);
 
   if (!data->dbl_mode) {
+    const u64 mask = (width == 64) ? __UINT64_MAX__ : ((1UL << width) - 1);
     u64 out = buffer[data->index] & mask;
     MEMCPY(output, &out, width >> 3);
     buffer[data->index] >>= width;

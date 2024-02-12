@@ -25,6 +25,8 @@
     u64 expected_chseed;
     u64 *chseed_dist;
     double avg_gap;
+    u64 freq_min;
+    u64 freq_max;
   } rng_test;
 
   void adam_test(const u64 limit, rng_test *rsl);

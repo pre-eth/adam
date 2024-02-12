@@ -323,7 +323,7 @@ double stream_bytes(const u64 limit, u64 *seed, u64 *nonce, u64 *aa, u64 *bb)
   return duration;
 }
 
-u8 get_seq_properties(const u64 limit, rng_test *rsl)
+double get_seq_properties(const u64 limit, rng_test *rsl)
 {
   // Connect internal integer and chaotic seed arrays to rng_test
   adam_data(&rsl->buffer, &rsl->chseeds);
@@ -332,12 +332,7 @@ u8 get_seq_properties(const u64 limit, rng_test *rsl)
   rsl->expected_chseed = rsl->sequences * (ROUNDS << 2);
 
   // Start examination!
-  printf("\033[1;33mExamining %llu bits of ADAM...\033[m\n", limit);
   register clock_t start = clock();
   adam_test(limit, rsl);
-  register double duration = (double)(clock() - start) / (double)CLOCKS_PER_SEC;
-  duration *= 0.77;
-  printf("\033[1;33mExamination Complete! (%lfs)\033[m\n\n", duration);
-
-  return 0;
+  return ((double)(clock() - start) / (double)CLOCKS_PER_SEC);
 }

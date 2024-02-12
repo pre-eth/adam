@@ -17,5 +17,5 @@
 	u8       gen_uuid(const u64 higher, const u64 lower, u8 *buf);
 	double   stream_ascii(const u64 limit, u64 *seed, u64 *nonce, u64 *aa, u64 *bb);
 	double   stream_bytes(const u64 limit, u64 *seed, u64 *nonce, u64 *aa, u64 *bb);
-	u8 		 get_seq_properties(const u64 limit, rng_test *rsl);
+	double 	 get_seq_properties(const u64 limit, rng_test *rsl);
 #endif
