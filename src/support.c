@@ -241,7 +241,7 @@ u8 gen_uuid(const u64 higher, const u64 lower, u8 *buf)
   return 0;
 }
 
-double stream_ascii(const u64 limit, u64 *seed, u64 *nonce, u64 *aa, u64 *bb)
+double stream_ascii(const u64 limit, u64 *seed, u64 *nonce)
 {
   /*
     Split limit based on how many calls (if needed)
@@ -261,7 +261,7 @@ double stream_ascii(const u64 limit, u64 *seed, u64 *nonce, u64 *aa, u64 *bb)
 
   while (rate > 0) {
     start = clock();
-    adam_run(seed, nonce, aa, bb);
+    adam_run(seed, nonce);
     duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
     print_chunks(_bptr, buffer);
     --rate;
@@ -279,7 +279,7 @@ double stream_ascii(const u64 limit, u64 *seed, u64 *nonce, u64 *aa, u64 *bb)
   if (LIKELY(leftovers > 0)) {
     register u16 l = 0;
     start = clock();
-    adam_run(seed, nonce, aa, bb);
+    adam_run(seed, nonce);
     duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
 
     do {
@@ -290,7 +290,7 @@ double stream_ascii(const u64 limit, u64 *seed, u64 *nonce, u64 *aa, u64 *bb)
   return duration;
 }
 
-double stream_bytes(const u64 limit, u64 *seed, u64 *nonce, u64 *aa, u64 *bb)
+double stream_bytes(const u64 limit, u64 *seed, u64 *nonce)
 {
   /*
     Split limit based on how many calls we need to make
@@ -307,7 +307,7 @@ double stream_bytes(const u64 limit, u64 *seed, u64 *nonce, u64 *aa, u64 *bb)
   register u64 progress = 0;
   while (LIKELY(progress < limit)) {
     start = clock();
-    adam_run(seed, nonce, aa, bb);
+    adam_run(seed, nonce);
     duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
     fwrite(&buffer[0], sizeof(u64), BUF_SIZE, stdout);
     progress += SEQ_SIZE;
@@ -315,7 +315,7 @@ double stream_bytes(const u64 limit, u64 *seed, u64 *nonce, u64 *aa, u64 *bb)
 
   if (LIKELY(leftovers > 0)) {
     start = clock();
-    adam_run(seed, nonce, aa, bb);
+    adam_run(seed, nonce);
     duration += (double)(clock() - start) / (double)CLOCKS_PER_SEC;
     fwrite(&buffer[0], sizeof(u64), BUF_SIZE, stdout);
   }
@@ -327,9 +327,6 @@ double get_seq_properties(const u64 limit, rng_test *rsl)
 {
   // Connect internal integer and chaotic seed arrays to rng_test
   adam_data(&rsl->buffer, &rsl->chseeds);
-
-  rsl->sequences = (limit >> 14) + !!(limit & (SEQ_SIZE - 1));
-  rsl->expected_chseed = rsl->sequences * (ROUNDS << 2);
 
   // Start examination!
   register clock_t start = clock();

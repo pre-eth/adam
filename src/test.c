@@ -101,7 +101,7 @@ static void test_loop(rng_test *rsl)
     rsl->max = rsl->max ^ ((rsl->max ^ num) & -(rsl->max < num));
 
     rsl->odd += (num & 1);
-    rsl->zeroes += (num == 0);
+    rsl->zeroes += (num < 0);
     rsl->mfreq += POPCNT(num);
 
     // Tracks the amount of runs AND longest run, both increasing and decreasing
@@ -117,16 +117,20 @@ static void test_loop(rng_test *rsl)
 
 void adam_test(const u64 limit, rng_test *rsl)
 {
-  adam_run(rsl->seed, &rsl->nonce, &rsl->aa, &rsl->bb);
+  register long int rate = limit >> 14;
+  register short leftovers = limit & (SEQ_SIZE - 1);
+
+  rsl->sequences = rate + !!(leftovers);
+  rsl->expected_chseed = rsl->sequences * (ROUNDS << 2);
+
+  adam_run(rsl->seed, &rsl->nonce);
 
   rsl->min = rsl->max = rsl->buffer[0];
   rsl->ent->sccu0 = rsl->buffer[0] & 0xFF;
 
-  register long int rate = limit >> 14;
-  register short leftovers = limit & (SEQ_SIZE - 1);
   do {
     test_loop(rsl);
-    adam_run(rsl->seed, &rsl->nonce, &rsl->aa, &rsl->bb);
+    adam_run(rsl->seed, &rsl->nonce);
     leftovers -= (u16)(rate <= 0) << 14;
   } while (LIKELY(--rate > 0) || LIKELY(leftovers > 0));
 
@@ -149,26 +153,3 @@ void adam_test(const u64 limit, rng_test *rsl)
 
   rsl->chseed_dist = &chseed_dist[0];
 }
-
-/*
-#   2000
-#
-#   1800                                              ▓▓▓▓
-#                                                     ▓▓▓▓
-#   1600                                              ▓▓▓▓
-#                                                     ▓▓▓▓
-#   1400                                              ▓▓▓▓
-#                                                     ▓▓▓▓
-#   1200                                              ▓▓▓▓
-#                                                ▓▓▓▓ ▓▓▓▓
-#   1000                               ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
-#                                 ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
-#    800                ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
-#        ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
-#    600 ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
-#        ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
-#    400 ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
-#        ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
-#    200 ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
-#        ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓ ▓▓▓▓
-*/

@@ -242,10 +242,10 @@ get_file_type:
   scanf(" %c", &c);
   if (c == '1') {
     freopen(file_name, "w+", stdout);
-    duration = stream_ascii(total, &cli->data->seed[0], &cli->data->nonce, &cli->data->aa, &cli->data->bb);
+    duration = stream_ascii(total, &cli->data->seed[0], &cli->data->nonce);
   } else if (c == '2') {
     freopen(file_name, "wb+", stdout);
-    duration = stream_bytes(total, &cli->data->seed[0], &cli->data->nonce, &cli->data->aa, &cli->data->bb);
+    duration = stream_bytes(total, &cli->data->seed[0], &cli->data->nonce);
   } else {
     err("Value must be 1 or 2");
     goto get_file_type;
@@ -265,7 +265,7 @@ static void print_basic_results(const u16 indent, const u64 limit, rng_test *rsl
   const u32 diff = (zeroes > rsl->mfreq) ? zeroes - rsl->mfreq : rsl->mfreq - zeroes;
 
   register u64 bytes = limit;
-  const char *unit = " BYTES\0KB\0MB\0GB\0TB";
+  const char *unit = " BYTES\0KB\0MB\0GB\0";
   if (bytes > 8000000000000UL) {
     bytes /= 8000000000000;
     unit += 16;
@@ -275,7 +275,7 @@ static void print_basic_results(const u16 indent, const u64 limit, rng_test *rsl
   } else if (bytes > 8000000) {
     bytes /= 8000000;
     unit += 10;
-  } else if (bytes > 8000) {
+  } else if (bytes >= 8000) {
     bytes /= 8000;
     unit += 7;
   }
@@ -293,8 +293,6 @@ static void print_basic_results(const u16 indent, const u64 limit, rng_test *rsl
   printf("\033[1;34m\033[%uC    256-bit Seed (u64 x 4): \033[m0x%llX, 0x%llX,\n", indent, init_values[0], init_values[1]);
   printf("\033[%uC                            0x%llX, 0x%llX\n", indent, init_values[2], init_values[3]);
   printf("\033[1;34m\033[%uC              64-bit Nonce: \033[m0x%llX\n", indent, init_values[4]);
-  printf("\033[1;34m\033[%uC           Initial State 1: \033[m0x%llX\n", indent, init_values[5]);
-  printf("\033[1;34m\033[%uC           Initial State 2: \033[m0x%llX\n", indent, init_values[6]);
   printf("\033[1;34m\033[%uC        Average Gap Length: \033[m%llu\n", indent, (u64)rsl->avg_gap);
   printf("\033[1;34m\033[%uC      Total Number of Runs: \033[m%u\n", indent, rsl->up_runs + rsl->down_runs);
   printf("\033[2m\033[%uC            a.  Increasing: \033[m%u\n", indent, rsl->up_runs);
@@ -344,17 +342,12 @@ static void print_chseed_results(const u16 indent, const u64 expected, const u64
   register u8 suspect_level = 32 - (CHSEED_CRITICAL_VALUE <= chi_calc);
 
   printf("\033[1;34m\033[%uC   Chaotic Seed Chi-Square: \033[m\033[1;%um%1.2lf\n", indent, suspect_level, chi_calc);
-  printf("\033[1;34m\033[%uC        Average Seed Value: \033[m%1.15lf (ideal = 0.25)\n", indent, avg_chseed / (double)expected);
+  printf("\033[1;34m\033[%uCAverage Chaotic Seed Value: \033[m%1.15lf (ideal = 0.25)\n", indent, avg_chseed / (double)expected);
   printf("\033[2m\033[%uC             a. (0.0, 0.1): \033[m%llu (%llu expected)\n", indent, chseed_dist[0], (u64)expected_chseeds);
   printf("\033[2m\033[%uC             b. [0.1, 0.2): \033[m%llu (%llu expected)\n", indent, chseed_dist[1], (u64)expected_chseeds);
   printf("\033[2m\033[%uC             c. [0.2, 0.3): \033[m%llu (%llu expected)\n", indent, chseed_dist[2], (u64)expected_chseeds);
   printf("\033[2m\033[%uC             d. [0.3, 0.4): \033[m%llu (%llu expected)\n", indent, chseed_dist[3], (u64)expected_chseeds);
   printf("\033[2m\033[%uC             e. [0.4, 0.5): \033[m%llu (%llu expected)\n", indent, chseed_dist[4], (u64)expected_chseeds);
-}
-
-static void print_histogram(const u16 center, const u64 *ent_freq, const u32 min, const u32 max)
-{
-  const u32 range = max - min;
 }
 
 u8 examine(const char *strlimit, rng_data *data)
@@ -367,14 +360,12 @@ u8 examine(const char *strlimit, rng_data *data)
   rsl.mfreq = rsl.zeroes = rsl.up_runs = rsl.longest_up = rsl.down_runs = rsl.longest_down = rsl.odd = 0;
 
   // Record initial state and connect internal state to rsl_test
-  u64 init_values[7];
+  u64 init_values[5];
   init_values[0] = rsl.seed[0] = data->seed[0];
   init_values[1] = rsl.seed[1] = data->seed[1];
   init_values[2] = rsl.seed[2] = data->seed[2];
   init_values[3] = rsl.seed[3] = data->seed[3];
   init_values[4] = rsl.nonce = data->nonce;
-  init_values[5] = rsl.aa = data->aa;
-  init_values[6] = rsl.bb = data->bb;
 
   // Check for and validate multiplier
   register u64 limit = TESTING_BITS;
@@ -387,24 +378,23 @@ u8 examine(const char *strlimit, rng_data *data)
   // Rest of this is just formatting and printing the results
   u16 center, indent, swidth;
   get_print_metrics(&center, &indent, &swidth);
-  indent <<= 1;
+  indent += (indent << 1);
 
   printf("\033[%uC[RESULTS]\n\n", center - 4);
   print_basic_results(indent, limit, &rsl, &init_values[0]);
   print_ent_results(indent, &ent);
   print_chseed_results(indent, rsl.expected_chseed, &rsl.chseed_dist[0], rsl.avg_chseed);
-  print_histogram(center, &ent.freq[0], rsl.freq_min, rsl.freq_max);
 
   // HISTOGRAM
 
-  printf("\n\033[1;33mExamination Complete! (%lfs)\033[m\n\n", duration);
+  printf("\n\033[1;33mExamination Complete! (%lfs)\033[m\n", duration);
   return 0;
 }
 
 int main(int argc, char **argv)
 {
   rng_data data;
-  adam_setup(&data, false);
+  adam_setup(&data, false, NULL, NULL);
 
   rng_cli cli;
   cli.results = 1;
@@ -426,7 +416,7 @@ int main(int argc, char **argv)
     case 'a':
       return assess(optarg, &cli);
     case 'b':
-      stream_bytes(__UINT64_MAX__, &data.seed[0], &data.nonce, &data.aa, &data.bb);
+      stream_bytes(__UINT64_MAX__, &data.seed[0], &data.nonce);
       return 0;
     case 'x':
       cli.hex = true;
