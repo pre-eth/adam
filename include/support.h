@@ -5,7 +5,7 @@
 	#define BITBUF_SIZE     1024
 						
 	#define TESTING_BITS    1000000ULL
-	#define TESTING_LIMIT   8000UL
+	#define TESTING_LIMIT   8000
 
 	typedef struct rng_test rng_test;
 
