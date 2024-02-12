@@ -44,7 +44,7 @@
     The rounds value is supposed to be generated from taking this 
     function 3 times and computing the max, in this case 6
   */
-  #define ROUNDS                6
+  #define ROUNDS                8
   #define ITER                  (ROUNDS / 3)
 
   /* 
