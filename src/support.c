@@ -78,7 +78,7 @@ u64 a_to_u(const char *s, const u64 min, const u64 max)
     val += (s[len - 1] - '0');
     break;
   }
-  return (val >= min || val < max - 1) ? val : min;
+  return (val >= min || val < max + 1) ? val : min;
 }
 
 static u8 load_seed(u64 *seed, const char *strseed)
