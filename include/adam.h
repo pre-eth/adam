@@ -31,25 +31,30 @@
     Call this ONCE at the start of your program, before you generate any 
     numbers. Set param "gen_dbls" to true to get double precision numbers.
   */
-  void  adam_init(rng_data *data, bool generate_dbls);
+  void adam_setup(rng_data *data, bool generate_dbls);
 
   /*
-    Automatically makes internal calls to the adam_run function when 
-    regeneration is needed to ensure that you can safely expect to call 
-    this function and always receive a randomly generated number.
-
+    Returns a random unsigned integer of the specified <width>
+  
     Param <width> must ALWAYS be either 8, 16, 32, or 64. Any other
-    value will make this function return 1 to let you know there's an 
-    error with the width parameter. When floating point output mode is
-    enabled, this field is ignored.
+    value will be ignored and revert to the default width of 64.
 
-    Caller must guarantee that param <output> is of at least (<width> / 8)
-    bytes in size, unless dbl_mode is set to true, in which case <output>
-    size is assumed to be of sizeof(double).
-
-    Returns 0 on success, 1 on error
+    Automatically makes internal calls when regeneration is needed to 
+    ensure that you can safely expect to call this function and 
+    always receive a randomly generated integer.
   */
-  int   adam_get(rng_data *data, void *output, const unsigned char width);
+  unsigned long long adam_int(rng_data *data, unsigned char width);
+
+  /*
+    Returns a random double after multiplying it by param <scale>
+  
+    For no scaling factor, just set <scale> to 1
+
+    Automatically makes internal calls when regeneration is needed to 
+    ensure that you can safely expect to call this function and 
+    always receive a randomly generated double.
+  */
+  double adam_dbl(rng_data *data, const unsigned long long scale);
 
   /*
     Fills a given buffer with random integers or doubles.
@@ -64,5 +69,5 @@
 
     Returns 0 on success, 1 on error
   */
-  int   adam_fill(rng_data *data, void *buf, const unsigned char width, const unsigned int amount);
+  int adam_fill(rng_data *data, void *buf, const unsigned char width, const unsigned int amount);
 #endif
