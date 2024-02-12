@@ -14,8 +14,8 @@
 #define MINOR 4
 #define PATCH 0
 
-#define OPTSTR ":hvdfbxop:w:a:e:r::u::s::n::"
-#define ARG_COUNT 15
+#define OPTSTR ":hvdfbxop:m:w:a:e:r:u::s::n::"
+#define ARG_COUNT 16
 
 #define R_LIMIT 1000
 
@@ -37,17 +37,21 @@ typedef struct rng_cli {
 
   //  Number of results to return to user (max 1000)
   u16 results;
+
+  // Multiplier to scale floating point results, if the user wants
+  // This returns doubles within range (0, mult)
+  u64 mult;
 } rng_cli;
 
 static void print_summary(const u16 swidth, const u16 indent)
 {
-#define SUMM_PIECES 9
+#define SUMM_PIECES 11
 
   const char *pieces[SUMM_PIECES] = {
-    "\033[1madam \033[m[-h|-v|-b|-x|-o|-d|-f]", "[-w \033[1mwidth\033[m]",
-    "[-a \033[1mmultiplier\033[m]", "[-e \033[1mmultiplier\033[m]",
-    "[-p \033[1mprecision\033[m]", "[-r \033[1mresults\033[m]", "[-s[\033[3mseed?\033[m]]",
-    "[-n[\033[3mnonce?\033[m]]", "[-u[\033[3mamount?\033[m]]"
+    "\033[1madam\033[m [-h|-v|-b]", "[-s[\033[3mseed?\033[m]]", "[-n[\033[3mnonce?\033[m]]", "\033[m[-dxof]",
+    "[-w \033[1mwidth\033[m]", "[-a \033[1mmultiplier\033[m]", "[-e \033[1mmultiplier\033[m]",
+    "[-m \033[1mmultiplier\033[m]", "[-p \033[1mprecision\033[m]", "[-r \033[1mresults\033[m]",
+    "[-u[\033[3mamount?\033[m]]"
   };
 
   const u8 sizes[SUMM_PIECES + 1] = { 25, 10, 15, 15, 14, 14, 11, 12, 13, 0 };
@@ -103,18 +107,19 @@ static u8 help(void)
     'x',
     'o',
     'f',
-    'p'
+    'p',
+    'm'
   };
 
   const char *ARGSHELP[ARG_COUNT] = {
     "Get command summary and all available options",
     "Version of this software (v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH) ")",
     "Get the seed for the generated buffer (no parameter), or provide "
-    "your own. Seeds are reusable but should be kept secret.",
+    "your own. Seeds are reusable but should be kept secret",
     "Get the nonce for the generated buffer (no parameter), or provide "
-    "your own. Nonces should ALWAYS be unique and secret",
-    "Generate a universally unique identifier (UUID). Optionally specify a number of UUID's to generate (max 128)",
-    "The amount of numbers to generate and return, written to stdout. Must be within [1, 1000]",
+    "your own. Nonces should be unique per seed and kept secret",
+    "Generate a universally unique identifier (UUID). Optionally specify a number of UUID's to generate (max " STRINGIFY(R_LIMIT) ")",
+    "The amount of numbers to generate and return, written to stdout. Must be within [1, " STRINGIFY(R_LIMIT) "]",
     "Dump entire buffer using the specified width (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)",
     "Desired alternative size (u8, u16, u32) of returned numbers. Default width is u64",
     "Just bits... literally",
@@ -125,9 +130,10 @@ static u8 help(void)
     "Print numbers in hexadecimal format with leading prefix",
     "Print numbers in octal format with leading prefix",
     "Enable floating point mode to generate doubles in (0, 1) instead of integers",
-    "The number of decimal places to display when printing doubles. Must be within [1, 15]. Default is 15"
+    "The number of decimal places to display when printing doubles. Must be within [1, 15]. Default is 15",
+    "Scaling factor for randomly generated doubles, such that they fall in the range (0, <FACTOR>)"
   };
-  const u8 lengths[ARG_COUNT] = { 25, 33, 120, 118, 108, 89, 91, 81, 22, 187, 178, 55, 49, 83, 100 };
+  const u8 lengths[ARG_COUNT] = { 25, 33, 119, 124, 109, 89, 91, 81, 22, 187, 178, 55, 49, 83, 100, 93 };
 
   register short len;
   for (u8 i = 0; i < ARG_COUNT; ++i) {
@@ -152,8 +158,7 @@ static u8 set_width(rng_cli *cli, const char *strwidth)
 
 static void print_int(rng_cli *cli)
 {
-  u64 num;
-  adam_get(cli->data, &num, cli->width);
+  register u64 num = adam_int(cli->data, cli->width);
   if (cli->hex)
     printf("0x%llx", num);
   else if (cli->octal)
@@ -164,8 +169,7 @@ static void print_int(rng_cli *cli)
 
 static void print_dbl(rng_cli *cli)
 {
-  double d;
-  adam_get(cli->data, &d, cli->width);
+  double d = adam_dbl(cli->data, cli->mult);
   printf("%.*lf", cli->precision, d);
 }
 
@@ -177,7 +181,7 @@ static u8 dump_buffer(rng_cli *cli)
   write_fn(cli);
 
   while (--cli->results > 0) {
-    printf(",\n");
+    printf("\n");
     write_fn(cli);
   }
 
@@ -188,20 +192,20 @@ static u8 dump_buffer(rng_cli *cli)
 
 static u8 uuid(const char *strlimit, rng_data *data)
 {
-  register u8 limit = a_to_u(optarg, 1, __UINT64_MAX__);
+  register u16 limit = a_to_u(optarg, 1, R_LIMIT);
   if (!limit)
     return err("Invalid amount specified. Value must be within "
-               "range [1, 128]");
+               "range [1, " STRINGIFY(R_LIMIT) "]");
 
   u8 buf[16];
 
-  register u8 i = 0;
+  register u16 i = 0;
 
   u64 lower, upper;
 
   do {
-    adam_get(data, &upper, 64);
-    adam_get(data, &lower, 64);
+    lower = adam_int(data, 64);
+    upper = adam_int(data, 64);
     gen_uuid(upper, lower, &buf[0]);
 
     // Print the UUID
@@ -246,21 +250,6 @@ get_file_type:
     err("Value must be 1 or 2");
     goto get_file_type;
   }
-
-  /*
-    Based off some observed benchmarks, keeping track of CPU time
-    adds around latency to the entire program, so this should be
-    accounted for with <duration> to give a more accurate measure of
-    how much cpu time the number generation really took.
-
-    0.77 was chosen because to generate 1GB of random data, there is
-    ~0.15s of latency added on average, increasing the generation time
-    from 0.47s to around 0.62s on Mac. So this ratio was used to adjust
-    the duration calculations.
-
-    TODO: confirm offset validity on linux
-  */
-  // duration *= 0.77;
 
   fprintf(stderr,
       "\n\033[0mGenerated \033[36m%llu\033[m bits in \033[36m%lfs\033[m\n",
@@ -415,15 +404,16 @@ u8 examine(const char *strlimit, rng_data *data)
 int main(int argc, char **argv)
 {
   rng_data data;
-  adam_init(&data, false);
+  adam_setup(&data, false);
 
   rng_cli cli;
   cli.results = 1;
   cli.data = &data;
   cli.hex = false;
   cli.octal = false;
-  cli.precision = 0;
+  cli.precision = 15;
   cli.width = 64;
+  cli.mult = 0;
 
   register char opt;
   while ((opt = getopt(argc, argv, OPTSTR)) != EOF) {
@@ -450,7 +440,7 @@ int main(int argc, char **argv)
       continue;
     case 'r':
       cli.results = a_to_u(optarg, 1, R_LIMIT);
-      if (cli.results == 0)
+      if (!cli.results)
         return err("Invalid number of results specified for desired width");
       continue;
     case 's':
@@ -467,11 +457,16 @@ int main(int argc, char **argv)
       return 0;
     case 'f':
       data.dbl_mode = true;
-      cli.precision = 15;
       continue;
     case 'p':
       data.dbl_mode = true;
       cli.precision = a_to_u(optarg, 1, 15);
+      continue;
+    case 'm':
+      data.dbl_mode = true;
+      cli.mult = a_to_u(optarg, 2, __UINT64_MAX__);
+      if (!cli.mult)
+        return err("Floating point multiplier must be between [2, " STRINGIFY(__UINT64_MAX__) "]");
       continue;
     case 'e':
       return examine(optarg, &data);
