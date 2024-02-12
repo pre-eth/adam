@@ -53,6 +53,6 @@
   */
   #define BETA                  10E15
 
-  void adam_run(unsigned long long *seed, unsigned long long *nonce, unsigned long long *aa, unsigned long long *bb);
+  void adam_run(unsigned long long *seed, unsigned long long *nonce);
   void adam_data(unsigned long long **_ptr, double **_chptr);
 #endif

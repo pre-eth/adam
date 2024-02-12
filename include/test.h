@@ -8,8 +8,6 @@
     double *chseeds;
     u64 seed[4];
     u64 nonce;
-    u64 aa;
-    u64 bb;
     ent_report *ent;
     u32 sequences;
     u32 mfreq;

@@ -16,13 +16,7 @@
     unsigned long long seed[4];          
 
     //  64-bit nonce      
-    unsigned long long nonce;              
-
-    //  State variable 1    
-    unsigned long long aa;      
-
-    //  State variable 2               
-    unsigned long long bb;              
+    unsigned long long nonce;                        
   } rng_data;
 
   /*
@@ -30,8 +24,13 @@
     
     Call this ONCE at the start of your program, before you generate any 
     numbers. Set param "gen_dbls" to true to get double precision numbers.
+
+    Params <seed> and <nonce> are optional - set to NULL if you'd like to seed
+    the generator with secure random bytes from the operating system itself.
+    Otherwise, the caller must ensure that <seed> points to 256-bits of data,
+    and that nonce points to a u64.
   */
-  void adam_setup(rng_data *data, bool generate_dbls);
+  void adam_setup(rng_data *data, bool generate_dbls, unsigned long long *seed, unsigned long long *nonce);
 
   /*
     Returns a random unsigned integer of the specified <width>

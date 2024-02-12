@@ -38,12 +38,12 @@
 
 // Slightly modified versions of macros from ISAAC for reseeding ADAM
 #define ISAAC_IND(mm, x) (*(u64 *)((u8 *)(mm) + ((x) % 2040)))
-#define ISAAC_RNGSTEP(mx, a, b, mm, m, m2, x, y) \
-  {                                              \
+#define ISAAC_RNGSTEP(mx, a, b, mm, m, m2, x, y)                \
+  {                                                             \
     x = (m << 24) | (~((m >> 40) ^ __UINT64_MAX__) & 0xFFFFFF); \
-    a = (a ^ (mx)) + m2;                         \
-    m = (ISAAC_IND(mm, x) + a + b);              \
-    y ^= b = ISAAC_IND(mm, y >> MAGNITUDE) + x;  \
+    a = (a ^ (mx)) + m2;                                        \
+    m = (ISAAC_IND(mm, x) + a + b);                             \
+    y = b = ISAAC_IND(mm, y >> MAGNITUDE) + x;                  \
   }
 
 #ifndef __AARCH64_SIMD__
@@ -65,6 +65,9 @@ static u64 buffer[BUF_SIZE + 8] ALIGN(SIMD_LEN);
 // Seeds supplied to each iteration of the chaotic function
 // Per each round, 4 consecutive seeds are supplied
 static double chseeds[ROUNDS << 2] ALIGN(SIMD_LEN);
+
+// State variables
+static u64 aa, bb;
 
 #ifdef __AARCH64_SIMD__
 static void accumulate(const u64 *seed)
@@ -103,9 +106,10 @@ static void accumulate(const u64 *seed)
     SIMD_MUL4QPD(seeds, seeds, range);
 
     SIMD_STORE4PD(&chseeds[i << 3], seeds);
+    SIMD_XOR4RQ64(r1, r1, r2);
   } while (++i < (ROUNDS >> 1));
 
-  // SIMD_STORE64x4(&buffer[256], r1);
+  SIMD_STORE64x4(&buffer[256], r1);
 }
 #else
 static void accumulate(const u64 *seed)
@@ -201,8 +205,6 @@ static void diffuse(const u64 nonce)
     ISAAC_MIX(a, b, c, d, e, f, g, h);
 
   i = 0;
-
-  // u64 scale = 9223372036854775808ULL;
 
   do {
     a += buffer[i];
@@ -359,9 +361,9 @@ static void mix(u16 dest, u16 map_a, u16 map_b)
 #endif
 }
 
-void adam_run(unsigned long long *seed, unsigned long long *_nonce, unsigned long long *_aa, unsigned long long *_bb)
+void adam_run(unsigned long long *seed, unsigned long long *_nonce)
 {
-  register u64 aa = *_aa, bb = *_bb, nonce = *_nonce;
+  register u64 nonce = *_nonce;
 
   accumulate(seed);
   diffuse(nonce);
@@ -373,8 +375,6 @@ void adam_run(unsigned long long *seed, unsigned long long *_nonce, unsigned lon
   mix(176, 0, 88);
   apply(0, 24);
 
-  ISAAC_MIX(buffer[256], buffer[257], buffer[258], buffer[259], buffer[260], buffer[261], buffer[262], buffer[263]);
-
   ISAAC_RNGSTEP(~(aa ^ (aa << 21)), aa, bb, buffer, buffer[256], buffer[260],
       seed[0], nonce);
   ISAAC_RNGSTEP(aa ^ (aa >> 5), aa, bb, buffer, buffer[257], buffer[261],
@@ -384,9 +384,7 @@ void adam_run(unsigned long long *seed, unsigned long long *_nonce, unsigned lon
   ISAAC_RNGSTEP(aa ^ (aa >> 33), aa, bb, buffer, buffer[259], buffer[263],
       seed[3], nonce);
 
-  *_aa = aa - 1;
-  *_bb = bb + 1;
-  *_nonce = nonce | (1ULL << ((nonce & 7) + 56)); 
+  *_nonce ^= ~nonce;
 }
 
 void adam_data(unsigned long long **_ptr, double **_chptr)
