@@ -30,7 +30,6 @@
     #define SIMD_SET64        vdup_n_u64
     #define SIMD_SETQ64       vdupq_n_u64
     #define SIMD_ADD64        vaddq_u64
-    #define SIMD_SUB64        vsubq_u64
     #define SIMD_AND64        vandq_u64
     #define SIMD_XOR64        veorq_u64
     #define SIMD_CAST64       vcvtq_u64_f64
@@ -69,12 +68,6 @@
       s1.val[2] = SIMD_ADD64(s2.val[2], s3), \
       s1.val[3] = SIMD_ADD64(s2.val[3], s3)
 
-    #define SIMD_SUB4Q64(s1, s2, s3) \
-      s1.val[0] = SIMD_SUB64(s2.val[0], s3), \
-      s1.val[1] = SIMD_SUB64(s2.val[1], s3), \
-      s1.val[2] = SIMD_SUB64(s2.val[2], s3), \
-      s1.val[3] = SIMD_SUB64(s2.val[3], s3)
-
     #define SIMD_ADD4RQ64(s1, s2, s3) \
       s1.val[0] = SIMD_ADD64(s2.val[0], s3.val[0]), \
       s1.val[1] = SIMD_ADD64(s2.val[1], s3.val[1]), \
@@ -104,12 +97,6 @@
       s1.val[1] = veor3q_u64(s1.val[1], s2.val[1], s3.val[1]), \
       s1.val[2] = veor3q_u64(s1.val[2], s2.val[2], s3.val[2]), \
       s1.val[3] = veor3q_u64(s1.val[3], s2.val[3], s3.val[3])            
-
-    #define SIMD_COMBINE64x4(r, m, a) \
-      r.val[0] = SIMD_COMBINE64(SIMD_SET64(m[a[0]]), SIMD_SET64(m[a[1]])), \
-      r.val[1] = SIMD_COMBINE64(SIMD_SET64(m[a[2]]), SIMD_SET64(m[a[3]])), \
-      r.val[2] = SIMD_COMBINE64(SIMD_SET64(m[a[4]]), SIMD_SET64(m[a[5]])), \
-      r.val[3] = SIMD_COMBINE64(SIMD_SET64(m[a[6]]), SIMD_SET64(m[a[7]]))
 
     #define SIMD_ADD4RQPD(s1, s2, s3) \
       s1.val[0] = SIMD_ADDPD(s2.val[0], s3.val[0]), \
