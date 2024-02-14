@@ -7,10 +7,8 @@
     typedef uint8x16_t        reg8q;
     typedef uint8x16x4_t      reg8q4;
     typedef uint64x2_t        reg64q;    
-    typedef uint64x2x2_t      reg64q2;    
     typedef uint64x2x4_t      reg64q4;
     typedef float64x2_t       dregq;
-    typedef float64x2x2_t     dreg2q;
     typedef float64x2x4_t     dreg4q;
 
     #define SIMD_LEN          64
@@ -143,6 +141,7 @@
       #define SIMD_CASTPD      _mm512_castpd_si512
       #define SIMD_LOADPD      _mm512_load_pd
       #define SIMD_STOREPD     _mm512_store_pd
+      #define SIMD_STOREUPD    _mm512_storeu_pd
       #define SIMD_SETPD       _mm512_set1_pd
       #define SIMD_SETRPD      _mm512_setr_pd
       #define SIMD_ADDPD       _mm512_add_pd
@@ -167,6 +166,7 @@
       #define SIMD_CASTPD      _mm256_castpd_si256
       #define SIMD_LOADPD      _mm256_load_pd
       #define SIMD_STOREPD     _mm256_store_pd
+      #define SIMD_STOREUPD    _mm256_storeu_pd
       #define SIMD_SETPD       _mm256_set1_pd
       #define SIMD_SETRPD      _mm256_setr_pd
       #define SIMD_ADDPD       _mm256_add_pd
