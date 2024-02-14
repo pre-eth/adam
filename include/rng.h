@@ -10,17 +10,6 @@
   #define BUF_SIZE            (1U << MAGNITUDE)     
   #define SEQ_SIZE            (BUF_SIZE << 6)  
   #define SEQ_BYTES           (BUF_SIZE << 3)  
-
-  /*
-    The PRNG algorithm is based on the construction of three 
-    chaotic maps obtained by permuting and shuffling the elements
-    of an initial input vector. The permutations are performed 
-    using a chaotic function to scramble the used positions. The 
-    chaotic function is given by this logistic function:
-
-    3.9999 * X * (1 - X)
-  */
-  #define COEFFICIENT           3.9999      
   
   /* 
     ROUNDS must satisfy k = T / 3 where T % 3 = 0, where k is 
@@ -42,10 +31,22 @@
       floor(256 / log2(5 x pow(10, c - 1) - 1)) + 1
 
     The rounds value is supposed to be generated from taking this 
-    function 3 times and computing the max, in this case 6
+    function 3 times and computing the max, in this case set to 8
+    because of the compressed nature of the implementation compared
+    to the original implementation
   */
   #define ROUNDS                8
-  #define ITER                  (ROUNDS / 3)
+
+  /*
+    The PRNG algorithm is based on the construction of three 
+    chaotic maps obtained by permuting and shuffling the elements
+    of an initial input vector. The permutations are performed 
+    using a chaotic function to scramble the used positions. The 
+    chaotic function is given by this logistic function:
+
+    3.9999 * X * (1 - X)
+  */
+  #define COEFFICIENT           3.9999      
 
   /* 
     BETA is derived from the length of the significant digits
@@ -54,5 +55,7 @@
   #define BETA                  10E15
 
   void adam_run(unsigned long long *seed, unsigned long long *nonce);
+  void adam_frun(unsigned long long *seed, unsigned long long *nonce, double *buf, const unsigned int amount);
+  void adam_fmrun(unsigned long long *seed, unsigned long long *nonce, double *buf, const unsigned int amount, const unsigned long long multiplier);
   void adam_data(unsigned long long **_ptr, double **_chptr);
 #endif
