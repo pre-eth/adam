@@ -38,11 +38,12 @@
   #define ROUNDS                8
 
   /*
-    The PRNG algorithm is based on the construction of three 
-    chaotic maps obtained by permuting and shuffling the elements
-    of an initial input vector. The permutations are performed 
-    using a chaotic function to scramble the used positions. The 
-    chaotic function is given by this logistic function:
+    The CSPRNG algorithm is based on the construction of three 
+    chaotic maps obtained by supplying a set of chaotic seeds and
+    partitioning the elements of an initial input vector, with the 
+    mixing of all elements in the vector performed between chaotic 
+    iterations to produce the final output sequence in place. The 
+    chaotic function is given as:
 
     3.9999 * X * (1 - X)
   */
@@ -57,5 +58,5 @@
   void adam_run(unsigned long long *seed, unsigned long long *nonce);
   void adam_frun(unsigned long long *seed, unsigned long long *nonce, double *buf, const unsigned int amount);
   void adam_fmrun(unsigned long long *seed, unsigned long long *nonce, double *buf, const unsigned int amount, const unsigned long long multiplier);
-  void adam_data(unsigned long long **_ptr, double **_chptr);
+  void adam_connect(unsigned long long **_ptr, double **_chptr);
 #endif

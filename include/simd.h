@@ -36,6 +36,7 @@
     #define SIMD_LOAD4PD      vld1q_f64_x4
     #define SIMD_CREATEPD     vcreate_f64
     #define SIMD_COMBINEPD    vcombine_f64
+    #define SIMD_CASTPD       vcvtq_f64_u64
     #define SIMD_SETPD        vdup_n_f64
     #define SIMD_SETQPD       vdupq_n_f64
     #define SIMD_ADDPD        vaddq_f64
@@ -95,6 +96,12 @@
       s1.val[1] = veor3q_u64(s1.val[1], s2.val[1], s3.val[1]), \
       s1.val[2] = veor3q_u64(s1.val[2], s2.val[2], s3.val[2]), \
       s1.val[3] = veor3q_u64(s1.val[3], s2.val[3], s3.val[3])            
+    
+    #define SIMD_CAST4QPD(s1, s2) \
+      s1.val[0] = SIMD_CASTPD(s2.val[0]), \
+      s1.val[1] = SIMD_CASTPD(s2.val[1]), \
+      s1.val[2] = SIMD_CASTPD(s2.val[2]), \
+      s1.val[3] = SIMD_CASTPD(s2.val[3])
 
     #define SIMD_ADD4RQPD(s1, s2, s3) \
       s1.val[0] = SIMD_ADDPD(s2.val[0], s3.val[0]), \
@@ -166,7 +173,6 @@
       #define SIMD_CASTPD      _mm256_castpd_si256
       #define SIMD_LOADPD      _mm256_load_pd
       #define SIMD_STOREPD     _mm256_store_pd
-      #define SIMD_STOREUPD    _mm256_storeu_pd
       #define SIMD_SETPD       _mm256_set1_pd
       #define SIMD_SETRPD      _mm256_setr_pd
       #define SIMD_ADDPD       _mm256_add_pd
