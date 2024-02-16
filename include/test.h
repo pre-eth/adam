@@ -1,7 +1,21 @@
 #ifndef TEST_H
 #define TEST_H
-  #include "defs.h"
-  #include "ent.h"
+  #include  "defs.h"
+  #include  "ent.h"
+
+	#define   TESTING_BITS    	      1000000ULL
+	#define   TESTING_DBL    		      1000ULL
+	#define   BITS_TESTING_LIMIT      8000
+	#define   DBL_TESTING_LIMIT       100000
+
+  #define   CHSEED_CRITICAL_VALUE   13.277
+
+  #define   RANGE_CRITICAL_VALUE    13.277
+  #define   RANGE1_PROB             2.328306436538696E-10
+  #define   RANGE2_PROB             5.937181414550612E-8
+  #define   RANGE3_PROB             0.000015199185323
+  #define   RANGE4_PROB             0.003891050583657
+  #define   RANGE5_PROB             0.996093750231020
 
   typedef struct rng_test {
     u64 *buffer;
@@ -25,6 +39,7 @@
     double avg_gap;
     u64 freq_min;
     u64 freq_max;
+    u32 *range_dist; 
   } rng_test;
 
   void adam_test(const u64 limit, rng_test *rsl);
