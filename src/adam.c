@@ -6,7 +6,7 @@
 
 static u64 *buffer;
 
-void adam_setup(rng_data *data, bool generate_dbls, unsigned long long *seed, unsigned long long *nonce)
+void adam_setup(adam_data *data, bool generate_dbls, unsigned long long *seed, unsigned long long *nonce)
 {
   if (seed == NULL)
   getentropy(&data->seed[0], sizeof(u64) << 2);
@@ -22,48 +22,73 @@ void adam_setup(rng_data *data, bool generate_dbls, unsigned long long *seed, un
   data->dbl_mode = generate_dbls;
 
   // adam_data() is an internal function for accessing the raw memory used by the RNG
-  adam_data(&buffer, NULL);
+  adam_connect(&buffer, NULL);
 }
 
-unsigned long long adam_int(rng_data *data, unsigned char width)
+static unsigned long long get_int(adam_data *data, const unsigned char width)
 {
-  if (width != 8 && width != 16 && width != 32 && width != 64)
-    width = 64;
-
-  if (buffer[BUF_SIZE - 1] == 0)
-    adam_run(data->seed, &data->nonce);
-
   const u64 mask = (width == 64) ? __UINT64_MAX__ : ((1UL << width) - 1);
   register u64 out = buffer[data->index] & mask;
   buffer[data->index] >>= width;
   data->index += (!buffer[data->index]);
-
   return out;
 }
 
-double adam_dbl(rng_data *data, const unsigned long long scale)
+static unsigned long long regen_int(adam_data *data, const unsigned char width)
 {
-  if (buffer[BUF_SIZE - 1] == 0)
     adam_run(data->seed, &data->nonce);
+  return get_int(data, width);
+}
 
+unsigned long long adam_int(adam_data *data, unsigned char width)
+{
+  static unsigned long long (*int_fn[])(adam_data *, const unsigned char) = {
+    &get_int,
+    &regen_int
+  };
+
+  if (width != 8 && width != 16 && width != 32 && width != 64)
+    width = 64;
+
+  return int_fn[!buffer[BUF_SIZE - 1]](data, width);
+}
+
+static double get_dbl(adam_data *data, const unsigned long long scale)
+{
   register double out = ((double)buffer[data->index] / (double)__UINT64_MAX__);
   buffer[data->index] = 0;
   ++data->index;
-
-  return out * (double)scale;
+  return out * (double)(scale + !scale);
 }
 
-int adam_fill(rng_data *data, void *buf, const unsigned char width, const unsigned int amount)
+static double regen_dbl(adam_data *data, const unsigned long long scale)
 {
-  if ((width != 8 && width != 16 && width != 32 && width != 64) || amount > 100000000)
+  adam_run(data->seed, &data->nonce);
+  return get_dbl(data, scale);
+}
+
+double adam_dbl(adam_data *data, unsigned long long scale)
+{
+  static double (*dbl_fn[])(adam_data *, const unsigned long long) = {
+    &get_dbl,
+    &regen_dbl
+  };
+  return dbl_fn[!buffer[BUF_SIZE - 1]](data, scale);
+}
+
+int adam_fill(adam_data *data, void *buf, unsigned char width, const unsigned int amount)
+{
+  if (!amount || amount > 125000000)
     return 1;
+
+  if (width != 8 && width != 16 && width != 32 && width != 64)
+    width = 64;
 
   const u16 one_run = BUF_SIZE * (64 / width);
   const u32 leftovers = amount & (one_run - 1);
 
   register long limit = amount >> CTZ(one_run);
 
-  if (!data->dbl_mode) {
     while (limit > 0) {
       adam_run(data->seed, &data->nonce);
       MEMCPY(buf, &buffer[0], SEQ_BYTES);
@@ -71,19 +96,23 @@ int adam_fill(rng_data *data, void *buf, const unsigned char width, const unsign
       --limit;
     }
 
-    if (leftovers > 0) {
+  if (LIKELY(leftovers > 0)) {
       adam_run(data->seed, &data->nonce);
       MEMCPY(buf, &buffer[0], leftovers * (width >> 3));
-    }
-  } else {
-    // register u32 out = 0;
-    // double d;
-    // while (out < amount) {
-    //   d = adam_dbl(buf, data, 64);
-    //   buf += sizeof(double);
-    //   ++out;
-    // }
   }
+
+  return 0;
+}
+
+int adam_dfill(adam_data *data, double *buf, const unsigned long long multiplier, const unsigned int amount)
+{
+  if (!amount || amount > 1000000000)
+    return 1;
+
+  if (multiplier > 1)
+    adam_fmrun(data->seed, &data->nonce, buf, amount, multiplier);
+  else
+    adam_frun(data->seed, &data->nonce, buf, amount);
 
   return 0;
 }
