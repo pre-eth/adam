@@ -179,12 +179,12 @@ static u8 dump_buffer(rng_cli *cli)
   return 0;
 }
 
-static u8 uuid(const char *strlimit, rng_data *data)
+static u8 uuid(const char *strlimit, adam_data *data)
 {
-  register u16 limit = a_to_u(optarg, 1, R_LIMIT);
+  register u16 limit = a_to_u(optarg, 1, 1000);
   if (!limit)
     return err("Invalid amount specified. Value must be within "
-               "range [1, " STRINGIFY(R_LIMIT) "]");
+               "range [1, 1000]");
 
   u8 buf[16];
 
