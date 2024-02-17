@@ -2,6 +2,26 @@
 
 Everything you need to know for testing ADAM with different popular RNG test suites.
 
+## adam -e 
+
+This is a collection of miscellaneous heuristics implemented by me, just for logging some properties of some output sequence. It's nowhere near as important as the feedback from tried and true testing suites, but it's good for some quick information about the sequences you generate.
+
+Additionally, the ENT framework is integrated into this collection, for a total of 13 pieces of information (plus initial state) that are returned to the user:
+
+- monobit frequency
+- any generated zeroes
+- range distribution + chi-square
+- max and min values
+- parity: even and odd number totals
+- chaotic seed distribution + chi-square
+- runs: total # of runs and longest run (increasing/decreasing)
+- average gap length
+- entropy                     (ENT)
+- chi-square                  (ENT)
+- arithmetic mean             (ENT)
+- monte carlo value for pi    (ENT)
+- serial correlation          (ENT)
+
 ## NIST
 
 The STS can be downloaded [here](https://csrc.nist.gov/projects/random-bit-generation/documentation-and-software). [This](https://www.slideshare.net/Muhammadhamid23/running-of-nist-test-109375052) is a good little quick start guide.
@@ -22,7 +42,7 @@ Explanation of options can be found in Dieharder's [man page](https://linux.die.
 
 First download gjrand [here](https://gjrand.sourceforge.net), and then come back to this section. I tested on gjrand.4.3.0.0 so that's the version I'll proceed with. 
 
-Using gjrand is easy but traversing it and figuring out what to build and how to build it is annoying so here's a quick little guide. I have only used the uniform randomness tests for binary integer output - the tests for binary doubles will be added once that functionality is implemented in ADAM.
+Using gjrand is easy but traversing it and figuring out what to build and how to build it is annoying so here's a quick little guide. 
 
 ### testunif
 
@@ -50,6 +70,38 @@ where SIZE_OPTION is one of:
 ```
 
 Results for sizes up to 100GB are available in the `tests` subdirectory.
+
+### testfunif
+
+I recommend reading or skimming the `README.txt` file at the top level of this directory.
+
+To build and run:
+
+```
+cd gjrand.4.3.0.0/testfunif/src
+./compile
+cd ..
+adam -f -a
+File name: ftest
+Output type (1 = ASCII, 2 = BINARY): 2
+Sequence Size (x 1000): 1500
+Scaling factor: 1
+./mcpf --tiny < ftest
+```
+
+The size options are:
+
+```
+--tiny          1M doubles
+--small         10M doubles
+--standard      100M doubles (default)
+--big           1G doubles
+--huge          10G doubles
+--even-huger    100G doubles
+--tera          1T doubles.
+```
+
+Results for sizes up to 10G (10 billion) doubles are available in the `tests` subdirectory.
 
 Finally, here is a summary of the meaning of gjrand's P-values.
 

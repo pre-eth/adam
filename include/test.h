@@ -6,7 +6,7 @@
 	#define   TESTING_BITS    	      1000000ULL
 	#define   TESTING_DBL    		      1000ULL
 	#define   BITS_TESTING_LIMIT      8000
-	#define   DBL_TESTING_LIMIT       100000
+	#define   DBL_TESTING_LIMIT       1500000
 
   #define   CHSEED_CRITICAL_VALUE   13.277
 
@@ -15,7 +15,7 @@
   #define   RANGE2_PROB             5.937181414550612E-8
   #define   RANGE3_PROB             0.000015199185323
   #define   RANGE4_PROB             0.003891050583657
-  #define   RANGE5_PROB             0.996093750231020
+  #define   RANGE5_PROB             0.996093690626375
 
   typedef struct rng_test {
     u64 *buffer;

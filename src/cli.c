@@ -354,7 +354,7 @@ static void print_ent_results(const u16 indent, const ent_report *ent)
   char chi_tmp[6];
   register u8 suspect_level = 32;
 
-  if (ent->pochisq < 0.001) {
+  if (ent->pochisq < 0.01) {
     chi_str = "<= 0.01";
     --suspect_level;
   } else if (ent->pochisq > 0.99) {

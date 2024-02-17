@@ -1,29 +1,3 @@
-/*
-  This is a collection of miscellaneous heuristics implemented
-  by me, just to log some properties of the generated sequence(s).
-  It's nowhere near as important as the feedback from tried and true
-  testing suites, but it's good for some quick information about the
-  sequences you generate
-
-  Additionally, the ENT framework is integrated into this collection,
-  for a total of 13 pieces of information (plus initial state) that
-  are returned to the user:
-
-    - monobit frequency
-    - presence of zeroes
-    - value ranges
-    - max and min values
-    - parity: even and odd number totals
-    - chaotic seed distribution + chi-square
-    - runs: total # of runs and longest run (increasing/decreasing)
-    - average gap length
-    - entropy                     (ENT)
-    - chi-square                  (ENT)
-    - arithmetic mean             (ENT)
-    - monte carlo value for pi    (ENT)
-    - serial correlation          (ENT)
-*/
-
 #include "../include/test.h"
 #include "../include/rng.h"
 
