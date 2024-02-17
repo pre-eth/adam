@@ -327,7 +327,7 @@ static void print_basic_results(const u16 indent, const u64 limit, rng_test *rsl
 
   register u8 suspect_level = 32 - (RANGE_CRITICAL_VALUE <= chi_calc);
 
-  printf("\033[1;34m\033[%uC          Range Chi Square: \033[m\033[1;%um%1.2lf\n", indent, suspect_level, chi_calc);
+  printf("\033[1;34m\033[%uC          Range Chi-Square: \033[m\033[1;%um%1.2lf\n", indent, suspect_level, chi_calc);
   printf("\033[1;34m\033[%uC                     Range: \033[m%llu\n", indent, rsl->max - rsl->min);
   printf("\033[2m\033[%uC            a.    [0, 2³²): \033[m%u (expected %llu)\n", indent, rsl->range_dist[0], range_exp[0]);
   printf("\033[2m\033[%uC            b.  [2³², 2⁴⁰): \033[m%u (expected %llu)\n", indent, rsl->range_dist[1], range_exp[1]);

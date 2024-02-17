@@ -363,7 +363,7 @@ static void dbl_simd_fill(double *buf, u64 *seed, u64 *nonce, u16 amount)
   register u16 i = 0;
 
 #ifdef __AARCH64_SIMD__
-  const dregq range = SIMD_SETQPD(DIV * LIMIT);
+  const dregq range = SIMD_SETQPD(1.0 / (double)__UINT64_MAX__);
 
   reg64q4 r1;
   dreg4q d1;
@@ -404,7 +404,7 @@ static void dbl_simd_fill_mult(double *buf, u64 *seed, u64 *nonce, u16 amount, c
   register u16 i = 0;
 
 #ifdef __AARCH64_SIMD__
-  const dregq range = SIMD_SETQPD(DIV * LIMIT);
+  const dregq range = SIMD_SETQPD(1.0 / (double)__UINT64_MAX__);
   const dregq mult = SIMD_SETQPD((double)multiplier);
   reg64q4 r1;
   dreg4q d1;
