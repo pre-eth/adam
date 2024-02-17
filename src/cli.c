@@ -210,39 +210,76 @@ static u8 uuid(const char *strlimit, adam_data *data)
   return 0;
 }
 
-static u8 assess(const char *strlimit, rng_cli *cli)
+static u8 assessf(bool ascii_mode, rng_cli *cli)
 {
-  const u16 limit = a_to_u(strlimit, 1, TESTING_LIMIT);
-  if (!limit)
-    return err(
-        "Multiplier must be within range [1, " STRINGIFY(TESTING_LIMIT) "]");
+  u32 mult;
+  fprintf(stderr, "\033[mSequence Size (x 1000): \033[1;33m");
+  while (!scanf(" %u", &mult) || mult < 1 || mult > DBL_TESTING_LIMIT) {
+    err("Output multiplier must be between [1, " STRINGIFY(DBL_TESTING_LIMIT) "]");
+    fprintf(stderr, "\033[mSequence Size (x 1000): \033[1;33m");
+  }
 
-  const u64 total = limit * TESTING_BITS;
-  register double duration = 0.0;
+  u64 scale_factor = 1;
+  fprintf(stderr, "\033[mScaling factor: \033[1;33m");
+  while (!scanf(" %llu", &scale_factor)) {
+    err("Scaling factor must be within range [1, " STRINGIFY(__UINT64_MAX__) "]");
+    fprintf(stderr, "\033[mScaling factor: \033[1;33m");
+  }
 
+  const u64 limit = TESTING_DBL * mult;
+
+  register double duration;
+  if (ascii_mode)
+    duration = dbl_ascii(limit, &cli->data->seed[0], &cli->data->nonce, scale_factor, cli->precision);
+  else
+    duration = dbl_bytes(limit, &cli->data->seed[0], &cli->data->nonce, scale_factor);
+
+  fprintf(stderr,
+      "\n\033[0mGenerated \033[36m%llu\033[m doubles in \033[36m%lfs\033[m\n",
+      limit, duration);
+
+  return duration;
+}
+
+static u8 assess(rng_cli *cli)
+{
   char file_name[65];
-  printf("File name: \033[1;93m");
+  fprintf(stderr, "File name: \033[1;33m");
   while (!scanf(" %64s", &file_name[0]))
     err("Please enter a valid file name");
 
-  char c = '2';
-get_file_type:
-  fprintf(stderr, "\033[mSample type (1 = ASCII, 2 = BINARY): \033[1;33m");
-  scanf(" %c", &c);
-  if (c == '1') {
-    freopen(file_name, "w+", stdout);
-    duration = stream_ascii(total, &cli->data->seed[0], &cli->data->nonce);
-  } else if (c == '2') {
-    freopen(file_name, "wb+", stdout);
-    duration = stream_bytes(total, &cli->data->seed[0], &cli->data->nonce);
-  } else {
+  register double duration = 0.0;
+
+  char c = '0';
+
+  fprintf(stderr, "\033[mOutput type (1 = ASCII, 2 = BINARY): \033[1;33m");
+  while (!scanf(" %c", &c) || (c != '1' && c != '2')) {
     err("Value must be 1 or 2");
-    goto get_file_type;
+    fprintf(stderr, "\033[mOutput type (1 = ASCII, 2 = BINARY): \033[1;33m");
   }
+
+  freopen(file_name, (c == '1') ? "w+" : "wb+", stdout);
+
+  if (cli->data->dbl_mode)
+    return assessf((c == '1'), cli);
+
+  u32 mult;
+  fprintf(stderr, "\033[mSequence Size (x 1000000): \033[1;33m");
+  while (!scanf(" %u", &mult) || mult < 1 || mult > BITS_TESTING_LIMIT) {
+    err("Output multiplier must be between [1, " STRINGIFY(BITS_TESTING_LIMIT) "]");
+    fprintf(stderr, "\033[mSequence Size (x 1000000): \033[1;33m");
+  }
+
+  register u64 limit = TESTING_BITS * mult;
+
+  if (c == '1')
+    duration = stream_ascii(limit, &cli->data->seed[0], &cli->data->nonce);
+  else
+    duration = stream_bytes(limit, &cli->data->seed[0], &cli->data->nonce);
 
   fprintf(stderr,
       "\n\033[0mGenerated \033[36m%llu\033[m bits in \033[36m%lfs\033[m\n",
-      total, duration);
+      limit, duration);
 
   return 0;
 }
@@ -339,14 +376,12 @@ static void print_chseed_results(const u16 indent, const u64 expected, const u64
   printf("\033[2m\033[%uC             e. [0.4, 0.5): \033[m%llu (%llu expected)\n", indent, chseed_dist[4], (u64)expected_chseeds);
 }
 
-u8 examine(const char *strlimit, rng_data *data)
+static u8 examine(const char *strlimit, adam_data *data)
 {
   // Initialize properties
   rng_test rsl;
   ent_report ent;
   rsl.ent = &ent;
-  rsl.avg_chseed = 0.0;
-  rsl.mfreq = rsl.zeroes = rsl.up_runs = rsl.longest_up = rsl.down_runs = rsl.longest_down = rsl.odd = 0;
 
   // Record initial state and connect internal state to rsl_test
   u64 init_values[5];
@@ -359,7 +394,7 @@ u8 examine(const char *strlimit, rng_data *data)
   // Check for and validate multiplier
   register u64 limit = TESTING_BITS;
   if (strlimit != NULL)
-    limit *= a_to_u(strlimit, 1, TESTING_LIMIT);
+    limit *= a_to_u(strlimit, 1, BITS_TESTING_LIMIT);
 
   printf("\033[1;33mExamining %llu bits of ADAM...\033[m\n", limit);
   register double duration = get_seq_properties(limit, &rsl);
@@ -367,22 +402,22 @@ u8 examine(const char *strlimit, rng_data *data)
   // Rest of this is just formatting and printing the results
   u16 center, indent, swidth;
   get_print_metrics(&center, &indent, &swidth);
-  indent += (indent << 1);
+  indent <<= 1;
 
   printf("\033[%uC[RESULTS]\n\n", center - 4);
+
   print_basic_results(indent, limit, &rsl, &init_values[0]);
   print_ent_results(indent, &ent);
   print_chseed_results(indent, rsl.expected_chseed, &rsl.chseed_dist[0], rsl.avg_chseed);
 
-  // HISTOGRAM
-
   printf("\n\033[1;33mExamination Complete! (%lfs)\033[m\n", duration);
+
   return 0;
 }
 
 int main(int argc, char **argv)
 {
-  rng_data data;
+  adam_data data;
   adam_setup(&data, false, NULL, NULL);
 
   rng_cli cli;
@@ -403,7 +438,7 @@ int main(int argc, char **argv)
       puts("v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH));
       return 0;
     case 'a':
-      return assess(optarg, &cli);
+      return assess(&cli);
     case 'b':
       stream_bytes(__UINT64_MAX__, &data.seed[0], &data.nonce);
       return 0;
@@ -414,11 +449,12 @@ int main(int argc, char **argv)
       cli.octal = true;
       continue;
     case 'w':
-      if (set_width(&cli, optarg))
+      cli.width = a_to_u(optarg, 8, 32);
+      if (UNLIKELY(cli.width & (cli.width - 1)))
         return err("Width must be either 8, 16, 32");
       continue;
     case 'r':
-      cli.results = a_to_u(optarg, 1, R_LIMIT);
+      cli.results = a_to_u(optarg, 1, ADAM_BUF_SIZE * (64 / cli.width));
       if (!cli.results)
         return err("Invalid number of results specified for desired width");
       continue;
@@ -440,12 +476,14 @@ int main(int argc, char **argv)
     case 'p':
       data.dbl_mode = true;
       cli.precision = a_to_u(optarg, 1, 15);
+      if (!cli.precision)
+        return err("Floating point precision must be between [1, 15]");
       continue;
     case 'm':
       data.dbl_mode = true;
-      cli.mult = a_to_u(optarg, 2, __UINT64_MAX__);
+      cli.mult = a_to_u(optarg, 1, __UINT64_MAX__);
       if (!cli.mult)
-        return err("Floating point multiplier must be between [2, " STRINGIFY(__UINT64_MAX__) "]");
+        return err("Floating point scaling factor must be between [1, " STRINGIFY(__UINT64_MAX__) "]");
       continue;
     case 'e':
       return examine(optarg, &data);
