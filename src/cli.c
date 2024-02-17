@@ -116,22 +116,21 @@ static u8 help(void)
     "your own. Seeds are reusable but should be kept secret",
     "Get the nonce for the generated buffer (no parameter), or provide "
     "your own. Nonces should be unique per seed and kept secret",
-    "Generate a universally unique identifier (UUID). Optionally specify a number of UUID's to generate (max " STRINGIFY(R_LIMIT) ")",
-    "The amount of numbers to generate and return, written to stdout. Must be within [1, " STRINGIFY(R_LIMIT) "]",
+    "Generate a universally unique identifier (UUID). Optionally specify a number of UUID's to generate (max 1000)",
+    "The amount of numbers to generate and return, written to stdout. Must be within max limit for current width (see -d)",
     "Dump entire buffer using the specified width (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)",
     "Desired alternative size (u8, u16, u32) of returned numbers. Default width is u64",
     "Just bits... literally",
-    "Write an ASCII or binary sample of 1000000 bits (1 Mb) to file for external assessment with your favorite tests. "
-    "You can choose a multiplier within [1, " STRINGIFY(TESTING_LIMIT) "] to output up to 1GB at a time",
-    "Examine a sample of 1000000 bits (1 Mb) with the ENT framework as well as some other in-house statistical tests. "
-    "You can choose a multiplier within [1, " STRINGIFY(TESTING_LIMIT) "] to examine up to 1GB at a time",
+    "Write an ASCII or binary sample of bits/doubles to file for external assessment. You can choose a multiplier to output up to 1GB, or 1 billion doubles (with optional scaling factor), at a time",
+    "Examine a sample of 1000000 bits (1 Mb) with the ENT framework and log some properties of the output sequence. "
+    "You can choose a multiplier within [1, " STRINGIFY(BITS_TESTING_LIMIT) "] to examine up to 1GB at a time",
     "Print numbers in hexadecimal format with leading prefix",
     "Print numbers in octal format with leading prefix",
     "Enable floating point mode to generate doubles in (0, 1) instead of integers",
     "The number of decimal places to display when printing doubles. Must be within [1, 15]. Default is 15",
-    "Scaling factor for randomly generated doubles, such that they fall in the range (0, <FACTOR>)"
+    "Multiplier for randomly generated doubles, such that they fall in the range (0, <MULTIPLIER>)"
   };
-  const u8 lengths[ARG_COUNT] = { 25, 33, 119, 124, 109, 89, 91, 81, 22, 187, 178, 55, 49, 83, 100, 93 };
+  const u8 lengths[ARG_COUNT] = { 25, 33, 119, 124, 109, 116, 91, 81, 22, 191, 185, 55, 49, 83, 100, 93 };
 
   register short len;
   for (u8 i = 0; i < ARG_COUNT; ++i) {
