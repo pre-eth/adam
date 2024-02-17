@@ -1,7 +1,5 @@
-#include <stddef.h>
-
-#include "../include/defs.h"
 #include "../include/rng.h"
+#include "../include/defs.h"
 #include "../include/simd.h"
 
 // To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random double D
@@ -43,7 +41,7 @@
     x = (m << 24) | (~((m >> 40) ^ __UINT64_MAX__) & 0xFFFFFF); \
     a = (a ^ (mx)) + m2;                                        \
     m = (ISAAC_IND(mm, x) + a + b);                             \
-    y = b = ISAAC_IND(mm, y >> MAGNITUDE) + x;                  \
+    y ^= b = ISAAC_IND(mm, y >> MAGNITUDE) + x;                 \
   }
 
 #ifndef __AARCH64_SIMD__
@@ -55,7 +53,15 @@
 
 /*
   The algorithm requires at least the construction of 3 maps of size BUF_SIZE
-  Offsets logically represent each individual map, but it's all one buffer
+  Offsets logically represent each individual map, but it's all one buffer.
+
+  This was originally implemented as an array of sizeof(u64) * BUF_SIZE * 3
+  bytes, but further optimization and testing found that the security and
+  statistical qualities were still preserved so long as the core algorithm
+  was not changed, meaning a slightyly modified approach with an extra
+  chaotic iteration allowed me to reduce the size of the buffer to just
+  sizeof(u64) * 264, where the three "maps" are now logically represented as
+  three subsections in the buffer, each of size 88 u64.
 
   static is important because otherwise buffer is initiated with junk that
   removes the deterministic nature of the algorithm
@@ -63,7 +69,7 @@
 static u64 buffer[BUF_SIZE + 8] ALIGN(SIMD_LEN);
 
 // Seeds supplied to each iteration of the chaotic function
-// Per each round, 4 consecutive seeds are supplied
+// Per each round, 8 consecutive chseeds are supplied
 static double chseeds[ROUNDS << 2] ALIGN(SIMD_LEN);
 
 // State variables
@@ -83,38 +89,28 @@ static void accumulate(const u64 *seed)
     0x68202847656E6573ULL ^ seed[0], 0x697320313A323829ULL ^ ~seed[2]
   };
 
-  reg64q4 r1 = SIMD_LOAD64x4(IV);
-  reg64q4 r2;
+  reg64q4 r1 = SIMD_LOAD64x4(&IV[0]);
+  reg64q4 r2 = SIMD_LOAD64x4(&buffer[256]);
 
   const dregq range = SIMD_SETQPD(DIV * LIMIT);
   dreg4q seeds;
 
-  register u16 i = 0;
+  register u8 i = 0;
   do {
-    SIMD_ADD4RQ64(r2, r1, r1);
-    SIMD_XOR4RQ64(r2, r1, r2);
+    SIMD_ADD4RQ64(r2, r1, r2);
+
     r1.val[0] = vrax1q_u64(r1.val[0], r2.val[0]);
     r1.val[1] = vrax1q_u64(r1.val[1], r2.val[1]);
     r1.val[2] = vrax1q_u64(r1.val[2], r2.val[2]);
     r1.val[3] = vrax1q_u64(r1.val[3], r2.val[3]);
-
-    seeds.val[0] = vcvtq_f64_u64(r1.val[0]);
-    seeds.val[1] = vcvtq_f64_u64(r1.val[1]);
-    seeds.val[2] = vcvtq_f64_u64(r1.val[2]);
-    seeds.val[3] = vcvtq_f64_u64(r1.val[3]);
-
+    SIMD_CAST4QPD(seeds, r1);
     SIMD_MUL4QPD(seeds, seeds, range);
-
     SIMD_STORE4PD(&chseeds[i << 3], seeds);
-    SIMD_XOR4RQ64(r1, r1, r2);
   } while (++i < (ROUNDS >> 1));
-
-  SIMD_STORE64x4(&buffer[256], r1);
 }
 #else
 static void accumulate(const u64 *seed)
 {
-
   /*
     8 64-bit IV's that correspond to the verse:
     "Be fruitful and multiply, and replenish the earth (Genesis 1:28)"
@@ -205,7 +201,6 @@ static void diffuse(const u64 nonce)
     ISAAC_MIX(a, b, c, d, e, f, g, h);
 
   i = 0;
-
   do {
     a += buffer[i];
     b += buffer[i + 1];
@@ -238,6 +233,7 @@ static void apply(u16 idx, const u8 rounds)
 
   reg64q4 r1, r2;
 
+  // Load 8 seeds at a time
   dreg4q d1 = SIMD_LOAD4PD(&chseeds[rounds]);
   dreg4q d2;
 
@@ -361,7 +357,7 @@ static void mix(u16 dest, u16 map_a, u16 map_b)
 #endif
 }
 
-static void dbl_simd_fill(double *buf, u64*seed, u64*nonce, u16 amount)
+static void dbl_simd_fill(double *buf, u64 *seed, u64 *nonce, u16 amount)
 {
   adam_run(seed, nonce);
   register u16 i = 0;
@@ -387,29 +383,29 @@ static void dbl_simd_fill(double *buf, u64*seed, u64*nonce, u16 amount)
   regd d1; 
 
   do {
-    r1 = SIMD_LOAD64((reg*)&buffer[i]);
+    r1 = SIMD_LOAD64((reg *)&buffer[i]);
     d1 = SIMD_CASTPD(r1);
     d1 = SIMD_MULPD(d1, max);
-    SIMD_STOREUPD((dreg *)&buf[i], d1);
+    SIMD_STOREPD((dreg *)&buf[i], d1);
 
 #ifndef __AVX512F__
-    r1 = SIMD_LOAD64((reg*)&buffer[i + 4]);
+    r1 = SIMD_LOAD64((reg *)&buffer[i + 4]);
     d1 = SIMD_CASTPD(r1);
     d1 = SIMD_MULPD(d1, max);
-    SIMD_STOREUPD((dreg *)&buf[i + 4], d1);
+    SIMD_STOREPD((dreg *)&buf[i + 4], d1);
 #endif  
   } while ((i += 8) < amount);
 #endif
 }
 
-static void dbl_simd_fill_mult(double *buf, u64*seed, u64*nonce, u16 amount, const u64 multiplier)
+static void dbl_simd_fill_mult(double *buf, u64 *seed, u64 *nonce, u16 amount, const u64 multiplier)
 {
   adam_run(seed, nonce);
   register u16 i = 0;
 
 #ifdef __AARCH64_SIMD__
   const dregq range = SIMD_SETQPD(DIV * LIMIT);
-  const dregq mult = SIMD_SETQPD((double) multiplier);
+  const dregq mult = SIMD_SETQPD((double)multiplier);
   reg64q4 r1;
   dreg4q d1; 
   
@@ -424,35 +420,35 @@ static void dbl_simd_fill_mult(double *buf, u64*seed, u64*nonce, u16 amount, con
   } while ((i += 8) < amount);
 #else
   const regd range = SIMD_SETPD(DIV * LIMIT);
-  const regd mult = SIMD_SETPD((double) multiplier);
+  const regd mult = SIMD_SETPD((double)multiplier);
 
   reg r1;
   regd d1; 
 
   do {
-    r1 = SIMD_LOAD64((reg*)&buffer[i]);
+    r1 = SIMD_LOAD64((reg *)&buffer[i]);
     d1 = SIMD_CASTPD(r1);
     d1 = SIMD_MULPD(d1, max);
     d1 = SIMD_MULPD(d1, mult);
-    SIMD_STOREUPD((dreg *)&buf[i], d1);
+    SIMD_STOREPD((dreg *)&buf[i], d1);
 
 #ifndef __AVX512F__
-    r1 = SIMD_LOAD64((reg*)&buffer[i + 4]);
+    r1 = SIMD_LOAD64((reg *)&buffer[i + 4]);
     d1 = SIMD_CASTPD(r1);
     d1 = SIMD_MULPD(d1, max);
     d1 = SIMD_MULPD(d1, mult);
-    SIMD_STOREUPD((dreg *)&buf[i + 4], d1);
+    SIMD_STOREPD((dreg *)&buf[i + 4], d1);
 #endif  
   } while ((i += 8) < amount);
 #endif
 }
   
-void adam_run(unsigned long long *seed, unsigned long long *_nonce)
+void adam_run(unsigned long long *seed, unsigned long long *nonce)
 {
-  register u64 nonce = *_nonce;
+  register u64 _nonce = *nonce;
 
   accumulate(seed);
-  diffuse(nonce);
+  diffuse(_nonce);
   apply(0, 0);
   mix(0, 88, 176);
   apply(88, 8);
@@ -462,15 +458,15 @@ void adam_run(unsigned long long *seed, unsigned long long *_nonce)
   apply(0, 24);
 
   ISAAC_RNGSTEP(~(aa ^ (aa << 21)), aa, bb, buffer, buffer[256], buffer[260],
-      seed[0], nonce);
+      seed[0], _nonce);
   ISAAC_RNGSTEP(aa ^ (aa >> 5), aa, bb, buffer, buffer[257], buffer[261],
-      seed[1], nonce);
+      seed[1], _nonce);
   ISAAC_RNGSTEP(aa ^ (aa << 12), aa, bb, buffer, buffer[258], buffer[262],
-      seed[2], nonce);
+      seed[2], _nonce);
   ISAAC_RNGSTEP(aa ^ (aa >> 33), aa, bb, buffer, buffer[259], buffer[263],
-      seed[3], nonce);
+      seed[3], _nonce);
 
-  *_nonce ^= ~nonce;
+  *nonce = _nonce;
 }
 
 void adam_frun(unsigned long long *seed, unsigned long long *nonce, double *buf, const unsigned int amount)
