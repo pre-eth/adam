@@ -116,3 +116,8 @@ int adam_dfill(adam_data *data, double *buf, const unsigned long long multiplier
 
   return 0;
 }
+
+void *adam_choice(adam_data *data, void *arr, const unsigned long long size)
+{
+  return &arr[adam_int(data, 64) % size];
+}

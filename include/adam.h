@@ -104,4 +104,16 @@
   */
   int adam_dfill(adam_data *data, double *buf, const unsigned long long multiplier, const unsigned int amount);
 
+  /*
+    Chooses a random item from a provided collection, where param <arr> is a 
+    pointer to this collection, and param <size> is to specify the total 
+    range of possible indices, usually the full length of the array but you
+    could pass in a smaller number than that if you want to choose from a 
+    particular range or within a specific radius.
+
+    Caller must guarantee <size> is NEVER larger than the <arr>'s capacity
+
+    Returns a randomly picked member of <arr>
+  */
+  void *adam_choice(adam_data *data, void *arr, const unsigned long long size);
 #endif
