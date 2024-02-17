@@ -6,11 +6,12 @@
   sequences you generate
 
   Additionally, the ENT framework is integrated into this collection,
-  for a total of 12 pieces of information (plus initial state) that
+  for a total of 13 pieces of information (plus initial state) that
   are returned to the user:
 
     - monobit frequency
     - presence of zeroes
+    - value ranges
     - max and min values
     - parity: even and odd number totals
     - chaotic seed distribution + chi-square
@@ -26,6 +27,7 @@
 #include "../include/test.h"
 #include "../include/rng.h"
 
+static u32 range_dist[5];
 static u64 chseed_dist[5];
 static u64 gaps[256];
 static u64 gaplengths[256];
@@ -95,6 +97,7 @@ static void test_loop(rng_test *rsl)
   u64 num;
   do {
     num = rsl->buffer[i];
+    ++range_dist[(num >= __UINT32_MAX__) + (num >= (1ULL << 40)) + (num >= (1ULL << 48)) + (num >= (1ULL << 56))];
 
     // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
     rsl->min = num ^ ((rsl->min ^ num) & -(rsl->min < num));
@@ -120,6 +123,8 @@ void adam_test(const u64 limit, rng_test *rsl)
   register long int rate = limit >> 14;
   register short leftovers = limit & (SEQ_SIZE - 1);
 
+  rsl->avg_chseed = 0.0;
+  rsl->mfreq = rsl->zeroes = rsl->up_runs = rsl->longest_up = rsl->down_runs = rsl->longest_down = rsl->odd = 0;
   rsl->sequences = rate + !!(leftovers);
   rsl->expected_chseed = rsl->sequences * (ROUNDS << 2);
 
@@ -152,4 +157,5 @@ void adam_test(const u64 limit, rng_test *rsl)
   rsl->avg_gap = average_gaplength / 256.0;
 
   rsl->chseed_dist = &chseed_dist[0];
+  rsl->range_dist = &range_dist[0];
 }
