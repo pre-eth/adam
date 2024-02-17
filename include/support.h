@@ -17,4 +17,5 @@
 	double   stream_bytes(const u64 limit, u64 *seed, u64 *nonce);
 	double	 dbl_bytes(const u32 limit, u64 *seed, u64 *nonce, const u32 multiplier);
 	double 	 get_seq_properties(const u64 limit, rng_test *rsl);
+	void 	 print_seq_results(rng_test *rsl, const u64 limit, const u64 *init_values);
 #endif

@@ -35,7 +35,7 @@
   }
 
 // Slightly modified versions of macros from ISAAC for reseeding ADAM
-#define ISAAC_IND(mm, x) (*(u64 *)((u8 *)(mm) + ((x) % 2040)))
+#define ISAAC_IND(mm, x) (*(u64 *)((u8 *)(mm) + ((x) % 2041)))
 #define ISAAC_RNGSTEP(mx, a, b, mm, m, m2, x, y)                \
   {                                                             \
     x = (m << 24) | (~((m >> 40) ^ __UINT64_MAX__) & 0xFFFFFF); \
