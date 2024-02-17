@@ -1,7 +1,6 @@
 #include <getopt.h>
 #include <math.h>
 #include <stdio.h>
-#include <unistd.h>
 
 #include "../include/adam.h"
 #include "../include/support.h"
@@ -14,14 +13,12 @@
 #define MINOR 4
 #define PATCH 0
 
-#define OPTSTR ":hvdfbxop:m:w:a:e:r:u::s::n::"
+#define OPTSTR ":hvdfbxoap:m:w:e:r:u::s::n::"
 #define ARG_COUNT 16
-
-#define R_LIMIT 1000
 
 typedef struct rng_cli {
   //  Pointer to RNG buffer and state
-  rng_data *data;
+  adam_data *data;
 
   //  Number of bits in results (8, 16, 32, 64)
   u8 width;
@@ -48,19 +45,19 @@ static void print_summary(const u16 swidth, const u16 indent)
 #define SUMM_PIECES 11
 
   const char *pieces[SUMM_PIECES] = {
-    "\033[1madam\033[m [-h|-v|-b]", "[-s[\033[3mseed?\033[m]]", "[-n[\033[3mnonce?\033[m]]", "\033[m[-dxof]",
-    "[-w \033[1mwidth\033[m]", "[-a \033[1mmultiplier\033[m]", "[-e \033[1mmultiplier\033[m]",
-    "[-m \033[1mmultiplier\033[m]", "[-p \033[1mprecision\033[m]", "[-r \033[1mresults\033[m]",
+    "\033[1madam\033[m [-h|-v|-b]", "[-s[\033[3mseed?\033[m]]", "[-n[\033[3mnonce?\033[m]]", "[-dxof]",
+    "[-w \033[1mwidth\033[m]", "[-m \033[1mmultiplier\033[m]", "[-p \033[1mprecision\033[m]",
+    "[-a \033[1mmultiplier\033[m]", "[-e \033[1mmultiplier\033[m]", "[-r \033[1mresults\033[m]",
     "[-u[\033[3mamount?\033[m]]"
   };
 
-  const u8 sizes[SUMM_PIECES + 1] = { 25, 10, 15, 15, 14, 14, 11, 12, 13, 0 };
+  const u8 sizes[SUMM_PIECES] = { 15, 11, 12, 7, 11, 15, 14, 15, 15, 12, 13 };
 
   register u8 i = 0, running_length = indent;
 
   printf("\n\033[%uC", indent);
 
-  for (; i < SUMM_PIECES; ++i) {
+  for (; i < SUMM_PIECES - 1; ++i) {
     printf("%s ", pieces[i]);
     // add one for space
     running_length += sizes[i] + 1;
@@ -68,9 +65,10 @@ static void print_summary(const u16 swidth, const u16 indent)
       // add 5 for "adam " to create hanging indent for
       // succeeding lines
       printf("\n\033[%uC", indent + 5);
-      running_length = 0;
+      running_length = indent + 5;
     }
   }
+  printf("%s", pieces[SUMM_PIECES - 1]);
 
   printf("\n\n");
 }
@@ -148,14 +146,6 @@ static u8 help(void)
   return 0;
 }
 
-static u8 set_width(rng_cli *cli, const char *strwidth)
-{
-  cli->width = a_to_u(strwidth, 8, 32);
-  if (UNLIKELY(cli->width & (cli->width - 1)))
-    return 1;
-  return 0;
-}
-
 static void print_int(rng_cli *cli)
 {
   register u64 num = adam_int(cli->data, cli->width);
@@ -175,7 +165,7 @@ static void print_dbl(rng_cli *cli)
 
 static u8 dump_buffer(rng_cli *cli)
 {
-  rng_data *data = cli->data;
+  adam_data *data = cli->data;
   void (*write_fn)(rng_cli *cli) = (!data->dbl_mode) ? &print_int : &print_dbl;
 
   write_fn(cli);
