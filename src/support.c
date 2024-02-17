@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/ioctl.h>
 #include <time.h>
 
@@ -78,7 +79,7 @@ u64 a_to_u(const char *s, const u64 min, const u64 max)
     val += (s[len - 1] - '0');
     break;
   }
-  return (val >= min || val < max + 1) ? val : min;
+  return (val >= min || val < max + 1) ? val : 0;
 }
 
 static u8 load_seed(u64 *seed, const char *strseed)
@@ -257,7 +258,7 @@ double stream_ascii(const u64 limit, u64 *seed, u64 *nonce)
   char *restrict _bptr = &bitbuffer[0];
 
   u64 *buffer;
-  adam_data(&buffer, NULL);
+  adam_connect(&buffer, NULL);
 
   while (rate > 0) {
     start = clock();
@@ -290,6 +291,35 @@ double stream_ascii(const u64 limit, u64 *seed, u64 *nonce)
   return duration;
 }
 
+double dbl_ascii(const u32 limit, u64 *seed, u64 *nonce, const u32 multiplier, const u8 precision)
+{
+  double *_buf = (double *)aligned_alloc(SIMD_LEN, limit * sizeof(double));
+
+  register clock_t start = clock();
+
+  if (multiplier > 1)
+    adam_fmrun(seed, nonce, _buf, limit, multiplier);
+  else
+    adam_frun(seed, nonce, _buf, limit);
+
+  register double duration = (double)(clock() - start) / (double)CLOCKS_PER_SEC;
+
+  register u32 i = 0;
+  while (limit - i > 8) {
+    fprintf(stdout, "%.*lf\n%.*lf\n%.*lf\n%.*lf\n%.*lf\n%.*lf\n%.*lf\n%.*lf\n",
+        precision, _buf[i], precision, _buf[i + 1], precision, _buf[i + 2], precision, _buf[i + 3],
+        precision, _buf[i + 4], precision, _buf[i + 5], precision, _buf[i + 6], precision, _buf[i + 7]);
+    i += 8;
+  }
+
+  while (i < limit)
+    fprintf(stdout, "%.*lf\n", precision, _buf[i++]);
+
+  free(_buf);
+
+  return duration;
+}
+
 double stream_bytes(const u64 limit, u64 *seed, u64 *nonce)
 {
   /*
@@ -300,7 +330,7 @@ double stream_bytes(const u64 limit, u64 *seed, u64 *nonce)
 
   u64 *buffer;
 
-  adam_data(&buffer, NULL);
+  adam_connect(&buffer, NULL);
 
   register double duration = 0.0;
   register clock_t start;
@@ -323,10 +353,30 @@ double stream_bytes(const u64 limit, u64 *seed, u64 *nonce)
   return duration;
 }
 
+double dbl_bytes(const u32 limit, u64 *seed, u64 *nonce, const u32 multiplier)
+{
+  double *_buf = (double *)aligned_alloc(SIMD_LEN, limit * sizeof(double));
+
+  register clock_t start = clock();
+
+  if (multiplier > 1)
+    adam_fmrun(seed, nonce, _buf, limit, multiplier);
+  else
+    adam_frun(seed, nonce, _buf, limit);
+
+  register double duration = (double)(clock() - start) / (double)CLOCKS_PER_SEC;
+
+  fwrite(&_buf[0], sizeof(double), limit, stdout);
+
+  free(_buf);
+
+  return duration;
+}
+
 double get_seq_properties(const u64 limit, rng_test *rsl)
 {
   // Connect internal integer and chaotic seed arrays to rng_test
-  adam_data(&rsl->buffer, &rsl->chseeds);
+  adam_connect(&rsl->buffer, &rsl->chseeds);
 
   // Start examination!
   register clock_t start = clock();
