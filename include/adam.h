@@ -40,7 +40,7 @@
     Otherwise, the caller must ensure that <seed> points to 256-bits of data,
     and that nonce points to a u64.
   */
-  void adam_setup(adam_data *data, bool generate_dbls, unsigned long long *seed, unsigned long long *nonce);
+  void adam_setup(adam_data *data, const bool generate_dbls, unsigned long long *seed, unsigned long long *nonce);
 
   /*
     Returns a random unsigned integer of the specified <width>.
