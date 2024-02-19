@@ -8,128 +8,129 @@ static u64 gaplengths[256];
 
 static void gap_lengths(u64 num)
 {
-  static u64 ctr;
+    static u64 ctr;
 
-  register u8 byte;
-  register u64 dist;
+    register u8 byte;
+    register u64 dist;
 
-  do {
-    byte = num & 0xFF;
-    dist = (++ctr - gaps[byte]);
-    gaplengths[byte] += dist;
-    gaps[byte] = ctr;
-    num >>= 8;
-  } while (num > 0);
+    do {
+        byte = num & 0xFF;
+        dist = (++ctr - gaps[byte]);
+        gaplengths[byte] += dist;
+        gaps[byte] = ctr;
+        num >>= 8;
+    } while (num > 0);
 }
 
 static void tally_runs(const u64 num, rng_test *rsl)
 {
-  // 0 = up, 1 = down, -1 = init
-  static short direction = -1;
+    // 0 = up, 1 = down, -1 = init
+    static short direction = -1;
 
-  static u64 curr_up, curr_down, prev;
+    static u64 curr_up, curr_down, prev;
 
-  if (num > prev) {
-    const u8 flag = (direction != 0);
-    rsl->up_runs += flag;
-    if (flag) {
-      rsl->longest_down = rsl->longest_down ^ ((rsl->longest_down ^ curr_down) & -(rsl->longest_down < curr_down));
-      curr_down = 0;
+    if (num > prev) {
+        const u8 flag = (direction != 0);
+        rsl->up_runs += flag;
+        if (flag) {
+            rsl->longest_down = rsl->longest_down ^ ((rsl->longest_down ^ curr_down) & -(rsl->longest_down < curr_down));
+            curr_down         = 0;
+        }
+        ++curr_up;
+        direction = 0;
+    } else if (num < prev) {
+        const u8 flag = (direction != 1);
+        rsl->down_runs += flag;
+        if (flag) {
+            rsl->longest_up = rsl->longest_up ^ ((rsl->longest_up ^ curr_up) & -(rsl->longest_up < curr_up));
+            curr_up         = 0;
+        }
+        ++curr_down;
+        direction = 1;
     }
-    ++curr_up;
-    direction = 0;
-  } else if (num < prev) {
-    const u8 flag = (direction != 1);
-    rsl->down_runs += flag;
-    if (flag) {
-      rsl->longest_up = rsl->longest_up ^ ((rsl->longest_up ^ curr_up) & -(rsl->longest_up < curr_up));
-      curr_up = 0;
-    }
-    ++curr_down;
-    direction = 1;
-  }
-  prev = num;
+    prev = num;
 }
 
 static void chseed_unif(double *chseeds, double *avg_chseed)
 {
-  register u8 i = 0, idx;
-  do {
-    idx = (chseeds[i] >= 0.1) + (chseeds[i] >= 0.2) + (chseeds[i] >= 0.3) + (chseeds[i] >= 0.4);
-    *avg_chseed += chseeds[i];
-    ++chseed_dist[idx];
-  } while (++i < (ROUNDS << 2));
+    register u8 i = 0, idx;
+    do {
+        idx = (chseeds[i] >= 0.1) + (chseeds[i] >= 0.2) + (chseeds[i] >= 0.3) + (chseeds[i] >= 0.4);
+        *avg_chseed += chseeds[i];
+        ++chseed_dist[idx];
+    } while (++i < (ROUNDS << 2));
 }
 
 static void test_loop(rng_test *rsl)
 {
-  // Chaotic seeds all occur within (0.0, 0.5).
-  // This function tracks their distribution and we check the uniformity at the end.
-  chseed_unif(rsl->chseeds, &rsl->avg_chseed);
+    // Chaotic seeds all occur within (0.0, 0.5).
+    // This function tracks their distribution and we check the uniformity at the end.
+    chseed_unif(rsl->chseeds, &rsl->avg_chseed);
 
-  register u16 i = 0;
-  u64 num;
-  do {
-    num = rsl->buffer[i];
-    ++range_dist[(num >= __UINT32_MAX__) + (num >= (1ULL << 40)) + (num >= (1ULL << 48)) + (num >= (1ULL << 56))];
+    register u16 i = 0;
+    u64 num;
+    do {
+        num = rsl->buffer[i];
+        ++range_dist[(num >= __UINT32_MAX__) + (num >= (1ULL << 40)) + (num >= (1ULL << 48)) + (num >= (1ULL << 56))];
 
-    // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
-    rsl->min = num ^ ((rsl->min ^ num) & -(rsl->min < num));
-    rsl->max = rsl->max ^ ((rsl->max ^ num) & -(rsl->max < num));
+        // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
+        rsl->min = num ^ ((rsl->min ^ num) & -(rsl->min < num));
+        rsl->max = rsl->max ^ ((rsl->max ^ num) & -(rsl->max < num));
 
-    rsl->odd += (num & 1);
-    rsl->zeroes += (num < 0);
-    rsl->mfreq += POPCNT(num);
+        rsl->odd += (num & 1);
+        rsl->zeroes += (num < 0);
+        rsl->mfreq += POPCNT(num);
 
-    // Tracks the amount of runs AND longest run, both increasing and decreasing
-    tally_runs(num, rsl);
+        // Tracks the amount of runs AND longest run, both increasing and decreasing
+        tally_runs(num, rsl);
 
-    // Checks gap lengths
-    gap_lengths(num);
+        // Checks gap lengths
+        gap_lengths(num);
 
-    // Calls into ENT framework, updating all the stuff there
-    ent_test((u8 *)&num);
-  } while (++i < BUF_SIZE);
+        // Calls into ENT framework, updating all the stuff there
+        ent_test((u8 *) &num);
+    } while (++i < BUF_SIZE);
 }
 
 void adam_test(const u64 limit, rng_test *rsl)
 {
-  register long int rate = limit >> 14;
-  register short leftovers = limit & (SEQ_SIZE - 1);
+    register long int rate   = limit >> 14;
+    register short leftovers = limit & (SEQ_SIZE - 1);
 
-  rsl->avg_chseed = 0.0;
-  rsl->mfreq = rsl->zeroes = rsl->up_runs = rsl->longest_up = rsl->down_runs = rsl->longest_down = rsl->odd = 0;
-  rsl->sequences = rate + !!(leftovers);
-  rsl->expected_chseed = rsl->sequences * (ROUNDS << 2);
+    rsl->avg_chseed = 0.0;
+    rsl->mfreq = rsl->zeroes = rsl->up_runs = rsl->longest_up = rsl->down_runs = rsl->longest_down = rsl->odd = 0;
 
-  adam_run(rsl->seed, &rsl->nonce);
+    rsl->sequences       = rate + !!(leftovers);
+    rsl->expected_chseed = rsl->sequences * (ROUNDS << 2);
 
-  rsl->min = rsl->max = rsl->buffer[0];
-  rsl->ent->sccu0 = rsl->buffer[0] & 0xFF;
-
-  do {
-    test_loop(rsl);
     adam_run(rsl->seed, &rsl->nonce);
-    leftovers -= (u16)(rate <= 0) << 14;
-  } while (LIKELY(--rate > 0) || LIKELY(leftovers > 0));
 
-  ent_results(rsl->ent);
+    rsl->min = rsl->max = rsl->buffer[0];
+    rsl->ent->sccu0     = rsl->buffer[0] & 0xFF;
 
-  register double average_gaplength = 0.0;
+    do {
+        test_loop(rsl);
+        adam_run(rsl->seed, &rsl->nonce);
+        leftovers -= (u16) (rate <= 0) << 14;
+    } while (LIKELY(--rate > 0) || LIKELY(leftovers > 0));
 
-  register u16 i = 0;
+    ent_results(rsl->ent);
 
-  register u64 tmp;
-  rsl->freq_max = rsl->freq_min = rsl->ent->freq[0];
-  for (; i < BUF_SIZE; ++i) {
-    tmp = rsl->ent->freq[i];
-    average_gaplength += ((double)gaplengths[i] / (double)(tmp - 1));
-    rsl->freq_min = tmp ^ ((rsl->freq_min ^ tmp) & -(rsl->freq_min < tmp));
-    rsl->freq_max = rsl->freq_max ^ ((rsl->freq_max ^ tmp) & -(rsl->freq_max < tmp));
-  }
+    register double average_gaplength = 0.0;
 
-  rsl->avg_gap = average_gaplength / 256.0;
+    register u16 i = 0;
 
-  rsl->chseed_dist = &chseed_dist[0];
-  rsl->range_dist = &range_dist[0];
+    register u64 tmp;
+    rsl->freq_max = rsl->freq_min = rsl->ent->freq[0];
+    for (; i < BUF_SIZE; ++i) {
+        tmp = rsl->ent->freq[i];
+        average_gaplength += ((double) gaplengths[i] / (double) (tmp - 1));
+        rsl->freq_min = tmp ^ ((rsl->freq_min ^ tmp) & -(rsl->freq_min < tmp));
+        rsl->freq_max = rsl->freq_max ^ ((rsl->freq_max ^ tmp) & -(rsl->freq_max < tmp));
+    }
+
+    rsl->avg_gap = average_gaplength / 256.0;
+
+    rsl->chseed_dist = &chseed_dist[0];
+    rsl->range_dist  = &range_dist[0];
 }

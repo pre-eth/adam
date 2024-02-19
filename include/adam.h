@@ -90,7 +90,7 @@
 
     The caller is responsible for ensuring param <buf> is of at least 
     <amount> * sizeof(double) bytes in length, and that the pointer is 
-    not NULL. If <amount> is 0 or greater than 125 million, this function 
+    not NULL. If <amount> is 0 or greater than 1 billion, this function 
     will return 1 and terminate early.
 
     Also, please make sure you use the ADAM_ALIGNMENT macro to align <buf> 

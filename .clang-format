@@ -1,7 +1,7 @@
 ---
 Language:        Cpp
 BasedOnStyle:  Webkit
-IndentWidth:     2
+IndentWidth:     4
 IndentWrappedFunctionNames: false
 InsertBraces:    false
 InsertNewlineAtEOF: false
@@ -23,10 +23,10 @@ NamespaceIndentation: None
 PackConstructorInitializers: BinPack
 PenaltyBreakAssignment: 2
 PenaltyBreakBeforeFirstCallParameter: 19
-PenaltyBreakComment: 300
-PenaltyBreakFirstLessLess: 120
+PenaltyBreakComment: 500
+PenaltyBreakFirstLessLess: 150
 PenaltyBreakOpenParenthesis: 0
-PenaltyBreakString: 1000
+PenaltyBreakString: 1500
 PenaltyExcessCharacter: 1000000
 PenaltyIndentedWhitespace: 0
 PenaltyReturnTypeOnItsOwnLine: 60
@@ -34,16 +34,23 @@ PointerAlignment: Right
 PPIndentWidth:   -1
 QualifierAlignment: Leave
 ReferenceAlignment: Pointer
-ReflowComments:  true
-RemoveBracesLLVM: false
+ReflowComments:  false
+RemoveBracesLLVM: true
 RemoveParentheses: Leave
-RemoveSemicolon: false
+AlignConsecutiveAssignments: true
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 1
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: false
 RequiresClausePosition: OwnLine
 RequiresExpressionIndentation: OuterScope
 SeparateDefinitionBlocks: Leave
 ShortNamespaceLines: 1
 SortIncludes:    CaseSensitive
-SpaceAfterCStyleCast: false
+SpaceAfterCStyleCast: true
 SpaceAfterLogicalNot: false
 SpaceAroundPointerQualifiers: Default
 SpaceBeforeAssignmentOperators: true

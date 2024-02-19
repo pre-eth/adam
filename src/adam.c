@@ -18,7 +18,7 @@ void adam_setup(adam_data *data, bool generate_dbls, unsigned long long *seed, u
   else
     data->nonce = *nonce;
 
-  data->index = 0;
+    data->index    = 0;
   data->dbl_mode = generate_dbls;
 
   // adam_data() is an internal function for accessing the raw memory used by the RNG
@@ -27,7 +27,7 @@ void adam_setup(adam_data *data, bool generate_dbls, unsigned long long *seed, u
 
 static unsigned long long get_int(adam_data *data, const unsigned char width)
 {
-  const u64 mask = (width == 64) ? __UINT64_MAX__ : ((1UL << width) - 1);
+    const u64 mask   = (width == 64) ? __UINT64_MAX__ : ((1UL << width) - 1);
   register u64 out = buffer[data->index] & mask;
   buffer[data->index] >>= width;
   data->index += (!buffer[data->index]);
@@ -55,10 +55,10 @@ unsigned long long adam_int(adam_data *data, unsigned char width)
 
 static double get_dbl(adam_data *data, const unsigned long long scale)
 {
-  register double out = ((double)buffer[data->index] / (double)__UINT64_MAX__);
+    register double out = ((double) buffer[data->index] / (double) __UINT64_MAX__);
   buffer[data->index] = 0;
   ++data->index;
-  return out * (double)(scale + !scale);
+    return out * (double) (scale + !scale);
 }
 
 static double regen_dbl(adam_data *data, const unsigned long long scale)
@@ -84,7 +84,7 @@ int adam_fill(adam_data *data, void *buf, unsigned char width, const unsigned in
   if (width != 8 && width != 16 && width != 32 && width != 64)
     width = 64;
 
-  const u16 one_run = BUF_SIZE * (64 / width);
+    const u16 one_run   = BUF_SIZE * (64 / width);
   const u32 leftovers = amount & (one_run - 1);
 
   register long limit = amount >> CTZ(one_run);
