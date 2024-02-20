@@ -171,7 +171,7 @@ static void print_dbl()
 
 static u8 dump_buffer()
 {
-    void (*write_fn)() = (!data.dbl_mode) ? &print_int : &print_dbl;
+    void (*write_fn)() = (!dbl_mode) ? &print_int : &print_dbl;
 
     write_fn();
 
@@ -217,27 +217,20 @@ static u8 uuid(const char *strlimit)
 
 static u8 assessf(bool ascii_mode)
 {
-    u32 mult;
+    u32 output_mult;
     fprintf(stderr, "\033[mSequence Size (x1000): \033[1;33m");
-    while (!scanf(" %u", &mult) || mult < 1 || mult > DBL_TESTING_LIMIT) {
+    while (!scanf(" %u", &output_mult) || output_mult < 1 || output_mult > DBL_TESTING_LIMIT) {
         err("Output multiplier must be between [1, " STRINGIFY(DBL_TESTING_LIMIT) "]");
         fprintf(stderr, "\033[mSequence Size (x1000): \033[1;33m");
-    }
-
-    u64 scale_factor = 1;
-    fprintf(stderr, "\033[mScaling factor: \033[1;33m");
-    while (!scanf(" %llu", &scale_factor)) {
-        err("Scaling factor must be within range [1, " STRINGIFY(__UINT64_MAX__) "]");
-        fprintf(stderr, "\033[mScaling factor: \033[1;33m");
     }
 
     const u64 limit = TESTING_DBL * mult;
 
     register double duration;
     if (ascii_mode)
-        duration = dbl_ascii(limit, &data.seed[0], &data.nonce, scale_factor, precision);
+        duration = dbl_ascii(limit, &data.seed[0], &data.nonce, mult, precision);
     else
-        duration = dbl_bytes(limit, &data.seed[0], &data.nonce, scale_factor);
+        duration = dbl_bytes(limit, &data.seed[0], &data.nonce, mult);
 
     fprintf(stderr,
         "\n\033[0mGenerated \033[36m%llu\033[m doubles in \033[36m%lfs\033[m\n",
@@ -265,7 +258,7 @@ static u8 assess()
 
     freopen(file_name, (c == '1') ? "w+" : "wb+", stdout);
 
-    if (data.dbl_mode)
+    if (dbl_mode)
         return assessf(c == '1');
 
     u32 mult;
@@ -305,7 +298,7 @@ static u8 examine(const char *strlimit)
     init_values[4] = rsl.nonce = data.nonce;
 
     // Check for and validate multiplier
-    register u64 limit = TESTING_BITS;
+    register u64 limit = EXAMINE_UNIT;
     if (strlimit != NULL)
         limit *= a_to_u(strlimit, 1, BITS_TESTING_LIMIT);
 
@@ -314,18 +307,19 @@ static u8 examine(const char *strlimit)
 
     print_seq_results(&rsl, limit, &init_values[0]);
 
-    printf("\n\033[1;33mExamination Complete! (%lfs)\033[m\n", duration);
+    printf("\n\033[1;33mExamination Complete! (%lfs)\033[m\n\n", duration);
 
     return 0;
 }
 
 int main(int argc, char **argv)
 {
-    adam_setup(&data, false, NULL, NULL);
+    adam_setup(&data, NULL, NULL);
 
     results   = 1;
     hex       = false;
     octal     = false;
+    dbl_mode  = false;
     precision = 15;
     width     = 64;
     mult      = 0;
@@ -372,17 +366,17 @@ int main(int argc, char **argv)
             dump_buffer();
             return 0;
         case 'f':
-            data.dbl_mode = true;
+            dbl_mode = true;
             continue;
         case 'p':
-            data.dbl_mode = true;
-            precision     = a_to_u(optarg, 1, 15);
+            dbl_mode  = true;
+            precision = a_to_u(optarg, 1, 15);
             if (!precision)
                 return err("Floating point precision must be between [1, 15]");
             continue;
         case 'm':
-            data.dbl_mode = true;
-            mult          = a_to_u(optarg, 1, __UINT64_MAX__);
+            dbl_mode = true;
+            mult     = a_to_u(optarg, 1, __UINT64_MAX__);
             if (!mult)
                 return err("Floating point scaling factor must be between [1, " STRINGIFY(__UINT64_MAX__) "]");
             continue;
