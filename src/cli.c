@@ -1,7 +1,7 @@
 #include <getopt.h>
 #include <stdio.h>
 
-#include "../include/adam.h"
+#include "../include/api.h"
 #include "../include/support.h"
 #include "../include/test.h"
 
@@ -21,9 +21,6 @@ static adam_data data;
 //  Number of bits in results (8, 16, 32, 64)
 static u8 width;
 
-//  Number of decimal places for floating point output (default 15)
-static u8 precision;
-
 //  Print hex?
 static bool hex;
 
@@ -32,6 +29,12 @@ static bool octal;
 
 //  Number of results to return to user (max 1000)
 static u16 results;
+
+// Flag for floating point output
+static u8 dbl_mode;
+
+//  Number of decimal places for floating point output (default 15)
+static u8 precision;
 
 // Multiplier to scale floating point results, if the user wants
 // This returns doubles within range (0, mult)
@@ -78,12 +81,12 @@ static u8 help(void)
 
     const u8 CENTER      = center - 4;
     const u8 INDENT      = indent - 1;                // subtract 1 because it is half of width for arg (ex. "-d")
-    const u8 HELP_INDENT = INDENT + INDENT + 2;       // total indent for help descriptions if they have to go to next line
+    const u8 HELP_INDENT = INDENT + INDENT + 1;       // total indent for help descriptions if they have to go to next line
     const u8 HELP_WIDTH  = swidth - (INDENT * 3) + 3; // max length for help description in COL 2 before it needs to wrap
 
     print_summary(swidth, INDENT);
 
-    printf("\033[%uC[OPTIONS]", CENTER);
+    printf("\033[%uC[OPTIONS]\n", CENTER);
 
     const char ARGS[ARG_COUNT] = {
         'h',
@@ -272,7 +275,7 @@ static u8 assess()
         fprintf(stderr, "\033[mSequence Size (x1000000): \033[1;33m");
     }
 
-    register u64 limit = TESTING_BITS * mult;
+    register u64 limit = ASSESS_UNIT * mult;
 
     if (c == '1')
         duration = stream_ascii(limit, &data.seed[0], &data.nonce);
