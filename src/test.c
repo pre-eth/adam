@@ -1,7 +1,7 @@
 #include "../include/test.h"
 #include "../include/rng.h"
 
-static u32 range_dist[5];
+static u64 range_dist[5];
 static u64 chseed_dist[5];
 static u64 gaps[256];
 static u64 gaplengths[256];

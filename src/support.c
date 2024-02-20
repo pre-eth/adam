@@ -433,11 +433,11 @@ static void print_basic_results(const u16 indent, const u64 limit, rng_test *rsl
 
     printf("\033[1;34m\033[%uC                     Range: \033[m%llu\n", indent, rsl->max - rsl->min);
     printf("\033[1;34m\033[%uC          Range Chi-Square: \033[m\033[1;%um%1.2lf\033[m\n", indent, suspect_level, chi_calc);
-    printf("\033[2m\033[%uC            a.    [0, 2³²): \033[m%u (expected %llu)\n", indent, rsl->range_dist[0], range_exp[0]);
-    printf("\033[2m\033[%uC            b.  [2³², 2⁴⁰): \033[m%u (expected %llu)\n", indent, rsl->range_dist[1], range_exp[1]);
-    printf("\033[2m\033[%uC            c.  [2⁴⁰, 2⁴⁸): \033[m%u (expected %llu)\n", indent, rsl->range_dist[2], range_exp[2]);
-    printf("\033[2m\033[%uC            d.  [2⁴⁸, 2⁵⁶): \033[m%u (expected %llu)\n", indent, rsl->range_dist[3], range_exp[3]);
-    printf("\033[2m\033[%uC            e.  [2⁵⁶, 2⁶⁴): \033[m%u (expected %llu)\n", indent, rsl->range_dist[4], range_exp[4]);
+    printf("\033[2m\033[%uC            a.    [0, 2³²): \033[m%llu (expected %llu)\n", indent, rsl->range_dist[0], range_exp[0]);
+    printf("\033[2m\033[%uC            b.  [2³², 2⁴⁰): \033[m%llu (expected %llu)\n", indent, rsl->range_dist[1], range_exp[1]);
+    printf("\033[2m\033[%uC            c.  [2⁴⁰, 2⁴⁸): \033[m%llu (expected %llu)\n", indent, rsl->range_dist[2], range_exp[2]);
+    printf("\033[2m\033[%uC            d.  [2⁴⁸, 2⁵⁶): \033[m%llu (expected %llu)\n", indent, rsl->range_dist[3], range_exp[3]);
+    printf("\033[2m\033[%uC            e.  [2⁵⁶, 2⁶⁴): \033[m%llu (expected %llu)\n", indent, rsl->range_dist[4], range_exp[4]);
     printf("\033[1;34m\033[%uC              Even Numbers: \033[m%llu (%u%%)\n", indent, output - rsl->odd, (u8) (((double) (output - rsl->odd) / (double) output) * 100));
     printf("\033[1;34m\033[%uC               Odd Numbers: \033[m%u (%u%%)\n", indent, rsl->odd, (u8) (((double) rsl->odd / (double) output) * 100));
     printf("\033[1;34m\033[%uC          Zeroes Generated: \033[m%u\n", indent, rsl->zeroes);

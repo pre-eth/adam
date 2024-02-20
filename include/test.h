@@ -3,7 +3,8 @@
   #include  "defs.h"
   #include  "ent.h"
 
-	#define   TESTING_BITS    	      1000000ULL
+	#define   ASSESS_UNIT    	        1000000ULL
+	#define   EXAMINE_UNIT    	      1000000ULL
 	#define   TESTING_DBL    		      1000ULL
 	#define   BITS_TESTING_LIMIT      8000
 	#define   DBL_TESTING_LIMIT       1500000
@@ -39,7 +40,7 @@
     double avg_gap;
     u64 freq_min;
     u64 freq_max;
-    u32 *range_dist; 
+    u64 *range_dist; 
   } rng_test;
 
   void adam_test(const u64 limit, rng_test *rsl);
