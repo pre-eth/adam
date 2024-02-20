@@ -1,11 +1,11 @@
 BUILD_DIR = ./build
 CC = @gcc
 
-CFLAGS = -Iinclude -O2 -flto 	# -Wall -Wextra -Wpedantic -Werror
+CFLAGS = -Iinclude -Os -flto 	# -Wall -Wextra -Wpedantic -Werror
 UNAME_P := $(shell uname -p)
 
 ifeq ($(UNAME_P), arm)
-	SIMD_FLAGS = -mtune=native -march=native
+	SIMD_FLAGS = -march=native
 else
 	AVX512 := $(grep -o avx512 /proc/cpuinfo)
 	ifeq ($(AVX512), avx512)
@@ -15,21 +15,38 @@ else
 	endif
 endif
  
-LIBRARY = rng adam 
-LIB_OBJ = $(LIBRARY:%=src/%.o)
-CLI = $(LIBRARY) ent test support cli
+STD_LIB = rng api
+LIB_OBJ = $(STD_LIB:%=src/%.o)
+CLI = $(STD_LIB) ent test support cli
 OBJ = $(CLI:%=src/%.o)
 
-%.o: src/%.c 
-	$(CC) $(CFLAGS) -c $^ $(SIMD_FLAGS)
-
-adam: $(OBJ)
+all: cli lib
 	@clang-format -i src/*.c
-	@echo "\033[1;36mBuilding ADAM...\033[m"
 	@mkdir -p $(BUILD_DIR)
-	@ar rcs $(BUILD_DIR)/libadam.a $(LIB_OBJ)
-	$(CC) -o $(BUILD_DIR)/adam $(OBJ)
 	@rm $(OBJ)
+
+%.o: src/%.c 
+	$(CC) $(CFLAGS) $(SIMD_FLAGS) -c $^ 
+
+cli: $(OBJ)
+	@echo "\033[1;36mBuilding ADAM CLI...\033[m"
+	$(CC) -o $(BUILD_DIR)/adam $(OBJ)
 	@echo "\033[1;32mFinished! Run adam -h to get started!\033[m"
-	@cp include/adam.h build/adam.h
-	@cp $(BUILD_DIR)/adam ~/.local/bin/adam
+
+lib: $(LIB_OBJ)
+	@echo "\033[1;36mBuilding ADAM library (standard API)...\033[m"
+	@ar rcs $(BUILD_DIR)/libadam.a $(LIB_OBJ)
+	@cp include/api.h $(BUILD_DIR)/adam.h
+	@echo "\033[1;32mLibrary and header written to \033[m$(BUILD_DIR)"
+	
+minlib: src/rng.o
+	@echo "\033[1;36mBuilding ADAM library (minimal API)...\033[m"
+	$(CC) $(CFLAGS) $(SIMD_FLAGS) -D ADAM_MIN_LIB -c src/rng.c -o src/rng.o
+	@ar rcs $(BUILD_DIR)/libadam.a src/rng.o
+	@cp include/minapi.h $(BUILD_DIR)/adam.h
+	@rm src/rng.o
+	@echo "\033[1;32mLibrary and header written to \033[m$(BUILD_DIR)"
+
+	
+	
+	

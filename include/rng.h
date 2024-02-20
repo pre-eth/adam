@@ -56,7 +56,13 @@
   #define BETA                  10E15
 
   void adam_run(unsigned long long *seed, unsigned long long *nonce);
+
+  /* 
+    Internals function prototypes, only added and defined if building for CLI or regular API
+  */
+#ifndef ADAM_MIN_LIB
+  void adam_connect(unsigned long long **_ptr, double **_chptr);
   void adam_frun(unsigned long long *seed, unsigned long long *nonce, double *buf, const unsigned int amount);
   void adam_fmrun(unsigned long long *seed, unsigned long long *nonce, double *buf, const unsigned int amount, const unsigned long long multiplier);
-  void adam_connect(unsigned long long **_ptr, double **_chptr);
+#endif
 #endif

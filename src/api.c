@@ -1,12 +1,12 @@
 #include <sys/random.h>
 
-#include "../include/adam.h"
+#include "../include/api.h"
 #include "../include/defs.h"
 #include "../include/rng.h"
 
 static u64 *buffer;
 
-void adam_setup(adam_data *data, const bool generate_dbls, unsigned long long *seed, unsigned long long *nonce)
+void adam_setup(adam_data *data, unsigned long long *seed, unsigned long long *nonce)
 {
     if (seed == NULL)
         getentropy(&data->seed[0], sizeof(u64) << 2);
@@ -18,8 +18,7 @@ void adam_setup(adam_data *data, const bool generate_dbls, unsigned long long *s
     else
         data->nonce = *nonce;
 
-    data->index    = 0;
-    data->dbl_mode = generate_dbls;
+    data->index = 0;
 
     // adam_data() is an internal function for accessing the raw memory used by the RNG
     adam_connect(&buffer, NULL);
@@ -50,7 +49,7 @@ unsigned long long adam_int(adam_data *data, unsigned char width)
     if (width != 8 && width != 16 && width != 32 && width != 64)
         width = 64;
 
-    return int_fn[!buffer[BUF_SIZE - 1]](data, width);
+    return int_fn[!buffer[ADAM_BUF_SIZE - 1]](data, width);
 }
 
 static double get_dbl(adam_data *data, const unsigned long long scale)
@@ -110,6 +109,7 @@ int adam_dfill(adam_data *data, double *buf, const unsigned long long multiplier
         return 1;
 
     if (multiplier > 1)
+
         adam_fmrun(data->seed, &data->nonce, buf, amount, multiplier);
     else
         adam_frun(data->seed, &data->nonce, buf, amount);

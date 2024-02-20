@@ -1,7 +1,5 @@
-#ifndef ADAM_H
-#define ADAM_H
-	#include <stdbool.h>
-
+#ifndef ADAM_API_H
+#define ADAM_API_H
 #ifdef __AARCH64_SIMD__
   #define ADAM_ALIGNMENT    64
 #else
@@ -14,11 +12,10 @@
 
   #define ADAM_BUF_SIZE     256
 
+  /*    STANDARD API    */
+
   // Data for RNG process
   typedef struct adam_data {
-    //  Output type (0 = INT, 1 = DOUBLE)
-    bool dbl_mode; 
-
     //  Current index in output vector
     unsigned char index;       
 
@@ -40,7 +37,7 @@
     Otherwise, the caller must ensure that <seed> points to 256-bits of data,
     and that nonce points to a u64.
   */
-  void adam_setup(adam_data *data, const bool generate_dbls, unsigned long long *seed, unsigned long long *nonce);
+  void adam_setup(adam_data *data, unsigned long long *seed, unsigned long long *nonce);
 
   /*
     Returns a random unsigned integer of the specified <width>.
