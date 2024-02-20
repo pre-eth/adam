@@ -405,10 +405,13 @@ static void print_basic_results(const u16 indent, const u64 limit, rng_test *rsl
         unit = "KB";
     }
 
-    printf("\033[1;34m\033[%uC              Total Output: \033[m%llu u64 (%llu u32 | %llu u16 | %llu u8)\n", indent, output, output << 1, output << 2, output << 3);
-    printf("\033[1;34m\033[%uC       Sequences Generated: \033[m%u\n", indent, rsl->sequences);
     printf("\033[1;34m\033[%uC               Sample Size: \033[m%llu BITS (%llu%s)\n", indent, limit, bytes, unit);
     printf("\033[1;34m\033[%uC         Monobit Frequency: \033[m%u ONES, %u ZEROES (+%u %s)\n", indent, rsl->mfreq, zeroes, diff, (zeroes > rsl->mfreq) ? "ZEROES" : "ONES");
+    printf("\033[1;34m\033[%uC       Sequences Generated: \033[m%u\n", indent, rsl->sequences);
+    printf("\033[2m\033[%uC                    a. u64: \033[m%llu numbers\n", indent, output);
+    printf("\033[2m\033[%uC                    b. u32: \033[m%llu numbers\n", indent, output << 1);
+    printf("\033[2m\033[%uC                    c. u16: \033[m%llu numbers\n", indent, output << 2);
+    printf("\033[2m\033[%uC                    d.  u8: \033[m%llu numbers\n", indent, output << 3);
     printf("\033[1;34m\033[%uC             Minimum Value: \033[m%llu\n", indent, rsl->min);
     printf("\033[1;34m\033[%uC             Maximum Value: \033[m%llu\n", indent, rsl->max);
 
@@ -500,7 +503,7 @@ void print_seq_results(rng_test *rsl, const u64 limit, const u64 *init_values)
 {
     u16 center, indent, swidth;
     get_print_metrics(&center, &indent, &swidth);
-    indent += (indent >> 1);
+    indent <<= 1;
 
     printf("\033[%uC[RESULTS]\n\n", center - 4);
 

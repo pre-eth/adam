@@ -215,10 +215,10 @@ static u8 uuid(const char *strlimit)
 static u8 assessf(bool ascii_mode)
 {
     u32 mult;
-    fprintf(stderr, "\033[mSequence Size (x 1000): \033[1;33m");
+    fprintf(stderr, "\033[mSequence Size (x1000): \033[1;33m");
     while (!scanf(" %u", &mult) || mult < 1 || mult > DBL_TESTING_LIMIT) {
         err("Output multiplier must be between [1, " STRINGIFY(DBL_TESTING_LIMIT) "]");
-        fprintf(stderr, "\033[mSequence Size (x 1000): \033[1;33m");
+        fprintf(stderr, "\033[mSequence Size (x1000): \033[1;33m");
     }
 
     u64 scale_factor = 1;
@@ -266,10 +266,10 @@ static u8 assess()
         return assessf(c == '1');
 
     u32 mult;
-    fprintf(stderr, "\033[mSequence Size (x 1000000): \033[1;33m");
+    fprintf(stderr, "\033[mSequence Size (x1000000): \033[1;33m");
     while (!scanf(" %u", &mult) || mult < 1 || mult > BITS_TESTING_LIMIT) {
         err("Output multiplier must be between [1, " STRINGIFY(BITS_TESTING_LIMIT) "]");
-        fprintf(stderr, "\033[mSequence Size (x 1000000): \033[1;33m");
+        fprintf(stderr, "\033[mSequence Size (x1000000): \033[1;33m");
     }
 
     register u64 limit = TESTING_BITS * mult;

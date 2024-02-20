@@ -4,7 +4,7 @@
 #include "../include/defs.h"
 #include "../include/rng.h"
 
-static u64 *restrict buffer;
+static u64 *buffer;
 
 void adam_setup(adam_data *data, const bool generate_dbls, unsigned long long *seed, unsigned long long *nonce)
 {
