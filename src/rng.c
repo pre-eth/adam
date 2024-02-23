@@ -224,8 +224,13 @@ static void apply()
     chaotic_iter(512, 0, 16);
 }
 
+static void mix()
 {
-    const u16 limit = dest + 88;
+    const u16 limit = BUF_SIZE;
+
+    u16 dest  = 0;
+    u16 map_a = BUF_SIZE;
+    u16 map_b = BUF_SIZE << 1;
 
 #ifdef __AARCH64_SIMD__
     reg64q4 r1, r2, r3;
@@ -240,6 +245,11 @@ static void apply()
         map_b += 8;
     } while (dest < limit);
 #else
+#define XOR_MAPS(i) buffer[0 + i] ^ buffer[0 + i + 256] ^ buffer[0 + i + 512], \
+                    buffer[1 + i] ^ buffer[1 + i + 256] ^ buffer[1 + i + 512], \
+                    buffer[2 + i] ^ buffer[2 + i + 256] ^ buffer[2 + i + 512], \
+                    buffer[3 + i] ^ buffer[3 + i + 256] ^ buffer[3 + i + 512]
+
     reg r1, r2;
 
     do {
