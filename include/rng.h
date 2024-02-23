@@ -35,7 +35,7 @@
     because of the compressed nature of the implementation compared
     to the original implementation
   */
-  #define ROUNDS                8
+  #define ROUNDS                6
 
   /*
     The CSPRNG algorithm is based on the construction of three 
@@ -53,7 +53,7 @@
     BETA is derived from the length of the significant digits
     ADAM uses the max double accuracy length of 15
   */
-  #define BETA                  10E15
+  #define BETA                  10E18
 
   void adam_run(unsigned long long *seed, unsigned long long *nonce);
 

@@ -443,7 +443,7 @@ static void print_basic_results(const u16 indent, const u64 limit, rng_test *rsl
     printf("\033[1;34m\033[%uC          Zeroes Generated: \033[m%u\n", indent, rsl->zeroes);
     printf("\033[1;34m\033[%uC    256-bit Seed (u64 x 4): \033[m0x%016llX, 0x%016llX,\n", indent, init_values[0], init_values[1]);
     printf("\033[%uC                            0x%016llX, 0x%016llX\n", indent, init_values[2], init_values[3]);
-    printf("\033[1;34m\033[%uC              64-bit Nonce: \033[m0x%16llX\n", indent, init_values[4]);
+    printf("\033[1;34m\033[%uC              64-bit Nonce: \033[m0x%016llX\n", indent, init_values[4]);
     printf("\033[1;34m\033[%uC        Average Gap Length: \033[m%llu\n", indent, (u64) rsl->avg_gap);
     printf("\033[1;34m\033[%uC      Total Number of Runs: \033[m%u\n", indent, rsl->up_runs + rsl->down_runs);
     printf("\033[2m\033[%uC            a.  Increasing: \033[m%u\n", indent, rsl->up_runs);
