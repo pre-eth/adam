@@ -6,6 +6,7 @@
 #define DIV   5.4210109E-20
 #define LIMIT 0.5
 
+// For diffusing the buffer
 #define ISAAC_MIX(a, b, c, d, e, f, g, h) \
     {                                     \
         a -= e;                           \
@@ -34,8 +35,8 @@
         g += h;                           \
     }
 
-// Slightly modified versions of macros from ISAAC for reseeding ADAM
-#define ISAAC_IND(mm, x) (*(u64 *) ((u8 *) (mm) + ((x) & 2047)))
+// Slightly modified macro from ISAAC for reseeding ADAM
+#define ISAAC_IND(mm, x) (*(u64 *) ((u8 *) (mm) + (4096 + (x & 2047))))
 #define ISAAC_RNGSTEP(mx, a, b, mm, m, m2, x, y)                         \
     {                                                                    \
         x      = (m << 24) | (~((m >> 40) ^ __UINT64_MAX__) & 0xFFFFFF); \
@@ -43,16 +44,6 @@
         m      = (ISAAC_IND(mm, x) + a + b);                             \
         y ^= b = ISAAC_IND(mm, y >> MAGNITUDE) + x;                      \
     }
-
-// For calculating each round's initial index for loading chseeds
-#define DET(c, i) (((c + i) & 3) << 3)
-
-#ifndef __AARCH64_SIMD__
-#define XOR_MAPS(i) buffer[0 + i] ^ buffer[0 + i + 256] ^ buffer[0 + i + 512], \
-                    buffer[1 + i] ^ buffer[1 + i + 256] ^ buffer[1 + i + 512], \
-                    buffer[2 + i] ^ buffer[2 + i + 256] ^ buffer[2 + i + 512], \
-                    buffer[3 + i] ^ buffer[3 + i + 256] ^ buffer[3 + i + 512]
-#endif
 
 /*
   The algorithm requires at least the construction of 3 maps of size BUF_SIZE
@@ -69,14 +60,11 @@
   static is important because otherwise buffer is initiated with junk that
   removes the deterministic nature of the algorithm
 */
-static u64 buffer[BUF_SIZE + 8] ALIGN(SIMD_LEN);
+static unsigned long long buffer[BUF_SIZE * 3] ALIGN(SIMD_LEN);
 
 // Seeds supplied to each iteration of the chaotic function
 // Per each round, 8 consecutive chseeds are supplied
 static double chseeds[ROUNDS << 2] ALIGN(SIMD_LEN);
-
-// State variables
-static u64 aa, bb, cc;
 
 /*
     8 64-bit IV's that correspond to the verse:
