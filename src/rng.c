@@ -46,19 +46,19 @@
     }
 
 /*
-  The algorithm requires at least the construction of 3 maps of size BUF_SIZE
-  Offsets logically represent each individual map, but it's all one buffer.
+    The algorithm requires at least the construction of 3 maps of size BUF_SIZE
+    Offsets logically represent each individual map, but it's all one buffer.
 
-  This was originally implemented as an array of sizeof(u64) * BUF_SIZE * 3
-  bytes, but further optimization and testing found that the security and
-  statistical qualities were still preserved so long as the core algorithm
-  was not changed, meaning a slightyly modified approach with an extra
-  chaotic iteration allowed me to reduce the size of the buffer to just
-  sizeof(u64) * 264, where the three "maps" are now logically represented as
-  three subsections in the buffer, each of size 88 u64.
+    This was originally implemented as an array of sizeof(u64) * BUF_SIZE * 3
+    bytes, but further optimization and testing found that the security and
+    statistical qualities were still preserved so long as the core algorithm
+    was not changed, meaning a slightyly modified approach with an extra
+    chaotic iteration allowed me to reduce the size of the buffer to just
+    sizeof(u64) * 264, where the three "maps" are now logically represented as
+    three subsections in the buffer, each of size 88 u64.
 
-  static is important because otherwise buffer is initiated with junk that
-  removes the deterministic nature of the algorithm
+    static is important because otherwise buffer is initiated with junk that
+    removes the deterministic nature of the algorithm
 */
 static unsigned long long buffer[BUF_SIZE * 3] ALIGN(SIMD_LEN);
 
@@ -300,6 +300,25 @@ void adam_run(unsigned long long *seed, unsigned long long *nonce)
     mix();
     reseed(seed, nonce);
 }
+
+/*  ALGORITHM ENDS HERE. FOLLOWING IS ALL API RELATED STUFF  */
+
+#ifdef ADAM_MIN_LIB
+void adam(unsigned long long *_ptr, unsigned long long *seed, unsigned long long *nonce)
+{
+    adam_run(seed, nonce);
+    MEMCPY(&_ptr[0], &buffer[0], sizeof(u64) * BUF_SIZE);
+}
+#else
+void adam_connect(unsigned long long **_ptr, double **_chptr)
+{
+    *_ptr = &buffer[0];
+
+    if (_chptr != (void *) 0)
+        *_chptr = &chseeds[0];
+}
+
+static void dbl_simd_fill(double *buf, u64 *seed, u64 *nonce, const u16 amount)
 {
     adam_run(seed, nonce);
     register u16 i = 0;
@@ -340,7 +359,7 @@ void adam_run(unsigned long long *seed, unsigned long long *nonce)
 #endif
 }
 
-static void dbl_simd_fill_mult(double *buf, u64 *seed, u64 *nonce, u16 amount, const u64 multiplier)
+static void dbl_simd_fill_mult(double *buf, u64 *seed, u64 *nonce, const u16 amount, const u64 multiplier)
 {
     adam_run(seed, nonce);
     register u16 i = 0;
@@ -383,33 +402,6 @@ static void dbl_simd_fill_mult(double *buf, u64 *seed, u64 *nonce, u16 amount, c
 #endif
     } while ((i += 8) < amount);
 #endif
-}
-
-void adam_run(unsigned long long *seed, unsigned long long *nonce)
-{
-    register u64 _nonce = *nonce;
-    cc += _nonce ^ (seed[~_nonce & 3] ^ buffer[256 + (cc & 7)]);
-
-    accumulate(seed);
-    diffuse(_nonce);
-    apply(0, DET(cc, 0));
-    mix(0, 88, 176);
-    apply(88, DET(cc, 1));
-    mix(88, 0, 176);
-    apply(176, DET(cc, 2));
-    mix(176, 0, 88);
-    apply(0, DET(cc, 3));
-
-    ISAAC_RNGSTEP(~(aa ^ (aa << 21)), aa, bb, buffer, buffer[256], buffer[260],
-        seed[0], _nonce);
-    ISAAC_RNGSTEP(aa ^ (aa >> 5), aa, bb, buffer, buffer[257], buffer[261],
-        seed[1], _nonce);
-    ISAAC_RNGSTEP(aa ^ (aa << 12), aa, bb, buffer, buffer[258], buffer[262],
-        seed[2], _nonce);
-    ISAAC_RNGSTEP(aa ^ (aa >> 33), aa, bb, buffer, buffer[259], buffer[263],
-        seed[3], _nonce);
-
-    *nonce = _nonce;
 }
 
 void adam_frun(unsigned long long *seed, unsigned long long *nonce, double *buf, const unsigned int amount)
@@ -456,11 +448,4 @@ void adam_fmrun(unsigned long long *seed, unsigned long long *nonce, double *buf
         } while (++count < amount);
     }
 }
-
-void adam_connect(unsigned long long **_ptr, double **_chptr)
-{
-    *_ptr = &buffer[0];
-
-    if (_chptr != (void *) 0)
-        *_chptr = &chseeds[0];
-}
+#endif
