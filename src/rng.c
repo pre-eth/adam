@@ -77,50 +77,42 @@ static u64 IV[8] ALIGN(SIMD_LEN) = {
     0x68202847656E6573, 0x697320313A323829
 };
 
-static void accumulate(const u64 *seed)
+static void accumulate(u64 *seed)
 {
-    // IV[0] ^= seed[(det + 1) & 3];
-    // IV[1] ^= ~seed[(det + 3) & 3];
-    // IV[2] ^= seed[(det + 2) & 3];
-    // IV[3] ^= ~seed[det & 3];
-    // IV[4] ^= seed[(det + 3) & 3];
-    // IV[5] ^= ~seed[det & 3];
-    // IV[6] ^= seed[(det + 2) & 3];
-    // IV[7] ^= ~seed[(det + 1) & 3];
-
     IV[0] ^= seed[0];
     IV[1] ^= seed[1];
-    IV[2] ^= seed[3];
-    IV[3] ^= seed[2];
+    IV[2] ^= seed[2];
+    IV[3] ^= seed[3];
     IV[4] ^= seed[0];
-    IV[5] ^= seed[2];
-    IV[6] ^= seed[1];
+    IV[5] ^= seed[1];
+    IV[6] ^= seed[2];
     IV[7] ^= seed[3];
 
-    register u8 i = 0;
+    register u8 i       = 0;
+    register u16 offset = BUF_SIZE + (buffer[767] & 0xFF);
 
 #ifdef __AARCH64_SIMD__
     reg64q4 r1 = SIMD_LOAD64x4(&IV[0]);
-    reg64q4 r2 = SIMD_LOAD64x4(&buffer[256]);
+    reg64q4 r2;
 
     const dregq range = SIMD_SETQPD(DIV * LIMIT);
     dreg4q seeds;
 
     do {
-        SIMD_ADD4RQ64(r2, r1, r2);
-        r1.val[0] = vrax1q_u64(r1.val[0], r2.val[0]);
-        r1.val[1] = vrax1q_u64(r1.val[1], r2.val[1]);
-        r1.val[2] = vrax1q_u64(r1.val[2], r2.val[2]);
-        r1.val[3] = vrax1q_u64(r1.val[3], r2.val[3]);
         SIMD_CAST4QPD(seeds, r1);
         SIMD_MUL4QPD(seeds, seeds, range);
         SIMD_STORE4PD(&chseeds[i << 3], seeds);
-    } while (++i < (ROUNDS >> 1));
+        r2 = SIMD_LOAD64x4(&buffer[offset]);
+        SIMD_ADD4RQ64(r1, r1, r2);
+        offset += 8;
+    } while (++i < (ROUNDS / 2));
+
+    SIMD_STORE64x4(&IV[0], r2);
 #else
     const regd factor = SIMD_SETPD(DIV * LIMIT);
 
     reg r1 = SIMD_LOADBITS(&IV[0]);
-    reg r2 = SIMD_LOADBITS(&buffer[256]);
+    reg r2 = SIMD_LOADBITS(&buffer[BUF_SIZE]);
 
     do {
         r2 = SIMD_ADD64(r1, r2);
