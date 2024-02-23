@@ -275,7 +275,31 @@ static void mix()
 #endif
 }
 
-static void dbl_simd_fill(double *buf, u64 *seed, u64 *nonce, u16 amount)
+static void reseed(u64 *seed, u64 *nonce)
+{
+    // static u8 byte_idx;
+
+    // const u8 next = byte_idx + !(byte_idx & 32) - (byte_idx & 32);
+
+    // ++seed[byte_idx];
+    // seed[next] += !seed[byte_idx];
+    // byte_idx += (!seed[byte_idx] & !(byte_idx & 32)) - (byte_idx & 32) * !seed[byte_idx];
+
+    seed[0] ^= ISAAC_IND(buffer, seed[0]);
+    seed[1] ^= ISAAC_IND(buffer, seed[1]);
+    seed[2] ^= ISAAC_IND(buffer, seed[2]);
+    seed[3] ^= ISAAC_IND(buffer, seed[3]);
+    *nonce = ISAAC_IND(buffer, *nonce) + 1;
+}
+
+void adam_run(unsigned long long *seed, unsigned long long *nonce)
+{
+    accumulate(seed);
+    diffuse(*nonce);
+    apply();
+    mix();
+    reseed(seed, nonce);
+}
 {
     adam_run(seed, nonce);
     register u16 i = 0;
