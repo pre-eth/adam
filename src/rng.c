@@ -125,11 +125,12 @@ static void accumulate(u64 *seed)
 #endif
 }
 
-static void diffuse(const u64 nonce)
+static void diffuse(u64 nonce)
 {
     u64 a, b, c, d, e, f, g, h;
-    a = b = c = d = e = f = g = h = nonce;
+    a = b = c = d = e = f = g = h = (nonce << 32) | ~(nonce >> 32);
 
+    // Scramble
     register u16 i = 0;
     for (; i < 4; ++i)
         ISAAC_MIX(a, b, c, d, e, f, g, h);
