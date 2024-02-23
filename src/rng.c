@@ -159,9 +159,9 @@ static void diffuse(u64 nonce)
     } while ((i += 8) < BUF_SIZE);
 }
 
-static void apply(u16 idx, const u8 rounds)
+static void chaotic_iter(u16 idx, u16 start, const u8 rounds)
 {
-    const u16 limit = idx + 88;
+    const u16 limit = idx + BUF_SIZE;
 
 #ifdef __AARCH64_SIMD__
     const dregq one   = SIMD_SETQPD(1.0);
@@ -187,7 +187,8 @@ static void apply(u16 idx, const u8 rounds)
         SIMD_CAST4Q64(r1, d2);
         r2 = SIMD_LOAD64x4(&buffer[idx]);
         SIMD_XOR4RQ64(r1, r1, r2);
-        SIMD_STORE64x4(&buffer[idx], r1);
+        SIMD_STORE64x4(&buffer[start], r1);
+        start += 8;
     } while ((idx += 8) < limit);
 #else
     const regd beta        = SIMD_SETQPD(BETA);
@@ -209,15 +210,20 @@ static void apply(u16 idx, const u8 rounds)
 
         // Cast, XOR, and store
         r1 = SIMD_CASTPD(d2);
-        r2 = SIMD_LOADBITS((reg *) &buffer[idx])
-            r1
-            = SIMD_XORBITS(r1, r2);
+        r2 = SIMD_LOADBITS((reg *) &buffer[idx]);
+        r1 = SIMD_XORBITS(r1, r2);
         SIMD_STOREBITS((reg *) &buffer[idx], r1);
     } while ((idx += 8) < limit);
 #endif
 }
 
-static void mix(u16 dest, u16 map_a, u16 map_b)
+static void apply()
+{
+    chaotic_iter(0, 256, 0);
+    chaotic_iter(256, 512, 8);
+    chaotic_iter(512, 0, 16);
+}
+
 {
     const u16 limit = dest + 88;
 
