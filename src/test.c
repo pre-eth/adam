@@ -125,9 +125,22 @@ static void test_loop(rng_test *rsl)
     chseed_unif(rsl->chseeds, &rsl->avg_chseed);
 
     register u16 i = 0;
+    register double d;
     u64 num;
     do {
         num = rsl->buffer[i];
+
+        // Records the Hamming Distance between this number and the number that
+        // was in the same index in the buffer during the previous iteration
+        ham(num);
+
+        // Convert this number to float with same logic used for returning FP results
+        // Then record float for FP freq distribution in (0.0, 1.0)
+        rsl->avg_fp += d = ((double) num / (double) __UINT64_MAX__);
+        ++fpfreq_dist[(u8) (d * 10.0)];
+        ++fpf_quadrants[(d >= 0.25) + (d >= 0.5) + (d >= 0.75)];
+
+        // Record range that this number falls in
         ++range_dist[(num >= __UINT32_MAX__) + (num >= (1ULL << 40)) + (num >= (1ULL << 48)) + (num >= (1ULL << 56))];
 
         // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
@@ -135,11 +148,13 @@ static void test_loop(rng_test *rsl)
         rsl->max = rsl->max ^ ((rsl->max ^ num) & -(rsl->max < num));
 
         rsl->odd += (num & 1);
-        rsl->zeroes += (num < 0);
         rsl->mfreq += POPCNT(num);
 
         // Tracks the amount of runs AND longest run, both increasing and decreasing
         tally_runs(num, rsl);
+
+        // Tracks the amount of runs AND longest runs for the bits in this number
+        tally_bitruns(num, rsl);
 
         // Checks gap lengths
         gap_lengths(num);
@@ -147,6 +162,8 @@ static void test_loop(rng_test *rsl)
         // Calls into ENT framework, updating all the stuff there
         ent_test((u8 *) &num);
     } while (++i < BUF_SIZE);
+
+    MEMCPY(&copy[0], &rsl->buffer[0], sizeof(u64) * BUF_SIZE);
 }
 
 void adam_test(const u64 limit, rng_test *rsl)
@@ -154,8 +171,8 @@ void adam_test(const u64 limit, rng_test *rsl)
     register long int rate   = limit >> 14;
     register short leftovers = limit & (SEQ_SIZE - 1);
 
-    rsl->avg_chseed = 0.0;
-    rsl->mfreq = rsl->zeroes = rsl->up_runs = rsl->longest_up = rsl->down_runs = rsl->longest_down = rsl->odd = 0;
+    rsl->avg_chseed = rsl->avg_fp = 0.0;
+    rsl->mfreq = rsl->up_runs = rsl->longest_up = rsl->down_runs = rsl->longest_down = rsl->one_runs = rsl->longest_one = rsl->zero_runs = rsl->longest_zero = rsl->odd = 0;
 
     rsl->sequences       = rate + !!(leftovers);
     rsl->expected_chseed = rsl->sequences * (ROUNDS << 2);
@@ -178,16 +195,21 @@ void adam_test(const u64 limit, rng_test *rsl)
     register u16 i = 0;
 
     register u64 tmp;
-    rsl->freq_max = rsl->freq_min = rsl->ent->freq[0];
     for (; i < BUF_SIZE; ++i) {
         tmp = rsl->ent->freq[i];
         average_gaplength += ((double) gaplengths[i] / (double) (tmp - 1));
-        rsl->freq_min = tmp ^ ((rsl->freq_min ^ tmp) & -(rsl->freq_min < tmp));
-        rsl->freq_max = rsl->freq_max ^ ((rsl->freq_max ^ tmp) & -(rsl->freq_max < tmp));
+        update_lcb(i, rsl->ent->freq);
+        update_mcb(i, rsl->ent->freq);
     }
 
     rsl->avg_gap = average_gaplength / 256.0;
+    rsl->avg_fp /= (rsl->sequences << 8);
+    rsl->hamming_dist = hamming_distance / (double) rsl->sequences;
 
     rsl->chseed_dist = &chseed_dist[0];
     rsl->range_dist  = &range_dist[0];
+    rsl->fpf_dist    = &fpfreq_dist[0];
+    rsl->fpf_quad    = &fpf_quadrants[0];
+    rsl->mcb         = &mcb[0];
+    rsl->lcb         = &lcb[0];
 }
