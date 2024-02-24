@@ -62,25 +62,50 @@ static void tally_runs(const u64 num, rng_test *rsl)
     static u64 curr_up, curr_down, prev;
 
     if (num > prev) {
-        const u8 flag = (direction != 0);
-        rsl->up_runs += flag;
-        if (flag) {
+        if (direction != 0) {
+            ++rsl->up_runs;
             rsl->longest_down = rsl->longest_down ^ ((rsl->longest_down ^ curr_down) & -(rsl->longest_down < curr_down));
             curr_down         = 0;
+            direction         = 0;
         }
         ++curr_up;
-        direction = 0;
     } else if (num < prev) {
-        const u8 flag = (direction != 1);
-        rsl->down_runs += flag;
-        if (flag) {
+        if (direction != 1) {
+            ++rsl->down_runs;
             rsl->longest_up = rsl->longest_up ^ ((rsl->longest_up ^ curr_up) & -(rsl->longest_up < curr_up));
             curr_up         = 0;
+            direction       = 1;
         }
         ++curr_down;
-        direction = 1;
     }
     prev = num;
+}
+
+static void tally_bitruns(u64 num, rng_test *rsl)
+{
+    // 0 = 0, 1 = 1, -1 = init
+    static short direction = -1;
+    static u64 curr_zero, curr_one;
+
+    do {
+        if (num & 1) {
+            if (direction != 1) {
+                ++rsl->one_runs;
+                rsl->longest_zero = rsl->longest_zero ^ ((rsl->longest_zero ^ curr_zero) & -(rsl->longest_zero < curr_zero));
+                curr_zero         = 0;
+                direction         = 1;
+            }
+            ++curr_one;
+        } else {
+            if (direction != 0) {
+                ++rsl->zero_runs;
+                rsl->longest_one = rsl->longest_one ^ ((rsl->longest_one ^ curr_one) & -(rsl->longest_one < curr_one));
+                curr_one         = 0;
+                direction        = 0;
+            }
+            ++curr_zero;
+        }
+    } while (num >>= 1);
 }
 
 static void chseed_unif(double *chseeds, double *avg_chseed)
