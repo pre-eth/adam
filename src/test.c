@@ -1,10 +1,42 @@
 #include "../include/test.h"
 #include "../include/rng.h"
 
-static u64 range_dist[5];
-static u64 chseed_dist[5];
+static u64 copy[BUF_SIZE];
+static u64 range_dist[RANGE_CAT];
+static u64 chseed_dist[CHSEED_CAT];
 static u64 gaps[256];
 static u64 gaplengths[256];
+static u8 lcb[5], mcb[5];
+static u64 fpfreq_dist[FPF_CAT];
+static u64 fpf_quadrants[4];
+static double hamming_distance;
+
+static void ham(const u64 num)
+{
+    static u8 i;
+    hamming_distance += POPCNT(copy[i] ^ num);
+    ++i;
+}
+
+static void update_mcb(const u8 idx, const u64 *freq)
+{
+    register short i = 3;
+    while (freq[idx] > freq[mcb[i]] && i >= 0) {
+        mcb[i + 1] = mcb[i];
+        --i;
+    }
+    mcb[i + 1] = idx;
+}
+
+static void update_lcb(const u8 idx, const u64 *freq)
+{
+    register short i = 3;
+    while (freq[idx] < freq[lcb[i]] && i >= 0) {
+        lcb[i + 1] = lcb[i];
+        --i;
+    }
+    lcb[i + 1] = idx;
+}
 
 static void gap_lengths(u64 num)
 {
