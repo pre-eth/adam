@@ -74,15 +74,29 @@ static void print_summary(const u16 swidth, const u16 indent)
     printf("\n\n");
 }
 
+static u8 nearest_space(const char *str, u8 offset)
+{
+    register u8 a = offset;
+    register u8 b = offset;
+
+    while (str[a] && str[a] != ' ')
+        --a;
+
+    while (str[b] && str[b] != ' ')
+        ++b;
+
+    return (b - offset < offset - a) ? b : a;
+}
+
 static u8 help(void)
 {
     u16 center, indent, swidth;
     get_print_metrics(&center, &indent, &swidth);
 
     const u8 CENTER      = center - 4;
-    const u8 INDENT      = indent - 1;                // subtract 1 because it is half of width for arg (ex. "-d")
-    const u8 HELP_INDENT = INDENT + INDENT + 1;       // total indent for help descriptions if they have to go to next line
-    const u8 HELP_WIDTH  = swidth - (INDENT * 3) + 3; // max length for help description in COL 2 before it needs to wrap
+    const u8 INDENT      = indent - 1;                    // subtract 1 because it is half of width for arg (ex. "-d")
+    const u8 HELP_INDENT = INDENT + INDENT + 1;           // total indent for help descriptions if they have to go to next line
+    const u8 HELP_WIDTH  = swidth - HELP_INDENT - indent; // max length for help description in COL 2 before it needs to wrap
 
     print_summary(swidth, INDENT);
 
@@ -131,17 +145,12 @@ static u8 help(void)
     register short len;
     register u16 line_width;
     for (u8 i = 0; i < ARG_COUNT; ++i) {
-        line_width = HELP_WIDTH;
-        if (lengths[i] > line_width)
-            while (ARGSHELP[i][--line_width] != ' ')
-                ;
+        line_width = nearest_space(ARGSHELP[i], HELP_WIDTH);
         printf("\n\033[%uC\033[1;33m-%c\033[m\033[%uC%.*s", INDENT, ARGS[i], INDENT, line_width, ARGSHELP[i]);
         len = lengths[i] - line_width;
         while (len > 0) {
             ARGSHELP[i] += line_width;
-            if (len > line_width)
-                while (ARGSHELP[i][--line_width] != ' ')
-                    ;
+            line_width = nearest_space(ARGSHELP[i], HELP_WIDTH);
             printf("\n\033[%uC%.*s", HELP_INDENT, line_width, ARGSHELP[i]);
             len -= line_width;
         }
