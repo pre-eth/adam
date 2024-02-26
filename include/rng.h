@@ -50,8 +50,8 @@
   #define COEFFICIENT           3.9999      
 
   /* 
-    BETA is derived from the length of the significant digits
-    ADAM uses the max double accuracy length of 15
+    BETA is derived from the number of digits we'd like to pull from the mantissa
+    before converting a chaotic seed output to an integer value
   */
   #define BETA                  10E18
 

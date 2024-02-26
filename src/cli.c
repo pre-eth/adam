@@ -131,8 +131,8 @@ static u8 help(void)
         "Dump entire buffer using the specified width (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)",
         "Desired alternative size (u8, u16, u32) of returned numbers. Default width is u64",
         "Just bits... literally",
-        "Write an ASCII or binary sample of bits/doubles to file for external assessment. You can choose a multiplier to output up to 1GB of bits, or 1 billion doubles (with optional scaling factor), at a time",
-        "Examine a sample of 1000000 bits (1 Mb) with the ENT framework and log some statistical properties of the output sequence. You can choose a multiplier within [1, " STRINGIFY(BITS_TESTING_LIMIT) "] to examine up to 1GB at a time",
+        "Write an ASCII or binary sample of bits/doubles to file for external assessment. You can choose a multiplier to output up to 100GB of bits, or 1 billion doubles (with optional scaling factor), at a time",
+        "Examine a sample of 1MB with the ENT framework and some other statistical tests to reveal properties of the output sequence. You can choose a multiplier within [1, " STRINGIFY(BITS_TESTING_LIMIT) "] to examine up to 100GB at a time",
         "Print numbers in hexadecimal format with leading prefix",
         "Print numbers in octal format with leading prefix",
         "Enable floating point mode to generate doubles in (0, 1) instead of integers",
@@ -140,7 +140,7 @@ static u8 help(void)
         "Multiplier for randomly generated doubles, such that they fall in the range (0, <MULTIPLIER>)"
     };
 
-    const u8 lengths[ARG_COUNT] = { 25, 33, 119, 124, 109, 116, 91, 81, 22, 200, 197, 55, 49, 76, 100, 93 };
+    const u8 lengths[ARG_COUNT] = { 25, 33, 119, 124, 109, 116, 91, 81, 22, 202, 204, 55, 49, 76, 100, 93 };
 
     register short len;
     register u16 line_width;
@@ -227,19 +227,22 @@ static u8 uuid(const char *strlimit)
 static u8 assessf(bool ascii_mode)
 {
     u32 output_mult;
-    fprintf(stderr, "\033[mSequence Size (x 1000): \033[1;33m");
-    while (!scanf(" %u", &output_mult) || output_mult < 1 || output_mult > DBL_TESTING_LIMIT) {
-        err("Output multiplier must be between [1, " STRINGIFY(DBL_TESTING_LIMIT) "]");
+    while (true) {
         fprintf(stderr, "\033[mSequence Size (x 1000): \033[1;33m");
+        if (!scanf(" %u", &output_mult) || output_mult < 1 || output_mult > DBL_TESTING_LIMIT) {
+            err("Output multiplier must be between [1, " STRINGIFY(DBL_TESTING_LIMIT) "]");
+            continue;
+        }
+        break;
     }
 
-    const u64 limit = TESTING_DBL * mult;
+    const u64 limit = TESTING_DBL * output_mult;
 
     register double duration;
     if (ascii_mode)
-        duration = dbl_ascii(limit, &data.seed[0], &data.nonce, mult, precision);
+        duration = dbl_ascii(limit, &data.seed[0], &data.nonce, output_mult, precision);
     else
-        duration = dbl_bytes(limit, &data.seed[0], &data.nonce, mult);
+        duration = dbl_bytes(limit, &data.seed[0], &data.nonce, output_mult);
 
     fprintf(stderr,
         "\n\033[0mGenerated \033[36m%llu\033[m doubles in \033[36m%lfs\033[m\n",
@@ -251,18 +254,25 @@ static u8 assessf(bool ascii_mode)
 static u8 assess()
 {
     char file_name[65];
-    fprintf(stderr, "File name: \033[1;33m");
-    while (!scanf(" %64s", &file_name[0]))
-        err("Please enter a valid file name");
+    while (true) {
+        fprintf(stderr, "File name: \033[1;33m");
+        if (!scanf(" %64s", &file_name[0])) {
+            err("Please enter a valid file name");
+            continue;
+        }
+        break;
+    }
 
     register double duration = 0.0;
 
     char c = '0';
-
-    fprintf(stderr, "\033[mOutput type (1 = ASCII, 2 = BINARY): \033[1;33m");
-    while (!scanf(" %c", &c) || (c != '1' && c != '2')) {
-        err("Value must be 1 or 2");
+    while (true) {
         fprintf(stderr, "\033[mOutput type (1 = ASCII, 2 = BINARY): \033[1;33m");
+        if (!scanf(" %c", &c) || (c != '1' && c != '2')) {
+            err("Value must be 1 or 2");
+            continue;
+        }
+        break;
     }
 
     freopen(file_name, (c == '1') ? "w+" : "wb+", stdout);
@@ -271,13 +281,16 @@ static u8 assess()
         return assessf(c == '1');
 
     u32 mult;
-    fprintf(stderr, "\033[mSequence Size (x 1000000): \033[1;33m");
-    while (!scanf(" %u", &mult) || mult < 1 || mult > BITS_TESTING_LIMIT) {
-        err("Output multiplier must be between [1, " STRINGIFY(BITS_TESTING_LIMIT) "]");
-        fprintf(stderr, "\033[mSequence Size (x 1000000): \033[1;33m");
+    while (true) {
+        fprintf(stderr, "\033[mSequence Size (x 1MB): \033[1;33m");
+        if (!scanf(" %u", &mult) || mult < 1 || mult > BITS_TESTING_LIMIT) {
+            err("Output multiplier must be between [1, " STRINGIFY(BITS_TESTING_LIMIT) "]");
+            continue;
+        }
+        break;
     }
 
-    register u64 limit = ASSESS_UNIT * mult;
+    register u64 limit = TESTING_BITS * mult;
 
     if (c == '1')
         duration = stream_ascii(limit, &data.seed[0], &data.nonce);
@@ -307,7 +320,7 @@ static u8 examine(const char *strlimit)
     init_values[4] = rsl.nonce = data.nonce;
 
     // Check for and validate multiplier
-    register u64 limit = EXAMINE_UNIT;
+    register u64 limit = TESTING_BITS;
     if (strlimit != NULL)
         limit *= a_to_u(strlimit, 1, BITS_TESTING_LIMIT);
 

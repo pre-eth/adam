@@ -3,11 +3,9 @@
   #include  "defs.h"
   #include  "ent.h"
 
-	#define   ASSESS_UNIT    	          1000000ULL
-	#define   EXAMINE_UNIT    	        1000000ULL
+	#define   TESTING_BITS    	        8000000ULL
 	#define   TESTING_DBL    		        1000ULL
-	#define   BITS_TESTING_LIMIT        8000
-	#define   EXAMINE_TESTING_LIMIT     8000
+	#define   BITS_TESTING_LIMIT        100000
 	#define   DBL_TESTING_LIMIT         1500000
 
   /*    NOTE: All critical values use an alpha level of 0.01    */
