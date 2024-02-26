@@ -422,15 +422,14 @@ static void print_basic_results(const u16 indent, const u64 limit, rng_test *rsl
 
     printf("\033[1;34m\033[%uC               Sample Size: \033[m%llu BITS (%llu%s)\n", indent, output << 6, bytes, unit);
     printf("\033[1;34m\033[%uC       Sequences Generated: \033[m%llu\n", indent, rsl->sequences);
-    printf("\033[2m\033[%uC       a. Hamming distance: \033[m%1.2lf (ideal = %u)\n", indent, rsl->hamming_dist, SEQ_SIZE >> 1);
-    printf("\033[2m\033[%uC                    b. u64: \033[m%llu\n", indent, output);
-    printf("\033[2m\033[%uC                    c. u32: \033[m%llu\n", indent, output << 1);
-    printf("\033[2m\033[%uC                    d. u16: \033[m%llu\n", indent, output << 2);
-    printf("\033[2m\033[%uC                    e.  u8: \033[m%llu\n", indent, output << 3);
+    printf("\033[2m\033[%uC                    a. u64: \033[m%llu\n", indent, output);
+    printf("\033[2m\033[%uC                    b. u32: \033[m%llu\n", indent, output << 1);
+    printf("\033[2m\033[%uC                    c. u16: \033[m%llu\n", indent, output << 2);
+    printf("\033[2m\033[%uC                    d.  u8: \033[m%llu\n", indent, output << 3);
     printf("\033[1;34m\033[%uC    256-bit Seed (u64 x 4): \033[m0x%016llX, 0x%016llX,\n", indent, init_values[0], init_values[1]);
     printf("\033[%uC                            0x%016llX, 0x%016llX\n", indent, init_values[2], init_values[3]);
     printf("\033[1;34m\033[%uC              64-bit Nonce: \033[m0x%016llX\n", indent, init_values[4]);
-    printf("\033[1;34m\033[%uC       Bit Freq Chi-Square: \033[m\033[1;%um%1.2lf\033[m\n", indent, suspect_level, chi_calc);
+    printf("\033[1;34m\033[%uC       Bit Freq Chi-Square: \033[m\033[1;%um%1.3lf\033[m\n", indent, suspect_level, chi_calc);
     printf("\033[2m\033[%uC                   a. Ones: \033[m%llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, rsl->mfreq, rsl->mfreq - expected_bits, expected_bits);
     printf("\033[2m\033[%uC                 b. Zeroes: \033[m%llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, zeroes, zeroes - expected_bits, expected_bits);
     printf("\033[2m\033[%uC   c. Total Number of Runs: \033[m%llu\n", indent, rsl->one_runs + rsl->zero_runs);
