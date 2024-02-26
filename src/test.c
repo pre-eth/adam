@@ -1,15 +1,28 @@
 #include "../include/test.h"
 #include "../include/rng.h"
 
-static u64 copy[BUF_SIZE];
 static u64 range_dist[RANGE_CAT];
 static u64 chseed_dist[CHSEED_CAT];
+
 static u64 gaps[256];
 static u64 gaplengths[256];
 static u8 lcb[5], mcb[5];
+
 static u64 fpfreq_dist[FPF_CAT];
 static u64 fpf_quadrants[4];
+
+/* 
+    Bit array for representing __UINT16_MAX__ values 
+    1 bit = corresponding u16 value
+*/
+static u64 tbt_bitarray[TBT_BITARRAY_SIZE];
+static double tbt_chi_calc;
+static u64 tbt_pass;
+
+static u64 copy[BUF_SIZE];
+static u8 ham_idx;
 static double hamming_distance;
+static u64 ham_dist[AVALANCHE_CAT + 1];
 
 static void ham(const u64 num)
 {
