@@ -33,6 +33,18 @@
   #define   FPF_CRITICAL_VALUE        21.666
   #define   FPF_PROB                  (1.0 / 10.0)
 
+  // FOR:   Topological Binary Test (Alcover, Pedro & Guillamón, Antonio & Ruiz, M.D.C.. (2013). A New Randomness Test for Bit Sequences. Informatica (Netherlands). 24. 339-356. 10.15388/Informatica.2013.399.)
+  #define   TBT_PROPORTION            0.629
+  #define   TBT_M                     16
+  #define   TBT_CRITICAL_VALUE        41241
+  #define   TBT_SEQ_SIZE              65536
+  #define   TBT_BITARRAY_SIZE         1024
+
+  // FOR:   Strict Avalanche Criterion (SAC) Test (Hernandez-Castro, Julio & Sierra, José & Seznec, Andre & Izquierdo, Antonio & Ribagorda, Arturo. (2005). The strict avalanche criterion randomness test. Mathematics and Computers in Simulation. 68. 1-7. 10.1016/j.matcom.2004.09.001.)
+  // NOTE:  64 different probabilities needed here so instead of polluting the header, see the function print_avalanche_results() in support.c
+  #define   AVALANCHE_CAT             64
+  #define   AVALANCHE_CRITICAL_VALUE  93.2168
+
 
   typedef struct rng_test {
     u64 *buffer;
