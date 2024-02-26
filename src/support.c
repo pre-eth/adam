@@ -507,8 +507,8 @@ static void print_ent_results(const u16 indent, const ent_report *ent)
         chi_str = &chi_tmp[0];
     }
 
-    printf("\033[1;34m\033[%uC                   Entropy: \033[m%.5lf bits per byte\n", indent, ent->ent);
-    printf("\033[1;34m\033[%uC                Chi-Square: \033[m\033[1;%um%1.2lf\033[m %16sexceeded %s%% of the time) \n", indent, suspect_level, ent->chisq, "(randomly ", chi_str);
+    printf("\033[1;34m\033[%uC                   Entropy: \033[m%.5lf %10s per byte)\n", indent, ent->ent, "(bits");
+    printf("\033[1;34m\033[%uC                Chi-Square: \033[m\033[1;%um%1.3lf\033[m %15sexceeded %s%% of the time) \n", indent, suspect_level, ent->chisq, "(randomly ", chi_str);
     printf("\033[1;34m\033[%uC           Arithmetic Mean: \033[m%1.3lf%22s\n", indent, ent->mean, "(127.5 = random)");
     printf("\033[1;34m\033[%uC  Monte Carlo Value for Pi: \033[m%1.9lf  (error: %1.2f%%)\n", indent, ent->montepicalc, ent->monterr);
     if (ent->scc >= -99999) {
@@ -531,13 +531,13 @@ static void print_chseed_results(const u16 indent, const u64 expected, const u64
     for (u8 i = 0; i < CHSEED_CAT; ++i) {
         delta[i] = (double) chseed_dist[i] - (double) expected_chseeds;
         chi_calc += pow(delta[i], 2) / (double) expected_chseeds;
-        tmp = calc_padding((delta[i] > 0) ? (u64) delta[i] : (long long) delta[i] * -1);
+        tmp = calc_padding((delta[i] > 0) ? (u64) delta[i] : (u64) (delta[i] * -1.0));
         pad = (tmp > pad) ? tmp : pad;
     }
 
     register u8 suspect_level = 32 - (CHSEED_CRITICAL_VALUE <= chi_calc);
 
-    printf("\033[1;34m\033[%uC   Chaotic Seed Chi-Square: \033[m\033[1;%um%1.2lf\033[m\n", indent, suspect_level, chi_calc);
+    printf("\033[1;34m\033[%uC   Chaotic Seed Chi-Square: \033[m\033[1;%um%1.3lf\033[m\n", indent, suspect_level, chi_calc);
     printf("\033[1;34m\033[%uC      Average Chaotic Seed: \033[m%1.15lf (ideal = 0.25)\n", indent, avg_chseed / (double) expected);
     printf("\033[2m\033[%uC             a. (0.0, 0.1): \033[m%llu (\033[1m%+*lli\033[m: exp. %llu)\n", indent, chseed_dist[0], pad + 1, (long long) delta[0], expected_chseeds);
     printf("\033[2m\033[%uC             b. [0.1, 0.2): \033[m%llu (\033[1m%+*lli\033[m: exp. %llu)\n", indent, chseed_dist[1], pad + 1, (long long) delta[1], expected_chseeds);
@@ -563,16 +563,111 @@ static void print_fp_results(const u16 indent, rng_test *rsl)
     expected = output * 0.25;
     for (u8 i = 0; i < 4; ++i) {
         delta[i] = rsl->fpf_quad[i] - expected;
-        tmp      = calc_padding((delta[i] > 0) ? (u64) delta[i] : (long long) delta[i] * -1);
+        tmp      = calc_padding((delta[i] > 0) ? (u64) delta[i] : (u64) (delta[i] * -1.0));
         pad      = (tmp > pad) ? tmp : pad;
     }
 
-    printf("\033[1;34m\033[%uC        FP Freq Chi-Square: \033[m\033[1;%um%1.2lf\033[m\n", indent, suspect_level, chi_calc);
+    printf("\033[1;34m\033[%uC        FP Freq Chi-Square: \033[m\033[1;%um%1.3lf\033[m\n", indent, suspect_level, chi_calc);
     printf("\033[1;34m\033[%uC          Average FP Value: \033[m%1.15lf (ideal = 0.5)\n", indent, rsl->avg_fp);
     printf("\033[2m\033[%uC            a. (0.0, 0.25): \033[m%llu (\033[1m%+*lli\033[m: exp. %llu)\n", indent, rsl->fpf_quad[0], pad + 1, (long long) delta[0], (u64) expected);
     printf("\033[2m\033[%uC            b. [0.25, 0.5): \033[m%llu (\033[1m%+*lli\033[m: exp. %llu)\n", indent, rsl->fpf_quad[1], pad + 1, (long long) delta[1], (u64) expected);
     printf("\033[2m\033[%uC            c. [0.5, 0.75): \033[m%llu (\033[1m%+*lli\033[m: exp. %llu)\n", indent, rsl->fpf_quad[2], pad + 1, (long long) delta[2], (u64) expected);
     printf("\033[2m\033[%uC            d. [0.75, 1.0): \033[m%llu (\033[1m%+*lli\033[m: exp. %llu)\n", indent, rsl->fpf_quad[3], pad + 1, (long long) delta[3], (u64) expected);
+
+    // printf("\033[1;34m\033[%uCFP Permutations Chi-Square: \033[m\033[1;%um%1.3lf\033[m\n", indent - 3, suspect_level, chi_calc);
+    // printf("\033[2m\033[%uC     a. Total Permutations: \033[m%1.2lf\n", indent, dev);
+    // printf("\033[2m\033[%uC     b. Standard Deviation: \033[m%1.2lf\n", indent, dev);
+
+    // printf("\033[1;34m\033[%uC FP Max-of-T Chi-Square: \033[m\033[1;%um%1.3lf\033[m\n", indent, suspect_level, chi_calc);
+    // printf("\033[2m\033[%uC     a. Most Common Position: \033[m%1.2lf\n", indent, dev);
+    // printf("\033[2m\033[%uC    b. Least Common Position: \033[m%1.2lf\n", indent, dev);
+    // printf("\033[2m\033[%uC     c. Standard Deviation: \033[m%1.2lf\n", indent, dev);
+}
+
+static void print_avalanche_results(const u16 indent, rng_test *rsl)
+{
+    /*
+        Calculated from the binomial distribution using probability 0.5 as per the paper. We have 64
+        degrees of freedom for the 64 bits in each value. If at least 32 bits have not changed, then 
+        the test fails for that run. So we do this for the entire stream size: tally the Hamming 
+        distance between u64 numbers in the same buffer position per run, compute the expected count
+        per bin for the size of this stream, then do a chi-square test for goodness of fit with the
+        binomial distribution. The avalanche effect measures the difference in output when you change
+        the inputs by 1 bit. We increment the seed internally per iteration so we are never changing
+        the input more than 1 bit, thus we can naturally perform the strict avalanche criterion (SAC)
+        test while examining a bit sequence!
+        
+        An interesting thing of note is that the binomial distribution with parameters B(0.5, n) will
+        average out to n/2. So we use this knowledge to check how the distribution of Hamming distances
+        we have recorded matches the given distribution. Additionally, the mean Hamming distance across
+        all measurements, the distribution, and the standard deviation of the observed distances is also
+        reported as well
+    */
+    static double expected[AVALANCHE_CAT + 1] = {
+        // clang-format off
+        5.421010862427522E-20,  3.469446951953614E-18,  1.092875789865388E-16,  2.258609965721802E-15,
+        3.444380197725749E-14,  4.133256237270899E-13,  4.064368633316384E-12,  3.367619724747861E-11,
+        2.399429053882851E-10,  1.492978077971551E-9,   8.211379428843534E-9,   4.031040810523189E-8,
+        1.780376357981075E-7,   7.121505431924302E-7,   2.594262693058138E-6,   8.647542310193795E-6,
+        0.000026483098324,      0.000074775807035,      0.000195247940591,      0.000472705540380,
+        0.001063587465856,      0.002228468976079,      0.004355643907791,      0.007953784527271,
+        0.013587715234088,      0.021740344374540,      0.032610516561811,      0.045896282568475,
+        0.060648659108342,      0.075287990617252,      0.087835989053460,      0.096336246058634,
+        0.099346753747966,      0.096336246058634,      0.087835989053460,      0.075287990617252,
+        0.060648659108342,      0.045896282568475,      0.032610516561811,      0.021740344374540,
+        0.013587715234088,      0.007953784527271,      0.004355643907791,      0.002228468976079,
+        0.001063587465856,      0.000472705540380,      0.000195247940591,      0.000074775807035,
+        0.000026483098324,      8.647542310193795E-6,   2.594262693058138E-6,   7.121505431924302E-7,
+        1.780376357981075E-7,   4.031040810523190E-8,   8.211379428843530E-9,   1.492978077971551E-9,
+        2.399429053882851E-10,  3.367619724747861E-11,  4.064368633316384E-12,  4.133256237270899E-13,
+        3.444380197725749E-14,  2.258609965721803E-15,  1.092875789865388E-16,  3.469446951953614E-16,
+        5.421010862427522E-20
+        // clang-format on
+    };
+
+    const double total_u64 = rsl->sequences << 8;
+
+    register double average = 0.0;
+    double bin_counts[4];
+    bin_counts[0] = bin_counts[1] = bin_counts[2] = bin_counts[3] = 0.0;
+
+    register u8 i = 0;
+    do {
+        expected[i] *= total_u64;
+        bin_counts[i >> 4] += (u64) expected[i];
+        average += rsl->ham_dist[i] * i;
+    } while (++i < (AVALANCHE_CAT + 1));
+
+    register double chi_calc;
+    chi_calc = average = 0.0;
+    double quadrants[4];
+    quadrants[0] = quadrants[1] = quadrants[2] = quadrants[3] = 0.0;
+
+    i = 0;
+    do {
+        quadrants[i >> 4] += rsl->ham_dist[i];
+        chi_calc += pow(((double) rsl->ham_dist[i] - expected[i]), 2) / expected[i];
+    } while (++i < (AVALANCHE_CAT + 1));
+
+    register u8 suspect_level = 32 - (AVALANCHE_CRITICAL_VALUE <= chi_calc);
+    average                   = average / (double) total_u64;
+
+    register u8 pad = 5;
+    register u8 tmp = calc_padding((bin_counts[0] > 0) ? (u64) bin_counts[0] : (u64) (bin_counts[0] * -1.0));
+    pad             = pad ^ ((pad ^ tmp) & -(pad < tmp));
+    tmp             = calc_padding((bin_counts[1] > 0) ? (u64) bin_counts[1] : (u64) (bin_counts[1] * -1.0));
+    pad             = pad ^ ((pad ^ tmp) & -(pad < tmp));
+    tmp             = calc_padding((bin_counts[2] > 0) ? (u64) bin_counts[2] : (u64) (bin_counts[2] * -1.0));
+    pad             = pad ^ ((pad ^ tmp) & -(pad < tmp));
+    tmp             = calc_padding((bin_counts[3] > 0) ? (u64) bin_counts[3] : (u64) (bin_counts[3] * -1.0));
+    pad             = pad ^ ((pad ^ tmp) & -(pad < tmp));
+
+    printf("\033[1;34m\033[%uCStrict Avalanche Chi-Square: \033[m\033[1;%um%1.3lf\033[m\n", indent - 1, suspect_level, chi_calc);
+    printf("\033[2m\033[%uC  a. Mean Hamming Distance: \033[m%2.3lf (ideal = %u)\n", indent, average, AVALANCHE_CAT >> 1);
+    printf("\033[2m\033[%uC                b. [0, 16): \033[m%*llu (\033[1m%+lli\033[m: exp. %llu\n", indent, pad, (u64) quadrants[0], (u64) quadrants[0] - (u64) bin_counts[0], (u64) bin_counts[0]);
+    printf("\033[2m\033[%uC               c. [16, 32): \033[m%*llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, pad, (u64) quadrants[1], (u64) quadrants[1] - (u64) bin_counts[1], (u64) bin_counts[1]);
+    printf("\033[2m\033[%uC               d. [32, 48): \033[m%*llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, pad, (u64) quadrants[2], (u64) quadrants[2] - (u64) bin_counts[2], (u64) bin_counts[2]);
+    printf("\033[2m\033[%uC               e. [48, 64]: \033[m%*llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, pad, (u64) quadrants[3], (u64) quadrants[3] - (u64) bin_counts[3], (u64) bin_counts[3]);
 }
 
 void print_seq_results(rng_test *rsl, const u64 limit, const u64 *init_values)
@@ -589,4 +684,5 @@ void print_seq_results(rng_test *rsl, const u64 limit, const u64 *init_values)
     print_byte_results(indent, rsl);
     print_chseed_results(indent, rsl->expected_chseed, &rsl->chseed_dist[0], rsl->avg_chseed);
     print_fp_results(indent, rsl);
+    print_avalanche_results(indent, rsl);
 }
