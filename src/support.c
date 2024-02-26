@@ -456,6 +456,7 @@ static void print_byte_results(const u16 indent, rng_test *rsl)
 static void print_range_results(const u16 indent, rng_test *rsl)
 {
     const u64 output               = rsl->sequences << 8;
+    const u8 pad                   = calc_padding(rsl->range_dist[4]);
     const u64 range_exp[RANGE_CAT] = {
         (double) output * RANGE1_PROB,
         (double) output * RANGE2_PROB,
@@ -467,14 +468,11 @@ static void print_range_results(const u16 indent, rng_test *rsl)
     // Calculate chi-square statistic for distribution of 64-bit numbers
     double delta[5];
     register double chi_calc = 0.0;
-    register u8 pad          = 1;
-    register u8 tmp;
+
     for (u8 i = 0; i < RANGE_CAT; ++i) {
         delta[i] = (double) rsl->range_dist[i] - (double) range_exp[i];
         if (range_exp[i] > 0)
             chi_calc += pow(delta[i], 2) / (double) range_exp[i];
-        tmp = calc_padding((delta[i] > 0) ? (u64) delta[i] : (long long) delta[i] * -1);
-        pad = (tmp > pad) ? tmp : pad;
     }
 
     register u8 suspect_level = 32 - (RANGE_CRITICAL_VALUE <= chi_calc);
@@ -482,14 +480,14 @@ static void print_range_results(const u16 indent, rng_test *rsl)
     printf("\033[1;34m\033[%uC             Minimum Value: \033[m%llu\n", indent, rsl->min);
     printf("\033[1;34m\033[%uC             Maximum Value: \033[m%llu\n", indent, rsl->max);
     printf("\033[1;34m\033[%uC                     Range: \033[m%llu\n", indent, rsl->max - rsl->min);
-    printf("\033[1;34m\033[%uC          Range Chi-Square: \033[m\033[1;%um%1.2lf\033[m\n", indent, suspect_level, chi_calc);
-    printf("\033[2m\033[%uC            a.    [0, 2³²): \033[m%-9llu (\033[1m%+*lli\033[m: exp. %llu)\n", indent, rsl->range_dist[0], pad + 1, (long long) delta[0], range_exp[0]);
-    printf("\033[2m\033[%uC            b.  [2³², 2⁴⁰): \033[m%-9llu (\033[1m%+*lli\033[m: exp. %llu)\n", indent, rsl->range_dist[1], pad + 1, (long long) delta[1], range_exp[1]);
-    printf("\033[2m\033[%uC            c.  [2⁴⁰, 2⁴⁸): \033[m%-9llu (\033[1m%+*lli\033[m: exp. %llu)\n", indent, rsl->range_dist[2], pad + 1, (long long) delta[2], range_exp[2]);
-    printf("\033[2m\033[%uC            d.  [2⁴⁸, 2⁵⁶): \033[m%-9llu (\033[1m%+*lli\033[m: exp. %llu)\n", indent, rsl->range_dist[3], pad + 1, (long long) delta[3], range_exp[3]);
-    printf("\033[2m\033[%uC            e.  [2⁵⁶, 2⁶⁴): \033[m%-9llu (\033[1m%+*lli\033[m: exp. %llu)\n", indent, rsl->range_dist[4], pad + 1, (long long) delta[4], range_exp[4]);
-    printf("\033[1;34m\033[%uC              Even Numbers: \033[m%llu  (%u%%)\n", indent, output - rsl->odd, (u8) (((double) (output - rsl->odd) / (double) output) * 100));
-    printf("\033[1;34m\033[%uC               Odd Numbers: \033[m%llu  (%u%%)\n", indent, rsl->odd, (u8) (((double) rsl->odd / (double) output) * 100));
+    printf("\033[1;34m\033[%uC          Range Chi-Square: \033[m\033[1;%um%1.3lf\033[m\n", indent, suspect_level, chi_calc);
+    printf("\033[2m\033[%uC            a.    [0, 2³²): \033[m%*llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, pad + 1, rsl->range_dist[0], (long long) delta[0], range_exp[0]);
+    printf("\033[2m\033[%uC            b.  [2³², 2⁴⁰): \033[m%*llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, pad + 1, rsl->range_dist[1], (long long) delta[1], range_exp[1]);
+    printf("\033[2m\033[%uC            c.  [2⁴⁰, 2⁴⁸): \033[m%*llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, pad + 1, rsl->range_dist[2], (long long) delta[2], range_exp[2]);
+    printf("\033[2m\033[%uC            d.  [2⁴⁸, 2⁵⁶): \033[m%*llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, pad + 1, rsl->range_dist[3], (long long) delta[3], range_exp[3]);
+    printf("\033[2m\033[%uC            e.  [2⁵⁶, 2⁶⁴): \033[m%*llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, pad + 1, rsl->range_dist[4], (long long) delta[4], range_exp[4]);
+    printf("\033[1;34m\033[%uC              Even Numbers: \033[m%llu (%u%%)\n", indent, output - rsl->odd, (u8) (((double) (output - rsl->odd) / (double) output) * 100));
+    printf("\033[1;34m\033[%uC               Odd Numbers: \033[m%llu (%u%%)\n", indent, rsl->odd, (u8) (((double) rsl->odd / (double) output) * 100));
 }
 
 static void print_ent_results(const u16 indent, const ent_report *ent)
