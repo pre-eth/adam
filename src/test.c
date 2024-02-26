@@ -145,7 +145,9 @@ static void test_loop(rng_test *rsl)
 
         // Records the Hamming Distance between this number and the number that
         // was in the same index in the buffer during the previous iteration
-        ham(num);
+        copy[i] = POPCNT(copy[i] ^ num);
+        ++ham_dist[copy[i]];
+        copy[i] = num;
 
         // Convert this number to float with same logic used for returning FP results
         // Then record float for FP freq distribution in (0.0, 1.0)
@@ -175,8 +177,6 @@ static void test_loop(rng_test *rsl)
         // Calls into ENT framework, updating all the stuff there
         ent_test((u8 *) &num);
     } while (++i < BUF_SIZE);
-
-    MEMCPY(&copy[0], &rsl->buffer[0], sizeof(u64) * BUF_SIZE);
 }
 
 void adam_test(const u64 limit, rng_test *rsl)
@@ -217,8 +217,8 @@ void adam_test(const u64 limit, rng_test *rsl)
 
     rsl->avg_gap = average_gaplength / 256.0;
     rsl->avg_fp /= (rsl->sequences << 8);
-    rsl->hamming_dist = hamming_distance / (double) rsl->sequences;
 
+    rsl->ham_dist    = &ham_dist[0];
     rsl->chseed_dist = &chseed_dist[0];
     rsl->range_dist  = &range_dist[0];
     rsl->fpf_dist    = &fpfreq_dist[0];
