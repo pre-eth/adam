@@ -10,6 +10,7 @@ static u8 lcb[5], mcb[5];
 
 static u64 fpfreq_dist[FPF_CAT];
 static u64 fpf_quadrants[4];
+static u64 fp_perm_dist[FP_PERM_CAT];
 
 /* 
     Bit array for representing __UINT16_MAX__ values 
@@ -26,9 +27,45 @@ static u64 ham_dist[AVALANCHE_CAT + 1];
 
 static void ham(const u64 num)
 {
-    static u8 i;
-    hamming_distance += POPCNT(copy[i] ^ num);
-    ++i;
+
+static void fp_perm(const double num, u64 *perms)
+{
+    static int perm_idx;
+    static double tuple[FP_PERM_SIZE + 1];
+
+    tuple[++perm_idx] = num;
+    if (perm_idx == FP_PERM_SIZE) {
+        *perms += 1;
+
+        register u64 f = 0;
+        register u8 s;
+        double d;
+        while (perm_idx > 1) {
+            s = perm_idx;
+            switch (perm_idx) {
+            case 5:
+                s = (tuple[4] > tuple[s]) ? 4 : s;
+            case 4:
+                s = (tuple[3] > tuple[s]) ? 3 : s;
+            case 3:
+                s = (tuple[2] > tuple[s]) ? 2 : s;
+            case 2:
+                s = (tuple[1] > tuple[s]) ? 1 : s;
+                break;
+            default:
+                break;
+            }
+
+            f               = (perm_idx * f) + s - 1;
+            d               = tuple[perm_idx];
+            tuple[perm_idx] = tuple[s];
+            tuple[s]        = d;
+            --perm_idx;
+        }
+
+        ++fp_perm_dist[f];
+        perm_idx = 0;
+    }
 }
 
 static void update_mcb(const u8 idx, const u64 *freq)
@@ -155,6 +192,10 @@ static void test_loop(rng_test *rsl)
         ++fpfreq_dist[(u8) (d * 10.0)];
         ++fpf_quadrants[(d >= 0.25) + (d >= 0.5) + (d >= 0.75)];
 
+        // Collect this floating point value into the permutations tuple
+        // Once the tuple reaches 5 elements, the permutation is recorded
+        fp_perm(d, &rsl->perms);
+
         // Record range that this number falls in
         ++range_dist[(num >= __UINT32_MAX__) + (num >= (1ULL << 40)) + (num >= (1ULL << 48)) + (num >= (1ULL << 56))];
 
@@ -185,7 +226,7 @@ void adam_test(const u64 limit, rng_test *rsl)
     register short leftovers = limit & (SEQ_SIZE - 1);
 
     rsl->avg_chseed = rsl->avg_fp = 0.0;
-    rsl->mfreq = rsl->up_runs = rsl->longest_up = rsl->down_runs = rsl->longest_down = rsl->one_runs = rsl->longest_one = rsl->zero_runs = rsl->longest_zero = rsl->odd = 0;
+    rsl->mfreq = rsl->up_runs = rsl->longest_up = rsl->down_runs = rsl->longest_down = rsl->one_runs = rsl->perms = rsl->longest_one = rsl->zero_runs = rsl->longest_zero = rsl->odd = 0;
 
     rsl->sequences       = rate + !!(leftovers);
     rsl->expected_chseed = rsl->sequences * (ROUNDS << 2);
@@ -223,6 +264,7 @@ void adam_test(const u64 limit, rng_test *rsl)
     rsl->range_dist  = &range_dist[0];
     rsl->fpf_dist    = &fpfreq_dist[0];
     rsl->fpf_quad    = &fpf_quadrants[0];
+    rsl->perm_dist   = &fp_perm_dist[0];
     rsl->mcb         = &mcb[0];
     rsl->lcb         = &lcb[0];
 }

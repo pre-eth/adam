@@ -28,10 +28,16 @@
   #define   RANGE4_PROB               0.003891050583657
   #define   RANGE5_PROB               0.996093690626375
 
-  // FOR:   floating point distribution when converting output values
+  // FOR:   floating point distribution upon converting integer output accordingly
   #define   FPF_CAT                   10
   #define   FPF_CRITICAL_VALUE        21.666
   #define   FPF_PROB                  (1.0 / 10.0)
+
+  // FOR:   floating point permutations test
+  #define   FP_PERM_SIZE              5
+  #define   FP_PERM_CAT               120             // 5!
+  #define   FP_PERM_CRITICAL_VALUE    157.800
+  #define   FP_PERM_PROB              (1.0 / 120.0)
 
   // FOR:   Topological Binary Test (Alcover, Pedro & Guillamón, Antonio & Ruiz, M.D.C.. (2013). A New Randomness Test for Bit Sequences. Informatica (Netherlands). 24. 339-356. 10.15388/Informatica.2013.399.)
   #define   TBT_PROPORTION            0.629
