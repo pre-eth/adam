@@ -8,6 +8,12 @@ static u64 *buffer;
 
 void adam_setup(adam_data *data, unsigned long long *seed, unsigned long long *nonce)
 {
+    // data->seed[0] = 0x43CE8BAD891F0610;
+    // data->seed[1] = 0xB1B2B727643446EA;
+    // data->seed[2] = 0x2A5D5C83EA265024;
+    // data->seed[3] = 0x07DC6BB2DF5E59DA;
+
+    // data->nonce = 0x031CC6BD641FA81C;
     if (seed == NULL)
         getentropy(&data->seed[0], sizeof(u64) << 2);
     else
@@ -77,7 +83,7 @@ double adam_dbl(adam_data *data, unsigned long long scale)
 
 int adam_fill(adam_data *data, void *buf, unsigned char width, const unsigned int amount)
 {
-    if (!amount || amount > 125000000)
+    if (!amount || amount > 1000000000UL)
         return 1;
 
     if (width != 8 && width != 16 && width != 32 && width != 64)
@@ -105,7 +111,7 @@ int adam_fill(adam_data *data, void *buf, unsigned char width, const unsigned in
 
 int adam_dfill(adam_data *data, double *buf, const unsigned long long multiplier, const unsigned int amount)
 {
-    if (!amount || amount > 1000000000)
+    if (!amount || amount > 1000000000UL)
         return 1;
 
     if (multiplier > 1)
