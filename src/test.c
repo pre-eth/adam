@@ -1,4 +1,5 @@
 #include "../include/test.h"
+#include "../include/ent.h"
 #include "../include/rng.h"
 
 static u64 range_dist[RANGE_CAT];
