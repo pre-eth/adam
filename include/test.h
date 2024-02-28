@@ -1,12 +1,6 @@
 #ifndef TEST_H
 #define TEST_H
   #include  "defs.h"
-  #include  "ent.h"
-
-	#define   TESTING_BITS    	        8000000ULL
-	#define   TESTING_DBL    		        1000ULL
-	#define   BITS_TESTING_LIMIT        100000
-	#define   DBL_TESTING_LIMIT         1500000
 
   /*    NOTE: All critical values use an alpha level of 0.01    */
 

@@ -17,8 +17,8 @@ endif
  
 STD_LIB = rng api
 LIB_OBJ = $(STD_LIB:%=src/%.o)
-CLI = $(STD_LIB) ent test support cli
-OBJ = $(CLI:%=src/%.o)
+CLI = ent test support cli
+OBJ = $(CLI:%=src/%.o) $(LIB_OBJ)
 
 all: cli lib
 	@clang-format -i src/*.c

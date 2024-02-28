@@ -247,10 +247,10 @@ u8 gen_uuid(const u64 higher, const u64 lower, u8 *buf)
 double stream_ascii(const u64 limit, u64 *seed, u64 *nonce)
 {
     /*
-    Split limit based on how many calls (if needed)
-    we make to print_chunks, which prints the bits of
-    an entire buffer (aka the SEQ_SIZE)
-  */
+        Split limit based on how many calls (if needed)
+        we make to print_chunks, which prints the bits of
+        an entire buffer (aka the SEQ_SIZE)
+    */
     register long int rate   = limit >> 14;
     register short leftovers = limit & (SEQ_SIZE - 1);
 
@@ -271,14 +271,14 @@ double stream_ascii(const u64 limit, u64 *seed, u64 *nonce)
     }
 
     /*
-    Since there are SEQ_SIZE (16384) bits in every
-    buffer, adam_bits is designed to print up to SEQ_SIZE
-    bits per call, so any leftovers must be processed
-    independently.
+        Since there are SEQ_SIZE (16384) bits in every
+        buffer, adam_bits is designed to print up to SEQ_SIZE
+        bits per call, so any leftovers must be processed
+        independently.
 
-    Most users probably won't enter powers of 2, especially
-    if assessing bits, so this branch has been marked as LIKELY.
-  */
+        Most users probably won't enter powers of 2, especially
+        if assessing bits, so this branch has been marked as LIKELY.
+    */
     if (LIKELY(leftovers > 0)) {
         register u16 l = 0;
         start          = clock();
