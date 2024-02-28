@@ -1,42 +1,6 @@
-#include "../include/rng.h"
 #include "../include/defs.h"
 #include "../include/simd.h"
-
-// To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random double D
-#define DIV   5.4210109E-20
-#define LIMIT 0.5
-
-// For diffusing the buffer
-#define ISAAC_MIX(a, b, c, d, e, f, g, h) \
-    {                                     \
-        a -= e;                           \
-        f ^= h >> 9;                      \
-        h += a;                           \
-        b -= f;                           \
-        g ^= a << 9;                      \
-        a += b;                           \
-        c -= g;                           \
-        h ^= b >> 23;                     \
-        b += c;                           \
-        d -= h;                           \
-        a ^= c << 15;                     \
-        c += d;                           \
-        e -= a;                           \
-        b ^= d >> 14;                     \
-        d += e;                           \
-        f -= b;                           \
-        c ^= e << 20;                     \
-        e += f;                           \
-        g -= c;                           \
-        d ^= f >> 17;                     \
-        f += g;                           \
-        h -= d;                           \
-        e ^= g << 14;                     \
-        g += h;                           \
-    }
-
-// Slightly modified macro from ISAAC for reseeding ADAM
-#define ISAAC_IND(mm, x) (*(u64 *) ((u8 *) (mm) + (4096 + (x & 2047))))
+#include "../include/rng.h"
 
 /*
     The algorithm requires at least the construction of 3 maps of size BUF_SIZE
@@ -66,7 +30,13 @@ static u64 IV[8] ALIGN(SIMD_LEN) = {
 };
 
 static void accumulate(const u64 *seed)
-{
+{   
+    // clang-format off
+    // To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random double D
+    #define DIV   5.4210109E-20
+    #define LIMIT 0.5
+    // clang-format on
+    
     IV[0] ^= seed[0];
     IV[1] ^= seed[1];
     IV[2] ^= seed[2];
@@ -77,7 +47,6 @@ static void accumulate(const u64 *seed)
     IV[7] ^= seed[3];
 
     register u8 i = 0;
-    // do induction based reseed
     register u16 offset = BUF_SIZE + (cc++ & 0xFF);
 
 #ifdef __AARCH64_SIMD__
@@ -115,10 +84,23 @@ static void accumulate(const u64 *seed)
 }
 
 static void diffuse(const u64 nonce)
-{
-    // Following logic is adapted from ISAAC64, by Bob Jenkins
+{   
+    // clang-format off
+    // For diffusing the buffer
+    #define ISAAC_MIX(a,b,c,d,e,f,g,h) { \
+        a-=e; f^=h>>9;  h+=a; \
+        b-=f; g^=a<<9;  a+=b; \
+        c-=g; h^=b>>23; b+=c; \
+        d-=h; a^=c<<15; c+=d; \
+        e-=a; b^=d>>14; d+=e; \
+        f-=b; c^=e<<20; e+=f; \
+        g-=c; d^=f>>17; f+=g; \
+        h-=d; e^=g<<14; g+=h; \
+    }
+    // clang-format on
 
-    u64 a, b, c, d, e, f, g, h;
+    // Following logic is adapted from ISAAC64, by Bob Jenkins
+    register u64 a, b, c, d, e, f, g, h;
     a = b = c = d = nonce;
     e = f = g = h = ~nonce;
 
@@ -269,6 +251,11 @@ static void mix()
 
 static void reseed(u8 *seed, u64 *nonce)
 {
+    // clang-format off
+    // Slightly modified macro from ISAAC for reseeding ADAM
+    #define ISAAC_IND(mm, x) (*(u64 *) ((u8 *) (mm) + (4096 + (x & 2047))))
+    // clang-format on
+
     static u8 byte_idx;
 
     ++seed[byte_idx];
