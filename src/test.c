@@ -21,8 +21,6 @@ static double tbt_chi_calc;
 static u64 tbt_pass;
 
 static u64 copy[BUF_SIZE];
-static u8 ham_idx;
-static double hamming_distance;
 static u64 ham_dist[AVALANCHE_CAT + 1];
 
 static void ham(const u64 num)
@@ -179,11 +177,16 @@ static void test_loop(rng_test *rsl)
     u64 num;
     do {
         num = rsl->buffer[i];
+        rsl->odd += (num & 1);
+        rsl->mfreq += POPCNT(num);
+
+        // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
+        rsl->min = num ^ ((rsl->min ^ num) & -(rsl->min < num));
+        rsl->max = rsl->max ^ ((rsl->max ^ num) & -(rsl->max < num));
 
         // Records the Hamming Distance between this number and the number that
         // was in the same index in the buffer during the previous iteration
-        copy[i] = POPCNT(copy[i] ^ num);
-        ++ham_dist[copy[i]];
+        ++ham_dist[POPCNT(copy[i] ^ num)];
         copy[i] = num;
 
         // Convert this number to float with same logic used for returning FP results
@@ -198,13 +201,6 @@ static void test_loop(rng_test *rsl)
 
         // Record range that this number falls in
         ++range_dist[(num >= __UINT32_MAX__) + (num >= (1ULL << 40)) + (num >= (1ULL << 48)) + (num >= (1ULL << 56))];
-
-        // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
-        rsl->min = num ^ ((rsl->min ^ num) & -(rsl->min < num));
-        rsl->max = rsl->max ^ ((rsl->max ^ num) & -(rsl->max < num));
-
-        rsl->odd += (num & 1);
-        rsl->mfreq += POPCNT(num);
 
         // Tracks the amount of runs AND longest run, both increasing and decreasing
         tally_runs(num, rsl);

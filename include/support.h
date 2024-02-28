@@ -2,9 +2,12 @@
 #define SUPPORT_H
 	#include "defs.h"
 
-	#define BITBUF_SIZE     	1024
-
-	typedef struct rng_test rng_test;
+	#define   BITBUF_SIZE     			1024
+	
+	#define   TESTING_BITS    	        8000000ULL
+	#define   TESTING_DBL    		    1000ULL
+	#define   BITS_TESTING_LIMIT        100000
+	#define   DBL_TESTING_LIMIT         1500000
 
 	void     get_print_metrics(u16 *center, u16 *indent, u16 *swidth);
 	u8       err(const char *s);
@@ -16,6 +19,5 @@
 	double 	 dbl_ascii(const u32 limit, u64 *seed, u64 *nonce, const u32 multiplier, const u8 precision);
 	double   stream_bytes(const u64 limit, u64 *seed, u64 *nonce);
 	double	 dbl_bytes(const u32 limit, u64 *seed, u64 *nonce, const u32 multiplier);
-	double 	 get_seq_properties(const u64 limit, rng_test *rsl);
-	void 	 print_seq_results(rng_test *rsl, const u64 limit, const u64 *init_values);
-#endif
+	void 	 get_seq_properties(const u64 limit, const unsigned long long *seed, const unsigned long long nonce);
+#endif   

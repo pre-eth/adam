@@ -3,7 +3,6 @@
 
 #include "../include/api.h"
 #include "../include/support.h"
-#include "../include/test.h"
 
 #define STRINGIZE(a) #a
 #define STRINGIFY(a) STRINGIZE(a)
@@ -135,12 +134,12 @@ static u8 help(void)
         "Examine a sample of 1MB with the ENT framework and some other statistical tests to reveal properties of the output sequence. You can choose a multiplier within [1, " STRINGIFY(BITS_TESTING_LIMIT) "] to examine up to 100GB at a time",
         "Print numbers in hexadecimal format with leading prefix",
         "Print numbers in octal format with leading prefix",
-        "Enable floating point mode to generate doubles in (0, 1) instead of integers",
+        "Enable floating point mode to generate doubles in (0.0, 1.0) instead of integers",
         "The number of decimal places to display when printing doubles. Must be within [1, 15]. Default is 15",
         "Multiplier for randomly generated doubles, such that they fall in the range (0, <MULTIPLIER>)"
     };
 
-    const u8 lengths[ARG_COUNT] = { 25, 33, 119, 124, 109, 116, 91, 81, 22, 202, 204, 55, 49, 76, 100, 93 };
+    const u8 lengths[ARG_COUNT] = { 45, 33, 119, 124, 109, 116, 91, 81, 22, 202, 204, 55, 49, 80, 100, 93 };
 
     register short len;
     register u16 line_width;
@@ -306,31 +305,11 @@ static u8 assess()
 
 static u8 examine(const char *strlimit)
 {
-    // Initialize properties
-    rng_test rsl;
-    ent_report ent;
-    rsl.ent = &ent;
-
-    // Record initial state and connect internal state to rsl_test
-    u64 init_values[5];
-    init_values[0] = rsl.seed[0] = data.seed[0];
-    init_values[1] = rsl.seed[1] = data.seed[1];
-    init_values[2] = rsl.seed[2] = data.seed[2];
-    init_values[3] = rsl.seed[3] = data.seed[3];
-    init_values[4] = rsl.nonce = data.nonce;
-
     // Check for and validate multiplier
     register u64 limit = TESTING_BITS;
     if (strlimit != NULL)
         limit *= a_to_u(strlimit, 1, BITS_TESTING_LIMIT);
-
-    printf("\033[1;33mExamining %llu bits of ADAM...\033[m\n", limit);
-    register double duration = get_seq_properties(limit, &rsl);
-
-    print_seq_results(&rsl, limit, &init_values[0]);
-
-    printf("\n\033[1;33mExamination Complete! (%lfs)\033[m\n\n", duration);
-
+    get_seq_properties(limit, &data.seed[0], data.nonce);
     return 0;
 }
 

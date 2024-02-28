@@ -4,6 +4,7 @@
 #include <sys/ioctl.h>
 #include <time.h>
 
+#include "../include/ent.h"
 #include "../include/rng.h"
 #include "../include/simd.h"
 #include "../include/support.h"
@@ -374,17 +375,6 @@ double dbl_bytes(const u32 limit, u64 *seed, u64 *nonce, const u32 multiplier)
     return duration;
 }
 
-double get_seq_properties(const u64 limit, rng_test *rsl)
-{
-    // Connect internal integer and chaotic seed arrays to rng_test
-    adam_connect(&rsl->buffer, &rsl->chseeds);
-
-    // Start examination!
-    register clock_t start = clock();
-    adam_test(limit, rsl);
-    return ((double) (clock() - start) / (double) CLOCKS_PER_SEC);
-}
-
 static u8 calc_padding(u64 num)
 {
     register u8 pad = 0;
@@ -551,12 +541,16 @@ static void print_fp_results(const u16 indent, rng_test *rsl)
     const u64 output         = rsl->sequences << 8;
     register double expected = output * FPF_PROB;
 
+    /*   FREQUENCY   */
+
     register double chi_calc = 0.0;
-    for (u8 i = 0; i < FPF_CAT; ++i)
+    register u8 i            = 0;
+    for (; i < FPF_CAT; ++i)
         chi_calc += pow((rsl->fpf_dist[i] - expected), 2) / expected;
 
     register u8 suspect_level = 32 - (FPF_CRITICAL_VALUE <= chi_calc);
 
+    // Divide frequency values into "quadrants" and report observed vs expected values
     double delta[4];
     register u8 pad = 1;
     register u8 tmp;
@@ -574,35 +568,35 @@ static void print_fp_results(const u16 indent, rng_test *rsl)
     printf("\033[2m\033[%uC            c. [0.5, 0.75): \033[m%llu (\033[1m%+*lli\033[m: exp. %llu)\n", indent, rsl->fpf_quad[2], pad + 1, (long long) delta[2], (u64) expected);
     printf("\033[2m\033[%uC            d. [0.75, 1.0): \033[m%llu (\033[1m%+*lli\033[m: exp. %llu)\n", indent, rsl->fpf_quad[3], pad + 1, (long long) delta[3], (u64) expected);
 
-    // printf("\033[1;34m\033[%uCFP Permutations Chi-Square: \033[m\033[1;%um%1.3lf\033[m\n", indent - 3, suspect_level, chi_calc);
-    // printf("\033[2m\033[%uC     a. Total Permutations: \033[m%1.2lf\n", indent, dev);
-    // printf("\033[2m\033[%uC     b. Standard Deviation: \033[m%1.2lf\n", indent, dev);
+    /*   PERMUTATIONS   */
 
-    // printf("\033[1;34m\033[%uC FP Max-of-T Chi-Square: \033[m\033[1;%um%1.3lf\033[m\n", indent, suspect_level, chi_calc);
-    // printf("\033[2m\033[%uC     a. Most Common Position: \033[m%1.2lf\n", indent, dev);
-    // printf("\033[2m\033[%uC    b. Least Common Position: \033[m%1.2lf\n", indent, dev);
-    // printf("\033[2m\033[%uC     c. Standard Deviation: \033[m%1.2lf\n", indent, dev);
+    expected            = rsl->perms * FP_PERM_PROB;
+    chi_calc            = 0;
+    i                   = 0;
+    double perm_average = 0.0;
+    for (; i < FP_PERM_CAT; ++i) {
+        perm_average += rsl->perm_dist[i];
+        chi_calc += pow((rsl->perm_dist[i] - expected), 2) / expected;
+    }
+
+    // Get standard deviation for observed permutation orderings
+    perm_average /= FP_PERM_CAT;
+    register double std_dev = 0.0;
+    for (; i < FP_PERM_CAT; ++i)
+        std_dev += pow(((double) rsl->perm_dist[i] - perm_average), 2);
+
+    suspect_level = 32 - (FP_PERM_CRITICAL_VALUE <= chi_calc);
+    std_dev       = sqrt(std_dev / (double) FP_PERM_CAT);
+
+    printf("\033[1;34m\033[%uCFP Permutations Chi-Square: \033[m\033[1;%um%1.3lf\033[m\n", indent, suspect_level, chi_calc);
+    printf("\033[2m\033[%uC     a. Total Permutations: \033[m%llu\n", indent, rsl->perms);
+    printf("\033[2m\033[%uC        b. Average Per Bin: \033[m%llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, (u64) perm_average, (u64) perm_average - (u64) expected, (u64) expected);
+    printf("\033[2m\033[%uC     c. Standard Deviation: \033[m%1.2lf\n", indent, std_dev);
 }
 
 static void print_avalanche_results(const u16 indent, rng_test *rsl)
 {
-    /*
-        Calculated from the binomial distribution using probability 0.5 as per the paper. We have 64
-        degrees of freedom for the 64 bits in each value. If at least 32 bits have not changed, then 
-        the test fails for that run. So we do this for the entire stream size: tally the Hamming 
-        distance between u64 numbers in the same buffer position per run, compute the expected count
-        per bin for the size of this stream, then do a chi-square test for goodness of fit with the
-        binomial distribution. The avalanche effect measures the difference in output when you change
-        the inputs by 1 bit. We increment the seed internally per iteration so we are never changing
-        the input more than 1 bit, thus we can naturally perform the strict avalanche criterion (SAC)
-        test while examining a bit sequence!
-        
-        An interesting thing of note is that the binomial distribution with parameters B(0.5, n) will
-        average out to n/2. So we use this knowledge to check how the distribution of Hamming distances
-        we have recorded matches the given distribution. Additionally, the mean Hamming distance across
-        all measurements, the distribution, and the standard deviation of the observed distances is also
-        reported as well
-    */
+    // See test.h for more details on these probabilities
     static double expected[AVALANCHE_CAT + 1] = {
         // clang-format off
         5.421010862427522E-20,  3.469446951953614E-18,  1.092875789865388E-16,  2.258609965721802E-15,
@@ -627,25 +621,21 @@ static void print_avalanche_results(const u16 indent, rng_test *rsl)
 
     const double total_u64 = rsl->sequences << 8;
 
-    register double average = 0.0;
+    register double average, chi_calc;
+    average = chi_calc = 0.0;
+
     double bin_counts[4];
     bin_counts[0] = bin_counts[1] = bin_counts[2] = bin_counts[3] = 0.0;
 
-    register u8 i = 0;
-    do {
-        expected[i] *= total_u64;
-        bin_counts[i >> 4] += (u64) expected[i];
-        average += rsl->ham_dist[i] * i;
-    } while (++i < (AVALANCHE_CAT + 1));
-
-    register double chi_calc;
-    chi_calc = average = 0.0;
     double quadrants[4];
     quadrants[0] = quadrants[1] = quadrants[2] = quadrants[3] = 0.0;
 
-    i = 0;
+    register u8 i = 0;
     do {
         quadrants[i >> 4] += rsl->ham_dist[i];
+        expected[i] *= total_u64;
+        bin_counts[i >> 4] += (u64) expected[i];
+        average += rsl->ham_dist[i] * i;
         chi_calc += pow(((double) rsl->ham_dist[i] - expected[i]), 2) / expected[i];
     } while (++i < (AVALANCHE_CAT + 1));
 
@@ -664,25 +654,51 @@ static void print_avalanche_results(const u16 indent, rng_test *rsl)
 
     printf("\033[1;34m\033[%uCStrict Avalanche Chi-Square: \033[m\033[1;%um%1.3lf\033[m\n", indent - 1, suspect_level, chi_calc);
     printf("\033[2m\033[%uC  a. Mean Hamming Distance: \033[m%2.3lf (ideal = %u)\n", indent, average, AVALANCHE_CAT >> 1);
-    printf("\033[2m\033[%uC                b. [0, 16): \033[m%*llu (\033[1m%+lli\033[m: exp. %llu\n", indent, pad, (u64) quadrants[0], (u64) quadrants[0] - (u64) bin_counts[0], (u64) bin_counts[0]);
+    printf("\033[2m\033[%uC                b. [0, 16): \033[m%*llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, pad, (u64) quadrants[0], (u64) quadrants[0] - (u64) bin_counts[0], (u64) bin_counts[0]);
     printf("\033[2m\033[%uC               c. [16, 32): \033[m%*llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, pad, (u64) quadrants[1], (u64) quadrants[1] - (u64) bin_counts[1], (u64) bin_counts[1]);
     printf("\033[2m\033[%uC               d. [32, 48): \033[m%*llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, pad, (u64) quadrants[2], (u64) quadrants[2] - (u64) bin_counts[2], (u64) bin_counts[2]);
     printf("\033[2m\033[%uC               e. [48, 64]: \033[m%*llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, pad, (u64) quadrants[3], (u64) quadrants[3] - (u64) bin_counts[3], (u64) bin_counts[3]);
 }
 
-void print_seq_results(rng_test *rsl, const u64 limit, const u64 *init_values)
+void get_seq_properties(const u64 limit, const unsigned long long *seed, const unsigned long long nonce)
 {
+    // Screen info for pretty printing
     u16 center, indent, swidth;
     get_print_metrics(&center, &indent, &swidth);
     indent <<= 1;
 
-    printf("\033[%uC[RESULTS]\n\n", center - 4);
+    // Assign an ent_report struct for collecting ENT stats
+    rng_test rsl;
+    ent_report ent;
+    rsl.ent = &ent;
 
-    print_basic_results(indent, limit, rsl, &init_values[0]);
-    print_range_results(indent, rsl);
-    print_ent_results(indent, rsl->ent);
-    print_byte_results(indent, rsl);
-    print_chseed_results(indent, rsl->expected_chseed, &rsl->chseed_dist[0], rsl->avg_chseed);
-    print_fp_results(indent, rsl);
-    print_avalanche_results(indent, rsl);
+    // Record initial state
+    u64 init_values[5];
+    init_values[0] = seed[0];
+    init_values[1] = seed[1];
+    init_values[2] = seed[2];
+    init_values[3] = seed[3];
+    init_values[4] = nonce;
+
+    // Connect internal integer and chaotic seed arrays to rng_test
+    adam_connect(&rsl.buffer, &rsl.chseeds);
+
+    printf("\033[1;33mExamining %llu bits of ADAM...\033[m\n", limit);
+
+    // Start examination!
+    register clock_t start = clock();
+    adam_test(limit, &rsl);
+    register double duration = ((double) (clock() - start) / (double) CLOCKS_PER_SEC);
+
+    // Output the results to the user
+    printf("\033[%uC[RESULTS]\n\n", center - 4);
+    print_basic_results(indent, limit, &rsl, &init_values[0]);
+    print_range_results(indent, &rsl);
+    print_ent_results(indent, rsl.ent);
+    print_byte_results(indent, &rsl);
+    print_chseed_results(indent, rsl.expected_chseed, &rsl.chseed_dist[0], rsl.avg_chseed);
+    print_fp_results(indent, &rsl);
+    print_avalanche_results(indent, &rsl);
+
+    printf("\n\033[1;33mExamination Complete! (%lfs)\033[m\n\n", duration);
 }

@@ -39,15 +39,33 @@
   #define   FP_PERM_CRITICAL_VALUE    157.800
   #define   FP_PERM_PROB              (1.0 / 120.0)
 
-  // FOR:   Topological Binary Test (Alcover, Pedro & Guillamón, Antonio & Ruiz, M.D.C.. (2013). A New Randomness Test for Bit Sequences. Informatica (Netherlands). 24. 339-356. 10.15388/Informatica.2013.399.)
-  #define   TBT_PROPORTION            0.629
-  #define   TBT_M                     16
-  #define   TBT_CRITICAL_VALUE        41241
-  #define   TBT_SEQ_SIZE              65536
-  #define   TBT_BITARRAY_SIZE         1024
+  /*
+    FOR:    Strict Avalanche Criterion (SAC) Test
 
-  // FOR:   Strict Avalanche Criterion (SAC) Test (Hernandez-Castro, Julio & Sierra, José & Seznec, Andre & Izquierdo, Antonio & Ribagorda, Arturo. (2005). The strict avalanche criterion randomness test. Mathematics and Computers in Simulation. 68. 1-7. 10.1016/j.matcom.2004.09.001.)
-  // NOTE:  64 different probabilities needed here so instead of polluting the header, see the function print_avalanche_results() in support.c
+    64 different probabilities needed here so instead of polluting the header, see the function
+    print_avalanche_results() in support.c.
+
+    These probabilities were calculated from the binomial distribution using probability 0.5 as per
+    the paper. We have 64 degrees of freedom for the 64 bits in each value. If at least 32 bits have
+    not changed, then the test fails for that run. So we do this for the entire stream size: tally the
+    Hamming distance between u64 numbers in the same buffer position per run, compute the expected
+    count per bin for the size of this stream, then do a chi-square test for goodness of fit with the
+    binomial distribution. The avalanche effect measures the difference in output when you change
+    the inputs by 1 bit. We increment the seed internally per iteration so we are never changing
+    the input more than 1 bit, thus we can naturally perform the strict avalanche criterion (SAC)
+    test while examining a bit sequence!
+    
+    An interesting thing of note is that the binomial distribution with parameters B(0.5, n) will
+    average out to n/2. So we use this knowledge to check how the distribution of Hamming distances
+    we have recorded matches the given distribution.
+    
+    Additionally, the mean Hamming distance across all measurements, the distribution, and the
+    standard deviation of the observed distances is also reported as well.
+
+    Hernandez-Castro, Julio & Sierra, José & Seznec, Andre & Izquierdo, Antonio & Ribagorda, Arturo. (2005).
+    The strict avalanche criterion randomness test. Mathematics and Computers in Simulation. 68. 1-7. 
+    10.1016/j.matcom.2004.09.001.
+  */ 
   #define   AVALANCHE_CAT             64
   #define   AVALANCHE_CRITICAL_VALUE  93.2168
 
@@ -81,7 +99,9 @@
     u64 *fpf_dist; 
     u64 *fpf_quad;
     double avg_fp;
-    double hamming_dist;
+    u64 *ham_dist;
+    u64 perms;
+    u64 *perm_dist;
   } rng_test;
 
   void adam_test(const u64 limit, rng_test *rsl);
