@@ -37,25 +37,10 @@
 
 // Slightly modified macro from ISAAC for reseeding ADAM
 #define ISAAC_IND(mm, x) (*(u64 *) ((u8 *) (mm) + (4096 + (x & 2047))))
-#define ISAAC_RNGSTEP(mx, a, b, mm, m, m2, x, y)                         \
-    {                                                                    \
-        x      = (m << 24) | (~((m >> 40) ^ __UINT64_MAX__) & 0xFFFFFF); \
-        a      = (a ^ (mx)) + m2;                                        \
-        m      = (ISAAC_IND(mm, x) + a + b);                             \
-        y ^= b = ISAAC_IND(mm, y >> MAGNITUDE) + x;                      \
-    }
 
 /*
     The algorithm requires at least the construction of 3 maps of size BUF_SIZE
     Offsets logically represent each individual map, but it's all one buffer.
-
-    This was originally implemented as an array of sizeof(u64) * BUF_SIZE * 3
-    bytes, but further optimization and testing found that the security and
-    statistical qualities were still preserved so long as the core algorithm
-    was not changed, meaning a slightyly modified approach with an extra
-    chaotic iteration allowed me to reduce the size of the buffer to just
-    sizeof(u64) * 264, where the three "maps" are now logically represented as
-    three subsections in the buffer, each of size 88 u64.
 
     static is important because otherwise buffer is initiated with junk that
     removes the deterministic nature of the algorithm
@@ -65,6 +50,9 @@ static unsigned long long buffer[BUF_SIZE * 3] ALIGN(SIMD_LEN);
 // Seeds supplied to each iteration of the chaotic function
 // Per each round, 8 consecutive chseeds are supplied
 static double chseeds[ROUNDS << 2] ALIGN(SIMD_LEN);
+
+// Counter
+static u64 cc;
 
 /*
     8 64-bit IV's that correspond to the verse:
@@ -77,7 +65,7 @@ static u64 IV[8] ALIGN(SIMD_LEN) = {
     0x68202847656E6573, 0x697320313A323829
 };
 
-static void accumulate(u64 *seed)
+static void accumulate(const u64 *seed)
 {
     IV[0] ^= seed[0];
     IV[1] ^= seed[1];
@@ -88,26 +76,27 @@ static void accumulate(u64 *seed)
     IV[6] ^= seed[2];
     IV[7] ^= seed[3];
 
-    register u8 i       = 0;
-    register u16 offset = BUF_SIZE + (buffer[767] & 0xFF);
+    register u8 i = 0;
+    // do induction based reseed
+    register u16 offset = BUF_SIZE + (cc++ & 0xFF);
 
 #ifdef __AARCH64_SIMD__
+    const dregq range = SIMD_SETQPD(DIV * LIMIT);
+
+    dreg4q seeds;
     reg64q4 r1 = SIMD_LOAD64x4(&IV[0]);
     reg64q4 r2;
 
-    const dregq range = SIMD_SETQPD(DIV * LIMIT);
-    dreg4q seeds;
-
     do {
+        r2 = SIMD_LOAD64x4(&buffer[offset]);
+        SIMD_XOR4RQ64(r1, r1, r2);
         SIMD_CAST4QPD(seeds, r1);
         SIMD_MUL4QPD(seeds, seeds, range);
         SIMD_STORE4PD(&chseeds[i << 3], seeds);
-        r2 = SIMD_LOAD64x4(&buffer[offset]);
-        SIMD_ADD4RQ64(r1, r1, r2);
         offset += 8;
     } while (++i < (ROUNDS / 2));
 
-    SIMD_STORE64x4(&IV[0], r2);
+    SIMD_STORE64x4(&IV[0], r1);
 #else
     const regd factor = SIMD_SETPD(DIV * LIMIT);
 
@@ -125,10 +114,13 @@ static void accumulate(u64 *seed)
 #endif
 }
 
-static void diffuse(u64 nonce)
+static void diffuse(const u64 nonce)
 {
+    // Following logic is adapted from ISAAC64, by Bob Jenkins
+
     u64 a, b, c, d, e, f, g, h;
-    a = b = c = d = e = f = g = h = (nonce << 32) | ~(nonce >> 32);
+    a = b = c = d = nonce;
+    e = f = g = h = ~nonce;
 
     // Scramble
     register u16 i = 0;
@@ -180,7 +172,7 @@ static void chaotic_iter(u16 idx, u16 start, const u8 rounds)
         SIMD_MUL4QPD(d2, d2, coeff);
         SIMD_MUL4RQPD(d1, d1, d2);
 
-        // Multiply result of chaotic function by BETA
+        // Multiply chaotic result by BETA to obtain int
         SIMD_MUL4QPD(d2, d1, beta);
 
         // Cast, XOR, and store
@@ -275,21 +267,15 @@ static void mix()
 #endif
 }
 
-static void reseed(u64 *seed, u64 *nonce)
+static void reseed(u8 *seed, u64 *nonce)
 {
-    // static u8 byte_idx;
+    static u8 byte_idx;
 
-    // const u8 next = byte_idx + !(byte_idx & 32) - (byte_idx & 32);
+    ++seed[byte_idx];
+    seed[byte_idx + !(byte_idx & 32) - (byte_idx & 32)] += !seed[byte_idx];
+    byte_idx += (!seed[byte_idx] & !(byte_idx & 32)) - (byte_idx & 32) * !seed[byte_idx];
 
-    // ++seed[byte_idx];
-    // seed[next] += !seed[byte_idx];
-    // byte_idx += (!seed[byte_idx] & !(byte_idx & 32)) - (byte_idx & 32) * !seed[byte_idx];
-
-    seed[0] ^= ISAAC_IND(buffer, seed[0]);
-    seed[1] ^= ISAAC_IND(buffer, seed[1]);
-    seed[2] ^= ISAAC_IND(buffer, seed[2]);
-    seed[3] ^= ISAAC_IND(buffer, seed[3]);
-    *nonce = ISAAC_IND(buffer, *nonce) + 1;
+    *nonce ^= ISAAC_IND(buffer, *nonce);
 }
 
 void adam_run(unsigned long long *seed, unsigned long long *nonce)
@@ -298,7 +284,7 @@ void adam_run(unsigned long long *seed, unsigned long long *nonce)
     diffuse(*nonce);
     apply();
     mix();
-    reseed(seed, nonce);
+    reseed((u8 *) seed, nonce);
 }
 
 /*  ALGORITHM ENDS HERE. FOLLOWING IS ALL API RELATED STUFF  */
