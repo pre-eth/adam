@@ -9,6 +9,7 @@
 #include "../include/simd.h"
 #include "../include/support.h"
 #include "../include/test.h"
+#include "../include/worker.h"
 
 void get_print_metrics(u16 *center, u16 *indent, u16 *swidth)
 {

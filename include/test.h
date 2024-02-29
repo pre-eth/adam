@@ -65,10 +65,6 @@
 
 
   typedef struct rng_test {
-    u64 *buffer;
-    double *chseeds;
-    u64 seed[4];
-    u64 nonce;
     ent_report *ent;
     u64 sequences;
     u64 mfreq;
@@ -85,18 +81,19 @@
     u64 longest_zero;
     double avg_chseed;
     u64 expected_chseed;
-    u64 *chseed_dist;
+    u64 *restrict chseed_dist;
     double avg_gap;
-    u64 *range_dist; 
-    u8 *mcb; 
-    u8 *lcb; 
-    u64 *fpf_dist; 
-    u64 *fpf_quad;
+    u64 *restrict range_dist; 
+    u8 *restrict mcb; 
+    u8 *restrict lcb; 
+    u64 *restrict fpf_dist; 
+    u64 *restrict fpf_quad;
     double avg_fp;
-    u64 *ham_dist;
+    u64 *restrict ham_dist;
     u64 perms;
-    u64 *perm_dist;
+    u64 *restrict perm_dist;
+    u32 tbt_m;
   } rng_test;
 
-  void adam_test(const u64 limit, rng_test *rsl);
+  void adam_examine(const u64 limit, rng_test *rsl, unsigned long long *seed, unsigned long long nonce);
 #endif
