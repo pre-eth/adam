@@ -71,17 +71,27 @@ static void accumulate(const u64 *restrict seed)
 #else
     const regd factor = SIMD_SETPD(DIV * LIMIT);
 
+    regd d1;
     reg r1 = SIMD_LOADBITS(&IV[0]);
-    reg r2 = SIMD_LOADBITS(&buffer[BUF_SIZE]);
+    reg r2;
 
     do {
-        r2 = SIMD_ADD64(r1, r2);
-        // shift r1 left by 1, then XOR r1 and r2, then store
-        // repeat twice if needed for AVX2
+        r2 = SIMD_LOADBITS(&buffer[offset]);
+        r1 = SIMD_XOR64(r1, r2);
+        d1 = SIMD_CASTPD(r1);
+        d1 = SIMD_MULPD(d1, factor);
+        SIMD_STOREPD((reg *) &chseeds[i], s1);
 
-        SIMD_STOREPD((reg *) &chseeds[(i << 2)], s1);
-        SIMD_STOREPD((reg *) &chseeds[(i << 2) + 4], s2);
-    } while (++i < (ROUNDS / 2));
+#ifndef __AVX512F__
+        r2 = SIMD_LOADBITS(&buffer[offset + 4]);
+        r1 = SIMD_XOR64(r1, r2);
+        d1 = SIMD_CASTPD(r1);
+        d1 = SIMD_MULPD(d1, factor);
+        SIMD_STOREPD((reg *) &chseeds[i + 4], s1);
+#endif
+        i += 8;
+        offset += 8;
+    } while (i < (ROUNDS << 2));
 #endif
 }
 
@@ -125,7 +135,7 @@ static void diffuse(u64 *restrict _ptr, const u64 nonce)
     // clang-format on
 }
 
-static void chaotic_iter(u64 *restrict in, u64 *restrict out, const u8 rounds)
+static void chaotic_iter(u64 *restrict in, u64 *restrict out, double *restrict chseeds)
 {
     const u64 *restrict limit = in + BUF_SIZE;
 
@@ -137,7 +147,7 @@ static void chaotic_iter(u64 *restrict in, u64 *restrict out, const u8 rounds)
     reg64q4 r1, r2;
 
     // Load 8 seeds at a time
-    dreg4q d1 = SIMD_LOAD4PD(&chseeds[rounds]);
+    dreg4q d1 = SIMD_LOAD4PD(chseeds);
     dreg4q d2;
 
     do {
@@ -185,59 +195,53 @@ static void chaotic_iter(u64 *restrict in, u64 *restrict out, const u8 rounds)
 
 static void apply(u64 *restrict _ptr)
 {
-    chaotic_iter(_ptr, &buffer[0], 0);
-    chaotic_iter(&buffer[0], &buffer[BUF_SIZE], 8);
-    chaotic_iter(&buffer[BUF_SIZE], _ptr, 16);
+    chaotic_iter(_ptr, &buffer[0], &chseeds[0]);
+    chaotic_iter(&buffer[0], &buffer[BUF_SIZE], &chseeds[8]);
+    chaotic_iter(&buffer[BUF_SIZE], _ptr, &chseeds[16]);
 }
 
-static void mix()
+static void mix(u64 *restrict _ptr)
 {
     const u16 limit = BUF_SIZE;
 
-    u16 dest  = 0;
-    u16 map_a = BUF_SIZE;
-    u16 map_b = BUF_SIZE << 1;
+    u16 map_a = 0;
+    u16 map_b = BUF_SIZE;
 
 #ifdef __AARCH64_SIMD__
     reg64q4 r1, r2, r3;
     do {
-        r1 = SIMD_LOAD64x4(&buffer[dest]);
+        r1 = SIMD_LOAD64x4(_ptr);
         r2 = SIMD_LOAD64x4(&buffer[map_a]);
         r3 = SIMD_LOAD64x4(&buffer[map_b]);
         SIMD_3XOR4Q64(r1, r2, r3);
-        SIMD_STORE64x4(&buffer[dest], r1);
-        dest += 8;
+        SIMD_STORE64x4(_ptr, r1);
+        _ptr += 8;
         map_a += 8;
         map_b += 8;
-    } while (dest < limit);
+    } while (map_a < BUF_SIZE);
 #else
-#define XOR_MAPS(i) buffer[0 + i] ^ buffer[0 + i + 256] ^ buffer[0 + i + 512], \
-                    buffer[1 + i] ^ buffer[1 + i + 256] ^ buffer[1 + i + 512], \
-                    buffer[2 + i] ^ buffer[2 + i + 256] ^ buffer[2 + i + 512], \
-                    buffer[3 + i] ^ buffer[3 + i + 256] ^ buffer[3 + i + 512]
-
-    reg r1, r2;
-
+    reg r1, r2, r3;
     do {
-        r1 = SIMD_SETR64(XOR_MAPS(i)
-#ifdef __AVX512F__
-                             ,
-            XOR_MAPS(i + 4)
+        r1 = SIMD_LOAD64((reg *) _ptr);
+        r2 = SIMD_LOAD64((reg *) &buffer[map_a]);
+        r3 = SIMD_LOAD64((reg *) &buffer[map_b]);
+        r1 = SIMD_XOR64(r1, r2);
+        r1 = SIMD_XOR64(r1, r3);
+        SIMD_STOREBITS((reg *) _ptr, r1);
+
+#ifndef __AVX512F__
+        r1 = SIMD_LOAD64((reg *) &_ptr[4]);
+        r2 = SIMD_LOAD64((reg *) &buffer[map_a + 4]);
+        r3 = SIMD_LOAD64((reg *) &buffer[map_b + 4]);
+        r1 = SIMD_XOR64(r1, r2);
+        r1 = SIMD_XOR64(r1, r3);
+        SIMD_STOREBITS((reg *) &_ptr[4], r1);
 #endif
-        );
 
-        r2 = SIMD_SETR64(XOR_MAPS(i + (SIMD_LEN >> 3))
-#ifdef __AVX512F__
-                             ,
-            XOR_MAPS(i + (SIMD_LEN >> 3) + 4)
-#endif
-        );
-
-        SIMD_STOREBITS((reg *) &buffer[i], r1);
-        SIMD_STOREBITS((reg *) &buffer[i + (SIMD_LEN >> 3)], r2);
-
-        i += (SIMD_LEN >> 2);
-    } while (i < BUF_SIZE);
+        _ptr += 8;
+        map_a += 8;
+        map_b += 8;
+    } while (map_a < BUF_SIZE);
 #endif
 }
 
@@ -261,35 +265,20 @@ static void reseed(u64 *restrict seed, u64 *restrict nonce)
     *nonce ^= ISAAC_IND(buffer, *nonce);
 }
 
-void adam_run(unsigned long long *seed, unsigned long long *nonce)
-{
-    accumulate(seed);
-    diffuse(*nonce);
-    apply();
-    mix();
-    reseed((u8 *) seed, nonce);
-}
-
 /*  ALGORITHM ENDS HERE. FOLLOWING IS ALL API RELATED STUFF  */
 
-#ifdef ADAM_MIN_LIB
-void adam(unsigned long long *_ptr, unsigned long long *seed, unsigned long long *nonce)
+void adam(unsigned long long *restrict _ptr, unsigned long long *restrict seed, unsigned long long *restrict nonce)
 {
-    adam_run(seed, nonce);
-    MEMCPY(&_ptr[0], &buffer[0], sizeof(u64) * BUF_SIZE);
-}
-#else
-void adam_connect(unsigned long long **_ptr, double **_chptr)
-{
-    *_ptr = &buffer[0];
-
-    if (_chptr != (void *) 0)
-        *_chptr = &chseeds[0];
+    accumulate(seed);
+    diffuse(_ptr, *nonce);
+    apply(_ptr);
+    mix(_ptr);
+    reseed(seed, nonce);
 }
 
-static void dbl_simd_fill(double *buf, u64 *seed, u64 *nonce, const u16 amount)
+#ifndef ADAM_MIN_LIB
+static void dbl_simd_fill(double *buf, unsigned long long *restrict _ptr, const unsigned amount)
 {
-    adam_run(seed, nonce);
     register u16 i = 0;
 
 #ifdef __AARCH64_SIMD__
@@ -299,7 +288,7 @@ static void dbl_simd_fill(double *buf, u64 *seed, u64 *nonce, const u16 amount)
     dreg4q d1;
 
     do {
-        r1        = SIMD_LOAD64x4(&buffer[i]);
+        r1        = SIMD_LOAD64x4(&_ptr[i]);
         d1.val[0] = SIMD_MULPD(SIMD_CASTPD(r1.val[0]), range);
         d1.val[1] = SIMD_MULPD(SIMD_CASTPD(r1.val[1]), range);
         d1.val[2] = SIMD_MULPD(SIMD_CASTPD(r1.val[2]), range);
@@ -313,13 +302,13 @@ static void dbl_simd_fill(double *buf, u64 *seed, u64 *nonce, const u16 amount)
     regd d1;
 
     do {
-        r1 = SIMD_LOAD64((reg *) &buffer[i]);
+        r1 = SIMD_LOAD64((reg *) &_ptr[i]);
         d1 = SIMD_CASTPD(r1);
         d1 = SIMD_MULPD(d1, max);
         SIMD_STOREPD((regd *) &buf[i], d1);
 
 #ifndef __AVX512F__
-        r1 = SIMD_LOAD64((reg *) &buffer[i + 4]);
+        r1 = SIMD_LOAD64((reg *) &_ptr[i + 4]);
         d1 = SIMD_CASTPD(r1);
         d1 = SIMD_MULPD(d1, max);
         SIMD_STOREPD((regd *) &buf[i + 4], d1);
@@ -328,9 +317,8 @@ static void dbl_simd_fill(double *buf, u64 *seed, u64 *nonce, const u16 amount)
 #endif
 }
 
-static void dbl_simd_fill_mult(double *buf, u64 *seed, u64 *nonce, const u16 amount, const u64 multiplier)
+static void dbl_simd_fill_mult(double *buf, unsigned long long *restrict _ptr, const unsigned amount, const unsigned long long multiplier)
 {
-    adam_run(seed, nonce);
     register u16 i = 0;
 
 #ifdef __AARCH64_SIMD__
@@ -340,7 +328,7 @@ static void dbl_simd_fill_mult(double *buf, u64 *seed, u64 *nonce, const u16 amo
     dreg4q d1;
 
     do {
-        r1        = SIMD_LOAD64x4(&buffer[i]);
+        r1        = SIMD_LOAD64x4(&_ptr[i]);
         d1.val[0] = SIMD_MULPD(SIMD_CASTPD(r1.val[0]), range);
         d1.val[1] = SIMD_MULPD(SIMD_CASTPD(r1.val[1]), range);
         d1.val[2] = SIMD_MULPD(SIMD_CASTPD(r1.val[2]), range);
@@ -356,14 +344,14 @@ static void dbl_simd_fill_mult(double *buf, u64 *seed, u64 *nonce, const u16 amo
     regd d1;
 
     do {
-        r1 = SIMD_LOAD64((reg *) &buffer[i]);
+        r1 = SIMD_LOAD64((reg *) &_ptr[i]);
         d1 = SIMD_CASTPD(r1);
         d1 = SIMD_MULPD(d1, max);
         d1 = SIMD_MULPD(d1, mult);
         SIMD_STOREPD((regd *) &buf[i], d1);
 
 #ifndef __AVX512F__
-        r1 = SIMD_LOAD64((reg *) &buffer[i + 4]);
+        r1 = SIMD_LOAD64((reg *) &_ptr[i + 4]);
         d1 = SIMD_CASTPD(r1);
         d1 = SIMD_MULPD(d1, max);
         d1 = SIMD_MULPD(d1, mult);
@@ -373,21 +361,23 @@ static void dbl_simd_fill_mult(double *buf, u64 *seed, u64 *nonce, const u16 amo
 #endif
 }
 
-void adam_frun(unsigned long long *seed, unsigned long long *nonce, double *buf, const unsigned int amount)
+void adam_frun(double *buf, unsigned long long *restrict _ptr, unsigned long long *restrict seed, unsigned long long *restrict nonce, const unsigned int amount)
 {
-    const u8 leftovers = amount & 7;
     register u32 count = 0;
     register u32 out, tmp;
 
     while (amount - count > 8) {
         tmp = amount - count;
         out = ((tmp > BUF_SIZE) << 8) | (!(tmp > BUF_SIZE) * tmp);
-        dbl_simd_fill(&buf[count], seed, nonce, out);
+        adam(_ptr, seed, nonce);
+        dbl_simd_fill(&buf[count], _ptr, out);
         count += out;
     }
 
-    if (LIKELY(amount & 7)) {
-        adam_run(seed, nonce);
+    const u8 leftovers = amount & 7;
+
+    if (LIKELY(leftovers)) {
+        adam(_ptr, seed, nonce);
         register u8 i = 0;
         do {
             buf[count] = (double) buffer[i++] / (double) __UINT64_MAX__;
@@ -395,21 +385,21 @@ void adam_frun(unsigned long long *seed, unsigned long long *nonce, double *buf,
     }
 }
 
-void adam_fmrun(unsigned long long *seed, unsigned long long *nonce, double *buf, const unsigned int amount, const unsigned long long multiplier)
+void adam_fmrun(double *buf, unsigned long long *restrict _ptr, unsigned long long *seed, unsigned long long *nonce, const unsigned int amount, const unsigned long long multiplier)
 {
-    const u8 leftovers = amount & 7;
     register u32 count = 0;
     register u32 out, tmp;
 
     while (amount - count > 8) {
         tmp = amount - count;
         out = ((tmp >= BUF_SIZE) << 8) | (!(tmp >= BUF_SIZE) * tmp);
-        dbl_simd_fill_mult(&buf[count], seed, nonce, out, multiplier);
+        dbl_simd_fill_mult(&buf[count], _ptr, out, multiplier);
         count += out;
     }
 
-    if (LIKELY(amount & 7)) {
-        adam_run(seed, nonce);
+    const u8 leftovers = amount & 7;
+
+    if (LIKELY(leftovers)) {
         register u8 i     = 0;
         const double mult = (double) multiplier;
         do {

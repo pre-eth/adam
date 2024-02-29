@@ -230,21 +230,21 @@ u8 gen_uuid(const u64 higher, const u64 lower, u8 *buf)
     MEMCPY(buf, &tmp, sizeof(u128));
 
     /*
-    CODE AND COMMENT PULLED FROM CRYPTOSYS
-    (https://www.cryptosys.net/pki/Uuid.c.html)
+        CODE AND COMMENT PULLED FROM CRYPTOSYS
+        (https://www.cryptosys.net/pki/Uuid.c.html)
 
-    Adjust certain bits according to RFC 4122 section 4.4.
-    This just means do the following
-    (a) set the high nibble of the 7th byte equal to 4 and
-    (b) set the two most significant bits of the 9th byte to 10'B,
-        so the high nibble will be one of {8,9,A,B}.
-  */
+        Adjust certain bits according to RFC 4122 section 4.4.
+        This just means do the following
+        (a) set the high nibble of the 7th byte equal to 4 and
+        (b) set the two most significant bits of the 9th byte to 10'B,
+            so the high nibble will be one of {8,9,A,B}.
+   */
     buf[6] = 0x40 | (buf[6] & 0xf);
     buf[8] = 0x80 | (buf[8] & 0x3f);
     return 0;
 }
 
-double stream_ascii(const u64 limit, u64 *seed, u64 *nonce)
+double stream_ascii(const u64 limit, u64 *restrict buffer, u64 *restrict seed, u64 *restrict nonce)
 {
     /*
         Split limit based on how many calls (if needed)
@@ -259,12 +259,9 @@ double stream_ascii(const u64 limit, u64 *seed, u64 *nonce)
 
     char *restrict _bptr = &bitbuffer[0];
 
-    u64 *buffer;
-    adam_connect(&buffer, NULL);
-
     while (rate > 0) {
         start = clock();
-        adam_run(seed, nonce);
+        adam(buffer, seed, nonce);
         duration += (double) (clock() - start) / (double) CLOCKS_PER_SEC;
         print_chunks(_bptr, buffer);
         --rate;
@@ -282,7 +279,7 @@ double stream_ascii(const u64 limit, u64 *seed, u64 *nonce)
     if (LIKELY(leftovers > 0)) {
         register u16 l = 0;
         start          = clock();
-        adam_run(seed, nonce);
+        adam(buffer, seed, nonce);
         duration += (double) (clock() - start) / (double) CLOCKS_PER_SEC;
 
         do {
@@ -293,16 +290,16 @@ double stream_ascii(const u64 limit, u64 *seed, u64 *nonce)
     return duration;
 }
 
-double dbl_ascii(const u32 limit, u64 *seed, u64 *nonce, const u32 multiplier, const u8 precision)
+double dbl_ascii(const u32 limit, u64 *restrict buffer, u64 *restrict seed, u64 *restrict nonce, const u32 multiplier, const u8 precision)
 {
     double *_buf = (double *) aligned_alloc(SIMD_LEN, limit * sizeof(double));
 
     register clock_t start = clock();
 
     if (multiplier > 1)
-        adam_fmrun(seed, nonce, _buf, limit, multiplier);
+        adam_fmrun(_buf, buffer, seed, nonce, limit, multiplier);
     else
-        adam_frun(seed, nonce, _buf, limit);
+        adam_frun(_buf, buffer, seed, nonce, limit);
 
     register double duration = (double) (clock() - start) / (double) CLOCKS_PER_SEC;
 
