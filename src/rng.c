@@ -277,6 +277,124 @@ void adam(unsigned long long *restrict _ptr, unsigned long long *restrict seed, 
 }
 
 #ifndef ADAM_MIN_LIB
+#include "../include/worker.h"
+
+void *adam_work(void *data)
+{
+    adam_worker *worker = (adam_worker *) data;
+
+#define DIV   5.4210109E-20
+#define LIMIT 0.5
+
+    worker->IV[0] ^= worker->seed[0];
+    worker->IV[1] ^= ~worker->seed[0];
+    worker->IV[2] ^= worker->seed[1];
+    worker->IV[3] ^= ~worker->seed[1];
+    worker->IV[4] ^= worker->seed[2];
+    worker->IV[5] ^= ~worker->seed[2];
+    worker->IV[6] ^= worker->seed[3];
+    worker->IV[7] ^= ~worker->seed[3];
+
+    register u16 i     = 0;
+    register u8 offset = worker->cc++;
+
+#ifdef __AARCH64_SIMD__
+    const dregq range = SIMD_SETQPD(DIV * LIMIT);
+
+    dreg4q seeds;
+    reg64q4 r1 = SIMD_LOAD64x4(&worker->IV[0]);
+    reg64q4 r2;
+
+    do {
+        r2 = SIMD_LOAD64x4(&worker->_buffer[offset]);
+        SIMD_XOR4RQ64(r1, r1, r2);
+        SIMD_CAST4QPD(seeds, r1);
+        SIMD_MUL4QPD(seeds, seeds, range);
+        SIMD_STORE4PD(&worker->_chseeds[i << 3], seeds);
+        offset += 8;
+    } while (++i < (ROUNDS / 2));
+
+    SIMD_STORE64x4(&worker->IV[0], r1);
+#else
+    const regd factor = SIMD_SETPD(DIV * LIMIT);
+
+    regd d1;
+    reg r1 = SIMD_LOADBITS(&worker->IV[0]);
+    reg r2;
+
+    do {
+        r2 = SIMD_LOADBITS((reg *) &worker->buffer[offset]);
+        r1 = SIMD_XOR64(r1, r2);
+        d1 = SIMD_CASTPD(r1);
+        d1 = SIMD_MULPD(d1, factor);
+        SIMD_STOREPD((reg *) &worker->_chseeds[i], s1);
+
+#ifndef __AVX512F__
+        r2 = SIMD_LOADBITS((reg *) &worker->buffer[offset + 4]);
+        r1 = SIMD_XOR64(r1, r2);
+        d1 = SIMD_CASTPD(r1);
+        d1 = SIMD_MULPD(d1, factor);
+        SIMD_STOREPD((reg *) &worker->_chseeds[i + 4], s1);
+#endif
+        offset += 8;
+    } while ((i += 8) < (ROUNDS << 2));
+#endif
+
+    diffuse(worker->_ptr, worker->nonce);
+    chaotic_iter(worker->_ptr, &worker->_buffer[0], &worker->_chseeds[0]);
+    chaotic_iter(&worker->_buffer[0], &worker->_buffer[BUF_SIZE], &worker->_chseeds[8]);
+    chaotic_iter(&worker->_buffer[BUF_SIZE], worker->_ptr, &worker->_chseeds[16]);
+
+    const u16 limit = BUF_SIZE;
+
+    i         = 0;
+    u16 map_a = 0;
+    u16 map_b = BUF_SIZE;
+
+#ifdef __AARCH64_SIMD__
+    reg64q4 r3;
+    do {
+        r1 = SIMD_LOAD64x4(&worker->_ptr[i]);
+        r2 = SIMD_LOAD64x4(&worker->_buffer[map_a]);
+        r3 = SIMD_LOAD64x4(&worker->_buffer[map_b]);
+        SIMD_3XOR4Q64(r1, r2, r3);
+        SIMD_STORE64x4(&worker->_ptr[i], r1);
+        i += 8;
+        map_a += 8;
+        map_b += 8;
+    } while (map_a < BUF_SIZE);
+#else
+    reg r1, r2, r3;
+    do {
+        r1 = SIMD_LOAD64((reg *) worker->_ptr);
+        r2 = SIMD_LOAD64((reg *) &worker->_buffer[map_a]);
+        r3 = SIMD_LOAD64((reg *) &worker->_buffer[map_b]);
+        r1 = SIMD_XOR64(r1, r2);
+        r1 = SIMD_XOR64(r1, r3);
+        SIMD_STOREBITS((reg *) worker->_ptr, r1);
+
+#ifndef __AVX512F__
+        r1 = SIMD_LOAD64((reg *) &worker->_ptr[4]);
+        r2 = SIMD_LOAD64((reg *) &worker->_buffer[map_a + 4]);
+        r3 = SIMD_LOAD64((reg *) &worker->_buffer[map_b + 4]);
+        r1 = SIMD_XOR64(r1, r2);
+        r1 = SIMD_XOR64(r1, r3);
+        SIMD_STOREBITS((reg *) &worker->_ptr[4], r1);
+#endif
+
+        worker->_ptr += 8;
+        map_a += 8;
+        map_b += 8;
+    } while (map_a < BUF_SIZE);
+#endif
+
+    worker->seed[0] ^= ISAAC_IND(worker->_buffer, worker->seed[0]);
+    worker->seed[1] ^= ISAAC_IND(worker->_buffer, worker->seed[1]);
+    worker->seed[2] ^= ISAAC_IND(worker->_buffer, worker->seed[2]);
+    worker->seed[3] ^= ISAAC_IND(worker->_buffer, worker->seed[3]);
+    worker->nonce ^= ISAAC_IND(worker->_buffer, worker->nonce);
+}
+
 static void dbl_simd_fill(double *buf, unsigned long long *restrict _ptr, const unsigned amount)
 {
     register u16 i = 0;

@@ -225,7 +225,20 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, double *restrict chseed
     } while (++i < BUF_SIZE);
 }
 
-void adam_test(const u64 limit, rng_test *rsl)
+static void adam_results(rng_test *rsl);
+
+static void adam_examine_parallel(adam_worker *_main, adam_worker *_sac)
+{
+    pthread_t th1, th2;
+    pthread_create(&th1, NULL, adam_work, (void *) _main);
+    pthread_create(&th2, NULL, adam_work, (void *) _sac);
+    pthread_join(th1, NULL);
+    pthread_join(th2, NULL);
+    MEMCPY(_sac->seed, _main->seed, sizeof(u64) * 4);
+    _sac->nonce = _main->nonce + 1;
+}
+
+void adam_examine(const u64 limit, rng_test *rsl, unsigned long long *seed, unsigned long long nonce)
 {
     register long int rate   = limit >> 14;
     register short leftovers = limit & (SEQ_SIZE - 1);
@@ -236,23 +249,38 @@ void adam_test(const u64 limit, rng_test *rsl)
     rsl->sequences       = rate + !!(leftovers);
     rsl->expected_chseed = rsl->sequences * (ROUNDS << 2);
 
-    adam_run(rsl->seed, &rsl->nonce);
+    adam_worker main_runner, sac_runner;
+    adam_worker_setup(&main_runner, seed, nonce);
 
-    rsl->min = rsl->max = rsl->buffer[0];
-    rsl->ent->sccu0     = rsl->buffer[0] & 0xFF;
+    nonce += 1;
+    adam_worker_setup(&sac_runner, seed, nonce);
 
+    adam_examine_parallel(&main_runner, &sac_runner);
+
+    rsl->min = rsl->max = main_runner._ptr[0];
+    rsl->ent->sccu0     = main_runner._ptr[0] & 0xFF;
+
+    rsl->tbt_m = ((limit >= 800000000) ? TBT_SEQ_SIZE16 : TBT_SEQ_SIZE);
     do {
-        test_loop(rsl);
-        adam_run(rsl->seed, &rsl->nonce);
+        test_loop(rsl, main_runner._ptr, main_runner._chseeds, sac_runner._ptr);
+        adam_examine_parallel(&main_runner, &sac_runner);
         leftovers -= (u16) (rate <= 0) << 14;
     } while (LIKELY(--rate > 0) || LIKELY(leftovers > 0));
 
+    adam_results(rsl);
+
+    adam_worker_cleanup(&main_runner);
+    adam_worker_cleanup(&sac_runner);
+}
+
+static void adam_results(rng_test *rsl)
+{
+    // First get the ENT results out of the way
     ent_results(rsl->ent);
 
     register double average_gaplength = 0.0;
 
     register u16 i = 0;
-
     register u64 tmp;
     for (; i < BUF_SIZE; ++i) {
         tmp = rsl->ent->freq[i];

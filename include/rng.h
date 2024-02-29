@@ -61,8 +61,8 @@
     Internals function prototypes, only added and defined if building for CLI or regular API
   */
 #ifndef ADAM_MIN_LIB
-  void adam_connect(unsigned long long **_ptr, double **_chptr);
-  void adam_frun(unsigned long long *seed, unsigned long long *nonce, double *buf, const unsigned int amount);
-  void adam_fmrun(unsigned long long *seed, unsigned long long *nonce, double *buf, const unsigned int amount, const unsigned long long multiplier);
+  void *adam_work(void *data);
+  void adam_frun(double *buf, unsigned long long *restrict _ptr, unsigned long long *restrict seed, unsigned long long *restrict nonce, const unsigned int amount);
+  void adam_fmrun(double *buf, unsigned long long *restrict _ptr, unsigned long long *restrict seed, unsigned long long *restrict nonce, const unsigned int amount, const unsigned long long multiplier);
 #endif
 #endif
