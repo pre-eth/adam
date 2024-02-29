@@ -1,6 +1,9 @@
-#include "../include/test.h"
+#include <pthread.h>
+
 #include "../include/ent.h"
 #include "../include/rng.h"
+#include "../include/test.h"
+#include "../include/worker.h"
 
 static u64 range_dist[RANGE_CAT];
 static u64 chseed_dist[CHSEED_CAT];
@@ -13,19 +16,20 @@ static u64 fpfreq_dist[FPF_CAT];
 static u64 fpf_quadrants[4];
 static u64 fp_perm_dist[FP_PERM_CAT];
 
-/* 
-    Bit array for representing __UINT16_MAX__ values 
-    1 bit = corresponding u16 value
-*/
-static u64 tbt_bitarray[TBT_BITARRAY_SIZE];
-static double tbt_chi_calc;
+static double tbt_dist[TBT_DF];
+static u8 tbt_trials, tbt_successes;
 static u64 tbt_pass;
 
-static u64 copy[BUF_SIZE];
 static u64 ham_dist[AVALANCHE_CAT + 1];
 
-static void ham(const u64 num)
+
+static void sac(const u64 *restrict run1, const u64 *restrict run2)
 {
+    register u16 i = 0;
+    do {
+        ++ham_dist[POPCNT(run1[i] ^ run2[i])];
+    } while (++i < BUF_SIZE);
+}
 
 static void fp_perm(const double num, u64 *perms)
 {
@@ -59,6 +63,7 @@ static void fp_perm(const double num, u64 *perms)
             d               = tuple[perm_idx];
             tuple[perm_idx] = tuple[s];
             tuple[s]        = d;
+
             --perm_idx;
         }
 
@@ -157,7 +162,7 @@ static void tally_bitruns(u64 num, rng_test *rsl)
     } while (num >>= 1);
 }
 
-static void chseed_unif(double *chseeds, double *avg_chseed)
+static void chseed_unif(double *restrict chseeds, double *avg_chseed)
 {
     register u8 i = 0, idx;
     do {
@@ -167,28 +172,31 @@ static void chseed_unif(double *chseeds, double *avg_chseed)
     } while (++i < (ROUNDS << 2));
 }
 
-static void test_loop(rng_test *rsl)
+static void test_loop(rng_test *rsl, u64 *restrict _ptr, double *restrict chseeds, u64 *restrict sac_ptr)
 {
     // Chaotic seeds all occur within (0.0, 0.5).
     // This function tracks their distribution and we check the uniformity at the end.
-    chseed_unif(rsl->chseeds, &rsl->avg_chseed);
+    chseed_unif(chseeds, &rsl->avg_chseed);
+
+    // Strict Avalanche Criterion (SAC) test
+    // Records the Hamming Distance between this number and the number that
+    // was in the same index in the buffer during the previous iteration
+    sac(_ptr, sac_ptr);
+
+    // Topological Binary Test
+    // tbt((u16 *) _ptr, rsl->tbt_m);
 
     register u16 i = 0;
     register double d;
     u64 num;
     do {
-        num = rsl->buffer[i];
+        num = _ptr[i];
         rsl->odd += (num & 1);
         rsl->mfreq += POPCNT(num);
 
         // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
         rsl->min = num ^ ((rsl->min ^ num) & -(rsl->min < num));
         rsl->max = rsl->max ^ ((rsl->max ^ num) & -(rsl->max < num));
-
-        // Records the Hamming Distance between this number and the number that
-        // was in the same index in the buffer during the previous iteration
-        ++ham_dist[POPCNT(copy[i] ^ num)];
-        copy[i] = num;
 
         // Convert this number to float with same logic used for returning FP results
         // Then record float for FP freq distribution in (0.0, 1.0)
