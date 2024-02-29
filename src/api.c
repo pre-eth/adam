@@ -4,9 +4,12 @@
 #include "../include/defs.h"
 #include "../include/rng.h"
 
-static u64 *buffer;
+static u64 buffer[ADAM_BUF_SIZE] ALIGN(ADAM_ALIGNMENT); //  Our output vector of 256 64-bit integers
+static u8 buff_idx;                                     //  Current index in buffer
+static u64 adam_seed[4];                                //  256-bit seed
+static u64 adam_nonce;                                  //  64-bit nonce
 
-void adam_setup(adam_data *data, unsigned long long *seed, unsigned long long *nonce)
+void adam_setup(unsigned long long *seed, unsigned long long *nonce)
 {
     // data->seed[0] = 0x43CE8BAD891F0610;
     // data->seed[1] = 0xB1B2B727643446EA;
@@ -15,39 +18,50 @@ void adam_setup(adam_data *data, unsigned long long *seed, unsigned long long *n
 
     // data->nonce = 0x031CC6BD641FA81C;
     if (seed == NULL)
-        getentropy(&data->seed[0], sizeof(u64) << 2);
+        getentropy(&adam_seed[0], sizeof(u64) << 2);
     else
-        MEMCPY(&data->seed[0], &seed[0], sizeof(u64) << 2);
+        MEMCPY(&adam_seed[0], &seed[0], sizeof(u64) << 2);
 
     if (nonce == NULL)
-        getentropy(&data->nonce, sizeof(u64));
+        getentropy(&adam_nonce, sizeof(u64));
     else
-        data->nonce = *nonce;
-
-    data->index = 0;
-
-    // adam_data() is an internal function for accessing the raw memory used by the RNG
-    adam_connect(&buffer, NULL);
+        adam_nonce = *nonce;
 }
 
-static unsigned long long get_int(adam_data *data, const unsigned char width)
+unsigned long long *adam_rng_seed()
+{
+    return &adam_seed[0];
+}
+
+unsigned long long *adam_rng_nonce()
+{
+    return &adam_nonce;
+}
+
+unsigned long long *adam_rng_buffer()
+{
+    buff_idx = 0;
+    return &buffer[0];
+}
+
+static unsigned long long get_int(const unsigned char width)
 {
     const u64 mask   = (width == 64) ? __UINT64_MAX__ : ((1UL << width) - 1);
-    register u64 out = buffer[data->index] & mask;
-    buffer[data->index] >>= width;
-    data->index += (!buffer[data->index]);
+    register u64 out = buffer[buff_idx] & mask;
+    buffer[buff_idx] >>= width;
+    buff_idx += (!buffer[buff_idx]);
     return out;
 }
 
-static unsigned long long regen_int(adam_data *data, const unsigned char width)
+static unsigned long long regen_int(const unsigned char width)
 {
-    adam_run(data->seed, &data->nonce);
-    return get_int(data, width);
+    adam(&buffer[0], adam_seed, &adam_nonce);
+    return get_int(width);
 }
 
-unsigned long long adam_int(adam_data *data, unsigned char width)
+unsigned long long adam_int(unsigned char width, const unsigned char force_regen)
 {
-    static unsigned long long (*int_fn[])(adam_data *, const unsigned char) = {
+    static unsigned long long (*int_fn[])(const unsigned char) = {
         &get_int,
         &regen_int
     };
@@ -55,33 +69,33 @@ unsigned long long adam_int(adam_data *data, unsigned char width)
     if (width != 8 && width != 16 && width != 32 && width != 64)
         width = 64;
 
-    return int_fn[!buffer[ADAM_BUF_SIZE - 1]](data, width);
+    return int_fn[!buff_idx || force_regen](width);
 }
 
-static double get_dbl(adam_data *data, const unsigned long long scale)
+static double get_dbl(const unsigned long long scale)
 {
-    register double out = ((double) buffer[data->index] / (double) __UINT64_MAX__);
-    buffer[data->index] = 0;
-    ++data->index;
+    register double out = ((double) buffer[buff_idx] / (double) __UINT64_MAX__);
+    buffer[buff_idx]    = 0;
+    ++buff_idx;
     return out * (double) (scale + !scale);
 }
 
-static double regen_dbl(adam_data *data, const unsigned long long scale)
+static double regen_dbl(const unsigned long long scale)
 {
-    adam_run(data->seed, &data->nonce);
-    return get_dbl(data, scale);
+    adam(&buffer[0], adam_seed, &adam_nonce);
+    return get_dbl(scale);
 }
 
-double adam_dbl(adam_data *data, unsigned long long scale)
+double adam_dbl(unsigned long long scale, const unsigned char force_regen)
 {
-    static double (*dbl_fn[])(adam_data *, const unsigned long long) = {
+    static double (*dbl_fn[])(const unsigned long long) = {
         &get_dbl,
         &regen_dbl
     };
-    return dbl_fn[!buffer[BUF_SIZE - 1]](data, scale);
+    return dbl_fn[!buff_idx || force_regen](scale);
 }
 
-int adam_fill(adam_data *data, void *buf, unsigned char width, const unsigned int amount)
+int adam_fill(void *buf, unsigned char width, const unsigned int amount)
 {
     if (!amount || amount > 1000000000UL)
         return 1;
@@ -95,35 +109,34 @@ int adam_fill(adam_data *data, void *buf, unsigned char width, const unsigned in
     register long limit = amount >> CTZ(one_run);
 
     while (limit > 0) {
-        adam_run(data->seed, &data->nonce);
+        adam(&buffer[0], adam_seed, &adam_nonce);
         MEMCPY(buf, &buffer[0], SEQ_BYTES);
         buf += SEQ_BYTES;
         --limit;
     }
 
     if (LIKELY(leftovers > 0)) {
-        adam_run(data->seed, &data->nonce);
+        adam(&buffer[0], adam_seed, &adam_nonce);
         MEMCPY(buf, &buffer[0], leftovers * (width >> 3));
     }
 
     return 0;
 }
 
-int adam_dfill(adam_data *data, double *buf, const unsigned long long multiplier, const unsigned int amount)
+int adam_dfill(double *buf, const unsigned long long multiplier, const unsigned int amount)
 {
     if (!amount || amount > 1000000000UL)
         return 1;
 
     if (multiplier > 1)
-
-        adam_fmrun(data->seed, &data->nonce, buf, amount, multiplier);
+        adam_fmrun(buf, &buffer[0], adam_seed, &adam_nonce, amount, multiplier);
     else
-        adam_frun(data->seed, &data->nonce, buf, amount);
+        adam_frun(buf, &buffer[0], adam_seed, &adam_nonce, amount);
 
     return 0;
 }
 
-void *adam_choice(adam_data *data, void *arr, const unsigned long long size)
+void *adam_choice(void *arr, const unsigned long long size)
 {
-    return &arr[adam_int(data, 64) % size];
+    return &arr[adam_int(64, false) % size];
 }
