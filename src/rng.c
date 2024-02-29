@@ -1,22 +1,22 @@
+#include "../include/rng.h"
 #include "../include/defs.h"
 #include "../include/simd.h"
-#include "../include/rng.h"
 
 /*
     The algorithm requires at least the construction of 3 maps of size BUF_SIZE
-    Offsets logically represent each individual map, but it's all one buffer.
+
+    This buffer contains 2 of the internal maps used for generating the chaotic
+    output. The final output vector is provided by the user, a pointer to an array 
+    of at least size 256 * sizeof(u64) bytes.
 
     static is important because otherwise buffer is initiated with junk that
     removes the deterministic nature of the algorithm
 */
-static unsigned long long buffer[BUF_SIZE * 3] ALIGN(SIMD_LEN);
+static unsigned long long buffer[BUF_SIZE << 1] ALIGN(SIMD_LEN);
 
-// Seeds supplied to each iteration of the chaotic function
-// Per each round, 8 consecutive chseeds are supplied
+//  Seeds supplied to each iteration of the chaotic function
+//  Per each round, 8 consecutive chseeds are supplied
 static double chseeds[ROUNDS << 2] ALIGN(SIMD_LEN);
-
-// Counter
-static u64 cc;
 
 /*
     8 64-bit IV's that correspond to the verse:
@@ -29,25 +29,27 @@ static u64 IV[8] ALIGN(SIMD_LEN) = {
     0x68202847656E6573, 0x697320313A323829
 };
 
-static void accumulate(const u64 *seed)
-{   
+static u8 cc; // Counter
+
+static void accumulate(const u64 *restrict seed)
+{
     // clang-format off
     // To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random double D
     #define DIV   5.4210109E-20
     #define LIMIT 0.5
     // clang-format on
-    
-    IV[0] ^= seed[0];
-    IV[1] ^= seed[1];
-    IV[2] ^= seed[2];
-    IV[3] ^= seed[3];
-    IV[4] ^= seed[0];
-    IV[5] ^= seed[1];
-    IV[6] ^= seed[2];
-    IV[7] ^= seed[3];
 
-    register u8 i = 0;
-    register u16 offset = BUF_SIZE + (cc++ & 0xFF);
+    IV[0] ^= seed[0];
+    IV[1] ^= ~seed[0];
+    IV[2] ^= seed[1];
+    IV[3] ^= ~seed[1];
+    IV[4] ^= seed[2];
+    IV[5] ^= ~seed[2];
+    IV[6] ^= seed[3];
+    IV[7] ^= ~seed[3];
+
+    register u8 i       = 0;
+    register u16 offset = cc++;
 
 #ifdef __AARCH64_SIMD__
     const dregq range = SIMD_SETQPD(DIV * LIMIT);
@@ -79,13 +81,14 @@ static void accumulate(const u64 *seed)
 
         SIMD_STOREPD((reg *) &chseeds[(i << 2)], s1);
         SIMD_STOREPD((reg *) &chseeds[(i << 2) + 4], s2);
-    } while (++i < (ROUNDS >> 1));
+    } while (++i < (ROUNDS / 2));
 #endif
 }
 
-static void diffuse(const u64 nonce)
-{   
+static void diffuse(u64 *restrict _ptr, const u64 nonce)
+{
     // clang-format off
+
     // For diffusing the buffer
     #define ISAAC_MIX(a,b,c,d,e,f,g,h) { \
         a-=e; f^=h>>9;  h+=a; \
@@ -97,7 +100,6 @@ static void diffuse(const u64 nonce)
         g-=c; d^=f>>17; f+=g; \
         h-=d; e^=g<<14; g+=h; \
     }
-    // clang-format on
 
     // Following logic is adapted from ISAAC64, by Bob Jenkins
     register u64 a, b, c, d, e, f, g, h;
@@ -111,31 +113,21 @@ static void diffuse(const u64 nonce)
 
     i = 0;
     do {
-        a += buffer[i];
-        b += buffer[i + 1];
-        c += buffer[i + 2];
-        d += buffer[i + 3];
-        e += buffer[i + 4];
-        f += buffer[i + 5];
-        g += buffer[i + 6];
-        h += buffer[i + 7];
+       a += _ptr[i + 0]; b += _ptr[i + 1]; c += _ptr[i + 2]; d += _ptr[i + 3];
+       e += _ptr[i + 4]; f += _ptr[i + 5]; g += _ptr[i + 6]; h += _ptr[i + 7];
 
-        ISAAC_MIX(a, b, c, d, e, f, g, h);
+       ISAAC_MIX(a, b, c, d, e, f, g, h);
 
-        buffer[i]     = a;
-        buffer[i + 1] = b;
-        buffer[i + 2] = c;
-        buffer[i + 3] = d;
-        buffer[i + 4] = e;
-        buffer[i + 5] = f;
-        buffer[i + 6] = g;
-        buffer[i + 7] = h;
+       _ptr[i + 0] = a; _ptr[i + 1] = b; _ptr[i + 2] = c; _ptr[i + 3] = d;
+       _ptr[i + 4] = e; _ptr[i + 5] = f; _ptr[i + 6] = g; _ptr[i + 7] = h;
     } while ((i += 8) < BUF_SIZE);
+
+    // clang-format on
 }
 
-static void chaotic_iter(u16 idx, u16 start, const u8 rounds)
+static void chaotic_iter(u64 *restrict in, u64 *restrict out, const u8 rounds)
 {
-    const u16 limit = idx + BUF_SIZE;
+    const u64 *restrict limit = in + BUF_SIZE;
 
 #ifdef __AARCH64_SIMD__
     const dregq one   = SIMD_SETQPD(1.0);
@@ -159,11 +151,11 @@ static void chaotic_iter(u16 idx, u16 start, const u8 rounds)
 
         // Cast, XOR, and store
         SIMD_CAST4Q64(r1, d2);
-        r2 = SIMD_LOAD64x4(&buffer[idx]);
+        r2 = SIMD_LOAD64x4(in);
         SIMD_XOR4RQ64(r1, r1, r2);
-        SIMD_STORE64x4(&buffer[start], r1);
-        start += 8;
-    } while ((idx += 8) < limit);
+        SIMD_STORE64x4(out, r1);
+        out += 8;
+    } while ((in += 8) < limit);
 #else
     const regd beta        = SIMD_SETQPD(BETA);
     const regd coefficient = SIMD_SETQPD(COEFFICIENT);
@@ -191,11 +183,11 @@ static void chaotic_iter(u16 idx, u16 start, const u8 rounds)
 #endif
 }
 
-static void apply()
+static void apply(u64 *restrict _ptr)
 {
-    chaotic_iter(0, 256, 0);
-    chaotic_iter(256, 512, 8);
-    chaotic_iter(512, 0, 16);
+    chaotic_iter(_ptr, &buffer[0], 0);
+    chaotic_iter(&buffer[0], &buffer[BUF_SIZE], 8);
+    chaotic_iter(&buffer[BUF_SIZE], _ptr, 16);
 }
 
 static void mix()
@@ -249,19 +241,23 @@ static void mix()
 #endif
 }
 
-static void reseed(u8 *seed, u64 *nonce)
+static void reseed(u64 *restrict seed, u64 *restrict nonce)
 {
     // clang-format off
     // Slightly modified macro from ISAAC for reseeding ADAM
-    #define ISAAC_IND(mm, x) (*(u64 *) ((u8 *) (mm) + (4096 + (x & 2047))))
+    #define ISAAC_IND(mm, x) (*(u64 *) ((u8 *) (mm) + (2048 + (x & 1023) + (x & 511))))
     // clang-format on
 
-    static u8 byte_idx;
+    // static u8 byte_idx;
 
-    ++seed[byte_idx];
-    seed[byte_idx + !(byte_idx & 32) - (byte_idx & 32)] += !seed[byte_idx];
-    byte_idx += (!seed[byte_idx] & !(byte_idx & 32)) - (byte_idx & 32) * !seed[byte_idx];
+    // ++seed[byte_idx];
+    // seed[byte_idx + !(byte_idx & 32) - (byte_idx & 32)] += !seed[byte_idx];
+    // byte_idx = byte_idx + ((!(byte_idx & 32) - (byte_idx & 32)) * !seed[byte_idx]);
 
+    seed[0] ^= ISAAC_IND(buffer, seed[0]);
+    seed[1] ^= ISAAC_IND(buffer, seed[1]);
+    seed[2] ^= ISAAC_IND(buffer, seed[2]);
+    seed[3] ^= ISAAC_IND(buffer, seed[3]);
     *nonce ^= ISAAC_IND(buffer, *nonce);
 }
 
