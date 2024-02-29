@@ -320,49 +320,47 @@ double dbl_ascii(const u32 limit, u64 *restrict buffer, u64 *restrict seed, u64 
     return duration;
 }
 
-double stream_bytes(const u64 limit, u64 *seed, u64 *nonce)
+double stream_bytes(const u64 limit, u64 *restrict buffer, u64 *restrict seed, u64 *restrict nonce)
 {
-    /*
-        Split limit based on how many calls we need to make
-        to write the bytes of an entire buffer directly
-    */
-    const u16 leftovers = limit & (SEQ_SIZE - 1);
-
-    u64 *buffer;
-
-    adam_connect(&buffer, NULL);
-
     register double duration = 0.0;
     register clock_t start;
     register u64 progress = 0;
     while (LIKELY(progress < limit)) {
         start = clock();
-        adam_run(seed, nonce);
+        adam(buffer, seed, nonce);
         duration += (double) (clock() - start) / (double) CLOCKS_PER_SEC;
-        fwrite(&buffer[0], sizeof(u64), BUF_SIZE, stdout);
+        fwrite(buffer, sizeof(u64), BUF_SIZE, stdout);
         progress += SEQ_SIZE;
     }
 
+    /*
+        Split limit based on how many calls we need to make
+        to write the bytes of an entire buffer directly
+
+        We multiply SEQ_SIZE by 4 because we write 4 buffers
+        at once
+    */
+    const u16 leftovers = (limit & ((SEQ_SIZE << 2) - 1)) >> 6;
     if (LIKELY(leftovers > 0)) {
         start = clock();
-        adam_run(seed, nonce);
+        adam(buffer, seed, nonce);
         duration += (double) (clock() - start) / (double) CLOCKS_PER_SEC;
-        fwrite(&buffer[0], sizeof(u64), BUF_SIZE, stdout);
+        fwrite(buffer, sizeof(u64), leftovers, stdout);
     }
 
     return duration;
 }
 
-double dbl_bytes(const u32 limit, u64 *seed, u64 *nonce, const u32 multiplier)
+double dbl_bytes(const u32 limit, u64 *restrict buffer, u64 *restrict seed, u64 *restrict nonce, const u32 multiplier)
 {
     double *_buf = (double *) aligned_alloc(SIMD_LEN, limit * sizeof(double));
 
     register clock_t start = clock();
 
     if (multiplier > 1)
-        adam_fmrun(seed, nonce, _buf, limit, multiplier);
+        adam_fmrun(_buf, buffer, seed, nonce, limit, multiplier);
     else
-        adam_frun(seed, nonce, _buf, limit);
+        adam_frun(_buf, buffer, seed, nonce, limit);
 
     register double duration = (double) (clock() - start) / (double) CLOCKS_PER_SEC;
 
@@ -658,7 +656,7 @@ static void print_avalanche_results(const u16 indent, rng_test *rsl)
     printf("\033[2m\033[%uC               e. [48, 64]: \033[m%*llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, pad, (u64) quadrants[3], (u64) quadrants[3] - (u64) bin_counts[3], (u64) bin_counts[3]);
 }
 
-void get_seq_properties(const u64 limit, const unsigned long long *seed, const unsigned long long nonce)
+void get_seq_properties(const u64 limit, unsigned long long *seed, unsigned long long nonce)
 {
     // Screen info for pretty printing
     u16 center, indent, swidth;
@@ -670,7 +668,7 @@ void get_seq_properties(const u64 limit, const unsigned long long *seed, const u
     ent_report ent;
     rsl.ent = &ent;
 
-    // Record initial state
+    // Record initial state and assign output vector
     u64 init_values[5];
     init_values[0] = seed[0];
     init_values[1] = seed[1];
@@ -678,14 +676,10 @@ void get_seq_properties(const u64 limit, const unsigned long long *seed, const u
     init_values[3] = seed[3];
     init_values[4] = nonce;
 
-    // Connect internal integer and chaotic seed arrays to rng_test
-    adam_connect(&rsl.buffer, &rsl.chseeds);
-
-    printf("\033[1;33mExamining %llu bits of ADAM...\033[m\n", limit);
-
     // Start examination!
+    printf("\033[1;33mExamining %llu bits of ADAM...\033[m\n", limit);
     register clock_t start = clock();
-    adam_test(limit, &rsl);
+    adam_examine(limit, &rsl, seed, nonce);
     register double duration = ((double) (clock() - start) / (double) CLOCKS_PER_SEC);
 
     // Output the results to the user

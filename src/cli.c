@@ -291,7 +291,7 @@ static u8 assess()
     if (c == '1')
         duration = stream_ascii(limit, adam_rng_buffer(), adam_rng_seed(), adam_rng_nonce());
     else
-        duration = stream_bytes(limit, adam_rng_seed(), adam_rng_nonce());
+        duration = stream_bytes(limit, adam_rng_buffer(), adam_rng_seed(), adam_rng_nonce());
 
     fprintf(stderr,
         "\n\033[0mGenerated \033[36m%llu\033[m bits in \033[36m%lfs\033[m\n",
@@ -333,7 +333,7 @@ int main(int argc, char **argv)
         case 'a':
             return assess();
         case 'b':
-            stream_bytes(__UINT64_MAX__, adam_rng_seed(), adam_rng_nonce());
+            stream_bytes(__UINT64_MAX__, adam_rng_buffer(), adam_rng_seed(), adam_rng_nonce());
             return 0;
         case 'x':
             hex = true;

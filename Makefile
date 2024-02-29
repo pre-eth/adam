@@ -1,7 +1,7 @@
 BUILD_DIR = ./build
 CC = @gcc
 
-CFLAGS = -Iinclude -Os -flto 	# -Wall -Wextra -Wpedantic -Werror
+CFLAGS = -Iinclude -Os -flto	# -Wall -Wextra -Wpedantic -Werror
 UNAME_P := $(shell uname -p)
 
 ifeq ($(UNAME_P), arm)
@@ -17,10 +17,10 @@ endif
  
 STD_LIB = rng api
 LIB_OBJ = $(STD_LIB:%=src/%.o)
-CLI = ent test support cli
+CLI = ent test support cli worker
 OBJ = $(CLI:%=src/%.o) $(LIB_OBJ)
 
-all: cli lib
+all: lib cli
 	@clang-format -i src/*.c
 	@mkdir -p $(BUILD_DIR)
 	@rm $(OBJ)
@@ -30,8 +30,9 @@ all: cli lib
 
 cli: $(OBJ)
 	@echo "\033[1;36mBuilding ADAM CLI...\033[m"
-	$(CC) -o $(BUILD_DIR)/adam $(OBJ)
+	$(CC) -lpthread -o $(BUILD_DIR)/adam $(OBJ) 
 	@echo "\033[1;32mFinished! Run adam -h to get started!\033[m"
+	@cp ./build/adam ~/.local/bin/adam
 
 lib: $(LIB_OBJ)
 	@echo "\033[1;36mBuilding ADAM library (standard API)...\033[m"

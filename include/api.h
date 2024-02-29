@@ -15,7 +15,7 @@
   /*    STANDARD API    */
 
   /*
-    Configures its initial state.
+    Configures ADAM's initial state.
     
     Call this ONCE at the start of your program, before generating any numbers.
 
