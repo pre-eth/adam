@@ -14,9 +14,6 @@
 #define OPTSTR       ":hvdfbxoap:m:w:e:r:u::s::n::"
 #define ARG_COUNT    16
 
-//  Pointer to RNG buffer and state
-static adam_data data;
-
 //  Number of bits in results (8, 16, 32, 64)
 static u8 width;
 
@@ -162,7 +159,7 @@ static u8 help(void)
 
 static void print_int()
 {
-    const u64 num = adam_int(&data, width);
+    const u64 num = adam_int(width, false);
     if (hex)
         printf("0x%llx", num);
     else if (octal)
@@ -173,7 +170,7 @@ static void print_int()
 
 static void print_dbl()
 {
-    const double d = adam_dbl(&data, mult);
+    const double d = adam_dbl(mult, false);
     printf("%.*lf", precision, d);
 }
 
@@ -206,8 +203,8 @@ static u8 uuid(const char *strlimit)
     u64 lower, upper;
 
     do {
-        lower = adam_int(&data, 64);
-        upper = adam_int(&data, 64);
+        lower = adam_int(64, false);
+        upper = adam_int(64, false);
         gen_uuid(upper, lower, &buf[0]);
 
         // Print the UUID
@@ -239,9 +236,9 @@ static u8 assessf(bool ascii_mode)
 
     register double duration;
     if (ascii_mode)
-        duration = dbl_ascii(limit, &data.seed[0], &data.nonce, output_mult, precision);
+        duration = dbl_ascii(limit, adam_rng_buffer(), adam_rng_seed(), adam_rng_nonce(), output_mult, precision);
     else
-        duration = dbl_bytes(limit, &data.seed[0], &data.nonce, output_mult);
+        duration = dbl_bytes(limit, adam_rng_buffer(), adam_rng_seed(), adam_rng_nonce(), output_mult);
 
     fprintf(stderr,
         "\n\033[0mGenerated \033[36m%llu\033[m doubles in \033[36m%lfs\033[m\n",
@@ -292,9 +289,9 @@ static u8 assess()
     register u64 limit = TESTING_BITS * mult;
 
     if (c == '1')
-        duration = stream_ascii(limit, &data.seed[0], &data.nonce);
+        duration = stream_ascii(limit, adam_rng_buffer(), adam_rng_seed(), adam_rng_nonce());
     else
-        duration = stream_bytes(limit, &data.seed[0], &data.nonce);
+        duration = stream_bytes(limit, adam_rng_seed(), adam_rng_nonce());
 
     fprintf(stderr,
         "\n\033[0mGenerated \033[36m%llu\033[m bits in \033[36m%lfs\033[m\n",
@@ -309,13 +306,13 @@ static u8 examine(const char *strlimit)
     register u64 limit = TESTING_BITS;
     if (strlimit != NULL)
         limit *= a_to_u(strlimit, 1, BITS_TESTING_LIMIT);
-    get_seq_properties(limit, &data.seed[0], data.nonce);
+    get_seq_properties(limit, adam_rng_seed(), *adam_rng_nonce());
     return 0;
 }
 
 int main(int argc, char **argv)
 {
-    adam_setup(&data, NULL, NULL);
+    adam_setup(NULL, NULL);
 
     results   = 1;
     hex       = false;
@@ -336,7 +333,7 @@ int main(int argc, char **argv)
         case 'a':
             return assess();
         case 'b':
-            stream_bytes(__UINT64_MAX__, &data.seed[0], &data.nonce);
+            stream_bytes(__UINT64_MAX__, adam_rng_seed(), adam_rng_nonce());
             return 0;
         case 'x':
             hex = true;
@@ -355,10 +352,10 @@ int main(int argc, char **argv)
                 return err("Invalid number of results specified for desired width");
             continue;
         case 's':
-            rwseed(&data.seed[0], optarg);
+            rwseed(adam_rng_seed(), optarg);
             continue;
         case 'n':
-            rwnonce(&data.nonce, optarg);
+            rwnonce(adam_rng_nonce(), optarg);
             continue;
         case 'u':
             return uuid(optarg);
