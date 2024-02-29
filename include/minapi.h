@@ -26,11 +26,12 @@
     allows you to use other platform specific functions to read random data. It's also not too hard
     to provide a good (or bad :P) seed/nonce yourself though - there's plenty of tutorials for it
     and you can have a scheme set up in like 10 minutes. After you provide the initial <seed> and
-    <nonce> parameters to ADAM, continue to pass the pointers but DO NOT modify the values again.
+    <nonce> parameters to ADAM, continue to pass the pointers but DO NOT modify the values again,
+    unless you want to reset or create a new stream.
 
     Caller must guarantee that <buffer> points to an array of at least 256 * 8 = 2048 bytes.
 
     IMPORTANT: NEVER PASS NULL FOR params <seed> OR <nonce>!!!!
   */
-  void adam(unsigned long long *buffer, unsigned long long *seed, unsigned long long *nonce);
+  void adam(unsigned long long *restrict _ptr, unsigned long long *restrict seed, unsigned long long *restrict nonce);
 #endif

@@ -14,30 +14,39 @@
 
   /*    STANDARD API    */
 
-  // Data for RNG process
-  typedef struct adam_data {
-    //  Current index in output vector
-    unsigned char index;       
-
-    //  256-bit seed/key
-    unsigned long long seed[4];          
-
-    //  64-bit nonce      
-    unsigned long long nonce;                        
-  } adam_data;
-
   /*
-    Initializes the adam_data struct and configures its initial state.
+    Configures its initial state.
     
-    Call this ONCE at the start of your program, before you generate any 
-    numbers. Set param "gen_dbls" to true to get double precision numbers.
+    Call this ONCE at the start of your program, before generating any numbers.
 
     Params <seed> and <nonce> are optional - set to NULL if you'd like to seed
     the generator with secure random bytes from the operating system itself.
     Otherwise, the caller must ensure that <seed> points to 256-bits of data,
     and that nonce points to a u64.
   */
-  void adam_setup(adam_data *data, unsigned long long *seed, unsigned long long *nonce);
+  void adam_setup(unsigned long long *seed, unsigned long long *nonce);
+
+  /*
+    Self-explanatory functions - return a raw pointer to the set of chaotic
+    seeds, current seed, current nonce, and output vector respectively
+
+    When working with the raw buffer, remember the ADAM_BUF_SIZE when doing
+    any indexing or pointer math. adam_rng_buffer() guarantees that the
+    return pointer contains at least 256 randomly generated 64-bit values.
+
+    You can modify the buffer if you'd like, but it will have no effect, as
+    the buffer is managed internally and only returned for inspection.
+
+    NOTE: Upon receiving the output vector pointer, the internal index for
+    the vector is reset, meaning the vector will be fully regenerated on ANY
+    future API calls. This forced regeneration is done because once ADAM hands
+    off the raw pointer to you, it assumes you use the entire buffer. And it's okay
+    even if you don't - this is still a nice sanity reset as it allows us to avoid 
+    tracking the internal index after the caller gets the pointer.
+  */
+  unsigned long long *adam_rng_seed(void);
+  unsigned long long *adam_rng_nonce(void);
+  unsigned long long *adam_rng_buffer(void);
 
   /*
     Returns a random unsigned integer of the specified <width>.
@@ -49,7 +58,7 @@
     ensure that you can safely expect to call this function and 
     always receive a randomly generated integer.
   */
-  unsigned long long adam_int(adam_data *data, unsigned char width);
+  unsigned long long adam_int(unsigned char width, const unsigned char force_regen);
 
   /*
     Returns a random double after multiplying it by param <scale>.
@@ -61,7 +70,7 @@
     ensure that you can safely expect to call this function and 
     always receive a randomly generated double.
   */
-  double adam_dbl(adam_data *data, unsigned long long scale);
+  double adam_dbl(unsigned long long scale, const unsigned char force_regen);
 
   /*
     Fills a given buffer with random integers.
@@ -80,7 +89,7 @@
 
     Returns 0 on success, 1 on error
   */
-  int adam_fill(adam_data *data, void *buf, unsigned char width, const unsigned int amount);
+  int adam_fill(void *buf, unsigned char width, const unsigned int amount);
 
   /*
     Fills a given buffer with random doubles.
@@ -99,7 +108,7 @@
 
     Returns 0 on success, 1 on error
   */
-  int adam_dfill(adam_data *data, double *buf, const unsigned long long multiplier, const unsigned int amount);
+  int adam_dfill(double *buf, const unsigned long long multiplier, const unsigned int amount);
 
   /*
     Chooses a random item from a provided collection, where param <arr> is a 
@@ -112,5 +121,5 @@
 
     Returns a randomly picked member of <arr>
   */
-  void *adam_choice(adam_data *data, void *arr, const unsigned long long size);
+  void *adam_choice(void *arr, const unsigned long long size);
 #endif

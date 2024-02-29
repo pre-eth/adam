@@ -55,7 +55,7 @@
   */
   #define BETA                  10E18
 
-  void adam_run(unsigned long long *seed, unsigned long long *nonce);
+  void adam(unsigned long long *restrict _ptr, unsigned long long *restrict seed, unsigned long long *restrict nonce);
 
   /* 
     Internals function prototypes, only added and defined if building for CLI or regular API
