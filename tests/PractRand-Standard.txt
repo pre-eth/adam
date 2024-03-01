@@ -1,0 +1,67 @@
+RNG_test using PractRand version 0.93
+RNG = RNG_stdin8, seed = 0x5dd2bcaa
+test set = normal, folding = standard (8 bit)
+
+rng=RNG_stdin8, seed=0x5dd2bcaa
+length= 512 megabytes (2^29 bytes), time= 3.3 seconds
+  no anomalies in 92 test result(s)
+
+rng=RNG_stdin8, seed=0x5dd2bcaa
+length= 1 gigabyte (2^30 bytes), time= 6.8 seconds
+  no anomalies in 98 test result(s)
+
+rng=RNG_stdin8, seed=0x5dd2bcaa
+length= 2 gigabytes (2^31 bytes), time= 13.7 seconds
+  no anomalies in 104 test result(s)
+
+rng=RNG_stdin8, seed=0x5dd2bcaa
+length= 4 gigabytes (2^32 bytes), time= 27.4 seconds
+  no anomalies in 108 test result(s)
+
+rng=RNG_stdin8, seed=0x5dd2bcaa
+length= 8 gigabytes (2^33 bytes), time= 55.5 seconds
+  no anomalies in 114 test result(s)
+
+rng=RNG_stdin8, seed=0x5dd2bcaa
+length= 16 gigabytes (2^34 bytes), time= 111 seconds
+  no anomalies in 120 test result(s)
+
+rng=RNG_stdin8, seed=0x5dd2bcaa
+length= 32 gigabytes (2^35 bytes), time= 221 seconds
+  no anomalies in 124 test result(s)
+
+rng=RNG_stdin8, seed=0x5dd2bcaa
+length= 64 gigabytes (2^36 bytes), time= 450 seconds
+  no anomalies in 130 test result(s)
+
+rng=RNG_stdin8, seed=0x5dd2bcaa
+length= 128 gigabytes (2^37 bytes), time= 902 seconds
+  no anomalies in 136 test result(s)
+
+rng=RNG_stdin8, seed=0x5dd2bcaa
+length= 256 gigabytes (2^38 bytes), time= 1784 seconds
+  no anomalies in 140 test result(s)
+
+rng=RNG_stdin8, seed=0x5dd2bcaa
+length= 512 gigabytes (2^39 bytes), time= 3590 seconds
+  no anomalies in 146 test result(s)
+
+rng=RNG_stdin8, seed=0x5dd2bcaa
+length= 1 terabyte (2^40 bytes), time= 7180 seconds
+  no anomalies in 152 test result(s)
+
+rng=RNG_stdin8, seed=0x5dd2bcaa
+length= 2 terabytes (2^41 bytes), time= 14055 seconds
+  no anomalies in 156 test result(s)
+
+rng=RNG_stdin8, seed=0x5dd2bcaa
+length= 4 terabytes (2^42 bytes), time= 27977 seconds
+  no anomalies in 162 test result(s)
+
+rng=RNG_stdin8, seed=0x5dd2bcaa
+length= 8 terabytes (2^43 bytes), time= 55481 seconds
+  no anomalies in 168 test result(s)
+
+rng=RNG_stdin8, seed=0x5dd2bcaa
+length= 16 terabytes (2^44 bytes), time= 111409 seconds
+  no anomalies in 172 test result(s)

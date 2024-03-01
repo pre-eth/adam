@@ -1,0 +1,3229 @@
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+                 Starting Crush
+                 Version: TestU01 1.2.3
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+
+***********************************************************
+Test smarsa_SerialOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N =  1,  n = 500000000,  r =  0,   d = 4096,   t =  2,
+       Sparse =  FALSE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =           16777216
+       Expected number per cell =   29.802322
+       Hashing =  FALSE
+
+   For Delta > -1, we use the ChiSquare approximation
+   Correction factor of the ChiSquare:
+       Delta =     1,    Mu =     0.01677312,    Sigma =          1
+
+-----------------------------------------------
+Test Results for Delta =   1.0000
+
+Number of degrees of freedom          : 16773120
+Value of the statistic                : 1.68e+7
+p-value of test                       :    0.58
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:15.41
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_SerialOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N =  1,  n = 300000000,  r =  0,   d =   64,   t =  4,
+       Sparse =  FALSE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =           16777216
+       Expected number per cell =   17.881393
+       Hashing =  FALSE
+
+   For Delta > -1, we use the ChiSquare approximation
+   Correction factor of the ChiSquare:
+       Delta =     1,    Mu =    0.027525119,    Sigma =          1
+
+-----------------------------------------------
+Test Results for Delta =   1.0000
+
+Number of degrees of freedom          : 16515072
+Value of the statistic                : 1.65e+7
+p-value of test                       :    0.46
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:07.76
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 10,  n = 10000000,  r =  0,   d = 1048576,   t =  2,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      1099511627776
+       Expected number per cell =  1 /  109951.16
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  109951.16
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :      454.75
+Observed number of collisions         :      454
+p-value of test                       :    0.50
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :   10995016278214
+  j =  1                              :         99999092
+  j =  2                              :              454
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:00:10.75
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 10,  n = 10000000,  r = 10,   d = 1048576,   t =  2,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      1099511627776
+       Expected number per cell =  1 /  109951.16
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  109951.16
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :      454.75
+Observed number of collisions         :      481
+p-value of test                       :    0.11
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :   10995016278241
+  j =  1                              :         99999038
+  j =  2                              :              481
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:00:11.03
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 10,  n = 10000000,  r =  0,   d = 1024,   t =  4,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      1099511627776
+       Expected number per cell =  1 /  109951.16
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  109951.16
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :      454.75
+Observed number of collisions         :      443
+p-value of test                       :    0.70
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :   10995016278203
+  j =  1                              :         99999114
+  j =  2                              :              443
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:00:15.20
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 10,  n = 10000000,  r = 20,   d = 1024,   t =  4,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      1099511627776
+       Expected number per cell =  1 /  109951.16
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  109951.16
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :      454.75
+Observed number of collisions         :      492
+p-value of test                       :    0.04
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :   10995016278252
+  j =  1                              :         99999016
+  j =  2                              :              492
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:00:15.62
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 10,  n = 10000000,  r =  0,   d =   32,   t =  8,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      1099511627776
+       Expected number per cell =  1 /  109951.16
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  109951.16
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :      454.75
+Observed number of collisions         :      442
+p-value of test                       :    0.72
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :   10995016278202
+  j =  1                              :         99999116
+  j =  2                              :              442
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:00:15.29
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 10,  n = 10000000,  r = 25,   d =   32,   t =  8,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      1099511627776
+       Expected number per cell =  1 /  109951.16
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  109951.16
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :      454.75
+Observed number of collisions         :      429
+p-value of test                       :    0.88
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :   10995016278189
+  j =  1                              :         99999142
+  j =  2                              :              429
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:00:15.78
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 10,  n = 10000000,  r =  0,   d =    4,   t = 20,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      1099511627776
+       Expected number per cell =  1 /  109951.16
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  109951.16
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :      454.74
+Observed number of collisions         :      497
+p-value of test                       :    0.03
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :   10995016278257
+  j =  1                              :         99999006
+  j =  2                              :              497
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:00:15.31
+
+Generator state:
+
+
+
+
+***********************************************************
+Test smarsa_CollisionOver calling smultin_MultinomialOver
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smultin_MultinomialOver test:
+-----------------------------------------------
+   N = 10,  n = 10000000,  r = 28,   d =    4,   t = 20,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellSerial
+       Number of cells = d^t =      1099511627776
+       Expected number per cell =  1 /  109951.16
+       EColl = n^2 / (2k) =  45.47473509
+       Hashing =   TRUE
+
+       Collision test
+
+       CollisionOver:   density = n / k =  1 /  109951.16
+       Expected number of collisions = Mu =      45.47
+
+
+-----------------------------------------------
+Results of CollisionOver test:
+
+POISSON approximation                 :
+Expected number of collisions = N*Mu  :      454.74
+Observed number of collisions         :      447
+p-value of test                       :    0.63
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :   10995016278207
+  j =  1                              :         99999106
+  j =  2                              :              447
+  j =  3                              :                0
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:00:15.46
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smarsa_BirthdaySpacings test:
+-----------------------------------------------
+   N =  5,  n = 20000000,  r =  0,    d = 2147483648,    t = 2,    p = 1
+
+
+      Number of cells = d^t = 4611686018427387904
+      Lambda = Poisson mean =     433.6809
+
+
+----------------------------------------------------
+Total expected number = N*Lambda      :    2168.40
+Total observed number                 :    2184
+p-value of test                       :    0.37
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:22.13
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smarsa_BirthdaySpacings test:
+-----------------------------------------------
+   N =  5,  n = 20000000,  r =  0,    d = 2097152,    t = 3,    p = 1
+
+
+      Number of cells = d^t = 9223372036854775808
+      Lambda = Poisson mean =     216.8404
+
+
+----------------------------------------------------
+Total expected number = N*Lambda      :    1084.20
+Total observed number                 :    1111
+p-value of test                       :    0.21
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:22.50
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smarsa_BirthdaySpacings test:
+-----------------------------------------------
+   N =  5,  n = 20000000,  r =  0,    d = 65536,    t = 4,    p = 1
+
+
+      Number of cells = d^t = 18446744073709551616
+      Lambda = Poisson mean =     108.4202
+
+
+----------------------------------------------------
+Total expected number = N*Lambda      :     542.10
+Total observed number                 :     551
+p-value of test                       :    0.36
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:23.06
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smarsa_BirthdaySpacings test:
+-----------------------------------------------
+   N =  3,  n = 20000000,  r =  0,    d = 512,    t = 7,    p = 1
+
+
+      Number of cells = d^t = 9223372036854775808
+      Lambda = Poisson mean =     216.8404
+
+
+----------------------------------------------------
+Total expected number = N*Lambda      :     650.52
+Total observed number                 :     645
+p-value of test                       :    0.58
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:15.05
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smarsa_BirthdaySpacings test:
+-----------------------------------------------
+   N =  3,  n = 20000000,  r =  7,    d = 512,    t = 7,    p = 1
+
+
+      Number of cells = d^t = 9223372036854775808
+      Lambda = Poisson mean =     216.8404
+
+
+----------------------------------------------------
+Total expected number = N*Lambda      :     650.52
+Total observed number                 :     646
+p-value of test                       :    0.56
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:15.25
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smarsa_BirthdaySpacings test:
+-----------------------------------------------
+   N =  3,  n = 20000000,  r = 14,    d = 256,    t = 8,    p = 1
+
+
+      Number of cells = d^t = 18446744073709551616
+      Lambda = Poisson mean =     108.4202
+
+
+----------------------------------------------------
+Total expected number = N*Lambda      :     325.26
+Total observed number                 :     312
+p-value of test                       :    0.76
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:15.65
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smarsa_BirthdaySpacings test:
+-----------------------------------------------
+   N =  3,  n = 20000000,  r = 22,    d = 256,    t = 8,    p = 1
+
+
+      Number of cells = d^t = 18446744073709551616
+      Lambda = Poisson mean =     108.4202
+
+
+----------------------------------------------------
+Total expected number = N*Lambda      :     325.26
+Total observed number                 :     315
+p-value of test                       :    0.70
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:15.74
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+snpair_ClosePairs test:
+-----------------------------------------------
+   N = 10,  n = 2000000,  r =  0,  t = 2,  p = 0,  m = 30,  Torus =  TRUE
+
+
+---------------------------------------
+Test based on the 2 nearest points (NP):
+
+Stat. AD on the N values (NP)         :    0.45
+p-value of test                       :    0.80
+
+
+A2 test based on the spacings between the
+   successive jump times of process Y_n(t):
+
+A2 test on the values of A2 (m-NP)    :    2.85
+p-value of test                       :    0.03
+
+Test on the Nm values of W_{n,i}(mNP1):    1.82
+p-value of test                       :    0.12
+
+Test on the jump times of Y
+   (superposition of Yn):
+
+Expected number of jumps of Y = mN    :     300
+Number of jumps of Y                  :     288
+p-value of test                       :    0.74
+
+Stat. AD (mNP2)                       :    0.50
+p-value of test                       :    0.74
+
+-----------------------------------------------
+CPU time used                    :  00:00:05.18
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+snpair_ClosePairs test:
+-----------------------------------------------
+   N = 10,  n = 2000000,  r =  0,  t = 3,  p = 0,  m = 30,  Torus =  TRUE
+
+
+---------------------------------------
+Test based on the 2 nearest points (NP):
+
+Stat. AD on the N values (NP)         :    0.31
+p-value of test                       :    0.93
+
+
+A2 test based on the spacings between the
+   successive jump times of process Y_n(t):
+
+A2 test on the values of A2 (m-NP)    :    0.95
+p-value of test                       :    0.38
+
+Test on the Nm values of W_{n,i}(mNP1):    2.10
+p-value of test                       :    0.08
+
+Test on the jump times of Y
+   (superposition of Yn):
+
+Expected number of jumps of Y = mN    :     300
+Number of jumps of Y                  :     326
+p-value of test                       :    0.07
+
+Stat. AD (mNP2)                       :    0.87
+p-value of test                       :    0.44
+
+Stat. AD after spacings (mNP2-S)      :    0.69
+p-value of test                       :    0.57
+
+-----------------------------------------------
+CPU time used                    :  00:00:06.79
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+snpair_ClosePairs test:
+-----------------------------------------------
+   N =  5,  n = 2000000,  r =  0,  t = 7,  p = 0,  m = 30,  Torus =  TRUE
+
+
+---------------------------------------
+Test based on the 2 nearest points (NP):
+
+Stat. AD on the N values (NP)         :    0.93
+p-value of test                       :    0.39
+
+
+A2 test based on the spacings between the
+   successive jump times of process Y_n(t):
+
+A2 test on the values of A2 (m-NP)    :    0.83
+p-value of test                       :    0.45
+
+Test on the Nm values of W_{n,i}(mNP1):    1.46
+p-value of test                       :    0.19
+
+Test on the jump times of Y
+   (superposition of Yn):
+
+Expected number of jumps of Y = mN    :     150
+Number of jumps of Y                  :     167
+p-value of test                       :    0.09
+
+Stat. AD (mNP2)                       :    0.60
+p-value of test                       :    0.65
+
+Stat. AD after spacings (mNP2-S)      :    0.51
+p-value of test                       :    0.74
+
+-----------------------------------------------
+CPU time used                    :  00:00:14.66
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+snpair_ClosePairsBitMatch test:
+-----------------------------------------------
+   N =  4,  n = 4000000,  r =  0,  t = 2
+
+
+-----------------------------------------------
+Max of all bit distances              :   22.00
+p-value of test                       :    0.37
+
+-----------------------------------------------
+CPU time used                    :  00:00:04.48
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+snpair_ClosePairsBitMatch test:
+-----------------------------------------------
+   N =  2,  n = 4000000,  r =  0,  t = 4
+
+
+-----------------------------------------------
+Max of all bit distances              :   11.00
+p-value of test                       :    0.06
+
+-----------------------------------------------
+CPU time used                    :  00:00:04.04
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_SimpPoker test:
+-----------------------------------------------
+   N =  1,  n = 40000000,  r =  0,   d =   16,   k =   16
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   12
+Chi-square statistic                  :   18.43
+p-value of test                       :    0.10
+
+-----------------------------------------------
+CPU time used                    :  00:00:11.00
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_SimpPoker test:
+-----------------------------------------------
+   N =  1,  n = 40000000,  r = 26,   d =   16,   k =   16
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   12
+Chi-square statistic                  :   14.40
+p-value of test                       :    0.28
+
+-----------------------------------------------
+CPU time used                    :  00:00:13.05
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_SimpPoker test:
+-----------------------------------------------
+   N =  1,  n = 10000000,  r =  0,   d =   64,   k =   64
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   23
+Chi-square statistic                  :   27.58
+p-value of test                       :    0.23
+
+-----------------------------------------------
+CPU time used                    :  00:00:11.58
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_SimpPoker test:
+-----------------------------------------------
+   N =  1,  n = 10000000,  r = 24,   d =   64,   k =   64
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   23
+Chi-square statistic                  :   18.07
+p-value of test                       :    0.75
+
+-----------------------------------------------
+CPU time used                    :  00:00:13.75
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_CouponCollector test:
+-----------------------------------------------
+   N =  1,  n = 40000000,  r =  0,   d =    4
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   51
+Chi-square statistic                  :   42.33
+p-value of test                       :    0.80
+
+-----------------------------------------------
+CPU time used                    :  00:00:05.97
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_CouponCollector test:
+-----------------------------------------------
+   N =  1,  n = 40000000,  r = 28,   d =    4
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   51
+Chi-square statistic                  :   46.30
+p-value of test                       :    0.66
+
+-----------------------------------------------
+CPU time used                    :  00:00:06.62
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_CouponCollector test:
+-----------------------------------------------
+   N =  1,  n = 10000000,  r =  0,   d =   16
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   46
+Chi-square statistic                  :   37.50
+p-value of test                       :    0.81
+
+-----------------------------------------------
+CPU time used                    :  00:00:07.25
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_CouponCollector test:
+-----------------------------------------------
+   N =  1,  n = 10000000,  r = 26,   d =   16
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   46
+Chi-square statistic                  :   42.32
+p-value of test                       :    0.63
+
+-----------------------------------------------
+CPU time used                    :  00:00:08.70
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_Gap test:
+-----------------------------------------------
+   N =  1,  n = 100000000,  r =  0,   Alpha =        0,   Beta  =    0.125
+
+
+-----------------------------------------------
+Number of degrees of freedom          :  106
+Chi-square statistic                  :  124.78
+p-value of test                       :    0.10
+
+-----------------------------------------------
+CPU time used                    :  00:00:07.74
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_Gap test:
+-----------------------------------------------
+   N =  1,  n = 100000000,  r = 27,   Alpha =        0,   Beta  =    0.125
+
+
+-----------------------------------------------
+Number of degrees of freedom          :  106
+Chi-square statistic                  :  113.31
+p-value of test                       :    0.30
+
+-----------------------------------------------
+CPU time used                    :  00:00:08.68
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_Gap test:
+-----------------------------------------------
+   N =  1,  n = 5000000,  r =  0,   Alpha =        0,   Beta  = 0.00390625
+
+
+-----------------------------------------------
+Number of degrees of freedom          : 1936
+Chi-square statistic                  : 1876.52
+p-value of test                       :    0.83
+
+-----------------------------------------------
+CPU time used                    :  00:00:08.36
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_Gap test:
+-----------------------------------------------
+   N =  1,  n = 5000000,  r = 22,   Alpha =        0,   Beta  = 0.00390625
+
+
+-----------------------------------------------
+Number of degrees of freedom          : 1936
+Chi-square statistic                  : 1924.73
+p-value of test                       :    0.57
+
+-----------------------------------------------
+CPU time used                    :  00:00:09.00
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_Run test:
+-----------------------------------------------
+   N =  1,  n = 500000000,  r =  0,   Up =  TRUE
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    6
+Chi-square statistic                  :    4.06
+p-value of test                       :    0.67
+
+-----------------------------------------------
+CPU time used                    :  00:00:07.60
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_Run test:
+-----------------------------------------------
+   N =  1,  n = 500000000,  r = 15,   Up = FALSE
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    6
+Chi-square statistic                  :    6.40
+p-value of test                       :    0.38
+
+-----------------------------------------------
+CPU time used                    :  00:00:09.04
+
+Generator state:
+
+
+
+
+***********************************************************
+Test sknuth_Permutation calling smultin_Multinomial
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smultin_Multinomial test:
+-----------------------------------------------
+   N =  1,  n = 50000000,  r =  0,   t = 10,
+       Sparse =  FALSE
+
+       GenerCell = smultin_GenerCellPermut
+       Number of cells = t! =            3628800
+       Expected number per cell =    13.77866
+       Hashing =  FALSE
+
+   For Delta > -1, we use the ChiSquare approximation
+   Correction factor of the ChiSquare:
+       Delta =     1,    Mu =     0.03628799,    Sigma =          1
+
+-----------------------------------------------
+Test Results for Delta =   1.0000
+
+Number of degrees of freedom          : 3628799
+Value of the statistic                : 3.63e+6
+p-value of test                       :    0.82
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:18.77
+
+Generator state:
+
+
+
+
+***********************************************************
+Test sknuth_Permutation calling smultin_Multinomial
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smultin_Multinomial test:
+-----------------------------------------------
+   N =  1,  n = 50000000,  r = 15,   t = 10,
+       Sparse =  FALSE
+
+       GenerCell = smultin_GenerCellPermut
+       Number of cells = t! =            3628800
+       Expected number per cell =    13.77866
+       Hashing =  FALSE
+
+   For Delta > -1, we use the ChiSquare approximation
+   Correction factor of the ChiSquare:
+       Delta =     1,    Mu =     0.03628799,    Sigma =          1
+
+-----------------------------------------------
+Test Results for Delta =   1.0000
+
+Number of degrees of freedom          : 3628799
+Value of the statistic                : 3.63e+6
+p-value of test                       :    0.59
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:18.16
+
+Generator state:
+
+
+
+
+***********************************************************
+Test sknuth_CollisionPermut calling smultin_Multinomial
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smultin_Multinomial test:
+-----------------------------------------------
+   N =  5,  n = 10000000,  r =  0,   t = 13,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellPermut
+       Number of cells = t! =         6227020800
+       Expected number per cell =  1 /  622.70208
+       EColl = n^2 / (2k) =  8029.521918
+       Hashing =   TRUE
+
+       Collision test,    Mu =      8025.2245,    Sigma =    89.5098
+
+-----------------------------------------------
+Test Results for Collisions
+
+For the total number of collisions, we use
+      the Poisson approximation:
+Expected number of collisions = N*Mu  :    40126.12
+Observed number of collisions         :    39937
+p-value of test                       :    0.83
+
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :      31085143937
+  j =  1                              :         49920155
+  j =  2                              :            39879
+  j =  3                              :               29
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:00:34.66
+
+Generator state:
+
+
+
+
+***********************************************************
+Test sknuth_CollisionPermut calling smultin_Multinomial
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smultin_Multinomial test:
+-----------------------------------------------
+   N =  5,  n = 10000000,  r = 15,   t = 13,
+       Sparse =   TRUE
+
+       GenerCell = smultin_GenerCellPermut
+       Number of cells = t! =         6227020800
+       Expected number per cell =  1 /  622.70208
+       EColl = n^2 / (2k) =  8029.521918
+       Hashing =   TRUE
+
+       Collision test,    Mu =      8025.2245,    Sigma =    89.5098
+
+-----------------------------------------------
+Test Results for Collisions
+
+For the total number of collisions, we use
+      the Poisson approximation:
+Expected number of collisions = N*Mu  :    40126.12
+Observed number of collisions         :    40412
+p-value of test                       :    0.08
+
+
+-----------------------------
+Total number of cells containing j balls
+
+  j =  0                              :      31085144412
+  j =  1                              :         49919196
+  j =  2                              :            40372
+  j =  3                              :               20
+  j =  4                              :                0
+  j =  5                              :                0
+
+-----------------------------------------------
+CPU time used                    :  00:00:34.82
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_MaxOft test:
+-----------------------------------------------
+   N = 10,  n = 10000000,  r =  0,   d = 100000,   t =  5
+
+      Number of categories = 100000
+      Expected number per category  = 100.00
+
+
+-----------------------------------------------
+Test results for chi2 with 99999 degrees of freedom:
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.20
+p-value of test                       :    0.41
+
+Kolmogorov-Smirnov- statistic = D-    :    0.24
+p-value of test                       :    0.27
+
+Anderson-Darling statistic = A2       :    0.66
+p-value of test                       :    0.59
+
+Test on the sum of all N observations
+Number of degrees of freedom          : 999990
+Chi-square statistic                  : 1.00e+6
+p-value of test                       :    0.52
+
+
+-----------------------------------------------
+Test results for Anderson-Darling:
+
+Kolmogorov-Smirnov+ statistic = D+    :   0.083
+p-value of test                       :    0.83
+
+Kolmogorov-Smirnov- statistic = D-    :    0.19
+p-value of test                       :    0.43
+
+Anderson-Darling statistic = A2       :    0.49
+p-value of test                       :    0.76
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:20.12
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_MaxOft test:
+-----------------------------------------------
+   N =  5,  n = 10000000,  r =  0,   d = 100000,   t = 10
+
+      Number of categories = 100000
+      Expected number per category  = 100.00
+
+
+-----------------------------------------------
+Test results for chi2 with 99999 degrees of freedom:
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.27
+p-value of test                       :    0.41
+
+Kolmogorov-Smirnov- statistic = D-    :    0.21
+p-value of test                       :    0.57
+
+Anderson-Darling statistic = A2       :    0.56
+p-value of test                       :    0.68
+
+Test on the sum of all N observations
+Number of degrees of freedom          : 499995
+Chi-square statistic                  : 4.99e+5
+p-value of test                       :    0.71
+
+
+-----------------------------------------------
+Test results for Anderson-Darling:
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.23
+p-value of test                       :    0.51
+
+Kolmogorov-Smirnov- statistic = D-    :    0.27
+p-value of test                       :    0.42
+
+Anderson-Darling statistic = A2       :    0.56
+p-value of test                       :    0.68
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:12.65
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_MaxOft test:
+-----------------------------------------------
+   N =  1,  n = 10000000,  r =  0,   d = 100000,   t = 20
+
+      Number of categories = 100000
+      Expected number per category  = 100.00
+
+
+-----------------------------------------------
+Number of degrees of freedom          : 99999
+Chi-square statistic                  :99718.98
+p-value of test                       :    0.73
+
+
+-----------------------------------------------
+Anderson-Darling statistic            :   0.083
+p-value of test                       :    0.92
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:03.37
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sknuth_MaxOft test:
+-----------------------------------------------
+   N =  1,  n = 10000000,  r =  0,   d = 100000,   t = 30
+
+      Number of categories = 100000
+      Expected number per category  = 100.00
+
+
+-----------------------------------------------
+Number of degrees of freedom          : 99999
+Chi-square statistic                  : 1.00e+5
+p-value of test                       :    0.44
+
+
+-----------------------------------------------
+Anderson-Darling statistic            :    0.35
+p-value of test                       :    0.65
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:04.17
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+svaria_SampleProd test:
+-----------------------------------------------
+   N =  1,  n = 10000000,  r =  0,   t = 10
+
+
+-----------------------------------------------
+Anderson-Darling statistic            :    0.14
+p-value of test                       :    0.86
+
+-----------------------------------------------
+CPU time used                    :  00:00:02.20
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+svaria_SampleProd test:
+-----------------------------------------------
+   N =  1,  n = 10000000,  r =  0,   t = 30
+
+
+-----------------------------------------------
+Anderson-Darling statistic            :    0.97
+p-value of test                       :    0.03
+
+-----------------------------------------------
+CPU time used                    :  00:00:04.04
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+svaria_SampleMean test:
+-----------------------------------------------
+   N = 10000000,  n = 20,  r =  0
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    : 3.13e-4
+p-value of test                       :    0.14
+
+Kolmogorov-Smirnov- statistic = D-    : 7.43e-5
+p-value of test                       :    0.90
+
+Anderson-Darling statistic = A2       :    1.46
+p-value of test                       :    0.19
+
+-----------------------------------------------
+CPU time used                    :  00:00:03.71
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+svaria_SampleCorr test:
+-----------------------------------------------
+   N =  1,  n = 500000000,  r =  0,   k = 1
+
+
+-----------------------------------------------
+Normal statistic                      :    1.45
+p-value of test                       :    0.07
+
+-----------------------------------------------
+CPU time used                    :  00:00:03.26
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+svaria_AppearanceSpacings test:
+-----------------------------------------------
+   N =  1,   Q = 10000000,   K = 400000000,   r = 0,   s = 30,   L = 15
+
+   Sequences of n = (K + Q)L =   6150000000 bits
+   Q = 10000000 initialization blocks
+   K = 400000000 blocks for the test
+   the blocks have L = 15 bits
+
+
+
+-----------------------------------------------
+Normal statistic                      :   -1.18
+p-value of test                       :    0.88
+
+-----------------------------------------------
+CPU time used                    :  00:00:04.05
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+svaria_AppearanceSpacings test:
+-----------------------------------------------
+   N =  1,   Q = 10000000,   K = 100000000,   r = 20,   s = 10,   L = 15
+
+   Sequences of n = (K + Q)L =   1650000000 bits
+   Q = 10000000 initialization blocks
+   K = 100000000 blocks for the test
+   the blocks have L = 15 bits
+
+
+
+-----------------------------------------------
+Normal statistic                      :    0.25
+p-value of test                       :    0.40
+
+-----------------------------------------------
+CPU time used                    :  00:00:02.26
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+svaria_WeightDistrib test:
+-----------------------------------------------
+   N =  1,  n = 2000000,  r =  0,  k = 256,  Alpha =      0,  Beta =  0.125
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   46
+Chi-square statistic                  :   54.60
+p-value of test                       :    0.18
+
+-----------------------------------------------
+CPU time used                    :  00:00:03.27
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+svaria_WeightDistrib test:
+-----------------------------------------------
+   N =  1,  n = 2000000,  r =  8,  k = 256,  Alpha =      0,  Beta =  0.125
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   46
+Chi-square statistic                  :   52.11
+p-value of test                       :    0.25
+
+-----------------------------------------------
+CPU time used                    :  00:00:03.48
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+svaria_WeightDistrib test:
+-----------------------------------------------
+   N =  1,  n = 2000000,  r = 16,  k = 256,  Alpha =      0,  Beta =  0.125
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   46
+Chi-square statistic                  :   56.58
+p-value of test                       :    0.14
+
+-----------------------------------------------
+CPU time used                    :  00:00:03.48
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+svaria_WeightDistrib test:
+-----------------------------------------------
+   N =  1,  n = 2000000,  r = 24,  k = 256,  Alpha =      0,  Beta =  0.125
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   46
+Chi-square statistic                  :   49.30
+p-value of test                       :    0.34
+
+-----------------------------------------------
+CPU time used                    :  00:00:03.48
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+svaria_SumCollector test:
+-----------------------------------------------
+   N =  1,  n = 20000000,  r =  0,   g = 10
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   25
+Chi-square statistic                  :   12.80
+p-value of test                       :    0.98
+
+-----------------------------------------------
+CPU time used                    :  00:00:03.53
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smarsa_MatrixRank test:
+-----------------------------------------------
+   N =  1,  n = 1000000,  r =  0,    s = 30,    L = 60,    k = 60
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    4
+Chi-square statistic                  :    0.83
+p-value of test                       :    0.93
+
+-----------------------------------------------
+CPU time used                    :  00:00:14.99
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smarsa_MatrixRank test:
+-----------------------------------------------
+   N =  1,  n = 1000000,  r = 20,    s = 10,    L = 60,    k = 60
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    4
+Chi-square statistic                  :    3.48
+p-value of test                       :    0.48
+
+-----------------------------------------------
+CPU time used                    :  00:00:16.85
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smarsa_MatrixRank test:
+-----------------------------------------------
+   N =  1,  n = 50000,  r =  0,    s = 30,    L = 300,    k = 300
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    3
+Chi-square statistic                  :    1.03
+p-value of test                       :    0.79
+
+-----------------------------------------------
+CPU time used                    :  00:00:21.10
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smarsa_MatrixRank test:
+-----------------------------------------------
+   N =  1,  n = 50000,  r = 20,    s = 10,    L = 300,    k = 300
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    3
+Chi-square statistic                  :    0.86
+p-value of test                       :    0.84
+
+-----------------------------------------------
+CPU time used                    :  00:00:25.22
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smarsa_MatrixRank test:
+-----------------------------------------------
+   N =  1,  n = 2000,  r =  0,    s = 30,    L = 1200,    k = 1200
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    3
+Chi-square statistic                  :    1.42
+p-value of test                       :    0.70
+
+-----------------------------------------------
+CPU time used                    :  00:00:27.01
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smarsa_MatrixRank test:
+-----------------------------------------------
+   N =  1,  n = 2000,  r = 20,    s = 10,    L = 1200,    k = 1200
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    3
+Chi-square statistic                  :    1.59
+p-value of test                       :    0.66
+
+-----------------------------------------------
+CPU time used                    :  00:00:41.16
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smarsa_Savir2 test:
+-----------------------------------------------
+   N =  1,  n = 20000000,  r =  0,    m = 1048576,    t = 30
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   17
+Chi-square statistic                  :   16.63
+p-value of test                       :    0.48
+
+-----------------------------------------------
+CPU time used                    :  00:00:05.07
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smarsa_GCD test:
+-----------------------------------------------
+   N =  1,  n = 100000000,  r =  0,   s = 30
+
+
+-----------------------------------------------
+Number of degrees of freedom          : 2465
+Chi2 statistic for GCD values         : 2554.28
+p-value of test                       :    0.10
+
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:11.17
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+smarsa_GCD test:
+-----------------------------------------------
+   N =  1,  n = 40000000,  r = 10,   s = 20
+
+
+-----------------------------------------------
+Number of degrees of freedom          : 1559
+Chi2 statistic for GCD values         : 1489.14
+p-value of test                       :    0.90
+
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:03.34
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+swalk_RandomWalk1 test:
+-----------------------------------------------
+   N =  1,  n = 50000000,  r =  0,   s = 30,   L0 =   90,   L1 =   90
+
+
+
+-----------------------------------------------
+Test on the values of the Statistic H
+
+Number of degrees of freedom          :   46
+ChiSquare statistic                   :   53.30
+p-value of test                       :    0.21
+
+
+-----------------------------------------------
+Test on the values of the Statistic M
+
+Number of degrees of freedom          :   47
+ChiSquare statistic                   :   49.12
+p-value of test                       :    0.39
+
+
+-----------------------------------------------
+Test on the values of the Statistic J
+
+Number of degrees of freedom          :   45
+ChiSquare statistic                   :   52.86
+p-value of test                       :    0.20
+
+
+-----------------------------------------------
+Test on the values of the Statistic R
+
+Number of degrees of freedom          :   36
+ChiSquare statistic                   :   55.13
+p-value of test                       :    0.02
+
+
+-----------------------------------------------
+Test on the values of the Statistic C
+
+Number of degrees of freedom          :   23
+ChiSquare statistic                   :   31.77
+p-value of test                       :    0.10
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:20.27
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+swalk_RandomWalk1 test:
+-----------------------------------------------
+   N =  1,  n = 10000000,  r = 20,   s = 10,   L0 =   90,   L1 =   90
+
+
+
+-----------------------------------------------
+Test on the values of the Statistic H
+
+Number of degrees of freedom          :   44
+ChiSquare statistic                   :   42.82
+p-value of test                       :    0.52
+
+
+-----------------------------------------------
+Test on the values of the Statistic M
+
+Number of degrees of freedom          :   45
+ChiSquare statistic                   :   55.01
+p-value of test                       :    0.15
+
+
+-----------------------------------------------
+Test on the values of the Statistic J
+
+Number of degrees of freedom          :   45
+ChiSquare statistic                   :   32.41
+p-value of test                       :    0.92
+
+
+-----------------------------------------------
+Test on the values of the Statistic R
+
+Number of degrees of freedom          :   35
+ChiSquare statistic                   :   38.22
+p-value of test                       :    0.33
+
+
+-----------------------------------------------
+Test on the values of the Statistic C
+
+Number of degrees of freedom          :   22
+ChiSquare statistic                   :   18.35
+p-value of test                       :    0.68
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:04.76
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+swalk_RandomWalk1 test:
+-----------------------------------------------
+   N =  1,  n = 5000000,  r =  0,   s = 30,   L0 = 1000,   L1 = 1000
+
+
+
+-----------------------------------------------
+Test on the values of the Statistic H
+
+Number of degrees of freedom          :  140
+ChiSquare statistic                   :  134.10
+p-value of test                       :    0.62
+
+
+-----------------------------------------------
+Test on the values of the Statistic M
+
+Number of degrees of freedom          :  141
+ChiSquare statistic                   :  165.11
+p-value of test                       :    0.08
+
+
+-----------------------------------------------
+Test on the values of the Statistic J
+
+Number of degrees of freedom          :  500
+ChiSquare statistic                   :  534.50
+p-value of test                       :    0.14
+
+
+-----------------------------------------------
+Test on the values of the Statistic R
+
+Number of degrees of freedom          :  132
+ChiSquare statistic                   :  131.39
+p-value of test                       :    0.50
+
+
+-----------------------------------------------
+Test on the values of the Statistic C
+
+Number of degrees of freedom          :   72
+ChiSquare statistic                   :   66.45
+p-value of test                       :    0.66
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:16.89
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+swalk_RandomWalk1 test:
+-----------------------------------------------
+   N =  1,  n = 1000000,  r = 20,   s = 10,   L0 = 1000,   L1 = 1000
+
+
+
+-----------------------------------------------
+Test on the values of the Statistic H
+
+Number of degrees of freedom          :  128
+ChiSquare statistic                   :  132.72
+p-value of test                       :    0.37
+
+
+-----------------------------------------------
+Test on the values of the Statistic M
+
+Number of degrees of freedom          :  130
+ChiSquare statistic                   :  121.35
+p-value of test                       :    0.69
+
+
+-----------------------------------------------
+Test on the values of the Statistic J
+
+Number of degrees of freedom          :  500
+ChiSquare statistic                   :  527.92
+p-value of test                       :    0.19
+
+
+-----------------------------------------------
+Test on the values of the Statistic R
+
+Number of degrees of freedom          :  122
+ChiSquare statistic                   :  129.17
+p-value of test                       :    0.31
+
+
+-----------------------------------------------
+Test on the values of the Statistic C
+
+Number of degrees of freedom          :   66
+ChiSquare statistic                   :   67.15
+p-value of test                       :    0.44
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:04.07
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+swalk_RandomWalk1 test:
+-----------------------------------------------
+   N =  1,  n = 500000,  r =  0,   s = 30,   L0 = 10000,   L1 = 10000
+
+
+
+-----------------------------------------------
+Test on the values of the Statistic H
+
+Number of degrees of freedom          :  366
+ChiSquare statistic                   :  379.00
+p-value of test                       :    0.31
+
+
+-----------------------------------------------
+Test on the values of the Statistic M
+
+Number of degrees of freedom          :  366
+ChiSquare statistic                   :  366.68
+p-value of test                       :    0.48
+
+
+-----------------------------------------------
+Test on the values of the Statistic J
+
+Number of degrees of freedom          : 5000
+ChiSquare statistic                   : 4839.65
+p-value of test                       :    0.95
+
+
+-----------------------------------------------
+Test on the values of the Statistic R
+
+Number of degrees of freedom          :  360
+ChiSquare statistic                   :  392.46
+p-value of test                       :    0.12
+
+
+-----------------------------------------------
+Test on the values of the Statistic C
+
+Number of degrees of freedom          :  192
+ChiSquare statistic                   :  205.07
+p-value of test                       :    0.25
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:15.08
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+swalk_RandomWalk1 test:
+-----------------------------------------------
+   N =  1,  n = 100000,  r = 20,   s = 10,   L0 = 10000,   L1 = 10000
+
+
+
+-----------------------------------------------
+Test on the values of the Statistic H
+
+Number of degrees of freedom          :  318
+ChiSquare statistic                   :  346.16
+p-value of test                       :    0.13
+
+
+-----------------------------------------------
+Test on the values of the Statistic M
+
+Number of degrees of freedom          :  318
+ChiSquare statistic                   :  271.84
+p-value of test                       :    0.97
+
+
+-----------------------------------------------
+Test on the values of the Statistic J
+
+Number of degrees of freedom          : 5000
+ChiSquare statistic                   : 4852.66
+p-value of test                       :    0.93
+
+
+-----------------------------------------------
+Test on the values of the Statistic R
+
+Number of degrees of freedom          :  315
+ChiSquare statistic                   :  319.60
+p-value of test                       :    0.42
+
+
+-----------------------------------------------
+Test on the values of the Statistic C
+
+Number of degrees of freedom          :  169
+ChiSquare statistic                   :  163.64
+p-value of test                       :    0.60
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:03.66
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+scomp_LinearComp test:
+-----------------------------------------------
+   N =  1,  n = 120000,  r =  0,    s = 1
+
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   10
+Chi2 statistic for size of jumps      :    2.74
+p-value of test                       :    0.99
+
+
+-----------------------------------------------
+Normal statistic for number of jumps  :    0.35
+p-value of test                       :    0.36
+
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:14.36
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+scomp_LinearComp test:
+-----------------------------------------------
+   N =  1,  n = 120000,  r = 29,    s = 1
+
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   10
+Chi2 statistic for size of jumps      :    2.77
+p-value of test                       :    0.99
+
+
+-----------------------------------------------
+Normal statistic for number of jumps  :    0.22
+p-value of test                       :    0.41
+
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:14.38
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+scomp_LempelZiv test:
+-----------------------------------------------
+   N = 10,  n = 33554432,  r =  0,   s =   30,   k =   25
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :   0.094
+p-value of test                       :    0.79
+
+Kolmogorov-Smirnov- statistic = D-    :    0.14
+p-value of test                       :    0.62
+
+Anderson-Darling statistic = A2       :    0.16
+p-value of test                       :    0.9974
+
+Tests on the sum of all N observations
+Standardized normal statistic         :    0.18
+p-value of test                       :    0.43
+
+Sample variance                       :    1.05
+p-value of test                       :    0.40
+
+-----------------------------------------------
+CPU time used                    :  00:00:04.17
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sspectral_Fourier3 test:
+-----------------------------------------------
+   N = 50000,  n = 16384,  r =  0,   s =   30,   k =   14
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    : 6.53e-3
+p-value of test                       :    0.70
+
+Kolmogorov-Smirnov- statistic = D-    :   0.012
+p-value of test                       :    0.30
+
+Anderson-Darling statistic = A2       :    0.52
+p-value of test                       :    0.72
+
+-----------------------------------------------
+CPU time used                    :  00:00:04.44
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sspectral_Fourier3 test:
+-----------------------------------------------
+   N = 50000,  n = 16384,  r = 20,   s =   10,   k =   14
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    : 1.06e-3
+p-value of test                       :    0.9901
+
+Kolmogorov-Smirnov- statistic = D-    :   0.024
+p-value of test                       :  8.4e-3
+
+Anderson-Darling statistic = A2       :    3.21
+p-value of test                       :    0.02
+
+-----------------------------------------------
+CPU time used                    :  00:00:04.78
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_LongestHeadRun test:
+-----------------------------------------------
+   N =  1,  n = 1000,  r =  0,   s = 30,   L = 10000020
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    8
+Chi-square statistic                  :    4.92
+p-value of test                       :    0.77
+
+-----------------------------------------------
+Global longest run of 1               :   35.00
+p-value of test                       :    0.14
+
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:57.46
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_LongestHeadRun test:
+-----------------------------------------------
+   N =  1,  n = 300,  r = 20,   s = 10,   L = 10000020
+
+
+-----------------------------------------------
+Number of degrees of freedom          :    7
+Chi-square statistic                  :    6.95
+p-value of test                       :    0.43
+
+-----------------------------------------------
+Global longest run of 1               :   29.00
+p-value of test                       :    0.75
+
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:19.75
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_PeriodsInStrings test:
+-----------------------------------------------
+   N =  1,  n = 300000000,  r =  0,   s =   30
+
+
+-----------------------------------------------
+Number of degrees of freedom          :  302
+Chi-square statistic                  :  300.71
+p-value of test                       :    0.51
+
+-----------------------------------------------
+CPU time used                    :  00:00:11.22
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_PeriodsInStrings test:
+-----------------------------------------------
+   N =  1,  n = 300000000,  r = 15,   s =   15
+
+
+-----------------------------------------------
+Number of degrees of freedom          :   56
+Chi-square statistic                  :   67.63
+p-value of test                       :    0.14
+
+-----------------------------------------------
+CPU time used                    :  00:00:08.80
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_HammingWeight2 test:
+-----------------------------------------------
+   N = 100,  n = 100000000,  r =  0,   s = 30,   L = 1000000
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :   0.068
+p-value of test                       :    0.38
+
+Kolmogorov-Smirnov- statistic = D-    :   0.026
+p-value of test                       :    0.86
+
+Anderson-Darling statistic = A2       :    0.34
+p-value of test                       :    0.91
+
+Test on the sum of all N observations
+Number of degrees of freedom          : 10000
+Chi-square statistic                  : 9933.06
+p-value of test                       :    0.68
+
+-----------------------------------------------
+CPU time used                    :  00:00:02.25
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_HammingWeight2 test:
+-----------------------------------------------
+   N = 30,  n = 100000000,  r = 20,   s = 10,   L = 1000000
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.13
+p-value of test                       :    0.35
+
+Kolmogorov-Smirnov- statistic = D-    :    0.12
+p-value of test                       :    0.40
+
+Anderson-Darling statistic = A2       :    0.66
+p-value of test                       :    0.59
+
+Test on the sum of all N observations
+Number of degrees of freedom          : 3000
+Chi-square statistic                  : 2960.22
+p-value of test                       :    0.69
+
+-----------------------------------------------
+CPU time used                    :  00:00:02.01
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_HammingCorr test:
+-----------------------------------------------
+   N =  1,  n = 500000000,  r =  0,   s = 30,   L = 30
+
+
+
+-----------------------------------------------
+Normal statistic                      :   -0.95
+p-value of test                       :    0.83
+
+-----------------------------------------------
+CPU time used                    :  00:00:03.96
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_HammingCorr test:
+-----------------------------------------------
+   N =  1,  n = 50000000,  r =  0,   s = 30,   L = 300
+
+
+
+-----------------------------------------------
+Normal statistic                      :   -0.56
+p-value of test                       :    0.71
+
+-----------------------------------------------
+CPU time used                    :  00:00:03.46
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_HammingCorr test:
+-----------------------------------------------
+   N =  1,  n = 10000000,  r =  0,   s = 30,   L = 1200
+
+
+
+-----------------------------------------------
+Normal statistic                      :    0.99
+p-value of test                       :    0.16
+
+-----------------------------------------------
+CPU time used                    :  00:00:02.76
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_HammingIndep test:
+-----------------------------------------------
+   N =  1,  n = 300000000,  r =  0,   s = 30,   L = 30,   d = 0
+
+
+
+Counters with expected numbers >= 10
+-----------------------------------------------
+Number of degrees of freedom          :  577
+Chi-square statistic                  :  534.63
+p-value of test                       :    0.90
+
+-----------------------------------------------
+CPU time used                    :  00:00:04.92
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_HammingIndep test:
+-----------------------------------------------
+   N =  1,  n = 100000000,  r = 20,   s = 10,   L = 30,   d = 0
+
+
+
+Counters with expected numbers >= 10
+-----------------------------------------------
+Number of degrees of freedom          :  533
+Chi-square statistic                  :  537.21
+p-value of test                       :    0.44
+
+-----------------------------------------------
+CPU time used                    :  00:00:04.97
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_HammingIndep test:
+-----------------------------------------------
+   N =  1,  n = 30000000,  r =  0,   s = 30,   L = 300,   d = 0
+
+
+
+Counters with expected numbers >= 10
+-----------------------------------------------
+Number of degrees of freedom          : 4117
+Chi-square statistic                  : 4067.31
+p-value of test                       :    0.71
+
+-----------------------------------------------
+CPU time used                    :  00:00:04.33
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_HammingIndep test:
+-----------------------------------------------
+   N =  1,  n = 10000000,  r = 20,   s = 10,   L = 300,   d = 0
+
+
+
+Counters with expected numbers >= 10
+-----------------------------------------------
+Number of degrees of freedom          : 3585
+Chi-square statistic                  : 3672.75
+p-value of test                       :    0.15
+
+-----------------------------------------------
+CPU time used                    :  00:00:04.28
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_HammingIndep test:
+-----------------------------------------------
+   N =  1,  n = 10000000,  r =  0,   s = 30,   L = 1200,   d = 0
+
+
+
+Counters with expected numbers >= 10
+-----------------------------------------------
+Number of degrees of freedom          : 11825
+Chi-square statistic                  :12002.16
+p-value of test                       :    0.12
+
+-----------------------------------------------
+CPU time used                    :  00:00:05.63
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_HammingIndep test:
+-----------------------------------------------
+   N =  1,  n = 1000000,  r = 20,   s = 10,   L = 1200,   d = 0
+
+
+
+Counters with expected numbers >= 10
+-----------------------------------------------
+Number of degrees of freedom          : 7473
+Chi-square statistic                  : 7448.84
+p-value of test                       :    0.58
+
+-----------------------------------------------
+CPU time used                    :  00:00:01.63
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_Run test:
+-----------------------------------------------
+   N =  1,  n = 1000000000,  r =  0,   s =   30
+
+
+-----------------------------------------------
+Total number of 1 runs:  1000000006
+
+Number of degrees of freedom          :   52
+Chi2 statistic for number of runs     :   41.98
+p-value of test                       :    0.84
+
+
+-----------------------------------------------
+Total number of bits:  4000099230
+
+Normal statistic for number of bits   :    1.11
+p-value of test                       :    0.13
+
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:19.68
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_Run test:
+-----------------------------------------------
+   N =  1,  n = 1000000000,  r = 20,   s =   10
+
+
+-----------------------------------------------
+Total number of 1 runs:  1000000002
+
+Number of degrees of freedom          :   52
+Chi2 statistic for number of runs     :   61.38
+p-value of test                       :    0.18
+
+
+-----------------------------------------------
+Total number of bits:  4000020370
+
+Normal statistic for number of bits   :    0.23
+p-value of test                       :    0.41
+
+
+
+-----------------------------------------------
+CPU time used                    :  00:00:24.18
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_AutoCor test:
+-----------------------------------------------
+   N = 10,  n = 1000000021,  r =  0,   s = 30,   d = 1
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.13
+p-value of test                       :    0.66
+
+Kolmogorov-Smirnov- statistic = D-    :    0.18
+p-value of test                       :    0.49
+
+Anderson-Darling statistic = A2       :    0.39
+p-value of test                       :    0.85
+
+Tests on the sum of all N observations
+Standardized normal statistic         :   0.047
+p-value of test                       :    0.48
+
+Sample variance                       :    1.14
+p-value of test                       :    0.33
+
+-----------------------------------------------
+CPU time used                    :  00:00:05.74
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_AutoCor test:
+-----------------------------------------------
+   N =  5,  n = 1000000001,  r = 20,   s = 10,   d = 1
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.16
+p-value of test                       :    0.72
+
+Kolmogorov-Smirnov- statistic = D-    :    0.35
+p-value of test                       :    0.23
+
+Anderson-Darling statistic = A2       :    0.53
+p-value of test                       :    0.71
+
+Tests on the sum of all N observations
+Standardized normal statistic         :    0.44
+p-value of test                       :    0.33
+
+Sample variance                       :    0.85
+p-value of test                       :    0.50
+
+-----------------------------------------------
+CPU time used                    :  00:00:08.59
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_AutoCor test:
+-----------------------------------------------
+   N = 10,  n = 1000000020,  r =  0,   s = 30,   d = 30
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :    0.13
+p-value of test                       :    0.65
+
+Kolmogorov-Smirnov- statistic = D-    :    0.14
+p-value of test                       :    0.63
+
+Anderson-Darling statistic = A2       :    0.30
+p-value of test                       :    0.94
+
+Tests on the sum of all N observations
+Standardized normal statistic         :   0.079
+p-value of test                       :    0.47
+
+Sample variance                       :    0.63
+p-value of test                       :    0.77
+
+-----------------------------------------------
+CPU time used                    :  00:00:02.73
+
+Generator state:
+
+
+
+
+***********************************************************
+HOST = Preeths-MBP.lan, Darwin
+
+adam
+
+
+sstring_AutoCor test:
+-----------------------------------------------
+   N =  5,  n = 1000000010,  r = 20,   s = 10,   d = 10
+
+
+-----------------------------------------------
+
+Kolmogorov-Smirnov+ statistic = D+    :   0.073
+p-value of test                       :    0.90
+
+Kolmogorov-Smirnov- statistic = D-    :    0.38
+p-value of test                       :    0.19
+
+Anderson-Darling statistic = A2       :    1.08
+p-value of test                       :    0.32
+
+Tests on the sum of all N observations
+Standardized normal statistic         :    1.18
+p-value of test                       :    0.12
+
+Sample variance                       :    0.55
+p-value of test                       :    0.70
+
+-----------------------------------------------
+CPU time used                    :  00:00:04.07
+
+Generator state:
+
+
+
+
+
+========= Summary results of Crush =========
+
+ Version:          TestU01 1.2.3
+ Generator:        adam
+ Number of statistics:  144
+ Total CPU time:   00:18:09.82
+
+ All tests were passed
+
+
