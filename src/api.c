@@ -33,47 +33,54 @@ struct adam_data_s {
 //  Current index in buffer (as bytes)
 static u16 buff_idx;
 
+adam_data adam_setup(const u64 *seed, const u64 *nonce)
 {
-    // data->seed[0] = 0x43CE8BAD891F0610;
-    // data->seed[1] = 0xB1B2B727643446EA;
-    // data->seed[2] = 0x2A5D5C83EA265024;
-    // data->seed[3] = 0x07DC6BB2DF5E59DA;
+    // Allocate the struct
+    adam_data data = aligned_alloc(ADAM_ALIGNMENT, sizeof(struct adam_data_s));
 
-    // data->nonce = 0x031CC6BD641FA81C;
+    // Get seed and nonce bytes from secure system RNG, or use user provided one(s)
     if (seed == NULL)
-        getentropy(&adam_seed[0], sizeof(u64) << 2);
+        getentropy(&data->seed[0], sizeof(u64) << 2);
     else
-        MEMCPY(&adam_seed[0], &seed[0], sizeof(u64) << 2);
+        MEMCPY(&data->seed[0], &seed[0], sizeof(u64) << 2);
 
     if (nonce == NULL)
-        getentropy(&adam_nonce, sizeof(u64));
+        getentropy(&data->nonce, sizeof(u64));
     else
-        adam_nonce = *nonce;
+        data->nonce = *nonce;
+
+    /*
+        The algorithm requres 3 u64 buffers of size BUF_SIZE - 2 internal maps used for generating
+        the chaotic function output, and an output vector. 
+        
+        The final output vector isn't stored contiguously so the pointer can be returned to the 
+        user without any fears of them indexing into the internal state maps.
+
+        aligned_alloc + memset is used rather than calloc to use the appropriate SIMD alignment.
+    */
+    data->out = aligned_alloc(ADAM_ALIGNMENT, ADAM_BUF_BYTES);
+    MEMSET(&data->out[0], 0, sizeof(u64) * BUF_SIZE);
+    data->work_buffer = aligned_alloc(ADAM_ALIGNMENT, ADAM_BUF_BYTES * 2);
+    MEMSET(&data->work_buffer[0], 0, sizeof(u64) * (BUF_SIZE << 1));
+
+    /*
+        8 64-bit IV's that correspond to the verse:
+        "Be fruitful and multiply, and replenish the earth (Genesis 1:28)"
+    */
+    data->IV[0] = 0x4265206672756974;
+    data->IV[1] = 0x66756C20616E6420;
+    data->IV[2] = 0x6D756C7469706C79;
+    data->IV[3] = 0x2C20616E64207265;
+    data->IV[4] = 0x706C656E69736820;
+    data->IV[5] = 0x7468652065617274;
+    data->IV[6] = 0x68202847656E6573;
+    data->IV[7] = 0x697320313A323829;
+
+    data->cc = 0;
+
+    return data;
 }
 
-unsigned long long *adam_rng_seed()
-{
-    return &adam_seed[0];
-}
-
-unsigned long long *adam_rng_nonce()
-{
-    return &adam_nonce;
-}
-
-unsigned long long *adam_rng_buffer()
-{
-    buff_idx = 0;
-    return &buffer[0];
-}
-
-static unsigned long long get_int(const unsigned char width)
-{
-    const u64 mask   = (width == 64) ? __UINT64_MAX__ : ((1UL << width) - 1);
-    register u64 out = buffer[buff_idx] & mask;
-    buffer[buff_idx] >>= width;
-    buff_idx += (!buffer[buff_idx]);
-    return out;
 }
 
 static unsigned long long regen_int(const unsigned char width)
