@@ -1,15 +1,38 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/random.h>
 
-#include "../include/api.h"
 #include "../include/defs.h"
+#include "../include/simd.h"
 #include "../include/rng.h"
+#include "../include/api.h"
 
-static u64 buffer[ADAM_BUF_SIZE] ALIGN(ADAM_ALIGNMENT); //  Our output vector of 256 64-bit integers
-static u8 buff_idx;                                     //  Current index in buffer
-static u64 adam_seed[4];                                //  256-bit seed
-static u64 adam_nonce;                                  //  64-bit nonce
+struct adam_data_s {
+    // 256-bit seed
+    u64 seed[4];
 
-void adam_setup(unsigned long long *seed, unsigned long long *nonce)
+    // 64-bit nonce
+    u64 nonce;
+
+    // 8 64-bit initialization vectors part of internal state
+    u64 IV[8];
+
+    // Output vector - 256 64-bit integers
+    u64 *out;
+
+    // Work maps - sizeof(u64) * 512
+    u64 *work_buffer;
+
+    // The seeds supplied to each iteration of the chaotic function
+    double chseeds[ROUNDS << 2];
+
+    // Counter
+    u64 cc;
+};
+
+//  Current index in buffer (as bytes)
+static u16 buff_idx;
+
 {
     // data->seed[0] = 0x43CE8BAD891F0610;
     // data->seed[1] = 0xB1B2B727643446EA;
