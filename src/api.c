@@ -129,7 +129,7 @@ double adam_dbl(adam_data data, const u64 scale, const u8 force_regen)
     return ((double) adam_int(data, 64, false) / (double) __UINT64_MAX__) * (double) (scale + !scale);
 }
 
-int adam_fill(void *buf, unsigned char width, const unsigned int amount)
+int adam_fill(adam_data data, void *buf, u8 width, const u64 amount)
 {
     if (!amount || amount > 1000000000UL)
         return 1;
@@ -137,35 +137,170 @@ int adam_fill(void *buf, unsigned char width, const unsigned int amount)
     if (width != 8 && width != 16 && width != 32 && width != 64)
         width = 64;
 
-    const u16 one_run   = BUF_SIZE * (64 / width);
-    const u32 leftovers = amount & (one_run - 1);
+    const u16 one_run   = amount * (64 / width);
+    const u32 leftovers = amount % (one_run - 1);
 
-    register long limit = amount >> CTZ(one_run);
+    register long long limit = amount >> CTZ(one_run);
 
     while (limit > 0) {
-        adam(&buffer[0], adam_seed, &adam_nonce);
-        MEMCPY(buf, &buffer[0], SEQ_BYTES);
+        adam(data);
+        MEMCPY(buf, data->out, SEQ_BYTES);
         buf += SEQ_BYTES;
         --limit;
     }
 
     if (LIKELY(leftovers > 0)) {
-        adam(&buffer[0], adam_seed, &adam_nonce);
-        MEMCPY(buf, &buffer[0], leftovers * (width >> 3));
+        adam(data);
+        MEMCPY(buf, data->out, leftovers * (width >> 3));
+        // To force regeneration on next API call for fresh buffer
+        data->buff_idx = ADAM_BUF_BYTES;
     }
 
     return 0;
 }
 
-int adam_dfill(double *buf, const unsigned long long multiplier, const unsigned int amount)
+void dbl_simd_fill(double *buf, u64 *restrict _ptr, const u16 amount)
 {
-    if (!amount || amount > 1000000000UL)
+    register u16 i = 0;
+
+#ifdef __AARCH64_SIMD__
+    const dregq range = SIMD_SETQPD(1.0 / (double) __UINT64_MAX__);
+
+    reg64q4 r1;
+    dreg4q d1;
+
+    do {
+        r1        = SIMD_LOAD64x4(&_ptr[i]);
+        d1.val[0] = SIMD_MULPD(SIMD_CASTPD(r1.val[0]), range);
+        d1.val[1] = SIMD_MULPD(SIMD_CASTPD(r1.val[1]), range);
+        d1.val[2] = SIMD_MULPD(SIMD_CASTPD(r1.val[2]), range);
+        d1.val[3] = SIMD_MULPD(SIMD_CASTPD(r1.val[3]), range);
+        SIMD_STORE4PD(&buf[i], d1);
+    } while ((i += 8) < amount);
+#else
+    const regd range = SIMD_SETPD(1.0 / (double) __UINT64_MAX__);
+
+    reg r1;
+    regd d1;
+
+    do {
+        r1 = SIMD_LOAD64((reg *) &_ptr[i]);
+        d1 = SIMD_CASTPD(r1);
+        d1 = SIMD_MULPD(d1, max);
+        SIMD_STOREPD((regd *) &buf[i], d1);
+
+#ifndef __AVX512F__
+        r1 = SIMD_LOAD64((reg *) &_ptr[i + 4]);
+        d1 = SIMD_CASTPD(r1);
+        d1 = SIMD_MULPD(d1, max);
+        SIMD_STOREPD((regd *) &buf[i + 4], d1);
+#endif
+    } while ((i += 8) < amount);
+#endif
+}
+
+void dbl_simd_fill_mult(double *buf, u64 *restrict _ptr, const u16 amount, const u64 multiplier)
+{
+    register u16 i = 0;
+
+#ifdef __AARCH64_SIMD__
+    const dregq range = SIMD_SETQPD(1.0 / (double) __UINT64_MAX__);
+    const dregq mult  = SIMD_SETQPD((double) multiplier);
+    reg64q4 r1;
+    dreg4q d1;
+
+    do {
+        r1        = SIMD_LOAD64x4(&_ptr[i]);
+        d1.val[0] = SIMD_MULPD(SIMD_CASTPD(r1.val[0]), range);
+        d1.val[1] = SIMD_MULPD(SIMD_CASTPD(r1.val[1]), range);
+        d1.val[2] = SIMD_MULPD(SIMD_CASTPD(r1.val[2]), range);
+        d1.val[3] = SIMD_MULPD(SIMD_CASTPD(r1.val[3]), range);
+        SIMD_MUL4QPD(d1, d1, mult);
+        SIMD_STORE4PD(&buf[i], d1);
+    } while ((i += 8) < amount);
+#else
+    const regd range = SIMD_SETPD(1.0 / (double) __UINT64_MAX__);
+    const regd mult  = SIMD_SETPD((double) multiplier);
+
+    reg r1;
+    regd d1;
+
+    do {
+        r1 = SIMD_LOAD64((reg *) &_ptr[i]);
+        d1 = SIMD_CASTPD(r1);
+        d1 = SIMD_MULPD(d1, max);
+        d1 = SIMD_MULPD(d1, mult);
+        SIMD_STOREPD((regd *) &buf[i], d1);
+
+#ifndef __AVX512F__
+        r1 = SIMD_LOAD64((reg *) &_ptr[i + 4]);
+        d1 = SIMD_CASTPD(r1);
+        d1 = SIMD_MULPD(d1, max);
+        d1 = SIMD_MULPD(d1, mult);
+        SIMD_STOREPD((regd *) &buf[i + 4], d1);
+#endif
+    } while ((i += 8) < amount);
+#endif
+}
+
+static void frun(adam_data data, double *buf, const u32 amount)
+{
+    register u32 count = 0;
+    register u32 out, tmp;
+
+    while (amount - count > 8) {
+        adam(data);
+        tmp = amount - count;
+        out = ((tmp > BUF_SIZE) << 8) | (!(tmp > BUF_SIZE) * tmp);
+        dbl_simd_fill(&buf[count], data->out, out);
+        count += out;
+    }
+
+    const u8 leftovers = amount & 7;
+
+    if (LIKELY(leftovers)) {
+        adam(data);
+        register u8 i = 0;
+        do
+            buf[count] = (double) data->out[i++] / (double) __UINT64_MAX__;
+        while (++count < amount);
+    }
+}
+
+static void fmrun(adam_data data, double *buf, const u32 amount, const u64 multiplier)
+{
+    register u32 count = 0;
+    register u32 out, tmp;
+
+    while (amount - count > 8) {
+        adam(data);
+        tmp = amount - count;
+        out = ((tmp >= BUF_SIZE) << 8) | (!(tmp >= BUF_SIZE) * tmp);
+        dbl_simd_fill_mult(&buf[count], data->out, out, multiplier);
+        count += out;
+    }
+
+    if (LIKELY(amount & 7)) {
+        adam(data);
+        const double mult = (double) multiplier;
+        register u8 i     = 0;
+        do
+            buf[count] = ((double) data->out[i++] / (double) __UINT64_MAX__) * mult;
+        while (++count < amount);
+    }
+}
+
+int adam_dfill(adam_data data, double *buf, const u64 multiplier, const u32 amount)
+{
+    if (!amount || amount > 1000000000)
         return 1;
 
     if (multiplier > 1)
-        adam_fmrun(buf, &buffer[0], adam_seed, &adam_nonce, amount, multiplier);
+        fmrun(data, buf, amount, multiplier);
     else
-        adam_frun(buf, &buffer[0], adam_seed, &adam_nonce, amount);
+        frun(data, buf, amount);
+
+    data->buff_idx = ADAM_BUF_BYTES;
 
     return 0;
 }
