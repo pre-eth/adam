@@ -17,10 +17,10 @@ endif
  
 STD_LIB = rng api
 LIB_OBJ = $(STD_LIB:%=src/%.o)
-CLI = ent test support cli worker
-OBJ = $(CLI:%=src/%.o) $(LIB_OBJ)
+CLI = ent test support cli
+OBJ := $(CLI:%=src/%.o) $(LIB_OBJ)
 
-all: lib cli
+all: cli lib
 	@clang-format -i src/*.c
 	@mkdir -p $(BUILD_DIR)
 	@rm $(OBJ)
@@ -38,14 +38,6 @@ lib: $(LIB_OBJ)
 	@echo "\033[1;36mBuilding ADAM library (standard API)...\033[m"
 	@ar rcs $(BUILD_DIR)/libadam.a $(LIB_OBJ)
 	@cp include/api.h $(BUILD_DIR)/adam.h
-	@echo "\033[1;32mLibrary and header written to \033[m$(BUILD_DIR)"
-	
-minlib: src/rng.o
-	@echo "\033[1;36mBuilding ADAM library (minimal API)...\033[m"
-	$(CC) $(CFLAGS) $(SIMD_FLAGS) -D ADAM_MIN_LIB -c src/rng.c -o src/rng.o
-	@ar rcs $(BUILD_DIR)/libadam.a src/rng.o
-	@cp include/minapi.h $(BUILD_DIR)/adam.h
-	@rm src/rng.o
 	@echo "\033[1;32mLibrary and header written to \033[m$(BUILD_DIR)"
 
 	
