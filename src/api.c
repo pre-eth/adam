@@ -305,7 +305,48 @@ int adam_dfill(adam_data data, double *buf, const u64 multiplier, const u32 amou
     return 0;
 }
 
-void *adam_choice(void *arr, const unsigned long long size)
+void *adam_choice(adam_data data, void *arr, const u64 size)
 {
-    return &arr[adam_int(64, false) % size];
+    return &arr[adam_int(data, 64, false) % size];
+}
+
+u64 adam_stream(adam_data data, const u64 output, const char *file_name)
+{
+    if (output < SEQ_SIZE)
+        return 0;
+
+    if (file_name != NULL)
+        freopen(file_name, "wb+", stdout);
+
+    const u16 leftovers  = output & (SEQ_SIZE - 1);
+    register u64 written = 0;
+    while (output - written >= SEQ_SIZE) {
+        adam(data);
+        fwrite(data->out, sizeof(u64), BUF_SIZE, stdout);
+        written += SEQ_SIZE;
+    }
+
+    if (LIKELY(leftovers)) {
+        adam(data);
+        fwrite(data->out, sizeof(u64), leftovers >> 6, stdout);
+        written += leftovers;
+        data->buff_idx = ADAM_BUF_BYTES;
+    }
+
+    return written;
+}
+
+void adam_cleanup(adam_data data)
+{
+    data->cc = data->nonce = data->buff_idx = 0;
+
+    MEMSET(data->IV, 0, sizeof(u64) * 8);
+    MEMSET(data->seed, 0, sizeof(u64) * 4);
+    MEMSET(data->out, 0, sizeof(u64) * BUF_SIZE);
+    MEMSET(data->work_buffer, 0, sizeof(u64) * (BUF_SIZE << 1));
+    MEMSET(data->chseeds, 0, sizeof(double) * (ROUNDS << 2));
+
+    free(data->out);
+    free(data->work_buffer);
+    free(data);
 }

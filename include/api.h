@@ -47,7 +47,7 @@
   unsigned long long *adam_seed(adam_data data);
   unsigned long long *adam_nonce(adam_data data);
   const unsigned long long *const adam_buffer(adam_data data);
-  
+
   /*
     Returns a random unsigned integer of the specified <width>. Param
     <force_regen> can be used to force the generation of a new output
@@ -132,7 +132,9 @@
     rather than an actual file. If you provide a valid file name, then it will
     be created and saved with the requested amount of binary data.
   
-    Returns the total number of bits written out.
+    If param <output> is less than ADAM_SEQ_BITS, this function won't do anything.
+
+    Returns the total number of bits written out, or 0 if invalid value for <output>
   */
   unsigned long long adam_stream(adam_data data, const unsigned long long output, const char *file_name);
 
