@@ -28,10 +28,10 @@ struct adam_data_s {
 
     // Counter
     u64 cc;
-};
 
-//  Current index in buffer (as bytes)
-static u16 buff_idx;
+    //  Current index in buffer (as bytes)
+    u16 buff_idx;
+};
 
 adam_data adam_setup(const u64 *seed, const u64 *nonce)
 {
@@ -76,53 +76,57 @@ adam_data adam_setup(const u64 *seed, const u64 *nonce)
     data->IV[6] = 0x68202847656E6573;
     data->IV[7] = 0x697320313A323829;
 
-    data->cc = 0;
+    data->cc = data->buff_idx = 0;
 
     return data;
 }
 
+static void adam(adam_data data)
+{
+    accumulate(data->seed, data->IV, data->chseeds, data->cc);
+    diffuse(data->out, data->nonce);
+    apply(data->out, data->work_buffer, data->chseeds);
+    mix(data->out, data->work_buffer);
+    reseed(data->seed, data->work_buffer, &data->nonce, &data->cc);
+    data->buff_idx = 0;
 }
 
-static unsigned long long regen_int(const unsigned char width)
+u64 *adam_seed(adam_data data)
 {
-    adam(&buffer[0], adam_seed, &adam_nonce);
-    return get_int(width);
+    return &data->seed[0];
 }
 
-unsigned long long adam_int(unsigned char width, const unsigned char force_regen)
+u64 *adam_nonce(adam_data data)
 {
-    static unsigned long long (*int_fn[])(const unsigned char) = {
-        &get_int,
-        &regen_int
-    };
+    return &data->nonce;
+}
+
+const u64 *const adam_buffer(adam_data data)
+{
+    return &data->out[0];
+}
+
+u64 adam_int(adam_data data, u8 width, const u8 force_regen)
+{
+    if (data->buff_idx == ADAM_BUF_BYTES || force_regen)
+        adam(data);
 
     if (width != 8 && width != 16 && width != 32 && width != 64)
         width = 64;
 
-    return int_fn[!buff_idx || force_regen](width);
+    u64 num = 0;
+    MEMCPY(&num, (u8 *)&data->out[data->buff_idx], width >> 3);
+    data->buff_idx += width >> 3;
+
+    return num;
 }
 
-static double get_dbl(const unsigned long long scale)
+double adam_dbl(adam_data data, const u64 scale, const u8 force_regen)
 {
-    register double out = ((double) buffer[buff_idx] / (double) __UINT64_MAX__);
-    buffer[buff_idx]    = 0;
-    ++buff_idx;
-    return out * (double) (scale + !scale);
-}
+    if (data->buff_idx == ADAM_BUF_BYTES || force_regen)
+        adam(data);
 
-static double regen_dbl(const unsigned long long scale)
-{
-    adam(&buffer[0], adam_seed, &adam_nonce);
-    return get_dbl(scale);
-}
-
-double adam_dbl(unsigned long long scale, const unsigned char force_regen)
-{
-    static double (*dbl_fn[])(const unsigned long long) = {
-        &get_dbl,
-        &regen_dbl
-    };
-    return dbl_fn[!buff_idx || force_regen](scale);
+    return ((double) adam_int(data, 64, false) / (double) __UINT64_MAX__) * (double) (scale + !scale);
 }
 
 int adam_fill(void *buf, unsigned char width, const unsigned int amount)
