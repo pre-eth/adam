@@ -7,9 +7,9 @@
     Need to left shift for SEQ_SIZE because there's 64 bits per index
   */
   #define MAGNITUDE           8  
-  #define BUF_SIZE            (1U << MAGNITUDE)     
+  #define BUF_SIZE            (1U << MAGNITUDE)   
+  #define SEQ_BYTES           (BUF_SIZE << 3)    
   #define SEQ_SIZE            (BUF_SIZE << 6)  
-  #define SEQ_BYTES           (BUF_SIZE << 3)  
   
   /* 
     ROUNDS must satisfy k = T / 3 where T % 3 = 0, where k is 
@@ -55,14 +55,11 @@
   */
   #define BETA                  10E18
 
-  void adam(unsigned long long *restrict _ptr, unsigned long long *restrict seed, unsigned long long *restrict nonce);
+  /*  The main primitives for using ADAM's algorithm  */
 
-  /* 
-    Internals function prototypes, only added and defined if building for CLI or regular API
-  */
-#ifndef ADAM_MIN_LIB
-  void *adam_work(void *data);
-  void adam_frun(double *buf, unsigned long long *restrict _ptr, unsigned long long *restrict seed, unsigned long long *restrict nonce, const unsigned int amount);
-  void adam_fmrun(double *buf, unsigned long long *restrict _ptr, unsigned long long *restrict seed, unsigned long long *restrict nonce, const unsigned int amount, const unsigned long long multiplier);
-#endif
+  void accumulate(unsigned long long *restrict seed, unsigned long long *restrict IV, double *restrict chseeds, const unsigned long long cc);
+  void diffuse(unsigned long long *restrict _ptr, const unsigned long long nonce);
+  void apply(unsigned long long *restrict _ptr, unsigned long long *restrict work_buffer, double *restrict chseeds);
+  void mix(unsigned long long *restrict _ptr, const unsigned long long *restrict work_buffer);
+  void reseed(unsigned long long *restrict seed, unsigned long long *restrict work_buffer, unsigned long long *restrict nonce, unsigned long long *restrict cc);
 #endif
