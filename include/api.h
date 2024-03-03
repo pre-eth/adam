@@ -11,45 +11,47 @@
 #endif
 
   #define ADAM_BUF_SIZE     256
+  #define ADAM_BUF_BYTES    2048
+  #define ADAM_BUF_BITS     16384
 
-  /*    STANDARD API    */
+  typedef struct adam_data_s *adam_data;
 
   /*
-    Configures ADAM's initial state.
+    Configures ADAM's initial state by allocating the adam_data
+    struct and preparing it for random generation.
     
-    Call this ONCE at the start of your program, before generating any numbers.
+    Call this ONCE at the start of your program, before generating 
+    any numbers.
 
-    Params <seed> and <nonce> are optional - set to NULL if you'd like to seed
-    the generator with secure random bytes from the operating system itself.
-    Otherwise, the caller must ensure that <seed> points to 256-bits of data,
-    and that nonce points to a u64.
+    Params <seed> and <nonce> are optional - set to NULL if you'd like
+    to seed the generator with secure random bytes from the operating
+    system itself. Otherwise, the caller must ensure that <seed> points
+    to 256-bits of data, and that nonce points to a u64.
+
+    Returns a pointer to the adam_data. Make sure you remember to pass it
+    to adam_cleanup() once you no longer need it!
   */
-  void adam_setup(unsigned long long *seed, unsigned long long *nonce);
+  adam_data adam_setup(const unsigned long long *seed, const unsigned long long *nonce);
 
   /*
-    Self-explanatory functions - return a raw pointer to the set of chaotic
-    seeds, current seed, current nonce, and output vector respectively
+    Self-explanatory functions - The first two return a raw pointer to
+    the seed/nonce respectively so you can set them yourself at anytime
+    you'd like.
 
-    When working with the raw buffer, remember the ADAM_BUF_SIZE when doing
-    any indexing or pointer math. adam_rng_buffer() guarantees that the
-    return pointer contains at least 256 randomly generated 64-bit values.
-
-    You can modify the buffer if you'd like, but it will have no effect, as
-    the buffer is managed internally and only returned for inspection.
-
-    NOTE: Upon receiving the output vector pointer, the internal index for
-    the vector is reset, meaning the vector will be fully regenerated on ANY
-    future API calls. This forced regeneration is done because once ADAM hands
-    off the raw pointer to you, it assumes you use the entire buffer. And it's okay
-    even if you don't - this is still a nice sanity reset as it allows us to avoid 
-    tracking the internal index after the caller gets the pointer.
+    Since the third function adam_buffer() returns a pointer to the output
+    vector, the return value of this function is a const pointer to const data
+    to prevent any sort of modification by the user, as technically even the 
+    output vector comprises RNG state and the result of each run is dependent
+    on its value.
   */
-  unsigned long long *adam_rng_seed(void);
-  unsigned long long *adam_rng_nonce(void);
-  unsigned long long *adam_rng_buffer(void);
-
+  unsigned long long *adam_seed(adam_data data);
+  unsigned long long *adam_nonce(adam_data data);
+  const unsigned long long *const adam_buffer(adam_data data);
+  
   /*
-    Returns a random unsigned integer of the specified <width>.
+    Returns a random unsigned integer of the specified <width>. Param
+    <force_regen> can be used to force the generation of a new output
+    vector before returning any results.
   
     Param <width> must ALWAYS be either 8, 16, 32, or 64. Any other
     value will be ignored and revert to the default width of 64.
@@ -58,19 +60,19 @@
     ensure that you can safely expect to call this function and 
     always receive a randomly generated integer.
   */
-  unsigned long long adam_int(unsigned char width, const unsigned char force_regen);
+  unsigned long long adam_int(adam_data data, unsigned char width, const unsigned char force_regen);
 
   /*
     Returns a random double after multiplying it by param <scale>.
   
-    For no scaling factor, just set <scale> to 1. Also, a scale value
+    For no scaling factor, just set <scale> to 1. Also, a <scale> value
     of 0 is ignored and treated as 1.
 
     Automatically makes internal calls when regeneration is needed to 
     ensure that you can safely expect to call this function and 
     always receive a randomly generated double.
   */
-  double adam_dbl(unsigned long long scale, const unsigned char force_regen);
+  double adam_dbl(adam_data data, const unsigned long long scale, const unsigned char force_regen);
 
   /*
     Fills a given buffer with random integers.
@@ -87,9 +89,9 @@
     width value, the default of 64 is used instead and the argument is 
     ignored.
 
-    Returns 0 on success, 1 on error
+    Returns 0 on success, 1 on error.
   */
-  int adam_fill(void *buf, unsigned char width, const unsigned int amount);
+  int adam_fill(adam_data data, void *buf, unsigned char width, const unsigned long long amount);
 
   /*
     Fills a given buffer with random doubles.
@@ -106,9 +108,9 @@
     scaling factor so they fall within the range (0, <multiplier>). If you
     do not need a scaling factor, just pass a value of 1.
 
-    Returns 0 on success, 1 on error
+    Returns 0 on success, 1 on error.
   */
-  int adam_dfill(double *buf, const unsigned long long multiplier, const unsigned int amount);
+  int adam_dfill(adam_data data, double *buf, const unsigned long long multiplier, const unsigned int amount);
 
   /*
     Chooses a random item from a provided collection, where param <arr> is a 
@@ -117,9 +119,27 @@
     could pass in a smaller number than that if you want to choose from a 
     particular range or within a specific radius.
 
-    Caller must guarantee <size> is NEVER larger than the <arr>'s capacity
+    Caller must guarantee <size> is NEVER larger than the <arr>'s capacity.
 
-    Returns a randomly picked member of <arr>
+    Returns a randomly picked member of <arr>.
   */
-  void *adam_choice(void *arr, const unsigned long long size);
+  void *adam_choice(adam_data data, void *arr, const unsigned long long size);
+
+  /*
+    Writes param <output> BITS (not bytes!) to a file descriptor of your choice.
+
+    You can pass NULL for param <file_name> if you'd like to stream to stdout,
+    rather than an actual file. If you provide a valid file name, then it will
+    be created and saved with the requested amount of binary data.
+  
+    Returns the total number of bits written out.
+  */
+  unsigned long long adam_stream(adam_data data, const unsigned long long output, const char *file_name);
+
+  /*
+    Zeroizes adam_data members and frees any allocated memory.
+
+    Call this once you are finished using the generator.
+  */
+  void adam_cleanup(adam_data data);
 #endif
