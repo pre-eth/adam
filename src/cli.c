@@ -1,8 +1,11 @@
 #include <getopt.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 #include "../include/api.h"
 #include "../include/support.h"
+#include "../include/test.h"
 
 #define STRINGIZE(a) #a
 #define STRINGIFY(a) STRINGIZE(a)
@@ -68,20 +71,6 @@ static void print_summary(const u16 swidth, const u16 indent)
     printf("%s", pieces[SUMM_PIECES - 1]);
 
     printf("\n\n");
-}
-
-static u8 nearest_space(const char *str, u8 offset)
-{
-    register u8 a = offset;
-    register u8 b = offset;
-
-    while (str[a] && str[a] != ' ')
-        --a;
-
-    while (str[b] && str[b] != ' ')
-        ++b;
-
-    return (b - offset < offset - a) ? b : a;
 }
 
 static u8 help(void)
@@ -157,9 +146,9 @@ static u8 help(void)
     return 0;
 }
 
-static void print_int()
+static void print_int(adam_data data)
 {
-    const u64 num = adam_int(width, false);
+    const u64 num = adam_int(data, width, false);
     if (hex)
         printf("0x%llx", num);
     else if (octal)
@@ -168,29 +157,31 @@ static void print_int()
         printf("%llu", num);
 }
 
-static void print_dbl()
+static void print_dbl(adam_data data)
 {
-    const double d = adam_dbl(mult, false);
+    const double d = adam_dbl(data, mult, false);
     printf("%.*lf", precision, d);
 }
 
-static u8 dump_buffer()
+static u8 dump_buffer(adam_data data)
 {
-    void (*write_fn)() = (!dbl_mode) ? &print_int : &print_dbl;
+    void (*write_fn)(adam_data) = (!dbl_mode) ? &print_int : &print_dbl;
 
-    write_fn();
+    write_fn(data);
 
     while (--results > 0) {
         printf("\n");
-        write_fn();
+        write_fn(data);
     }
 
     putchar('\n');
 
+    adam_cleanup(data);
+
     return 0;
 }
 
-static u8 uuid(const char *strlimit)
+static u8 uuid(adam_data data, const char *strlimit)
 {
     register u16 limit = a_to_u(optarg, 1, 1000);
     if (!limit)
@@ -203,8 +194,8 @@ static u8 uuid(const char *strlimit)
     u64 lower, upper;
 
     do {
-        lower = adam_int(64, false);
-        upper = adam_int(64, false);
+        lower = adam_int(data, 64, false);
+        upper = adam_int(data, 64, false);
         gen_uuid(upper, lower, &buf[0]);
 
         // Print the UUID
@@ -220,7 +211,7 @@ static u8 uuid(const char *strlimit)
     return 0;
 }
 
-static u8 assessf(bool ascii_mode)
+static u8 assessf(adam_data data, bool ascii_mode, const u64 mult)
 {
     u32 output_mult;
     while (true) {
@@ -234,20 +225,37 @@ static u8 assessf(bool ascii_mode)
 
     const u64 limit = TESTING_DBL * output_mult;
 
-    register double duration;
-    if (ascii_mode)
-        duration = dbl_ascii(limit, adam_rng_buffer(), adam_rng_seed(), adam_rng_nonce(), output_mult, precision);
-    else
-        duration = dbl_bytes(limit, adam_rng_buffer(), adam_rng_seed(), adam_rng_nonce(), output_mult);
+    double *_buf = aligned_alloc(ADAM_ALIGNMENT, limit * sizeof(double));
+
+    register clock_t start = clock();
+    adam_dfill(data, _buf, mult, limit);
+    register double duration = (double) (clock() - start) / (double) CLOCKS_PER_SEC;
+
+    if (ascii_mode) {
+        register u32 i = 0;
+        while (limit - i > 8) {
+            fprintf(stdout, "%.*lf\n%.*lf\n%.*lf\n%.*lf\n%.*lf\n%.*lf\n%.*lf\n%.*lf\n",
+                precision, _buf[i], precision, _buf[i + 1], precision, _buf[i + 2], precision, _buf[i + 3],
+                precision, _buf[i + 4], precision, _buf[i + 5], precision, _buf[i + 6], precision, _buf[i + 7]);
+            i += 8;
+        }
+
+        while (i < limit)
+            fprintf(stdout, "%.*lf\n", precision, _buf[i++]);
+    } else
+        fwrite(&_buf[0], sizeof(double), limit, stdout);
 
     fprintf(stderr,
         "\n\033[0mGenerated \033[36m%llu\033[m doubles in \033[36m%lfs\033[m\n",
         limit, duration);
 
-    return duration;
+    free(_buf);
+    adam_cleanup(data);
+
+    return 0;
 }
 
-static u8 assess()
+static u8 assess(adam_data data)
 {
     char file_name[65];
     while (true) {
@@ -259,8 +267,6 @@ static u8 assess()
         break;
     }
 
-    register double duration = 0.0;
-
     char c = '0';
     while (true) {
         fprintf(stderr, "\033[mOutput type (1 = ASCII, 2 = BINARY): \033[1;33m");
@@ -271,69 +277,93 @@ static u8 assess()
         break;
     }
 
-    freopen(file_name, (c == '1') ? "w+" : "wb+", stdout);
+    if (dbl_mode) {
+        freopen(file_name, "wb+", stdout);
+        return assessf(data, c == '1', mult);
+    }
 
-    if (dbl_mode)
-        return assessf(c == '1');
-
-    u32 mult;
+    u32 output_mult;
     while (true) {
         fprintf(stderr, "\033[mSequence Size (x 1MB): \033[1;33m");
-        if (!scanf(" %u", &mult) || mult < 1 || mult > BITS_TESTING_LIMIT) {
+        if (!scanf(" %u", &output_mult) || output_mult < 1 || output_mult > BITS_TESTING_LIMIT) {
             err("Output multiplier must be between [1, " STRINGIFY(BITS_TESTING_LIMIT) "]");
             continue;
         }
         break;
     }
 
-    register u64 limit = TESTING_BITS * mult;
+    register u64 limit = TESTING_BITS * output_mult;
+    register double duration;
 
-    if (c == '1')
-        duration = stream_ascii(limit, adam_rng_buffer(), adam_rng_seed(), adam_rng_nonce());
-    else
-        duration = stream_bytes(limit, adam_rng_buffer(), adam_rng_seed(), adam_rng_nonce());
+    if (c == '1') {
+        freopen(file_name, "wb+", stdout);
+
+        const u64 amount       = (limit >> 6) + !!(limit & 63);
+        u64 *restrict buffer   = aligned_alloc(ADAM_ALIGNMENT, ADAM_BUF_SIZE * sizeof(u64));
+        register clock_t start = clock();
+        adam_fill(data, buffer, 64, amount);
+        duration = (double) (clock() - start) / (double) CLOCKS_PER_SEC;
+        print_ascii_bits(buffer, amount);
+
+        free(buffer);
+    } else {
+        register clock_t start = clock();
+        adam_stream(data, limit, file_name);
+        duration = (double) (clock() - start) / (double) CLOCKS_PER_SEC;
+    }
 
     fprintf(stderr,
         "\n\033[0mGenerated \033[36m%llu\033[m bits in \033[36m%lfs\033[m\n",
-        limit, duration);
+        limit, duration * 0.3);
+
+    adam_cleanup(data);
 
     return 0;
 }
 
-static u8 examine(const char *strlimit)
+static u8 examine(adam_data data, const char *strlimit)
 {
-    // Check for and validate multiplier
     register u64 limit = TESTING_BITS;
     if (strlimit != NULL)
         limit *= a_to_u(strlimit, 1, BITS_TESTING_LIMIT);
-    get_seq_properties(limit, adam_rng_seed(), *adam_rng_nonce());
+
+    printf("\033[1;33mExamining %llu bits of ADAM...\033[m\n", limit);
+
+    register clock_t start = clock();
+    adam_examine(limit, data);
+    register double duration = ((double) (clock() - start) / (double) CLOCKS_PER_SEC);
+
+    printf("\n\033[1;33mExamination Complete! (%lfs)\033[m\n\n", duration);
+
+    adam_cleanup(data);
+
     return 0;
 }
 
 int main(int argc, char **argv)
 {
-    adam_setup(NULL, NULL);
+    adam_data data = adam_setup(NULL, NULL);
 
+    // Initialize the non-zero defaults
     results   = 1;
-    hex       = false;
-    octal     = false;
-    dbl_mode  = false;
     precision = 15;
     width     = 64;
-    mult      = 0;
 
     register char opt;
     while ((opt = getopt(argc, argv, OPTSTR)) != EOF) {
         switch (opt) {
         case 'h':
+            adam_cleanup(data);
             return help();
         case 'v':
+            adam_cleanup(data);
             puts("v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH));
             return 0;
         case 'a':
-            return assess();
+            return assess(data);
         case 'b':
-            stream_bytes(__UINT64_MAX__, adam_rng_buffer(), adam_rng_seed(), adam_rng_nonce());
+            adam_stream(data, __UINT64_MAX__, NULL);
+            adam_cleanup(data);
             return 0;
         case 'x':
             hex = true;
@@ -343,49 +373,58 @@ int main(int argc, char **argv)
             continue;
         case 'w':
             width = a_to_u(optarg, 8, 32);
-            if (UNLIKELY(width != 8 || width != 16 || width != 32))
-                return err("Width must be either 8, 16, 32");
+            if (UNLIKELY(width != 8 || width != 16 || width != 32)) {
+                adam_cleanup(data);
+                return err("Alternate width must be either 8, 16, 32");
+            }
             continue;
         case 'r':
             results = a_to_u(optarg, 1, ADAM_BUF_SIZE * (64 / width));
-            if (!results)
+            if (!results) {
+                adam_cleanup(data);
                 return err("Invalid number of results specified for desired width");
+            }
             continue;
         case 's':
-            rwseed(adam_rng_seed(), optarg);
+            rwseed(adam_seed(data), optarg);
             continue;
         case 'n':
-            rwnonce(adam_rng_nonce(), optarg);
+            rwnonce(adam_nonce(data), optarg);
             continue;
         case 'u':
-            return uuid(optarg);
+            return uuid(data, optarg);
         case 'd':
             results = ADAM_BUF_SIZE * (64 / width);
-            dump_buffer();
-            return 0;
+            dump_buffer(data);
+            break;
         case 'f':
             dbl_mode = true;
             continue;
         case 'p':
             dbl_mode  = true;
             precision = a_to_u(optarg, 1, 15);
-            if (!precision)
+            if (!precision) {
+                adam_cleanup(data);
                 return err("Floating point precision must be between [1, 15]");
+            }
             continue;
         case 'm':
             dbl_mode = true;
             mult     = a_to_u(optarg, 1, __UINT64_MAX__);
-            if (!mult)
+            if (!mult) {
+                adam_cleanup(data);
                 return err("Floating point scaling factor must be between [1, " STRINGIFY(__UINT64_MAX__) "]");
+            }
             continue;
         case 'e':
-            return examine(optarg);
+            return examine(data, optarg);
         default:
+            adam_cleanup(data);
             return err("Option is invalid or missing required argument");
         }
     }
 
-    dump_buffer();
+    dump_buffer(data);
 
     return 0;
 }
