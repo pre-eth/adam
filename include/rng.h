@@ -1,5 +1,7 @@
 #ifndef RNG_H
 #define RNG_H
+  #include "../include/defs.h"
+
   /* 
     Sizes of the buffer and bit vector for the binary sequence
     The buffer is of type [u64; 256] with size 256 * 8 = 2048 bytes
@@ -57,9 +59,9 @@
 
   /*  The main primitives for using ADAM's algorithm  */
 
-  void accumulate(unsigned long long *restrict seed, unsigned long long *restrict IV, double *restrict chseeds, const unsigned long long cc);
-  void diffuse(unsigned long long *restrict _ptr, const unsigned long long nonce);
-  void apply(unsigned long long *restrict _ptr, unsigned long long *restrict work_buffer, double *restrict chseeds);
-  void mix(unsigned long long *restrict _ptr, const unsigned long long *restrict work_buffer);
-  void reseed(unsigned long long *restrict seed, unsigned long long *restrict work_buffer, unsigned long long *restrict nonce, unsigned long long *restrict cc);
+  void accumulate(u64 *restrict seed, u64 *restrict IV, u64 *restrict work_buffer, double *restrict chseeds, const u64 cc);
+  void diffuse(u64 *restrict _ptr, const u64 nonce);
+  void apply(u64 *restrict _ptr, u64 *restrict work_buffer, double *restrict chseeds);
+  void mix(u64 *restrict _ptr, const u64 *restrict work_buffer);
+  void reseed(u64 *restrict seed, u64 *restrict work_buffer, u64 *restrict nonce, u64*restrict cc);
 #endif
