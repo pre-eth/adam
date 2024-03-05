@@ -1,15 +1,11 @@
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <sys/ioctl.h>
-#include <time.h>
 
 #include "../include/ent.h"
-#include "../include/rng.h"
 #include "../include/simd.h"
 #include "../include/support.h"
 #include "../include/test.h"
-#include "../include/worker.h"
 
 void get_print_metrics(u16 *center, u16 *indent, u16 *swidth)
 {
@@ -18,6 +14,20 @@ void get_print_metrics(u16 *center, u16 *indent, u16 *swidth)
     *center = (wsize.ws_col >> 1);
     *indent = (wsize.ws_col >> 4);
     *swidth = wsize.ws_col;
+}
+
+u8 nearest_space(const char *str, u8 offset)
+{
+    register u8 a = offset;
+    register u8 b = offset;
+
+    while (str[a] && str[a] != ' ')
+        --a;
+
+    while (str[b] && str[b] != ' ')
+        ++b;
+
+    return (b - offset < offset - a) ? b : a;
 }
 
 u8 err(const char *s)
@@ -122,6 +132,28 @@ u8 rwnonce(u64 *nonce, const char *strnonce)
         *nonce = a_to_u(strnonce, 0, __UINT64_MAX__);
     else
         fprintf(stderr, "\033[1;96mNONCE:\033[m %llu", *nonce);
+    return 0;
+}
+
+u8 gen_uuid(const u64 higher, const u64 lower, u8 *buf)
+{
+    // Fill buf with 16 random bytes
+    u128 tmp = ((u128) higher << 64) | lower;
+
+    MEMCPY(buf, &tmp, sizeof(u128));
+
+    /*
+        CODE AND COMMENT PULLED FROM CRYPTOSYS
+        (https://www.cryptosys.net/pki/Uuid.c.html)
+
+        Adjust certain bits according to RFC 4122 section 4.4.
+        This just means do the following
+        (a) set the high nibble of the 7th byte equal to 4 and
+        (b) set the two most significant bits of the 9th byte to 10'B,
+            so the high nibble will be one of {8,9,A,B}.
+   */
+    buf[6] = 0x40 | (buf[6] & 0xf);
+    buf[8] = 0x80 | (buf[8] & 0x3f);
     return 0;
 }
 
