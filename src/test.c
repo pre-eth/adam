@@ -52,9 +52,9 @@ static u64 ham_dist[AVALANCHE_CAT + 1];
 static void sac(const u64 *restrict run1, const u64 *restrict run2)
 {
     register u16 i = 0;
-    do {
+    do
         ++ham_dist[POPCNT(run1[i] ^ run2[i])];
-    } while (++i < BUF_SIZE);
+    while (++i < BUF_SIZE);
 }
 
 static void fp_perm(const double num, u64 *perms)
@@ -262,39 +262,45 @@ static void run_rng(adam_data data)
     reseed(data->seed, data->work_buffer, &data->nonce, &data->cc);
 }
 
-void adam_examine(const u64 limit, rng_test *rsl, unsigned long long *seed, unsigned long long nonce)
+void adam_examine(const u64 limit, adam_data data)
 {
     register long int rate   = limit >> 14;
     register short leftovers = limit & (SEQ_SIZE - 1);
 
-    rsl->avg_chseed = rsl->avg_fp = 0.0;
-    rsl->mfreq = rsl->up_runs = rsl->longest_up = rsl->down_runs = rsl->longest_down = rsl->one_runs = rsl->perms = rsl->longest_one = rsl->zero_runs = rsl->longest_zero = rsl->odd = 0;
+    rng_test rsl;
+    ent_test ent;
 
-    rsl->sequences       = rate + !!(leftovers);
-    rsl->expected_chseed = rsl->sequences * (ROUNDS << 2);
+    MEMCPY(&rsl.init_values[0], data->seed, sizeof(u64) * 4);
+    rsl.init_values[4] = data->nonce;
 
-    adam_worker main_runner, sac_runner;
-    adam_worker_setup(&main_runner, seed, nonce);
+    rsl.avg_chseed = rsl.avg_fp = 0.0;
+    rsl.mfreq = rsl.up_runs = rsl.longest_up = rsl.down_runs = rsl.longest_down = rsl.one_runs = rsl.perms = rsl.longest_one = rsl.zero_runs = rsl.longest_zero = rsl.odd = 0;
 
-    nonce += 1;
-    adam_worker_setup(&sac_runner, seed, nonce);
+    rsl.sequences       = rate + !!leftovers;
+    rsl.expected_chseed = rsl.sequences * (ROUNDS << 2);
 
-    adam_examine_parallel(&main_runner, &sac_runner);
+    rsl.tbt = (limit >= 800000000) ? &tbt16 : &tbt10;
 
-    rsl->min = rsl->max = main_runner._ptr[0];
-    rsl->ent->sccu0     = main_runner._ptr[0] & 0xFF;
+    const u64 nonce      = data->nonce + 1;
+    adam_data sac_runner = adam_setup(adam_seed(data), &nonce);
 
-    rsl->tbt_m = ((limit >= 800000000) ? TBT_SEQ_SIZE16 : TBT_SEQ_SIZE);
+    run_rng(data);
+
+    rsl.min = rsl.max = data->out[0];
+    ent.sccu0         = data->out[0] & 0xFF;
+
     do {
-        test_loop(rsl, main_runner._ptr, main_runner._chseeds, sac_runner._ptr);
-        adam_examine_parallel(&main_runner, &sac_runner);
+        run_rng(sac_runner);
+        test_loop(&rsl, data->out, data->chseeds, sac_runner->out);
+        MEMCPY(sac_runner, data, sizeof(struct adam_data_s));
+        sac_runner->nonce += 1;
+        run_rng(data);
         leftovers -= (u16) (rate <= 0) << 14;
     } while (LIKELY(--rate > 0) || LIKELY(leftovers > 0));
 
-    adam_results(rsl);
+    adam_results(limit, &rsl, &ent);
 
-    adam_worker_cleanup(&main_runner);
-    adam_worker_cleanup(&sac_runner);
+    adam_cleanup(sac_runner);
 }
 
 static void adam_results(rng_test *rsl)
