@@ -128,7 +128,7 @@ static double ent_pochisq(const double ax)
 
 // Need to do a little rewrite to make ent process 8 bytes at a time
 // since ADAM's default work unit is 64 bits
-void ent_test(u8 *byte)
+void ent_loop(const u8 *byte)
 {
     // Update counters for each bin, and then total
     ++ccount[byte[0]];
@@ -170,7 +170,7 @@ void ent_test(u8 *byte)
     } while (++i < 8);
 }
 
-void ent_results(ent_report *rsl)
+void ent_results(ent_test *rsl)
 {
     register u16 i;
 
