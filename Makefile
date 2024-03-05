@@ -32,7 +32,6 @@ cli: $(OBJ)
 	@echo "\033[1;36mBuilding ADAM CLI...\033[m"
 	$(CC) -lpthread -o $(BUILD_DIR)/adam $(OBJ) 
 	@echo "\033[1;32mFinished! Run adam -h to get started!\033[m"
-	@cp ./build/adam ~/.local/bin/adam
 
 lib: $(LIB_OBJ)
 	@echo "\033[1;36mBuilding ADAM library (standard API)...\033[m"
