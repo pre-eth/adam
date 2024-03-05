@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <sys/random.h>
 
-#include "../include/defs.h"
-#include "../include/simd.h"
-#include "../include/rng.h"
 #include "../include/api.h"
+#include "../include/defs.h"
+#include "../include/rng.h"
+#include "../include/simd.h"
 
 struct adam_data_s {
     // 256-bit seed
@@ -17,11 +17,11 @@ struct adam_data_s {
     // 8 64-bit initialization vectors part of internal state
     u64 IV[8];
 
-    // Output vector - 256 64-bit integers
-    u64 *out;
+    // Output vector - 256 64-bit integers = 2048 bytes
+    u64 out[BUF_SIZE] ALIGN(SIMD_LEN);
 
-    // Work maps - sizeof(u64) * 512
-    u64 *work_buffer;
+    // Work maps - sizeof(u64) * 512 = 4096 bytes
+    u64 work_buffer[BUF_SIZE << 1] ALIGN(SIMD_LEN);
 
     // The seeds supplied to each iteration of the chaotic function
     double chseeds[ROUNDS << 2];
@@ -40,9 +40,9 @@ adam_data adam_setup(const u64 *seed, const u64 *nonce)
 
     // Get seed and nonce bytes from secure system RNG, or use user provided one(s)
     if (seed == NULL)
-        getentropy(&data->seed[0], sizeof(u64) << 2);
+        getentropy(&data->seed[0], sizeof(u64) * 4);
     else
-        MEMCPY(&data->seed[0], &seed[0], sizeof(u64) << 2);
+        MEMCPY(&data->seed[0], &seed[0], sizeof(u64) * 4);
 
     if (nonce == NULL)
         getentropy(&data->nonce, sizeof(u64));
@@ -58,10 +58,8 @@ adam_data adam_setup(const u64 *seed, const u64 *nonce)
 
         aligned_alloc + memset is used rather than calloc to use the appropriate SIMD alignment.
     */
-    data->out = aligned_alloc(ADAM_ALIGNMENT, ADAM_BUF_BYTES);
-    MEMSET(&data->out[0], 0, sizeof(u64) * BUF_SIZE);
-    data->work_buffer = aligned_alloc(ADAM_ALIGNMENT, ADAM_BUF_BYTES * 2);
-    MEMSET(&data->work_buffer[0], 0, sizeof(u64) * (BUF_SIZE << 1));
+    MEMSET(&data->out[0], 0, ADAM_BUF_BYTES);
+    MEMSET(&data->work_buffer[0], 0, ADAM_BUF_BYTES * 2);
 
     /*
         8 64-bit IV's that correspond to the verse:
@@ -76,7 +74,10 @@ adam_data adam_setup(const u64 *seed, const u64 *nonce)
     data->IV[6] = 0x68202847656E6573;
     data->IV[7] = 0x697320313A323829;
 
-    data->cc = data->buff_idx = 0;
+    data->cc = 0;
+
+    // Last byte idx == regen next API call
+    data->buff_idx = ADAM_BUF_BYTES - 1;
 
     return data;
 }
