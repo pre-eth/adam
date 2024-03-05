@@ -1,9 +1,35 @@
 #include <pthread.h>
+#include <stdlib.h>
 
-#include "../include/ent.h"
 #include "../include/rng.h"
+#include "../include/support.h"
 #include "../include/test.h"
-#include "../include/worker.h"
+
+struct adam_data_s {
+    // 256-bit seed
+    u64 seed[4];
+
+    // 64-bit nonce
+    u64 nonce;
+
+    // 8 64-bit initialization vectors part of internal state
+    u64 IV[8];
+
+    // Output vector - 256 64-bit integers = 2048 bytes
+    u64 out[BUF_SIZE] ALIGN(ADAM_ALIGNMENT);
+
+    // Work maps - sizeof(u64) * 512 = 4096 bytes
+    u64 work_buffer[BUF_SIZE << 1] ALIGN(ADAM_ALIGNMENT);
+
+    // The seeds supplied to each iteration of the chaotic function
+    double chseeds[ROUNDS << 2];
+
+    // Counter
+    u64 cc;
+
+    //  Current index in buffer (as bytes)
+    u16 buff_idx;
+};
 
 static u64 range_dist[RANGE_CAT];
 static u64 chseed_dist[CHSEED_CAT];
