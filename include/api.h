@@ -1,5 +1,7 @@
 #ifndef ADAM_API_H
 #define ADAM_API_H
+  #include <stdbool.h>
+
 #ifdef __AARCH64_SIMD__
   #define ADAM_ALIGNMENT    64
 #else
@@ -60,7 +62,7 @@
     ensure that you can safely expect to call this function and 
     always receive a randomly generated integer.
   */
-  unsigned long long adam_int(adam_data data, unsigned char width, const unsigned char force_regen);
+  unsigned long long adam_int(adam_data data, unsigned char width, const bool force_regen);
 
   /*
     Returns a random double after multiplying it by param <scale>.
@@ -72,7 +74,7 @@
     ensure that you can safely expect to call this function and 
     always receive a randomly generated double.
   */
-  double adam_dbl(adam_data data, const unsigned long long scale, const unsigned char force_regen);
+  double adam_dbl(adam_data data, const unsigned long long scale, const bool force_regen);
 
   /*
     Fills a given buffer with random integers.
