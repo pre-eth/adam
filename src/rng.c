@@ -2,36 +2,7 @@
 #include "../include/defs.h"
 #include "../include/simd.h"
 
-/*
-    The algorithm requires at least the construction of 3 maps of size BUF_SIZE
-
-    This buffer contains 2 of the internal maps used for generating the chaotic
-    output. The final output vector is provided by the user, a pointer to an array 
-    of at least size 256 * sizeof(u64) bytes.
-
-    static is important because otherwise buffer is initiated with junk that
-    removes the deterministic nature of the algorithm
-*/
-static unsigned long long buffer[BUF_SIZE << 1] ALIGN(SIMD_LEN);
-
-//  Seeds supplied to each iteration of the chaotic function
-//  Per each round, 8 consecutive chseeds are supplied
-static double chseeds[ROUNDS << 2] ALIGN(SIMD_LEN);
-
-/*
-    8 64-bit IV's that correspond to the verse:
-    "Be fruitful and multiply, and replenish the earth (Genesis 1:28)"
-*/
-static u64 IV[8] ALIGN(SIMD_LEN) = {
-    0x4265206672756974, 0x66756C20616E6420,
-    0x6D756C7469706C79, 0x2C20616E64207265,
-    0x706C656E69736820, 0x7468652065617274,
-    0x68202847656E6573, 0x697320313A323829
-};
-
-static u8 cc; // Counter
-
-static void accumulate(const u64 *restrict seed)
+void accumulate(u64 *restrict seed, u64 *restrict IV, u64 *restrict work_buffer, double *restrict chseeds, const u64 cc)
 {
     // clang-format off
     // To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random double D
@@ -49,22 +20,20 @@ static void accumulate(const u64 *restrict seed)
     IV[7] ^= ~seed[3];
 
     register u8 i       = 0;
-    register u16 offset = cc++;
-
+    register u16 offset = cc & 255;
 #ifdef __AARCH64_SIMD__
     const dregq range = SIMD_SETQPD(DIV * LIMIT);
 
     dreg4q seeds;
     reg64q4 r1 = SIMD_LOAD64x4(&IV[0]);
-    reg64q4 r2;
+    reg64q4 r2 = SIMD_LOAD64x4(&work_buffer[offset]);
 
     do {
-        r2 = SIMD_LOAD64x4(&buffer[offset]);
         SIMD_XOR4RQ64(r1, r1, r2);
         SIMD_CAST4QPD(seeds, r1);
         SIMD_MUL4QPD(seeds, seeds, range);
         SIMD_STORE4PD(&chseeds[i << 3], seeds);
-        offset += 8;
+        SIMD_XOR4RQ64(r1, r1, r2);
     } while (++i < (ROUNDS / 2));
 
     SIMD_STORE64x4(&IV[0], r1);
