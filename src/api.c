@@ -24,7 +24,7 @@ struct adam_data_s {
     u64 work_buffer[BUF_SIZE << 1] ALIGN(SIMD_LEN);
 
     // The seeds supplied to each iteration of the chaotic function
-    double chseeds[ROUNDS << 2];
+    double chseeds[ROUNDS << 2] ALIGN(SIMD_LEN);
 
     // Counter
     u64 cc;
@@ -77,14 +77,14 @@ adam_data adam_setup(const u64 *seed, const u64 *nonce)
     data->cc = 0;
 
     // Last byte idx == regen next API call
-    data->buff_idx = ADAM_BUF_BYTES - 1;
+    data->buff_idx = ADAM_BUF_BYTES;
 
     return data;
 }
 
 static void adam(adam_data data)
 {
-    accumulate(data->seed, data->IV, data->chseeds, data->cc);
+    accumulate(data->seed, data->IV, data->work_buffer, data->chseeds, data->cc);
     diffuse(data->out, data->nonce);
     apply(data->out, data->work_buffer, data->chseeds);
     mix(data->out, data->work_buffer);
@@ -102,12 +102,14 @@ u64 *adam_nonce(adam_data data)
     return &data->nonce;
 }
 
-const u64 *const adam_buffer(adam_data data)
+const u64 *const adam_buffer(adam_data data, const bool force_regen)
 {
+    if (force_regen)
+        adam(data);
     return &data->out[0];
 }
 
-u64 adam_int(adam_data data, u8 width, const u8 force_regen)
+u64 adam_int(adam_data data, u8 width, const bool force_regen)
 {
     if (data->buff_idx == ADAM_BUF_BYTES || force_regen)
         adam(data);
@@ -116,13 +118,13 @@ u64 adam_int(adam_data data, u8 width, const u8 force_regen)
         width = 64;
 
     u64 num = 0;
-    MEMCPY(&num, (u8 *)&data->out[data->buff_idx], width >> 3);
+    MEMCPY(&num, (((u8 *) data->out) + data->buff_idx), width >> 3);
     data->buff_idx += width >> 3;
 
     return num;
 }
 
-double adam_dbl(adam_data data, const u64 scale, const u8 force_regen)
+double adam_dbl(adam_data data, const u64 scale, const bool force_regen)
 {
     if (data->buff_idx == ADAM_BUF_BYTES || force_regen)
         adam(data);
@@ -331,8 +333,9 @@ u64 adam_stream(adam_data data, const u64 output, const char *file_name)
         adam(data);
         fwrite(data->out, sizeof(u64), leftovers >> 6, stdout);
         written += leftovers;
-        data->buff_idx = ADAM_BUF_BYTES;
     }
+
+    data->buff_idx = ADAM_BUF_BYTES;
 
     return written;
 }
@@ -343,11 +346,9 @@ void adam_cleanup(adam_data data)
 
     MEMSET(data->IV, 0, sizeof(u64) * 8);
     MEMSET(data->seed, 0, sizeof(u64) * 4);
-    MEMSET(data->out, 0, sizeof(u64) * BUF_SIZE);
-    MEMSET(data->work_buffer, 0, sizeof(u64) * (BUF_SIZE << 1));
+    MEMSET(data->out, 0, ADAM_BUF_BYTES);
+    MEMSET(data->work_buffer, 0, ADAM_BUF_BYTES * 2);
     MEMSET(data->chseeds, 0, sizeof(double) * (ROUNDS << 2));
 
-    free(data->out);
-    free(data->work_buffer);
     free(data);
 }
