@@ -303,31 +303,43 @@ void adam_examine(const u64 limit, adam_data data)
     adam_cleanup(sac_runner);
 }
 
-static void adam_results(rng_test *rsl)
+static void adam_results(const u64 limit, rng_test *rsl, ent_test *ent)
 {
+    // Screen info for pretty printing
+    u16 center, indent, swidth;
+    get_print_metrics(&center, &indent, &swidth);
+    indent <<= 1;
+
     // First get the ENT results out of the way
-    ent_results(rsl->ent);
+    ent_results(ent);
 
     register double average_gaplength = 0.0;
 
     register u16 i = 0;
     register u64 tmp;
     for (; i < BUF_SIZE; ++i) {
-        tmp = rsl->ent->freq[i];
+        tmp = ent->freq[i];
         average_gaplength += ((double) gaplengths[i] / (double) (tmp - 1));
-        update_lcb(i, rsl->ent->freq);
-        update_mcb(i, rsl->ent->freq);
+        update_lcb(i, ent->freq);
+        update_mcb(i, ent->freq);
     }
 
-    rsl->avg_gap = average_gaplength / 256.0;
-    rsl->avg_fp /= (rsl->sequences << 8);
+    print_basic_results(indent, rsl, limit);
+    print_mfreq_results(indent, rsl);
 
-    rsl->ham_dist    = &ham_dist[0];
-    rsl->chseed_dist = &chseed_dist[0];
-    rsl->range_dist  = &range_dist[0];
-    rsl->fpf_dist    = &fpfreq_dist[0];
-    rsl->fpf_quad    = &fpf_quadrants[0];
-    rsl->perm_dist   = &fp_perm_dist[0];
-    rsl->mcb         = &mcb[0];
-    rsl->lcb         = &lcb[0];
+    rsl->avg_gap = average_gaplength / 256.0;
+    print_byte_results(indent, rsl, &mcb[0], &lcb[0]);
+
+    print_range_results(indent, rsl, &range_dist[0]);
+    print_ent_results(indent, ent);
+    print_chseed_results(indent, rsl->expected_chseed, &chseed_dist[0], rsl->avg_chseed);
+
+    rsl->avg_fp /= (rsl->sequences << 8);
+    print_fp_results(indent, rsl, &fpfreq_dist[0], &fpf_quadrants[0], &fp_perm_dist[0]);
+
+    print_avalanche_results(indent, rsl, &ham_dist[0]);
+
+    rsl->tbt_pass = tbt_pass;
+    rsl->tbt_prop = tbt_prop_sum;
+    // print_tbt_results(indent, rsl, &tbt_dist[0]);
 }
