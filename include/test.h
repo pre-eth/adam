@@ -31,9 +31,11 @@
     Hamming distance between u64 numbers in the same buffer position per run, compute the expected
     count per bin for the size of this stream, then do a chi-square test for goodness of fit with the
     binomial distribution. The avalanche effect measures the difference in output when you change
-    the inputs by 1 bit. We increment the seed internally per iteration so we are never changing
-    the input more than 1 bit, thus we can naturally perform the strict avalanche criterion (SAC)
-    test while examining a bit sequence!
+    the inputs by 1 bit, so a copy of the adam_data struct that is passed to the test runner is assigned
+    the same seed and nonce, but the nonce is incremented by 1. The resulting output between both is
+    compared for the test, and as the original struct gets reseeded, its internal state is duplicated
+    to the copy struct and the nonce is incremented again. So we get to conduct the SAC test for EACH
+    iteration of the testing loop and collect all the results for the end!
     
     An interesting thing of note is that the binomial distribution with parameters B(0.5, n) will
     average out to n/2. So we use this knowledge to check how the distribution of Hamming distances
