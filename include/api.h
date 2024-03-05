@@ -48,7 +48,7 @@
   */
   unsigned long long *adam_seed(adam_data data);
   unsigned long long *adam_nonce(adam_data data);
-  const unsigned long long *const adam_buffer(adam_data data);
+  const unsigned long long *const adam_buffer(adam_data data, const bool force_regen);
 
   /*
     Returns a random unsigned integer of the specified <width>. Param
