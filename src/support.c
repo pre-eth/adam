@@ -238,169 +238,27 @@ static void print_binary(char *restrict _bptr, u64 num)
 #endif
 
 // prints all bits in a buffer as chunks of 1024 bits
-static void print_chunks(char *restrict _bptr, u64 *_ptr)
+void print_ascii_bits(u64 *_ptr, const u64 limit)
 {
-#define PRINT_4(i, j) print_binary(_bptr + i, _ptr[j]),           \
-                      print_binary(_bptr + 64 + i, _ptr[j + 1]),  \
-                      print_binary(_bptr + 128 + i, _ptr[j + 2]), \
-                      print_binary(_bptr + 192 + i, _ptr[j + 3])
+#define PRINT_4(i, j) print_binary(&bitbuffer[i], _ptr[j]),           \
+                      print_binary(&bitbuffer[64 + i], _ptr[j + 1]),  \
+                      print_binary(&bitbuffer[128 + i], _ptr[j + 2]), \
+                      print_binary(&bitbuffer[192 + i], _ptr[j + 3])
 
-    register u8 i = 0;
+    register u16 i = 0;
     do {
         PRINT_4(0, i + 0);
         PRINT_4(256, i + 4);
         PRINT_4(512, i + 8);
         PRINT_4(768, i + 12);
-        fwrite(_bptr, 1, BITBUF_SIZE, stdout);
-    } while ((i += 16 - (i == 240)) < BUF_SIZE - 1);
-}
+        fwrite(&bitbuffer[0], 1, BITBUF_SIZE, stdout);
+        i += 16;
+    } while (limit - i >= 16);
 
-u8 gen_uuid(const u64 higher, const u64 lower, u8 *buf)
-{
-    // Fill buf with 16 random bytes
-    u128 tmp = ((u128) higher << 64) | lower;
-
-    MEMCPY(buf, &tmp, sizeof(u128));
-
-    /*
-        CODE AND COMMENT PULLED FROM CRYPTOSYS
-        (https://www.cryptosys.net/pki/Uuid.c.html)
-
-        Adjust certain bits according to RFC 4122 section 4.4.
-        This just means do the following
-        (a) set the high nibble of the 7th byte equal to 4 and
-        (b) set the two most significant bits of the 9th byte to 10'B,
-            so the high nibble will be one of {8,9,A,B}.
-   */
-    buf[6] = 0x40 | (buf[6] & 0xf);
-    buf[8] = 0x80 | (buf[8] & 0x3f);
-    return 0;
-}
-
-double stream_ascii(const u64 limit, u64 *restrict buffer, u64 *restrict seed, u64 *restrict nonce)
-{
-    /*
-        Split limit based on how many calls (if needed)
-        we make to print_chunks, which prints the bits of
-        an entire buffer (aka the SEQ_SIZE)
-    */
-    register long int rate   = limit >> 14;
-    register short leftovers = limit & (SEQ_SIZE - 1);
-
-    register clock_t start;
-    register double duration = 0.0;
-
-    char *restrict _bptr = &bitbuffer[0];
-
-    while (rate > 0) {
-        start = clock();
-        adam(buffer, seed, nonce);
-        duration += (double) (clock() - start) / (double) CLOCKS_PER_SEC;
-        print_chunks(_bptr, buffer);
-        --rate;
-    }
-
-    /*
-        Since there are SEQ_SIZE (16384) bits in every
-        buffer, adam_bits is designed to print up to SEQ_SIZE
-        bits per call, so any leftovers must be processed
-        independently.
-
-        Most users probably won't enter powers of 2, especially
-        if assessing bits, so this branch has been marked as LIKELY.
-    */
-    if (LIKELY(leftovers > 0)) {
-        register u16 l = 0;
-        start          = clock();
-        adam(buffer, seed, nonce);
-        duration += (double) (clock() - start) / (double) CLOCKS_PER_SEC;
-
-        do {
-            print_binary(_bptr, buffer[l >> 6]);
-            fwrite(_bptr, 1, 64, stdout);
-        } while ((l += 64) < leftovers);
-    }
-    return duration;
-}
-
-double dbl_ascii(const u32 limit, u64 *restrict buffer, u64 *restrict seed, u64 *restrict nonce, const u32 multiplier, const u8 precision)
-{
-    double *_buf = (double *) aligned_alloc(SIMD_LEN, limit * sizeof(double));
-
-    register clock_t start = clock();
-
-    if (multiplier > 1)
-        adam_fmrun(_buf, buffer, seed, nonce, limit, multiplier);
-    else
-        adam_frun(_buf, buffer, seed, nonce, limit);
-
-    register double duration = (double) (clock() - start) / (double) CLOCKS_PER_SEC;
-
-    register u32 i = 0;
-    while (limit - i > 8) {
-        fprintf(stdout, "%.*lf\n%.*lf\n%.*lf\n%.*lf\n%.*lf\n%.*lf\n%.*lf\n%.*lf\n",
-            precision, _buf[i], precision, _buf[i + 1], precision, _buf[i + 2], precision, _buf[i + 3],
-            precision, _buf[i + 4], precision, _buf[i + 5], precision, _buf[i + 6], precision, _buf[i + 7]);
-        i += 8;
-    }
-
-    while (i < limit)
-        fprintf(stdout, "%.*lf\n", precision, _buf[i++]);
-
-    free(_buf);
-
-    return duration;
-}
-
-double stream_bytes(const u64 limit, u64 *restrict buffer, u64 *restrict seed, u64 *restrict nonce)
-{
-    register double duration = 0.0;
-    register clock_t start;
-    register u64 progress = 0;
-    while (LIKELY(progress < limit)) {
-        start = clock();
-        adam(buffer, seed, nonce);
-        duration += (double) (clock() - start) / (double) CLOCKS_PER_SEC;
-        fwrite(buffer, sizeof(u64), BUF_SIZE, stdout);
-        progress += SEQ_SIZE;
-    }
-
-    /*
-        Split limit based on how many calls we need to make
-        to write the bytes of an entire buffer directly
-
-        We multiply SEQ_SIZE by 4 because we write 4 buffers
-        at once
-    */
-    const u16 leftovers = (limit & ((SEQ_SIZE << 2) - 1)) >> 6;
-    if (LIKELY(leftovers > 0)) {
-        start = clock();
-        adam(buffer, seed, nonce);
-        duration += (double) (clock() - start) / (double) CLOCKS_PER_SEC;
-        fwrite(buffer, sizeof(u64), leftovers, stdout);
-    }
-
-    return duration;
-}
-
-double dbl_bytes(const u32 limit, u64 *restrict buffer, u64 *restrict seed, u64 *restrict nonce, const u32 multiplier)
-{
-    double *_buf = (double *) aligned_alloc(SIMD_LEN, limit * sizeof(double));
-
-    register clock_t start = clock();
-
-    if (multiplier > 1)
-        adam_fmrun(_buf, buffer, seed, nonce, limit, multiplier);
-    else
-        adam_frun(_buf, buffer, seed, nonce, limit);
-
-    register double duration = (double) (clock() - start) / (double) CLOCKS_PER_SEC;
-
-    fwrite(&_buf[0], sizeof(double), limit, stdout);
-
-    free(_buf);
-
-    return duration;
+    do {
+        print_binary(&bitbuffer[0], _ptr[i]);
+        fwrite(&bitbuffer[0], 1, 64, stdout);
+    } while (++i < limit);
 }
 
 static u8 calc_padding(u64 num)
