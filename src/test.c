@@ -188,7 +188,7 @@ static void tally_bitruns(u64 num, rng_test *rsl)
     } while (num >>= 1);
 }
 
-static void chseed_unif(double *restrict chseeds, double *avg_chseed)
+static void chseed_unif(const double *restrict chseeds, double *avg_chseed)
 {
     register u8 i = 0, idx;
     do {
@@ -198,7 +198,7 @@ static void chseed_unif(double *restrict chseeds, double *avg_chseed)
     } while (++i < (ROUNDS << 2));
 }
 
-static void test_loop(rng_test *rsl, u64 *restrict _ptr, double *restrict chseeds, u64 *restrict sac_ptr)
+static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict chseeds, const u64 *sac_run)
 {
     // Chaotic seeds all occur within (0.0, 0.5).
     // This function tracks their distribution and we check the uniformity at the end.
@@ -207,10 +207,10 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, double *restrict chseed
     // Strict Avalanche Criterion (SAC) test
     // Records the Hamming Distance between this number and the number that
     // was in the same index in the buffer during the previous iteration
-    sac(_ptr, sac_ptr);
+    sac(_ptr, sac_run);
 
     // Topological Binary Test
-    // tbt((u16 *) _ptr, rsl->tbt_m);
+    // rsl->tbt((u16 *) _ptr);
 
     register u16 i = 0;
     register double d;
@@ -247,21 +247,19 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, double *restrict chseed
         gap_lengths(num);
 
         // Calls into ENT framework, updating all the stuff there
-        ent_test((u8 *) &num);
+        ent_loop((const u8 *) &num);
     } while (++i < BUF_SIZE);
 }
 
-static void adam_results(rng_test *rsl);
+static void adam_results(const u64 limit, rng_test *rsl, ent_test *ent);
 
-static void adam_examine_parallel(adam_worker *_main, adam_worker *_sac)
+static void run_rng(adam_data data)
 {
-    pthread_t th1, th2;
-    pthread_create(&th1, NULL, adam_work, (void *) _main);
-    pthread_create(&th2, NULL, adam_work, (void *) _sac);
-    pthread_join(th1, NULL);
-    pthread_join(th2, NULL);
-    MEMCPY(_sac->seed, _main->seed, sizeof(u64) * 4);
-    _sac->nonce = _main->nonce + 1;
+    accumulate(data->seed, data->IV, data->work_buffer, data->chseeds, data->cc);
+    diffuse(data->out, data->nonce);
+    apply(data->out, data->work_buffer, data->chseeds);
+    mix(data->out, data->work_buffer);
+    reseed(data->seed, data->work_buffer, &data->nonce, &data->cc);
 }
 
 void adam_examine(const u64 limit, rng_test *rsl, unsigned long long *seed, unsigned long long nonce)
