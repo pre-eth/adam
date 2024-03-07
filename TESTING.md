@@ -30,7 +30,7 @@ Results for testing 10Mb, 100Mb, 500Mb, and 1Gb are available in the `tests` sub
 
 Some results for the NonOverlappingTemplate tests may be borderline - this is expected since the output should be random, which means some runs will probability wise be weaker than others. The overall is what's most important, and to confirm for yourself you can run the Dieharder test suite which includes the STS tests and retries any `WEAK` results until a conclusive verdict can be reached.
 
-NIST has created a [manual](https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-22r1a.pdf) detailing each of the different tests, available for free. 
+NIST has created a [manual](https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-22r1a.pdf) detailing each of the different tests, available for free download. 
 
 ## Dieharder
 
@@ -152,3 +152,77 @@ P <= 1.0e-12 : You are most unlikely to see a good generator do this on a
 	generator that does this on a properly calibrated test.
 ```
 
+**Note:** For the next two test suites, I assume you've cloned the [testingRNG](https://github.com/lemire/testingRNG) repository.
+
+## TestU01
+
+To build from the root of `testingRNG`:
+
+```
+cd testu01
+make
+```
+
+You might get a linker error when trying to install the examples, but just scroll up and make sure you see something like "Libraries have been installed in <PATH>". Now there should be a folder named `build` present.
+
+Now, `cd` back to `build` in the ADAM directory:
+
+```
+cp ./libadam.a <TESTU01_PATH>/build/lib/libadam.a
+cp ./adam.h <TESTU01_PATH>/build/include/adam.h
+```
+
+Where <TESTU01_PATH> is replaced with the path of the top-level TestU01 folder respectively on your system. Once you're done that, create a new C source file in `<TESTU01_PATH>/build` with the following:
+
+```c
+#include "include/TestU01.h"
+#include "include/adam.h"
+
+static adam_data data;
+
+unsigned int adam_get(void)
+{
+    return adam_int(data, 32, 0);
+}
+
+int main()
+{
+    data = adam_setup(NULL, NULL);
+    
+    // Create TestU01 PRNG object for our generator
+    unif01_Gen *gen = unif01_CreateExternGenBits("adam", adam_get);
+
+    // Run the tests.
+    bbattery_Crush(gen);
+    
+    // Clean up.
+    unif01_DeleteExternGenBits(gen);
+    adam_cleanup(data);
+
+    return 0;
+}
+```
+
+TestU01 works with 32-bit data so we need to set the width parameter accordingly. Now compile and run (swap `crush.c` with the name of your file):
+
+```
+gcc -std=c99 -Wall -O3 -o crush crush.c -Iinclude -Llib -ltestu01 -lprobdist -lmylib -lm -ladam -march=native
+./crush
+```
+
+Crush should start running if you did everything correctly. It will take a while. You can swap out Crush with other batteries easily by changing the `bbattery_Crush` function call to `bbattery_SmallCrush`, `bbattery_Rabbit`, etc. For more details about the test suite, consult the [guide](http://simul.iro.umontreal.ca/testu01/guideshorttestu01.pdf), which is also available in the `doc` folder.
+
+## PractRand
+
+To build from the root of `testingRNG`:
+
+```
+cd practrand
+make
+```
+
+Then, assuming `adam` is in your path (if not, copy it to the build folder): 
+
+`adam -b / RNG_test stdin8`
+
+PractRand also includes a wealth of great documentation about its test results and thought processes. See any of the text files with the `Test_` prefix to learn more about how the tests work, how the author determines their results and grading system, and the author's thoughts on the other test suites listed here.

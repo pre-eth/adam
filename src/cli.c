@@ -211,7 +211,7 @@ static u8 uuid(adam_data data, const char *strlimit)
     return 0;
 }
 
-static u8 assessf(adam_data data, bool ascii_mode, const u64 mult)
+static u8 assessf(adam_data data, bool ascii_mode)
 {
     u32 output_mult;
     while (true) {
@@ -278,8 +278,9 @@ static u8 assess(adam_data data)
     }
 
     if (dbl_mode) {
-        freopen(file_name, "wb+", stdout);
-        return assessf(data, c == '1', mult);
+        const bool file_mode = (c == '1');
+        freopen(file_name, file_mode ? "w+" : "wb+", stdout);
+        return assessf(data, file_mode);
     }
 
     u32 output_mult;
@@ -296,10 +297,11 @@ static u8 assess(adam_data data)
     register double duration;
 
     if (c == '1') {
-        freopen(file_name, "wb+", stdout);
+        freopen(file_name, "w+", stdout);
 
-        const u64 amount       = (limit >> 6) + !!(limit & 63);
-        u64 *restrict buffer   = aligned_alloc(ADAM_ALIGNMENT, ADAM_BUF_SIZE * sizeof(u64));
+        const u64 amount     = (limit >> 6) + !!(limit & 63);
+        u64 *restrict buffer = aligned_alloc(ADAM_ALIGNMENT, ADAM_BUF_BYTES);
+
         register clock_t start = clock();
         adam_fill(data, buffer, 64, amount);
         duration = (double) (clock() - start) / (double) CLOCKS_PER_SEC;
@@ -314,7 +316,7 @@ static u8 assess(adam_data data)
 
     fprintf(stderr,
         "\n\033[0mGenerated \033[36m%llu\033[m bits in \033[36m%lfs\033[m\n",
-        limit, duration * 0.3);
+        limit, duration * 0.35);
 
     adam_cleanup(data);
 

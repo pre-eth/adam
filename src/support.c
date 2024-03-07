@@ -289,7 +289,7 @@ void print_basic_results(const u16 indent, const rng_test *rsl, const u64 limit)
         unit = "KB";
     }
 
-    printf("\033[1;34m\033[%uC               Sample Size: \033[m%llu BITS (%llu%s)\n", indent, output << 6, bytes, unit);
+    printf("\033[1;34m\033[%uC               Output Size: \033[m%llu BITS (%llu%s)\n", indent, output << 6, bytes, unit);
     printf("\033[1;34m\033[%uC       Sequences Generated: \033[m%llu\n", indent, rsl->sequences);
     printf("\033[2m\033[%uC                    a. u64: \033[m%llu\n", indent, output);
     printf("\033[2m\033[%uC                    b. u32: \033[m%llu\n", indent, output << 1);
