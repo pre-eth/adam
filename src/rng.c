@@ -1,6 +1,6 @@
-#include "../include/rng.h"
 #include "../include/defs.h"
 #include "../include/simd.h"
+#include "../include/rng.h"
 
 void accumulate(u64 *restrict seed, u64 *restrict IV, u64 *restrict work_buffer, double *restrict chseeds, const u64 cc)
 {
@@ -33,7 +33,7 @@ void accumulate(u64 *restrict seed, u64 *restrict IV, u64 *restrict work_buffer,
         SIMD_CAST4QPD(seeds, r1);
         SIMD_MUL4QPD(seeds, seeds, range);
         SIMD_STORE4PD(&chseeds[i << 3], seeds);
-        SIMD_XOR4RQ64(r1, r1, r2);
+        SIMD_ADD4RQ64(r1, r1, r2);
     } while (++i < (ROUNDS / 2));
 
     SIMD_STORE64x4(&IV[0], r1);
@@ -78,7 +78,6 @@ void diffuse(u64 *restrict _ptr, const u64 nonce)
         g-=c; d^=f>>17; f+=g; \
         h-=d; e^=g<<14; g+=h; \
     }
-    // clang-format on
 
     // Following logic is adapted from ISAAC64, by Bob Jenkins
     register u64 a, b, c, d, e, f, g, h;
@@ -92,7 +91,6 @@ void diffuse(u64 *restrict _ptr, const u64 nonce)
 
     i = 0;
     do {
-        // clang-format off
         a += _ptr[i + 0]; b += _ptr[i + 1]; c += _ptr[i + 2]; d += _ptr[i + 3];
         e += _ptr[i + 4]; f += _ptr[i + 5]; g += _ptr[i + 6]; h += _ptr[i + 7];
 
@@ -100,8 +98,8 @@ void diffuse(u64 *restrict _ptr, const u64 nonce)
 
         _ptr[i + 0] = a; _ptr[i + 1] = b; _ptr[i + 2] = c; _ptr[i + 3] = d;
         _ptr[i + 4] = e; _ptr[i + 5] = f; _ptr[i + 6] = g; _ptr[i + 7] = h;
-        // clang-format on
     } while ((i += 8) < BUF_SIZE);
+    // clang-format on
 }
 
 static void chaotic_iter(u64 *restrict in, u64 *restrict out, double *restrict chseeds)
@@ -113,7 +111,7 @@ static void chaotic_iter(u64 *restrict in, u64 *restrict out, double *restrict c
 
     reg64q4 r1, r2;
 
-    // Load 8 seeds at a time
+    // Load 8 consecutive seeds at a time
     dreg4q d1 = SIMD_LOAD4PD(chseeds);
     dreg4q d2;
 
@@ -124,7 +122,7 @@ static void chaotic_iter(u64 *restrict in, u64 *restrict out, double *restrict c
         SIMD_MUL4QPD(d2, d2, coeff);
         SIMD_MUL4RQPD(d1, d1, d2);
 
-        // Multiply chaotic result by BETA to obtain int
+        // Multiply chaotic result by BETA to obtain ints
         SIMD_MUL4QPD(d2, d1, beta);
 
         // Cast, XOR, and store
@@ -208,13 +206,13 @@ void reseed(u64 *restrict seed, u64 *restrict work_buffer, u64 *restrict nonce, 
 {
     // clang-format off
     // Slightly modified macro from ISAAC for reseeding ADAM
-    #define ISAAC_IND(mm, x) (*(u64 *) ((u8 *) (mm) + (2048 + (x & 1023))))
-    // clang-format on
+    #define ISAAC_IND(mm, x) (*(u64 *) ((u8 *) (mm) + (2048 + (x & 1015))))
 
-    cc += (*nonce >> (*nonce & 15));
-    seed[0] ^= ~ISAAC_IND(work_buffer, seed[2]);
-    seed[1] ^= ~ISAAC_IND(work_buffer, seed[3]);
-    seed[2] ^= ~ISAAC_IND(work_buffer, seed[0]);
-    seed[3] ^= ~ISAAC_IND(work_buffer, seed[1]);
-    *nonce ^= ~ISAAC_IND(work_buffer, *nonce);
+    cc      += (*nonce >> (*nonce & 15));
+    seed[0] ^= ~ISAAC_IND(work_buffer, seed[0]);
+    seed[1] ^= ~ISAAC_IND(work_buffer, seed[1]);
+    seed[2] ^= ~ISAAC_IND(work_buffer, seed[2]);
+    seed[3] ^= ~ISAAC_IND(work_buffer, seed[3]);
+    *nonce  ^= ~ISAAC_IND(work_buffer, *nonce);
+    // clang-format on
 }
