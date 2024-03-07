@@ -16,6 +16,8 @@
   #define ADAM_BUF_BYTES    2048
   #define ADAM_BUF_BITS     16384
 
+  #define ADAM_FILL_MAX     1000000000
+
   typedef struct adam_data_s *adam_data;
 
   /*
@@ -48,7 +50,7 @@
   */
   unsigned long long *adam_seed(adam_data data);
   unsigned long long *adam_nonce(adam_data data);
-  const unsigned long long *const adam_buffer(adam_data data, const bool force_regen);
+  const unsigned long long *const adam_buffer(const adam_data data, const bool force_regen);
 
   /*
     Returns a random unsigned integer of the specified <width>. Param
@@ -65,7 +67,9 @@
   unsigned long long adam_int(adam_data data, unsigned char width, const bool force_regen);
 
   /*
-    Returns a random double after multiplying it by param <scale>.
+    Returns a random double after multiplying it by param <scale>. Param
+    <force_regen> can be used to force the generation of a new output
+    vector before returning any results.
   
     For no scaling factor, just set <scale> to 1. Also, a <scale> value
     of 0 is ignored and treated as 1.
@@ -134,7 +138,7 @@
     rather than an actual file. If you provide a valid file name, then it will
     be created and saved with the requested amount of binary data.
   
-    If param <output> is less than ADAM_SEQ_BITS, this function won't do anything.
+    If param <output> is less than ADAM_BUF_BITS, this function won't do anything.
 
     Returns the total number of bits written out, or 0 if invalid value for <output>
   */
@@ -143,7 +147,7 @@
   /*
     Zeroizes adam_data members and frees any allocated memory.
 
-    Call this once you are finished using the generator.
+    Call this once after you are finished using the generator.
   */
   void adam_cleanup(adam_data data);
 #endif

@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <sys/random.h>
 
-#include "../include/api.h"
 #include "../include/defs.h"
-#include "../include/rng.h"
 #include "../include/simd.h"
+#include "../include/rng.h"
+#include "../include/api.h"
 
 struct adam_data_s {
     // 256-bit seed
@@ -92,17 +92,17 @@ static void adam(adam_data data)
     data->buff_idx = 0;
 }
 
-u64 *adam_seed(adam_data data)
+u64 *adam_seed(const adam_data data)
 {
     return &data->seed[0];
 }
 
-u64 *adam_nonce(adam_data data)
+u64 *adam_nonce(const adam_data data)
 {
     return &data->nonce;
 }
 
-const u64 *const adam_buffer(adam_data data, const bool force_regen)
+const u64 *const adam_buffer(const adam_data data, const bool force_regen)
 {
     if (force_regen)
         adam(data);
@@ -134,7 +134,7 @@ double adam_dbl(adam_data data, const u64 scale, const bool force_regen)
 
 int adam_fill(adam_data data, void *buf, u8 width, const u64 amount)
 {
-    if (!amount || amount > 1000000000UL)
+    if (!amount || amount > ADAM_FILL_MAX)
         return 1;
 
     if (width != 8 && width != 16 && width != 32 && width != 64)
@@ -295,7 +295,7 @@ static void fmrun(adam_data data, double *buf, const u32 amount, const u64 multi
 
 int adam_dfill(adam_data data, double *buf, const u64 multiplier, const u32 amount)
 {
-    if (!amount || amount > 1000000000)
+    if (!amount || amount > ADAM_FILL_MAX)
         return 1;
 
     if (multiplier > 1)
@@ -315,7 +315,7 @@ void *adam_choice(adam_data data, void *arr, const u64 size)
 
 u64 adam_stream(adam_data data, const u64 output, const char *file_name)
 {
-    if (output < SEQ_SIZE)
+    if (output < ADAM_BUF_BITS)
         return 0;
 
     if (file_name != NULL)
