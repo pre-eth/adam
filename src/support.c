@@ -551,14 +551,14 @@ void print_avalanche_results(const u16 indent, const rng_test *rsl, const u64 *h
     printf("\033[2m\033[%uC               e. [48, 64]: \033[m%*llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, pad, (u64) quadrants[3], (u64) quadrants[3] - (u64) bin_counts[3], (u64) bin_counts[3]);
 }
 
-void print_tbt_results(const u16 indent, const rng_test *rsl, const u64 *tbt_dist)
+void print_tbt_results(const u16 indent, const rng_test *rsl)
 {
-    // Probabilties computed from binomial distribution
-    static double expected[TBT_CAT + 1] = {
-        0.0009765625, 0.009765625, 0.0439453125, 0.1171875000, 0.205078125,
-        0.2460937500, 0.205078125, 0.1171875000, 0.0439453125, 0.009765625,
-        0.0009765625
-    };
+    const u64 total_u16        = rsl->sequences << 10;
+    const double proportion    = ((double) rsl->tbt_prop / (double) total_u16);
+    const u16 average_distinct = (u16) ((double) rsl->tbt_prop / (double) rsl->sequences);
+    const u8 pass_rate         = ((double) rsl->tbt_pass / (double) rsl->sequences) * 100;
 
-    const u64 total_u16 = rsl->sequences << 10;
+    printf("\033[1;34m\033[%uC   Topological Binary Test:\033[m %llu/%llu (%u%%)\n", indent, rsl->tbt_pass, rsl->sequences, pass_rate);
+    printf("\033[2m\033[%uCa. Average Distinct Patterns:\033[m %u (cv = %u)\n", indent - 2, average_distinct, TBT_CRITICAL_VALUE);
+    printf("\033[2m\033[%uC             b. Proportion:\033[m %.3lf (min. = %.3f)\n", indent, proportion, TBT_PROPORTION);
 }
