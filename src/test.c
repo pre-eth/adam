@@ -22,7 +22,7 @@ struct adam_data_s {
     u64 work_buffer[BUF_SIZE << 1] ALIGN(ADAM_ALIGNMENT);
 
     // The seeds supplied to each iteration of the chaotic function
-    double chseeds[ROUNDS << 2];
+    double chseeds[ROUNDS << 2] ALIGN(ADAM_ALIGNMENT);
 
     // Counter
     u64 cc;
@@ -42,12 +42,25 @@ static u64 fpfreq_dist[FPF_CAT];
 static u64 fpf_quadrants[4];
 static u64 fp_perm_dist[FP_PERM_CAT];
 
-static double tbt_dist[TBT_DF];
-static u8 tbt_trials, tbt_successes;
-static u64 tbt_pass;
-
 static u64 ham_dist[AVALANCHE_CAT + 1];
 
+static u64 tbt_pass, tbt_prop_sum;
+
+static void tbt(u16 *tbt_array, u16 *nums)
+{
+    // Checks if this 10-bit pattern has been recorded
+    register u16 i, different;
+    i = different = 0;
+    do {
+        different += !tbt_array[nums[i] & 1023];
+        tbt_array[nums[i] & 1023] |= 1;
+    } while (++i < (ADAM_BUF_BYTES >> 1));
+
+    tbt_prop_sum += different;
+    tbt_pass += (different >= TBT_CRITICAL_VALUE);
+
+    MEMSET(&tbt_array[0], 0, sizeof(u16) * TBT_SEQ_SIZE);
+}
 
 static void sac(const u64 *restrict run1, const u64 *restrict run2)
 {
@@ -210,7 +223,8 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
     sac(_ptr, sac_run);
 
     // Topological Binary Test
-    // rsl->tbt((u16 *) _ptr);
+    // Checks for distinct patterns in a certain collection of numbers
+    tbt(rsl->tbt_array, (u16 *) _ptr);
 
     register u16 i = 0;
     register double d;
@@ -279,7 +293,11 @@ void adam_examine(const u64 limit, adam_data data)
     rsl.sequences       = rate + !!leftovers;
     rsl.expected_chseed = rsl.sequences * (ROUNDS << 2);
 
-    rsl.tbt = (limit >= 800000000) ? &tbt16 : &tbt10;
+    /* 
+        Array for representing 2^10 values 
+        1 idx = corresponding u16 value
+    */
+    rsl.tbt_array = calloc(0, sizeof(u16) * TBT_SEQ_SIZE);
 
     const u64 nonce      = data->nonce + 1;
     adam_data sac_runner = adam_setup(adam_seed(data), &nonce);
@@ -299,7 +317,7 @@ void adam_examine(const u64 limit, adam_data data)
     } while (LIKELY(--rate > 0) || LIKELY(leftovers > 0));
 
     adam_results(limit, &rsl, &ent);
-
+    free(rsl.tbt_array);
     adam_cleanup(sac_runner);
 }
 
@@ -341,5 +359,5 @@ static void adam_results(const u64 limit, rng_test *rsl, ent_test *ent)
 
     rsl->tbt_pass = tbt_pass;
     rsl->tbt_prop = tbt_prop_sum;
-    // print_tbt_results(indent, rsl, &tbt_dist[0]);
+    print_tbt_results(indent, rsl);
 }

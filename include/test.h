@@ -6,7 +6,7 @@
 
   /*    NOTE: All critical values use an alpha level of 0.01    */
 
-  // FOR:   range distribution of output values
+  // FOR:   Range distribution of output values
   #define   RANGE_CAT                 5
   #define   RANGE_CRITICAL_VALUE      13.277
   #define   RANGE1_PROB               2.328306436538696E-10
@@ -15,7 +15,7 @@
   #define   RANGE4_PROB               0.003891050583657
   #define   RANGE5_PROB               0.996093690626375
 
-  // FOR:   monobit frequency (bit distribution)
+  // FOR:   Monobit frequency (bit distribution)
   #define   MFREQ_CRITICAL_VALUE      6.635
   #define   MFREQ_PROB                0.5
 
@@ -51,56 +51,44 @@
   #define   AVALANCHE_CAT             64
   #define   AVALANCHE_CRITICAL_VALUE  93.2168
 
-  // FOR:   chaotic seed distribution 
+  // FOR:   Chaotic seed distribution 
   #define   CHSEED_CAT                5
   #define   CHSEED_CRITICAL_VALUE     13.277
   #define   CHSEED_PROB               (1.0 / 5.0)
 
-  // FOR:   floating point distribution upon converting integer output accordingly
+  // FOR:   Floating point distribution upon converting integer output accordingly
   #define   FPF_CAT                   10
   #define   FPF_CRITICAL_VALUE        21.666
   #define   FPF_PROB                  (1.0 / 10.0)
 
-  // FOR:   floating point permutations test
+  // FOR:   Floating point permutations test
   #define   FP_PERM_SIZE              5
   #define   FP_PERM_CAT               120             // 5!
   #define   FP_PERM_CRITICAL_VALUE    157.800
   #define   FP_PERM_PROB              (1.0 / 120.0)
 
   /*
-    FOR:   10-bit and 16-bit Topological Binary Test (TBT)
+    FOR:   10-bit Topological Binary Test (TBT)
 
-    The 10-bit TBT is done on sequences that are less than 100MB. This is because the chi-square test 
-    cannot be applied effectively, due to having less than 5 items per bin. But otherwise, the 16-bit 
-    test is performed on larger sequences that DO meet this criteria.
+    The 10-bit TBT looks for the number of distinct 10-bit patterns per 2^10 patterns, where a "pattern"
+    is a 10-bit block of bits. Since we provide 1024 such patterns per iteration (each iteration of
+    ADAM produces 1024 u16, the minimum size needed for 2^10 values), we mask the lower 10 bits of each
+    16-bit value and perform the topological binary test over them. If the number of distinct numbers
+    found is greater than or equal to TBT_CRITICAL_VALUE, then we fail to reject the null hypothesis.
 
-    We once again use the binomial distribution to compute the number of successes in a run of 10 (just an
-    arbitrary choice but it can likely be experimented with), as the topological binary test is another
-    Bernoulli trial: if the number of different 10-bit/16-bit patterns is less than the respective 
-    critical value, then the sequence is not sufficiently random. The paper DOES have an exact distribution
-    function, but having to calculate the Stirling numbers for large values of k (since the -e option
-    allows for testing up to 100GB) is unfeasible. So I adapted the approach here a bit :P 
-
-    The probabilities calculated for k successes in a run of 10 have been put in print_tbt_results() in
-    support.c, just like what was done for the SAC test above
-
-    Additionally, we take the critical value in each case as the expected value and model the observed
-    numbers of different patterns as a Poisson distribution. We use the calculated 10-bit and 16-bit 
-    probabilities to check if the range of recorded successes is as expected.
+    The pass rate, average number of distinct patterns, and overall proportion are reported in addition
+    to the target metrics from the original paper. While the paper specifies the discrete probability 
+    function allowing us to obtain a p-value, actually using the function for calculations proves very
+    difficult due to the large values involved, especially the Stirling Numbers of the Second Kind. So
+    no p-value or chi-square is calculated for this test.
 
     Alcover, Pedro & Guillamón, Antonio & Ruiz, M.D.C.. (2013). A New Randomness Test for Bit Sequences.
     Informatica (Netherlands). 24. 339-356. 10.15388/Informatica.2013.399.
   */ 
-  #define   TBT_CAT                   10
   #define   TBT_M1                    10
   #define   TBT_SEQ_SIZE              (1U << TBT_M1)
   #define   TBT_CRITICAL_VALUE        624
   #define   TBT_PROPORTION            0.609
-  #define   TBT_M2                    16
-  #define   TBT_SEQ_SIZE16            (1UL << TBT_M2)
-  #define   TBT_CRITICAL_VALUE16      41241
-  #define   TBT_PROPORTION16          0.629
-  #define   TBT_BITARRAY_SIZE         1024
 
   typedef struct rng_test {
     u64 init_values[5];
@@ -120,7 +108,7 @@
     u64 longest_zero;
     double avg_fp;
     u64 perms;
-    void (*tbt)(u16 *);
+    u16 *tbt_array;
     u64 tbt_pass;
     u64 tbt_prop;
     double avg_chseed;
