@@ -6,6 +6,12 @@
 
   /*    NOTE: All critical values use an alpha level of 0.01    */
 
+  #define   GAMMA_2DF                 1
+  #define   GAMMA_5DF                 1.329340388179137
+  #define   GAMMA_10DF                24
+  #define   GAMMA_64DF                8.222838654177923E33
+  #define   GAMMA_120DF               1.386831185456898E80
+
   // FOR:   Range distribution of output values
   #define   RANGE_CAT                 5
   #define   RANGE_CRITICAL_VALUE      13.277
@@ -18,6 +24,22 @@
   // FOR:   Monobit frequency (bit distribution)
   #define   MFREQ_CRITICAL_VALUE      6.635
   #define   MFREQ_PROB                0.5
+
+  // FOR:   Chaotic seed distribution 
+  #define   CHSEED_CAT                5
+  #define   CHSEED_CRITICAL_VALUE     13.277
+  #define   CHSEED_PROB               (1.0 / 5.0)
+
+  // FOR:   Floating point distribution upon converting integer output accordingly
+  #define   FPF_CAT                   10
+  #define   FPF_CRITICAL_VALUE        21.666
+  #define   FPF_PROB                  (1.0 / 10.0)
+
+  // FOR:   Floating point permutations test
+  #define   FP_PERM_SIZE              5
+  #define   FP_PERM_CAT               120             // 5!
+  #define   FP_PERM_CRITICAL_VALUE    157.800
+  #define   FP_PERM_PROB              (1.0 / 120.0)
 
   /*
     FOR:    Strict Avalanche Criterion (SAC) Test
@@ -49,23 +71,7 @@
     10.1016/j.matcom.2004.09.001.
   */ 
   #define   AVALANCHE_CAT             64
-  #define   AVALANCHE_CRITICAL_VALUE  93.2168
-
-  // FOR:   Chaotic seed distribution 
-  #define   CHSEED_CAT                5
-  #define   CHSEED_CRITICAL_VALUE     13.277
-  #define   CHSEED_PROB               (1.0 / 5.0)
-
-  // FOR:   Floating point distribution upon converting integer output accordingly
-  #define   FPF_CAT                   10
-  #define   FPF_CRITICAL_VALUE        21.666
-  #define   FPF_PROB                  (1.0 / 10.0)
-
-  // FOR:   Floating point permutations test
-  #define   FP_PERM_SIZE              5
-  #define   FP_PERM_CAT               120             // 5!
-  #define   FP_PERM_CRITICAL_VALUE    157.800
-  #define   FP_PERM_PROB              (1.0 / 120.0)
+  #define   AVALANCHE_CRITICAL_VALUE  93.217
 
   /*
     FOR:   10-bit Topological Binary Test (TBT)
