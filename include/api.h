@@ -38,19 +38,19 @@
   adam_data adam_setup(const unsigned long long *seed, const unsigned long long *nonce);
 
   /*
-    Self-explanatory functions - The first two return a raw pointer to
-    the seed/nonce respectively so you can set them yourself at anytime
-    you'd like.
+    Self-explanatory functions - The first two return a raw pointer to the 
+    seed/nonce respectively so you can set them yourself at anytime you'd like.
 
     Since the third function adam_buffer() returns a pointer to the output
     vector, the return value of this function is a const pointer to const data
     to prevent any sort of modification by the user, as technically even the 
     output vector comprises RNG state and the result of each run is dependent
-    on its value.
+    on its value. This function ALWAYS generates a fresh buffer before returning
+    the pointer, as the API assumes you use the whole buffer each time.
   */
   unsigned long long *adam_seed(adam_data data);
   unsigned long long *adam_nonce(adam_data data);
-  const unsigned long long *const adam_buffer(const adam_data data, const bool force_regen);
+  const unsigned long long *const adam_buffer(const adam_data data);
 
   /*
     Returns a random unsigned integer of the specified <width>. Param
