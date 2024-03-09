@@ -1,7 +1,7 @@
 ==========================================================================================
 FILE            IMPLEMENTATION FOCUS   
 ==========================================================================================
-api.c           The standard API functions for libadam -and adam_data struct definition
+api.c           The standard API functions for libadam and adam_data struct definition
 cli.c           Command line - option parsing, pretty printing info, manipulating ADAM
 ent.c           ENT framework code with some arrangement tweaks to work with the adam CLI
 rng.c           Where the magic happens! All the necessary primitives for ADAM

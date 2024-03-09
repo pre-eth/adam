@@ -1,7 +1,6 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 
 #include "../include/api.h"
 #include "../include/support.h"
@@ -10,12 +9,24 @@
 #define STRINGIZE(a) #a
 #define STRINGIFY(a) STRINGIZE(a)
 
-#define MAJOR        1
-#define MINOR        4
-#define PATCH        0
+#define ASSESS_PROMPT(var, msg, fmt, cond, error)        \
+    {                                                    \
+        while (true) {                                   \
+            fprintf(stderr, "\033[m" msg " \033[1;33m"); \
+            if (!scanf(fmt, var) || cond) {              \
+                err(error);                              \
+                continue;                                \
+            }                                            \
+            break;                                       \
+        }                                                \
+    }
 
-#define OPTSTR       ":hvdfbxoap:m:w:e:r:u::s::n::"
-#define ARG_COUNT    16
+#define MAJOR     1
+#define MINOR     4
+#define PATCH     0
+
+#define OPTSTR    ":hvdfbxoap:m:w:e:r:u::s::n::"
+#define ARG_COUNT 16
 
 //  Number of bits in results (8, 16, 32, 64)
 static u8 width;
@@ -121,11 +132,11 @@ static u8 help(void)
         "Print numbers in hexadecimal format with leading prefix",
         "Print numbers in octal format with leading prefix",
         "Enable floating point mode to generate doubles in (0.0, 1.0) instead of integers",
-        "The number of decimal places to display when printing doubles. Must be within [1, 15]. Default is 15",
+        "How many decimal places to print when printing doubles. Must be within [1, 15]. Default is 15",
         "Multiplier for randomly generated doubles, such that they fall in the range (0, <MULTIPLIER>)"
     };
 
-    const u8 lengths[ARG_COUNT] = { 45, 33, 119, 124, 109, 116, 91, 81, 22, 202, 204, 55, 49, 80, 100, 93 };
+    const u8 lengths[ARG_COUNT] = { 45, 33, 119, 124, 109, 116, 91, 81, 22, 202, 204, 55, 49, 80, 93, 93 };
 
     register short len;
     register u16 line_width;
@@ -211,25 +222,11 @@ static u8 uuid(adam_data data, const char *strlimit)
     return 0;
 }
 
-static u8 assessf(adam_data data, bool ascii_mode)
+static void assessf(adam_data data, const u64 limit, bool ascii_mode)
 {
-    u32 output_mult;
-    while (true) {
-        fprintf(stderr, "\033[mSequence Size (x 1000): \033[1;33m");
-        if (!scanf(" %u", &output_mult) || output_mult < 1 || output_mult > DBL_TESTING_LIMIT) {
-            err("Output multiplier must be between [1, " STRINGIFY(DBL_TESTING_LIMIT) "]");
-            continue;
-        }
-        break;
-    }
-
-    const u64 limit = TESTING_DBL * output_mult;
-
     double *_buf = aligned_alloc(ADAM_ALIGNMENT, limit * sizeof(double));
 
-    register clock_t start = clock();
     adam_dfill(data, _buf, mult, limit);
-    register double duration = (double) (clock() - start) / (double) CLOCKS_PER_SEC;
 
     if (ascii_mode) {
         register u32 i = 0;
@@ -245,78 +242,48 @@ static u8 assessf(adam_data data, bool ascii_mode)
     } else
         fwrite(&_buf[0], sizeof(double), limit, stdout);
 
-    fprintf(stderr,
-        "\n\033[0mGenerated \033[36m%llu\033[m doubles in \033[36m%lfs\033[m\n",
-        limit, duration);
-
     free(_buf);
     adam_cleanup(data);
-
-    return 0;
 }
 
 static u8 assess(adam_data data)
 {
     char file_name[65];
-    while (true) {
-        fprintf(stderr, "File name: \033[1;33m");
-        if (!scanf(" %64s", &file_name[0])) {
-            err("Please enter a valid file name");
-            continue;
-        }
-        break;
-    }
+    ASSESS_PROMPT(&file_name[0], "File name:", " %64s", false, "Please enter a valid file name");
 
     char c = '0';
-    while (true) {
-        fprintf(stderr, "\033[mOutput type (1 = ASCII, 2 = BINARY): \033[1;33m");
-        if (!scanf(" %c", &c) || (c != '1' && c != '2')) {
-            err("Value must be 1 or 2");
-            continue;
-        }
-        break;
-    }
+    ASSESS_PROMPT(&c, "Output type (1 = ASCII, 2 = BINARY):", " %c", (c != '1' && c != '2'), "Value must be 1 or 2");
 
-    if (dbl_mode) {
-        const bool file_mode = (c == '1');
-        freopen(file_name, file_mode ? "w+" : "wb+", stdout);
-        return assessf(data, file_mode);
-    }
+    const bool file_mode = (c == '1');
+    freopen(file_name, file_mode ? "w+" : "wb+", stdout);
 
     u32 output_mult;
-    while (true) {
-        fprintf(stderr, "\033[mSequence Size (x 1MB): \033[1;33m");
-        if (!scanf(" %u", &output_mult) || output_mult < 1 || output_mult > BITS_TESTING_LIMIT) {
-            err("Output multiplier must be between [1, " STRINGIFY(BITS_TESTING_LIMIT) "]");
-            continue;
-        }
-        break;
-    }
+    register u64 limit;
 
-    register u64 limit = TESTING_BITS * output_mult;
-    register double duration;
-
-    if (c == '1') {
-        freopen(file_name, "w+", stdout);
-
-        const u64 amount     = (limit >> 6) + !!(limit & 63);
-        u64 *restrict buffer = aligned_alloc(ADAM_ALIGNMENT, ADAM_BUF_BYTES);
-
-        register clock_t start = clock();
-        adam_fill(data, buffer, 64, amount);
-        duration = (double) (clock() - start) / (double) CLOCKS_PER_SEC;
-        print_ascii_bits(buffer, amount);
-
-        free(buffer);
+    if (dbl_mode) {
+        ASSESS_PROMPT(&output_mult, "Sequence Size (x 1000):", " %u", (output_mult < 1 || output_mult > DBL_TESTING_LIMIT), "Output multiplier must be between [1, " STRINGIFY(DBL_TESTING_LIMIT) "]");
+        limit = TESTING_DBL * output_mult;
+        assessf(data, limit, file_mode);
     } else {
-        register clock_t start = clock();
-        adam_stream(data, limit, file_name);
-        duration = (double) (clock() - start) / (double) CLOCKS_PER_SEC;
+        ASSESS_PROMPT(&output_mult, "Sequence Size (x 1MB):", " %u", (output_mult < 1 || output_mult > BITS_TESTING_LIMIT), "Output multiplier must be between [1, " STRINGIFY(BITS_TESTING_LIMIT) "]");
+
+        limit = TESTING_BITS * output_mult;
+        if (file_mode) {
+            const u64 amount     = (limit >> 6) + !!(limit & 63);
+            u64 *restrict buffer = aligned_alloc(ADAM_ALIGNMENT, sizeof(u64) * amount);
+            fprintf(stderr, "starting to print the stuff\n");
+            adam_fill(data, buffer, 64, amount);
+            print_ascii_bits(buffer, amount);
+
+            free(buffer);
+        } else {
+            adam_stream(data, limit, file_name);
+        }
     }
 
     fprintf(stderr,
-        "\n\033[0mGenerated \033[36m%llu\033[m bits in \033[36m%lfs\033[m\n",
-        limit, duration * 0.35);
+        "\n\033[0mGenerated \033[36m%llu\033[m %s and saved to \033[36m%s\033[m\n",
+        limit, (dbl_mode) ? "doubles" : "bits", file_name);
 
     adam_cleanup(data);
 
@@ -331,11 +298,9 @@ static u8 examine(adam_data data, const char *strlimit)
 
     printf("\033[1;33mExamining %llu bits of ADAM...\033[m\n", limit);
 
-    register clock_t start = clock();
     adam_examine(limit, data);
-    register double duration = ((double) (clock() - start) / (double) CLOCKS_PER_SEC);
 
-    printf("\n\033[1;33mExamination Complete! (%lfs)\033[m\n\n", duration);
+    puts("\n\033[1;33mExamination Complete!\033[m\n");
 
     adam_cleanup(data);
 

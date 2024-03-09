@@ -245,7 +245,7 @@ void print_ascii_bits(u64 *_ptr, const u64 limit)
                       print_binary(&bitbuffer[128 + i], _ptr[j + 2]), \
                       print_binary(&bitbuffer[192 + i], _ptr[j + 3])
 
-    register u16 i = 0;
+    register u64 i = 0;
     do {
         PRINT_4(0, i + 0);
         PRINT_4(256, i + 4);
@@ -560,5 +560,5 @@ void print_tbt_results(const u16 indent, const rng_test *rsl)
 
     printf("\033[1;34m\033[%uC   Topological Binary Test:\033[m %llu/%llu (%u%%)\n", indent, rsl->tbt_pass, rsl->sequences, pass_rate);
     printf("\033[2m\033[%uCa. Average Distinct Patterns:\033[m %u (cv = %u)\n", indent - 2, average_distinct, TBT_CRITICAL_VALUE);
-    printf("\033[2m\033[%uC             b. Proportion:\033[m %.3lf (min. = %.3f)\n", indent, proportion, TBT_PROPORTION);
+    printf("\033[2m\033[%uC             b. Proportion:\033[m %.3lf (min. %.3f)\n", indent, proportion, TBT_PROPORTION);
 }

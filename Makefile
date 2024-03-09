@@ -1,7 +1,7 @@
 BUILD_DIR = ./build
 CC = @gcc
 
-CFLAGS = -Iinclude -Os -flto	# -Wall -Wextra -Wpedantic -Werror
+CFLAGS = -Iinclude -O2 -flto	# -Wall -Wextra -Wpedantic -Werror
 UNAME_P := $(shell uname -p)
 
 ifeq ($(UNAME_P), arm)
@@ -22,7 +22,6 @@ OBJ := $(CLI:%=src/%.o) $(LIB_OBJ)
 
 all: cli lib
 	@clang-format -i src/*.c
-	@mkdir -p $(BUILD_DIR)
 	@rm $(OBJ)
 
 %.o: src/%.c 
@@ -30,7 +29,8 @@ all: cli lib
 
 cli: $(OBJ)
 	@echo "\033[1;36mBuilding ADAM CLI...\033[m"
-	$(CC) -lpthread -o $(BUILD_DIR)/adam $(OBJ) 
+	@mkdir -p $(BUILD_DIR)
+	$(CC) -o $(BUILD_DIR)/adam $(OBJ) 
 	@echo "\033[1;32mFinished! Run adam -h to get started!\033[m"
 
 lib: $(LIB_OBJ)
