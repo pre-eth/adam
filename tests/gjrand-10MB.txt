@@ -1,145 +1,146 @@
-***** MCP version 13 --tiny ****
+***** MCP version 13 --tiny *****
 
 ============
 binr -c 1/280 (37449 bytes)
 =======
-dim = 128 ; rnk = 125 ; p = 0.25
+dim = 128 ; rnk = 128 ; p = 1
+dim = 384 ; rnk = 380 ; p = 0.125
 done 3 matrices ; largest 384 X 384
 
-processed in 0 seconds. Wed Oct 18 17:49:46 2023
+processed in 0 seconds. Mon Nov 27 12:52:06 2023
 
 one sided P value (very small numbers are bad)
-P = 0.578
-... after 1 tests running guess [p] = 0.58
+P = 0.33
+... after 1 tests running guess [p] = 0.33
 
 
 ============
 rda 1/1 (10485760 bytes)
 =======
-chisquare (df=749)  717 (p = 0.793)
-extreme = 0.00198 (82 -) (p = 0.774)
-zero1st = 0.00285 (118 +) (p = 0.882)
-ext = 25857 ; exk = 9822 ; expect = 9529
+chisquare (df=749)  753 (p = 0.455)
+extreme = 0.000622 (310 -) (p = 0.373)
+zero1st = 0.00449 (30 +) (p = 0.966)
+ext = 36416 ; exk = 4101 ; expect = 3922
 
-processed 1e+07 bytes in 0 seconds. Wed Oct 18 17:49:46 2023
+processed 1e+07 bytes in 0 seconds. Mon Nov 27 12:52:06 2023
 
 one sided P value (very small numbers are bad)
-P = 0.988
-... after 2 tests running guess [p] = 0.82
+P = 0.754
+... after 2 tests running guess [p] = 0.55
 
 
 ============
 z9 1/1 (10485760 bytes)
 =======
-mix3 extreme = 2.30822 (lags = 00002) low weight 44
-mix3 extreme = 3.45159 (lags = 0012) medium weight 378
-mix3 extreme = 4.02397 (lags = 12000111) high weight 6138
-bits per word =  32 : sub-test P value = 0.469
+mix3 extreme = 2.50806 (lags = 101) low weight 44
+mix3 extreme = 2.98960 (lags = 0000022) medium weight 378
+mix3 extreme = 4.19483 (lags = 01022211) high weight 6138
+bits per word =  32 : sub-test P value = 0.395
 
-mix3 extreme = 2.83831 (lags = 000101) low weight 44
-mix3 extreme = 3.02517 (lags = 200001) medium weight 378
-mix3 extreme = 4.02784 (lags = 02102012) high weight 6138
-bits per word = 128 : sub-test P value = 0.451
+mix3 extreme = 1.88952 (lags = 01000001) low weight 44
+mix3 extreme = 3.01328 (lags = 01010011) medium weight 378
+mix3 extreme = 3.96877 (lags = 12200011) high weight 6138
+bits per word = 128 : sub-test P value = 0.736
 
-processed 1e+07 bytes in 0 seconds. Wed Oct 18 17:49:46 2023
+processed 1e+07 bytes in 0 seconds. Mon Nov 27 12:52:06 2023
 
 one sided P value (very small numbers are bad)
-P = 0.699
-... after 3 tests running guess [p] = 0.92
+P = 0.634
+... after 3 tests running guess [p] = 0.7
 
 
 ============
 diff12 1/7 (1497965 bytes)
 =======
-order =  0 : chis =       2027 ;  p = 0.76038
-order =  1 : chis =       2042 ;  p = 0.950449
-order =  2 : chis =       2077 ;  p = 0.63861
-order =  3 : chis =       2031 ;  p = 0.806312
-order =  4 : chis =       2077 ;  p = 0.628491
-order =  5 : chis =       2088 ;  p = 0.5157
-order =  6 : chis =       2089 ;  p = 0.504659
-order =  7 : chis =       2079 ;  p = 0.613449
-order =  8 : chis =       2065 ;  p = 0.772093
-order =  9 : chis =       2130 ;  p = 0.19881
-order = 10 : chis =       2159 ;  p = 0.0843219
-order = 11 : chis =       2066 ;  p = 0.759652
+order =  0 : chis =       2064 ;  p = 0.778337
+order =  1 : chis =       2034 ;  p = 0.847217
+order =  2 : chis =       2123 ;  p = 0.237591
+order =  3 : chis =       2011 ;  p = 0.580124
+order =  4 : chis =       2016 ;  p = 0.638866
+order =  5 : chis =       2017 ;  p = 0.643311
+order =  6 : chis =       2020 ;  p = 0.677785
+order =  7 : chis =       1937 ;  p = 0.082287
+order =  8 : chis =       2126 ;  p = 0.216082
+order =  9 : chis =       1925 ;  p = 0.0534226
+order = 10 : chis =       1969 ;  p = 0.219902
+order = 11 : chis =       1966 ;  p = 0.20336
 
-processed 1.5e+06 bytes in 0 seconds. Wed Oct 18 17:49:46 2023
+processed 1.5e+06 bytes in 0 seconds. Mon Nov 27 12:52:06 2023
 
 one sided P value (very small numbers are bad)
-P = 0.653
-... after 4 tests running guess [p] = 0.97
+P = 0.483
+... after 4 tests running guess [p] = 0.8
 
 
 ============
 lownda 1/2 (5242880 bytes)
 =======
-extreme = 0.000233   (13 9 25 -)
-transform = 4.26   (a a 24)
-pvals (0.943 0.22)
+extreme = 3.51e-05   (13 2 21 -)
+transform = 4.03   (e b 13)
+pvals (0.35 0.49)
 
-processed 5.2e+06 bytes in 0 seconds. Wed Oct 18 17:49:46 2023
+processed 5.2e+06 bytes in 0 seconds. Mon Nov 27 12:52:06 2023
 
 one sided P value (very small numbers are bad)
-P = 0.392
-... after 5 tests running guess [p] = 0.92
+P = 0.578
+... after 5 tests running guess [p] = 0.86
 
 
 ============
 nda 1/28 (374491 bytes)
 =======
-extreme = 3.57e-05   (5 0 16 -)
-transform = 4.13   (b 2 40)
-pvals (0.355 0.359)
+extreme = 0.000217   (4 12 16 -)
+transform = 3.75   (f d 47)
+pvals (0.93 0.888)
 
-processed 3.7e+05 bytes in 0 seconds. Wed Oct 18 17:49:46 2023
+processed 3.7e+05 bytes in 0 seconds. Mon Nov 27 12:52:06 2023
 
 one sided P value (very small numbers are bad)
-P = 0.584
-... after 6 tests running guess [p] = 0.95
+P = 0.987
+... after 6 tests running guess [p] = 0.91
 
 
 ============
 v256 1/1 (10485760 bytes)
 =======
-minimum = 143  (prob =    0.8551239826    0.9869084458)
-maximum = 181  (prob =    0.8091440887    0.9778275933)
+minimum = 142  (prob =    0.5632440838    0.8551239826)
+maximum = 182  (prob =    0.4989919552    0.8091440887)
 
 expected range [ 14.0 17.8 23.9 44.9 56.1 65.3 ]
-chi-squared =        36.19273
+chi-squared =        25.26382
 
-processed 1e+07 bytes in 0 seconds. Wed Oct 18 17:49:46 2023
+processed 1e+07 bytes in 0 seconds. Mon Nov 27 12:52:06 2023
 
 one sided P value (very small numbers are bad)
-P = 0.642
-... after 7 tests running guess [p] = 0.97
+P = 0.995
+... after 7 tests running guess [p] = 0.94
 
 
 ============
 mod3 1/1 (10485760 bytes)
 =======
-chis =         19850.2 ; df = 19682 ; p = 0.19807
-mix3 extreme = 4.09371 ; p = 0.42712
+chis =         19718.9 ; df = 19682 ; p = 0.42489
+mix3 extreme = 4.02635 ; p = 0.52449
 
-processed 1e+07 bytes in 0 seconds. Wed Oct 18 17:49:46 2023
+processed 1e+07 bytes in 0 seconds. Mon Nov 27 12:52:06 2023
 
 one sided P value (very small numbers are bad)
-P = 0.357
-... after 8 tests running guess [p] = 0.97
+P = 0.669
+... after 8 tests running guess [p] = 0.96
 
 
 ============
 selfcor 1/1 (10485760 bytes)
 =======
-forward (msb) : mean=-0.002272 ; sd=1.004877 ; ext = -4.552617 (22726)
-==> p = 0.159
-reverse (lsb) : mean=0.004470 ; sd=0.991655 ; ext = -4.121232 (28372)
-==> p = 0.709
+forward (msb) : mean=-0.003565 ; sd=1.004286 ; ext = -4.542497 (3455)
+==> p = 0.167
+reverse (lsb) : mean=-0.003843 ; sd=0.996559 ; ext = 4.137189 (24116)
+==> p = 0.684
 
-processed 1e+07 bytes in 0 seconds. Wed Oct 18 17:49:46 2023
+processed 1e+07 bytes in 1 seconds. Mon Nov 27 12:52:07 2023
 
 one sided P value (very small numbers are bad)
-P = 0.293
+P = 0.305
 ... after 9 tests running guess [p] = 0.96
 
 
@@ -147,20 +148,20 @@ P = 0.293
 rda16 1/12 (873813 bytes)
 =======
 simple
-chis = 69408 (p = 0.943)
-extreme = 3.08e-05 (51128 +) (p = 0.884)
-zero1st = 0.000214 (2 -) (p = 0.936)
-ext = 7 ; exk = 0 ; expect = 0.000107
+chis = 70141 (p = 0.351)
+extreme = 2.3e-05 (21831 +) (p = 0.8)
+zero1st = 0.000153 (2 -) (p = 0.859)
+ext = 5 ; exk = 0 ; expect = 7.63e-05
 
 zero1st
-zero1st = 0.000153 (2 -) (p = 0.881)
+zero1st = 0.000153 (2 -) (p = 0.933)
 ext = 5 ; exk = 0 ; expect = 7.63e-05
 
 
-processed 6.1e+05 bytes in 0 seconds. Wed Oct 18 17:49:46 2023
+processed 6.1e+05 bytes in 0 seconds. Mon Nov 27 12:52:07 2023
 
 one sided P value (very small numbers are bad)
-P = 1
+P = 0.823
 ... after 10 tests running guess [p] = 0.97
 
 
@@ -168,65 +169,65 @@ P = 1
 z9 -t 1/1 (10485760 bytes)
 =======
 transitions
-mix3 extreme = 2.27680 (lags = 0011) low weight 44
-mix3 extreme = 3.79151 (lags = 000022) medium weight 378
-mix3 extreme = 3.65889 (lags = 01120201) high weight 6138
-bits per word =  32 : sub-test P value = 0.156
+mix3 extreme = 2.46004 (lags = 1000001) low weight 44
+mix3 extreme = 3.36359 (lags = 02000101) medium weight 378
+mix3 extreme = 4.24230 (lags = 2200222) high weight 6138
+bits per word =  32 : sub-test P value = 0.335
 
-mix3 extreme = 2.55155 (lags = 00000011) low weight 44
-mix3 extreme = 2.93431 (lags = 20001) medium weight 378
-mix3 extreme = 3.94562 (lags = 21200122) high weight 6138
-bits per word = 128 : sub-test P value = 0.759
+mix3 extreme = 2.35547 (lags = 011) low weight 44
+mix3 extreme = 3.00025 (lags = 20011) medium weight 378
+mix3 extreme = 4.07362 (lags = 0002102) high weight 6138
+bits per word = 128 : sub-test P value = 0.574
 
-processed 1e+07 bytes in 0 seconds. Wed Oct 18 17:49:46 2023
+processed 1e+07 bytes in 0 seconds. Mon Nov 27 12:52:07 2023
 
 one sided P value (very small numbers are bad)
-P = 0.288
+P = 0.557
 ... after 11 tests running guess [p] = 0.98
 
 
 ============
 sh5da 1/1 (10485760 bytes)
 =======
-native byte order : (df=364) chis=377.28  p = 0.305
-extreme = 0.00129 (107 +) (p = 0.376)
-reverse byte order: (df=364) chis=326.34  p = 0.922
-extreme = 0.0163 (105 +) (p = 0.998)
+native byte order : (df=364) chis=354.08  p = 0.635
+extreme = 0.00193 (148 +) (p = 0.505)
+reverse byte order: (df=364) chis=399.08  p = 0.0994
+extreme = 0.000752 (231 -) (p = 0.24)
 
-processed 1e+07 bytes in 0 seconds. Wed Oct 18 17:49:46 2023
+processed 1e+07 bytes in 0 seconds. Mon Nov 27 12:52:07 2023
 
 one sided P value (very small numbers are bad)
-P = 0.766
-... after 12 tests running guess [p] = 0.98
+P = 0.342
+... after 12 tests running guess [p] = 0.99
 
 
 ============
 slicerda 1/3 (3495253 bytes)
 =======
 expected range [ 633 662 699 799 841 875 ]
- 0 :       746.16485
- 2 :       745.04773
- 4 :       661.02842
- 6 :       725.44297
- 8 :       735.05324
-10 :       754.68707
-12 :       822.17903
-14 :       745.89113
-16 :       766.22326
-18 :       811.65289
-20 :       755.19151
-22 :       736.93573
-24 :       675.46252
-26 :       742.77364
-28 :       719.09426
-30 :       834.60498
-extreme = 0.000186 (30 452 -)
-pvals (0.225 0.893)
+ 0 :       703.40746
+ 2 :       814.56476
+ 4 :       800.40740
+ 6 :       743.11632
+ 8 :       750.99000
+10 :       718.05328
+12 :       733.87538
+14 :       764.71377
+16 :       705.56924
+18 :       796.97640
+20 :       775.30182
+22 :       766.65419
+24 :       761.67447
+26 :       774.23663
+28 :       843.56883
+30 :       817.21198
+extreme = 5.31e-05 (30 428 +)
+pvals (0.135 0.471)
 
-processed 3.5e+06 bytes in 0 seconds. Wed Oct 18 17:49:46 2023
+processed 3.5e+06 bytes in 0 seconds. Mon Nov 27 12:52:07 2023
 
 one sided P value (very small numbers are bad)
-P = 0.399
+P = 0.252
 
 
 ====================
@@ -235,4 +236,4 @@ completed 13 tests
 
 
 Overall summary one sided P-value (smaller numbers bad)
-P = 0.988 : ok
+P = 0.977 : ok
