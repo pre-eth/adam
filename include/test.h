@@ -7,20 +7,20 @@
   /*    NOTE: All critical values use an alpha level of 0.01    */
 
   #define   GAMMA_2DF                 1
+  #define   GAMMA_4DF                 2
   #define   GAMMA_5DF                 1.329340388179137
   #define   GAMMA_8DF                 6
   #define   GAMMA_10DF                24
-  #define   GAMMA_64DF                8.222838654177923E33
   #define   GAMMA_120DF               1.386831185456898E80
 
   // FOR:   Range distribution of output values
   #define   RANGE_CAT                 5
   #define   RANGE_CRITICAL_VALUE      13.277
-  #define   RANGE1_PROB               2.328306436538696E-10
-  #define   RANGE2_PROB               5.937181414550612E-8
-  #define   RANGE3_PROB               0.000015199185323
-  #define   RANGE4_PROB               0.003891050583657
-  #define   RANGE5_PROB               0.996093690626375
+  #define   RANGE_PROB1               2.328306436538696E-10
+  #define   RANGE_PROB2               5.937181414550612E-8
+  #define   RANGE_PROB3               0.000015199185323
+  #define   RANGE_PROB4               0.003891050583657
+  #define   RANGE_PROB5               0.996093690626375
 
   // FOR:   Monobit frequency (bit distribution)
   #define   MFREQ_CRITICAL_VALUE      6.635
@@ -76,8 +76,8 @@
     The strict avalanche criterion randomness test. Mathematics and Computers in Simulation. 68. 1-7. 
     10.1016/j.matcom.2004.09.001.
   */ 
-  #define   AVALANCHE_CAT             64
-  #define   AVALANCHE_CRITICAL_VALUE  93.217
+  #define   AVALANCHE_CAT             4
+  #define   AVALANCHE_CRITICAL_VALUE  11.345
 
   /*
     FOR:   10-bit Topological Binary Test (TBT)

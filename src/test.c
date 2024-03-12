@@ -4,6 +4,10 @@
 #include "../include/support.h"
 #include "../include/test.h"
 
+// https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
+#define MIN(a, b) (b ^ ((a ^ b) & -(a < b)))
+#define MAX(a, b) (a ^ ((a ^ b) & -(a < b)))
+
 struct adam_data_s {
     // 256-bit seed
     u64 seed[4];
@@ -43,7 +47,7 @@ static u64 fp_perm_dist[FP_PERM_CAT];
 static u64 fp_max_dist[FP_MAX_CAT];
 static u64 fp_max_runs;
 
-static u64 ham_dist[AVALANCHE_CAT + 1];
+static u64 ham_dist[65];
 
 static u64 tbt_pass, tbt_prop_sum;
 
@@ -181,7 +185,7 @@ static void tally_runs(const u64 num, rng_test *rsl)
     if (num > prev) {
         if (direction != 0) {
             ++rsl->up_runs;
-            rsl->longest_down = rsl->longest_down ^ ((rsl->longest_down ^ curr_down) & -(rsl->longest_down < curr_down));
+            rsl->longest_down = MAX(rsl->longest_down, curr_down);
             curr_down         = 0;
             direction         = 0;
         }
@@ -189,7 +193,7 @@ static void tally_runs(const u64 num, rng_test *rsl)
     } else if (num < prev) {
         if (direction != 1) {
             ++rsl->down_runs;
-            rsl->longest_up = rsl->longest_up ^ ((rsl->longest_up ^ curr_up) & -(rsl->longest_up < curr_up));
+            rsl->longest_up = MAX(rsl->longest_up, curr_up);
             curr_up         = 0;
             direction       = 1;
         }
@@ -208,7 +212,7 @@ static void tally_bitruns(u64 num, rng_test *rsl)
         if (num & 1) {
             if (direction != 1) {
                 ++rsl->one_runs;
-                rsl->longest_zero = rsl->longest_zero ^ ((rsl->longest_zero ^ curr_zero) & -(rsl->longest_zero < curr_zero));
+                rsl->longest_zero = MAX(rsl->longest_zero, curr_zero);
                 curr_zero         = 0;
                 direction         = 1;
             }
@@ -216,7 +220,7 @@ static void tally_bitruns(u64 num, rng_test *rsl)
         } else {
             if (direction != 0) {
                 ++rsl->zero_runs;
-                rsl->longest_one = rsl->longest_one ^ ((rsl->longest_one ^ curr_one) & -(rsl->longest_one < curr_one));
+                rsl->longest_one = MAX(rsl->longest_one, curr_one);
                 curr_one         = 0;
                 direction        = 0;
             }
@@ -262,8 +266,8 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
         rsl->mfreq += POPCNT(num);
 
         // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
-        rsl->min = num ^ ((rsl->min ^ num) & -(rsl->min < num));
-        rsl->max = rsl->max ^ ((rsl->max ^ num) & -(rsl->max < num));
+        rsl->min = MIN(rsl->min, num);
+        rsl->max = MAX(rsl->max, num);
 
         // Convert this number to float with same logic used for returning FP results
         // Then record float for FP freq distribution in (0.0, 1.0)
@@ -327,7 +331,7 @@ void adam_examine(const u64 limit, adam_data data)
     rsl.tbt_array = calloc(0, sizeof(u16) * TBT_SEQ_SIZE);
 
     const u64 nonce      = data->nonce + 1;
-    adam_data sac_runner = adam_setup(adam_seed(data), &nonce);
+    adam_data sac_runner = adam_setup(data->seed, &nonce);
 
     run_rng(data);
 
