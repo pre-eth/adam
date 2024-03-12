@@ -40,6 +40,8 @@ static u8 lcb[5], mcb[5];
 static u64 fpfreq_dist[FPF_CAT];
 static u64 fpf_quadrants[4];
 static u64 fp_perm_dist[FP_PERM_CAT];
+static u64 fp_max_dist[FP_MAX_CAT];
+static u64 fp_max_runs;
 
 static u64 ham_dist[AVALANCHE_CAT + 1];
 
@@ -67,6 +69,29 @@ static void sac(const u64 *restrict run1, const u64 *restrict run2)
     do
         ++ham_dist[POPCNT(run1[i] ^ run2[i])];
     while (++i < BUF_SIZE);
+}
+
+static void fp_max8(const u32 *nums)
+{
+    register u16 idx = 1;
+    register u16 max, count;
+    max = count = 0;
+
+    register double d;
+    register double last = (double) nums[0] / (double) __UINT32_MAX__;
+    do {
+        d    = (double) nums[idx] / (double) __UINT32_MAX__;
+        max  = (d > last) ? (idx & 7) : max;
+        last = d;
+        ++idx;
+        if (++count == FP_MAX_CAT) {
+            ++fp_max_dist[max];
+            ++fp_max_runs;
+            max = count = 0;
+            last        = (double) nums[idx] / (double) __UINT32_MAX__;
+            ++idx;
+        }
+    } while (idx < (BUF_SIZE << 1));
 }
 
 static void fp_perm(const double num, u64 *perms)
@@ -225,6 +250,9 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
     // Checks for distinct patterns in a certain collection of numbers
     tbt(rsl->tbt_array, (u16 *) _ptr);
 
+    // 32-bit floating point max-of-T test with T = 8
+    fp_max8((u32 *) _ptr);
+
     register u16 i = 0;
     register double d;
     u64 num;
@@ -352,7 +380,9 @@ static void adam_results(const u64 limit, rng_test *rsl, ent_test *ent)
     print_chseed_results(indent, rsl->expected_chseed, &chseed_dist[0], rsl->avg_chseed);
 
     rsl->avg_fp /= (rsl->sequences << 8);
-    print_fp_results(indent, rsl, &fpfreq_dist[0], &fpf_quadrants[0], &fp_perm_dist[0]);
+    rsl->fp_max_runs = fp_max_runs;
+    print_fp_results(indent, rsl, &fpfreq_dist[0], &fpf_quadrants[0], &fp_perm_dist[0], &fp_max_dist[0]);
+
 
     print_avalanche_results(indent, rsl, &ham_dist[0]);
 

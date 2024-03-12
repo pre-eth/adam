@@ -8,6 +8,7 @@
 
   #define   GAMMA_2DF                 1
   #define   GAMMA_5DF                 1.329340388179137
+  #define   GAMMA_8DF                 6
   #define   GAMMA_10DF                24
   #define   GAMMA_64DF                8.222838654177923E33
   #define   GAMMA_120DF               1.386831185456898E80
@@ -40,6 +41,11 @@
   #define   FP_PERM_CAT               120             // 5!
   #define   FP_PERM_CRITICAL_VALUE    157.800
   #define   FP_PERM_PROB              (1.0 / 120.0)
+
+  // FOR:   Floating point max of 8 test
+  #define   FP_MAX_CAT                8
+  #define   FP_MAX_PROB               0.125
+  #define   FP_MAX_CRITICAL_VALUE     18.475
 
   /*
     FOR:    Strict Avalanche Criterion (SAC) Test
@@ -119,6 +125,7 @@
     u64 tbt_prop;
     double avg_chseed;
     u64 expected_chseed;
+    u64 fp_max_runs;
   } rng_test;
 
   void adam_examine(const u64 limit, adam_data data);
