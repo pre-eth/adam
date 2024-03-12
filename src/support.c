@@ -270,9 +270,9 @@ static u8 calc_padding(u64 num)
     return pad;
 }
 
-static double get_pvalue(const u8 n, const double chi, const double gamma)
+static double igfc1(const u8 n, const double chi, const double gamma)
 {
-    // lower incomplete function
+    // lower incomplete function where n = integer (ex. 32)
     register double factorial = 1.0;
     register double sum       = 0.0;
     register u8 i             = 0;
@@ -283,6 +283,32 @@ static double get_pvalue(const u8 n, const double chi, const double gamma)
 
     // Need to subtract from 1 because we are doing a right-tail test
     return 1.0 - ((factorial / n) * (1.0 - (exp(-chi) * sum)) / gamma);
+}
+
+// Courtesy of https://www.codeproject.com/Articles/432194/How-to-Calculate-the-Chi-Squared-P-Value
+static double igfc2(double n, const double chi, const double gamma)
+{
+    // lower incomplete function where n = double (ex. 2.5)
+    double sc = (1.0 / n);
+    sc *= pow(chi, n);
+    sc *= exp(-chi);
+
+    double sum, nom, denom;
+    sum = nom = denom = 1.0;
+
+    for (int i = 0; i < 200; ++i) {
+        nom *= chi;
+        n++;
+        denom *= n;
+        sum += (nom / denom);
+    }
+
+    double p_value = sum * sc;
+    if (isnan(p_value) || isinf(p_value))
+        p_value = 1E-14;
+
+    // Need to subtract from 1 because we are doing a right-tail test
+    return 1.0 - (p_value / gamma);
 }
 
 void print_basic_results(const u16 indent, const rng_test *rsl, const u64 limit)
@@ -325,7 +351,7 @@ void print_mfreq_results(const u16 indent, const rng_test *rsl)
 
     register u8 suspect_level = 32 - (MFREQ_CRITICAL_VALUE <= chi_calc);
 
-    const double p_value = get_pvalue(1, chi_calc / 2, GAMMA_2DF);
+    const double p_value = igfc1(1, chi_calc / 2, GAMMA_2DF);
 
     printf("\033[1;34m\033[%uC         Monobit Frequency:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
     printf("\033[2m\033[%uC         a. Raw Chi-Square:\033[m %1.3lf (cv = %.3lf)\n", indent, chi_calc, MFREQ_CRITICAL_VALUE);
@@ -354,14 +380,14 @@ void print_byte_results(const u16 indent, const rng_test *rsl, const u8 *restric
 
 void print_range_results(const u16 indent, const rng_test *rsl, const u64 *restrict range_dist)
 {
-    const u64 output               = rsl->sequences << 8;
-    const u8 pad                   = calc_padding(range_dist[4]);
-    const u64 range_exp[RANGE_CAT] = {
-        (double) output * RANGE1_PROB,
-        (double) output * RANGE2_PROB,
-        (double) output * RANGE3_PROB,
-        (double) output * RANGE4_PROB,
-        (double) output * RANGE5_PROB
+    const u64 output                 = rsl->sequences << 8;
+    const u8 pad                     = calc_padding(range_dist[4]);
+    const double expected[RANGE_CAT] = {
+        (double) output * RANGE_PROB1,
+        (double) output * RANGE_PROB2,
+        (double) output * RANGE_PROB3,
+        (double) output * RANGE_PROB4,
+        (double) output * RANGE_PROB5
     };
 
     // Calculate chi-square statistic for distribution of 64-bit numbers
@@ -369,25 +395,25 @@ void print_range_results(const u16 indent, const rng_test *rsl, const u64 *restr
     register double chi_calc = 0.0;
 
     for (u8 i = 0; i < RANGE_CAT; ++i) {
-        delta[i] = (double) range_dist[i] - (double) range_exp[i];
-        if (range_exp[i] > 0)
-            chi_calc += pow(delta[i], 2) / (double) range_exp[i];
+        delta[i] = (double) range_dist[i] - expected[i];
+        if (expected[i] > 0)
+            chi_calc += pow(delta[i], 2) / expected[i];
     }
 
     register u8 suspect_level = 32 - (RANGE_CRITICAL_VALUE <= chi_calc);
 
-    const double p_value = get_pvalue(RANGE_CAT / 2, chi_calc / 2, GAMMA_5DF);
+    const double p_value = igfc2(RANGE_CAT / 2, chi_calc / 2, GAMMA_5DF);
 
     printf("\033[1;34m\033[%uC             Minimum Value:\033[m %llu\n", indent, rsl->min);
     printf("\033[1;34m\033[%uC             Maximum Value:\033[m %llu\n", indent, rsl->max);
     printf("\033[1;34m\033[%uC                     Range:\033[m %llu\n", indent, rsl->max - rsl->min);
     printf("\033[1;34m\033[%uC        Range Distribution:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
     printf("\033[2m\033[%uC         a. Raw Chi-Square:\033[m %1.3lf (cv = %.3lf)\n", indent, chi_calc, RANGE_CRITICAL_VALUE);
-    printf("\033[2m\033[%uC            b.    [0, 2³²):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad + 1, range_dist[0], range_exp[0], (long long) delta[0]);
-    printf("\033[2m\033[%uC            c.  [2³², 2⁴⁰):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad + 1, range_dist[1], range_exp[1], (long long) delta[1]);
-    printf("\033[2m\033[%uC            d.  [2⁴⁰, 2⁴⁸):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad + 1, range_dist[2], range_exp[2], (long long) delta[2]);
-    printf("\033[2m\033[%uC            e.  [2⁴⁸, 2⁵⁶):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad + 1, range_dist[3], range_exp[3], (long long) delta[3]);
-    printf("\033[2m\033[%uC            f.  [2⁵⁶, 2⁶⁴):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad + 1, range_dist[4], range_exp[4], (long long) delta[4]);
+    printf("\033[2m\033[%uC            b.    [0, 2³²):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad + 1, range_dist[0], (u64) expected[0], (long long) delta[0]);
+    printf("\033[2m\033[%uC            c.  [2³², 2⁴⁰):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad + 1, range_dist[1], (u64) expected[1], (long long) delta[1]);
+    printf("\033[2m\033[%uC            d.  [2⁴⁰, 2⁴⁸):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad + 1, range_dist[2], (u64) expected[2], (long long) delta[2]);
+    printf("\033[2m\033[%uC            e.  [2⁴⁸, 2⁵⁶):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad + 1, range_dist[3], (u64) expected[3], (long long) delta[3]);
+    printf("\033[2m\033[%uC            f.  [2⁵⁶, 2⁶⁴):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad + 1, range_dist[4], (u64) expected[4], (long long) delta[4]);
     printf("\033[1;34m\033[%uC              Even Numbers:\033[m %llu (%u%%)\n", indent, output - rsl->odd, (u8) (((double) (output - rsl->odd) / (double) output) * 100));
     printf("\033[1;34m\033[%uC               Odd Numbers:\033[m %llu (%u%%)\n", indent, rsl->odd, (u8) (((double) rsl->odd / (double) output) * 100));
 }
@@ -396,23 +422,13 @@ void print_ent_results(const u16 indent, const ent_test *ent)
 {
     char *chi_str;
     char chi_tmp[6];
-    register u8 suspect_level = 32;
 
-    if (ent->pochisq < 0.01) {
-        chi_str = "<= 0.01";
-        --suspect_level;
-    } else if (ent->pochisq > 0.99) {
-        chi_str = ">= 0.99";
-        --suspect_level;
-    } else {
-        snprintf(&chi_tmp[0], 5, "%1.2f", ent->pochisq * 100);
-        chi_str = &chi_tmp[0];
-    }
+    register u8 suspect_level = 32 - (ent->pochisq < 0.01);
 
-    printf("\033[1;34m\033[%uC                   Entropy: \033[m%.5lf %9s per byte)\n", indent, ent->ent, "(bits");
-    printf("\033[1;34m\033[%uC            ENT Chi-Square: \033[m\033[1;%um%1.3lf\033[m %14sexceeded %s%% of the time) \n", indent, suspect_level, ent->chisq, "(randomly ", chi_str);
-    printf("\033[1;34m\033[%uC           Arithmetic Mean: \033[m%1.3lf%21s\n", indent, ent->mean, "(127.5 = random)");
-    printf("\033[1;34m\033[%uC  Monte Carlo Value for Pi: \033[m%1.9lf (error: %1.2f%%)\n", indent, ent->montepicalc, ent->monterr);
+    printf("\033[1;34m\033[%uC                   Entropy:\033[m %.5lf %9s per byte)\n", indent, ent->ent, "(bits");
+    printf("\033[1;34m\033[%uC            ENT Chi-Square:\033[m %1.3lf\033[m  %14s\033[1;%um%1.2lf\033[m)\n", indent, ent->chisq, "(p-value = ", suspect_level, ent->pochisq);
+    printf("\033[1;34m\033[%uC           Arithmetic Mean:\033[m %1.3lf%21s\n", indent, ent->mean, "(127.5 = random)");
+    printf("\033[1;34m\033[%uC  Monte Carlo Value for Pi:\033[m %1.9lf (error: %1.2f%%)\n", indent, ent->montepicalc, ent->monterr);
 
     if (ent->scc >= -99999) {
         double scc = ent->scc;
@@ -436,7 +452,7 @@ void print_chseed_results(const u16 indent, const u64 expected, const u64 *chsee
 
     register u8 suspect_level = 32 - (CHSEED_CRITICAL_VALUE <= chi_calc);
 
-    const double p_value = get_pvalue(CHSEED_CAT / 2, chi_calc / 2, GAMMA_5DF);
+    const double p_value = igfc2(CHSEED_CAT / 2, chi_calc / 2, GAMMA_5DF);
 
     printf("\033[1;34m\033[%uC Chaotic Seed Distribution:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
     printf("\033[2m\033[%uC         a. Raw Chi-Square:\033[m %1.3lf (cv = %.3lf)\n", indent, chi_calc, CHSEED_CRITICAL_VALUE);
@@ -448,7 +464,7 @@ void print_chseed_results(const u16 indent, const u64 expected, const u64 *chsee
     printf("\033[2m\033[%uC             g. [0.4, 0.5):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, chseed_dist[4], expected_chseeds, (long long) delta[4]);
 }
 
-void print_fp_results(const u16 indent, const rng_test *rsl, const u64 *restrict fpf_dist, const u64 *restrict fpf_quad, const u64 *fp_perm_dist)
+void print_fp_results(const u16 indent, const rng_test *rsl, const u64 *restrict fpf_dist, const u64 *restrict fpf_quad, const u64 *fp_perm_dist, const u64 *fp_max_dist)
 {
     const u64 output         = rsl->sequences << 8;
     register double expected = output * FPF_PROB;
@@ -468,7 +484,7 @@ void print_fp_results(const u16 indent, const rng_test *rsl, const u64 *restrict
     for (u8 i = 0; i < 4; ++i)
         delta[i] = fpf_quad[i] - expected;
 
-    register double p_value = get_pvalue(FPF_CAT / 2, chi_calc / 2, GAMMA_10DF);
+    register double p_value = igfc1(FPF_CAT / 2, chi_calc / 2, GAMMA_10DF);
 
     printf("\033[1;34m\033[%uC              FP Frequency:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
     printf("\033[2m\033[%uC         a. Raw Chi-Square:\033[m %1.3lf (cv = %.3lf)\n", indent, chi_calc, FPF_CRITICAL_VALUE);
@@ -480,37 +496,62 @@ void print_fp_results(const u16 indent, const rng_test *rsl, const u64 *restrict
 
     /*   PERMUTATIONS   */
 
-    expected            = rsl->perms * FP_PERM_PROB;
-    chi_calc            = 0;
-    i                   = 0;
-    double perm_average = 0.0;
+    expected       = rsl->perms * FP_PERM_PROB;
+    chi_calc       = 0;
+    i              = 0;
+    double average = 0.0;
     for (; i < FP_PERM_CAT; ++i) {
-        perm_average += fp_perm_dist[i];
-        chi_calc += pow((fp_perm_dist[i] - expected), 2) / expected;
+        average += fp_perm_dist[i];
+        chi_calc += pow(((double) fp_perm_dist[i] - expected), 2) / expected;
     }
 
     // Get standard deviation for observed permutation orderings
-    perm_average /= FP_PERM_CAT;
+    average /= FP_PERM_CAT;
     register double std_dev = 0.0;
     for (; i < FP_PERM_CAT; ++i)
-        std_dev += pow(((double) fp_perm_dist[i] - perm_average), 2);
+        std_dev += pow(((double) fp_perm_dist[i] - average), 2);
 
     suspect_level = 32 - (FP_PERM_CRITICAL_VALUE <= chi_calc);
     std_dev       = sqrt(std_dev / (double) FP_PERM_CAT);
 
-    p_value = get_pvalue(FP_PERM_CAT / 2, chi_calc / 2, GAMMA_120DF);
+    p_value = igfc1(FP_PERM_CAT / 2, chi_calc / 2, GAMMA_120DF);
 
     printf("\033[1;34m\033[%uC           FP Permutations:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
     printf("\033[2m\033[%uC         a. Raw Chi-Square:\033[m %1.3lf (cv = %1.3lf)\n", indent, chi_calc, FP_PERM_CRITICAL_VALUE);
     printf("\033[2m\033[%uC     b. Total Permutations:\033[m %llu\n", indent, rsl->perms);
-    printf("\033[2m\033[%uC        c. Average Per Bin:\033[m %llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, (u64) perm_average, (u64) perm_average - (u64) expected, (u64) expected);
-    printf("\033[2m\033[%uC     d. Standard Deviation:\033[m %1.2lf\n", indent, std_dev);
+    printf("\033[2m\033[%uC        c. Average Per Bin:\033[m %llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, (u64) average, (u64) average - (u64) expected, (u64) expected);
+    printf("\033[2m\033[%uC     d. Standard Deviation:\033[m %1.3lf\n", indent, std_dev);
+
+    /*   MAX-OF-8   */
+
+    expected = (rsl->fp_max_runs) * FP_MAX_PROB;
+    chi_calc = 0;
+    i        = 0;
+    average  = 0.0;
+
+    register u8 most_pos, least_pos;
+    most_pos = least_pos = 0;
+    for (; i < FP_MAX_CAT; ++i) {
+        most_pos  = (fp_max_dist[most_pos] > fp_max_dist[i]) ? most_pos : i;
+        least_pos = (fp_max_dist[least_pos] < fp_max_dist[i]) ? least_pos : i;
+        chi_calc += pow(((double) fp_max_dist[i] - expected), 2) / expected;
+    }
+
+    suspect_level = 32 - (FP_MAX_CRITICAL_VALUE <= chi_calc);
+
+    p_value = igfc1(FP_MAX_CAT / 2, chi_calc / 2, GAMMA_8DF);
+
+    printf("\033[1;34m\033[%uC               FP Max-of-8:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
+    printf("\033[2m\033[%uC         a. Raw Chi-Square:\033[m %1.3lf (cv = %1.3lf)\n", indent, chi_calc, FP_MAX_CRITICAL_VALUE);
+    printf("\033[2m\033[%uC             b. Total Sets:\033[m %llu\n", indent, rsl->fp_max_runs);
+    printf("\033[2m\033[%uC   c. Most Common Position:\033[m %u (exp. %llu : \033[1m%+lli\033[m)\n", indent, most_pos + 1, (u64) expected, fp_max_dist[most_pos] - (u64) expected);
+    printf("\033[2m\033[%uC  d. Least Common Position:\033[m %u (exp. %llu : \033[1m%+lli\033[m)\n", indent, least_pos + 1, (u64) expected, fp_max_dist[least_pos] - (u64) expected);
 }
 
 void print_avalanche_results(const u16 indent, const rng_test *rsl, const u64 *ham_dist)
 {
     // See test.h for more details on these probabilities
-    static double expected[AVALANCHE_CAT + 1] = {
+    static double expected[65] = {
         // clang-format off
         5.421010862427522E-20,  3.469446951953614E-18,  1.092875789865388E-16,  2.258609965721802E-15,
         3.444380197725749E-14,  4.133256237270899E-13,  4.064368633316384E-12,  3.367619724747861E-11,
@@ -534,8 +575,7 @@ void print_avalanche_results(const u16 indent, const rng_test *rsl, const u64 *h
 
     const u64 output = rsl->sequences << 8;
 
-    register double average, chi_calc;
-    average = chi_calc = 0.0;
+    register double average = 0.0;
 
     double bin_counts[4];
     bin_counts[0] = bin_counts[1] = bin_counts[2] = bin_counts[3] = 0.0;
@@ -549,12 +589,18 @@ void print_avalanche_results(const u16 indent, const rng_test *rsl, const u64 *h
         expected[i] *= output;
         bin_counts[i >> 4] += (u64) expected[i];
         average += ham_dist[i] * i;
-        chi_calc += pow(((double) ham_dist[i] - expected[i]), 2) / expected[i];
-    } while (++i < (AVALANCHE_CAT + 1));
+    } while (++i < 65);
+
+    register double chi_calc = 0.0;
+    i                        = 0;
+    do {
+        chi_calc += pow((quadrants[i] - bin_counts[i]), 2) / bin_counts[i];
+    } while (++i < AVALANCHE_CAT);
 
     register u8 suspect_level = 32 - (AVALANCHE_CRITICAL_VALUE <= chi_calc);
-    average                   = average / (double) output;
+    average                   = average / (quadrants[0] + quadrants[1] + quadrants[2] + quadrants[3]);
 
+    // Figure out the right amount of padding based on length of expected bin counts
     register u8 pad = 5;
     register u8 tmp = calc_padding((bin_counts[0] > 0) ? (u64) bin_counts[0] : (u64) (bin_counts[0] * -1.0));
     pad             = pad ^ ((pad ^ tmp) & -(pad < tmp));
@@ -565,11 +611,11 @@ void print_avalanche_results(const u16 indent, const rng_test *rsl, const u64 *h
     tmp             = calc_padding((bin_counts[3] > 0) ? (u64) bin_counts[3] : (u64) (bin_counts[3] * -1.0));
     pad             = pad ^ ((pad ^ tmp) & -(pad < tmp));
 
-    const double p_value = get_pvalue(AVALANCHE_CAT / 2, chi_calc / 2.0, GAMMA_64DF);
+    const double p_value = igfc1(AVALANCHE_CAT / 2, chi_calc / 2.0, GAMMA_4DF);
 
     printf("\033[1;34m\033[%uCStrict Avalanche Criterion:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
     printf("\033[2m\033[%uC         a. Raw Chi-Square:\033[m %1.3lf (cv = %.3lf)\033[m\n", indent, chi_calc, AVALANCHE_CRITICAL_VALUE);
-    printf("\033[2m\033[%uC  b. Mean Hamming Distance:\033[m %2.3lf (ideal = %u)\n", indent, average, AVALANCHE_CAT >> 1);
+    printf("\033[2m\033[%uC  b. Mean Hamming Distance:\033[m %2.3lf (ideal = %u)\n", indent, average, 32);
     printf("\033[2m\033[%uC               c.  [0, 16):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad, (u64) quadrants[0], (u64) bin_counts[0], (u64) quadrants[0] - (u64) bin_counts[0]);
     printf("\033[2m\033[%uC               d. [16, 32):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad, (u64) quadrants[1], (u64) bin_counts[1], (u64) quadrants[1] - (u64) bin_counts[1]);
     printf("\033[2m\033[%uC               e. [32, 48):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad, (u64) quadrants[2], (u64) bin_counts[2], (u64) quadrants[2] - (u64) bin_counts[2]);
