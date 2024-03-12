@@ -27,7 +27,8 @@
 	void	 print_range_results(const u16 indent, const rng_test *rsl, const u64 *restrict range_dist);
 	void	 print_ent_results(const u16 indent, const ent_test *ent);
 	void	 print_chseed_results(const u16 indent, const u64 expected, const u64 *chseed_dist, double avg_chseed);
-	void	 print_fp_results(const u16 indent, const rng_test *rsl, const u64 *restrict fpf_dist, const u64 *restrict fpf_quad, const u64 *fp_perm_dist);
+	void	 print_fp_results(const u16 indent, const rng_test *rsl, const u64 *restrict fpf_dist, const u64 *restrict fpf_quad, const u64 *fp_perm_dist, const u64 *fp_max_dist);
+	void 	 print_sp_results(const u16 indent, const rng_test *rsl, u64 *sat_dist, u64 *sat_range);
 	void	 print_avalanche_results(const u16 indent, const rng_test *rsl, const u64 *ham_dist);
 	void	 print_tbt_results(const u16 indent, const rng_test *rsl);
 #endif   

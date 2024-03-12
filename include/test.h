@@ -97,10 +97,19 @@
     Alcover, Pedro & Guillamón, Antonio & Ruiz, M.D.C.. (2013). A New Randomness Test for Bit Sequences.
     Informatica (Netherlands). 24. 339-356. 10.15388/Informatica.2013.399.
   */ 
-  #define   TBT_M1                    10
-  #define   TBT_SEQ_SIZE              (1U << TBT_M1)
-  #define   TBT_CRITICAL_VALUE        624
-  #define   TBT_PROPORTION            0.609
+
+  #define   SP_CAT                    5
+  #define   SP_DIST                   50
+  #define   SP_EXPECTED               51
+  #define   SP_K                      4
+  #define   SP_OBS_MIN                16
+  #define   SP_OBS_MAX                64
+  #define   SP_CRITICAL_VALUE         13.277
+  #define   SP_PROB1                  0.193609
+  #define   SP_PROB2                  0.179686
+  #define   SP_PROB3                  0.196007
+  #define   SP_PROB4                  0.195881
+  #define   SP_PROB5                  0.234818
 
   typedef struct rng_test {
     u64 init_values[5];

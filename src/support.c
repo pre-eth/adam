@@ -633,3 +633,44 @@ void print_tbt_results(const u16 indent, const rng_test *rsl)
     printf("\033[2m\033[%uCa. Average Distinct Patterns:\033[m %u (cv = %u)\n", indent - 2, average_distinct, TBT_CRITICAL_VALUE);
     printf("\033[2m\033[%uC             b. Proportion:\033[m %.3lf (min. %.3f)\n", indent, proportion, TBT_PROPORTION);
 }
+
+void print_sp_results(const u16 indent, const rng_test *rsl, u64 *sat_dist, u64 *sat_range)
+{
+    const u64 output              = sat_range[0] + sat_range[1] + sat_range[2] + sat_range[3] + sat_range[4];
+    const double expected[SP_CAT] = {
+        (double) output * SP_PROB1,
+        (double) output * SP_PROB2,
+        (double) output * SP_PROB3,
+        (double) output * SP_PROB4,
+        (double) output * SP_PROB5
+    };
+
+    register double average, chi_calc;
+    average = chi_calc = 0.0;
+
+    register u8 i      = 0;
+    register u64 count = 0;
+    do {
+        count += sat_dist[i];
+        average += sat_dist[i] * (i + 16);
+    } while (++i < SP_DIST);
+
+    average /= count;
+
+    i = 0;
+    for (; i < SP_CAT; ++i)
+        chi_calc += pow(((double) sat_range[i] - expected[i]), 2) / expected[i];
+
+    register u8 suspect_level = 32 - (SP_CRITICAL_VALUE <= chi_calc);
+
+    const double p_value = igfc2(SP_CAT / 2, chi_calc / 2.0, GAMMA_5DF);
+
+    printf("\033[1;34m\033[%uC     Saturation Point Test:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
+    printf("\033[2m\033[%uC         a. Raw Chi-Square:\033[m %1.3lf (cv = %.3lf)\n", indent, chi_calc, SP_CRITICAL_VALUE);
+    printf("\033[2m\033[%uCb. Average Saturation Point:\033[m %llu (ideal = %u)\n", indent - 1, (u64) average, SP_EXPECTED);
+    printf("\033[2m\033[%uC               c. [16, 39):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, sat_range[0], (u64) expected[0], sat_range[0] - (u64) expected[0]);
+    printf("\033[2m\033[%uC               d. [39, 46):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, sat_range[1], (u64) expected[1], sat_range[1] - (u64) expected[1]);
+    printf("\033[2m\033[%uC               e. [46, 55):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, sat_range[2], (u64) expected[2], sat_range[2] - (u64) expected[2]);
+    printf("\033[2m\033[%uC               f. [54, 64]:\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, sat_range[3], (u64) expected[3], sat_range[3] - (u64) expected[3]);
+    printf("\033[2m\033[%uC               g. [65, ∞):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, sat_range[4], (u64) expected[4], sat_range[4] - (u64) expected[4]);
+}

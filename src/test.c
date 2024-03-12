@@ -51,7 +51,50 @@ static u64 ham_dist[65];
 
 static u64 tbt_pass, tbt_prop_sum;
 
-static void tbt(u16 *tbt_array, u16 *nums)
+static u64 sat_range[SP_CAT + 1];
+static u64 sat_dist[SP_DIST];
+
+static void sat_point(const u8 *nums)
+{
+    // Bitarray to track presence of 2^4 values
+    static u16 num_range;
+    static u8 ctr;
+
+    register u16 i = 0, j = 0;
+    do {
+        // 2 4-bit quantities per 8 -bits
+        // so we only increment <i> every other iteration
+        num_range |= (1U << ((nums[i] >> ((j & 1) << 2)) & 15));
+
+        ++ctr;
+
+        // Ranges derived from probability table in paper
+        if (num_range == __UINT16_MAX__) {
+            // Log the actual saturation point
+            if (ctr > SP_OBS_MAX)
+                ++sat_dist[49];
+            else
+                ++sat_dist[ctr - SP_OBS_MIN];
+
+            if (ctr >= SP_OBS_MIN && ctr < 39)
+                ++sat_range[0];
+            else if (ctr >= 39 && ctr < 46)
+                ++sat_range[1];
+            else if (ctr >= 46 && ctr < 54)
+                ++sat_range[2];
+            else if (ctr >= 54 && ctr <= SP_OBS_MAX)
+                ++sat_range[3];
+            else if (ctr > SP_OBS_MAX)
+                ++sat_range[4];
+
+            ctr = num_range = 0;
+        }
+
+        i += j;
+        j = !j;
+    } while (i < ADAM_BUF_BYTES);
+}
+
 {
     // Checks if this 10-bit pattern has been recorded
     register u16 i, different;
@@ -254,6 +297,10 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
     // Checks for distinct patterns in a certain collection of numbers
     tbt(rsl->tbt_array, (u16 *) _ptr);
 
+    // Saturation Point Test
+    // Determines index where all 2^4 values have appeared at least once
+    sat_point((u8 *) _ptr);
+
     // 32-bit floating point max-of-T test with T = 8
     fp_max8((u32 *) _ptr);
 
@@ -387,6 +434,7 @@ static void adam_results(const u64 limit, rng_test *rsl, ent_test *ent)
     rsl->fp_max_runs = fp_max_runs;
     print_fp_results(indent, rsl, &fpfreq_dist[0], &fpf_quadrants[0], &fp_perm_dist[0], &fp_max_dist[0]);
 
+    print_sp_results(indent, rsl, &sat_dist[0], &sat_range[0]);
 
     print_avalanche_results(indent, rsl, &ham_dist[0]);
 
