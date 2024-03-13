@@ -80,23 +80,27 @@
   #define   AVALANCHE_CRITICAL_VALUE  11.345
 
   /*
-    FOR:   10-bit Topological Binary Test (TBT)
+    FOR:   16-bit Topological Binary Test (TBT)
 
-    The 10-bit TBT looks for the number of distinct 10-bit patterns per 2^10 patterns, where a "pattern"
-    is a 10-bit block of bits. Since we provide 1024 such patterns per iteration (each iteration of
-    ADAM produces 1024 u16, the minimum size needed for 2^10 values), we mask the lower 10 bits of each
-    16-bit value and perform the topological binary test over them. If the number of distinct numbers
-    found is greater than or equal to TBT_CRITICAL_VALUE, then we fail to reject the null hypothesis.
+    The 16-bit TBT looks for the number of distinct 16-bit patterns per 2^16 patterns, where a "pattern"
+    is a 16-bit block of bits. Since we provide 1024 such patterns per iteration (each iteration of
+    ADAM produces 1024 u16), we count the number of distinct 16-bit patterns over 64 RNG iterations. If
+    the number of distinct numbers found is greater than or equal to TBT_CRITICAL_VALUE, then we fail to 
+    reject the null hypothesis.
 
     The pass rate, average number of distinct patterns, and overall proportion are reported in addition
     to the target metrics from the original paper. While the paper specifies the discrete probability 
     function allowing us to obtain a p-value, actually using the function for calculations proves very
     difficult due to the large values involved, especially the Stirling Numbers of the Second Kind. So
-    no p-value or chi-square is calculated for this test.
+    only the collected results of each discrete outcome is reported.
 
     Alcover, Pedro & Guillamón, Antonio & Ruiz, M.D.C.. (2013). A New Randomness Test for Bit Sequences.
     Informatica (Netherlands). 24. 339-356. 10.15388/Informatica.2013.399.
   */ 
+  #define   TBT_M                     16
+  #define   TBT_SEQ_SIZE              (1UL << TBT_M)
+  #define   TBT_CRITICAL_VALUE        41241
+  #define   TBT_PROPORTION            0.629
 
   #define   SP_CAT                    5
   #define   SP_DIST                   50

@@ -95,19 +95,34 @@ static void sat_point(const u8 *nums)
     } while (i < ADAM_BUF_BYTES);
 }
 
+static void tbt(u64 *tbt_array, const u16 *nums)
 {
+    static u8 ctr;
+
+    register u16 i = 0;
+
     // Checks if this 10-bit pattern has been recorded
-    register u16 i, different;
-    i = different = 0;
+    // Each run gives us 1024 u16 which is the TBT_SEQ_SIZE
     do {
-        different += !tbt_array[nums[i] & 1023];
-        tbt_array[nums[i] & 1023] |= 1;
+        tbt_array[nums[i] >> 6] |= 1ULL << (nums[i] & 63);
     } while (++i < (ADAM_BUF_BYTES >> 1));
 
-    tbt_prop_sum += different;
-    tbt_pass += (different >= TBT_CRITICAL_VALUE);
+    // 65536 / 1024 u16 per iteration = 64 iterations
+    if (++ctr == 64) {
+        register u16 different;
+        i = different = 0;
+        do
+            different += POPCNT(tbt_array[i]);
+        while (++i < 1024);
 
-    MEMSET(&tbt_array[0], 0, sizeof(u16) * TBT_SEQ_SIZE);
+        tbt_prop_sum += different;
+        tbt_pass += (different >= TBT_CRITICAL_VALUE);
+
+        const double proportion = different / TBT_SEQ_SIZE;
+
+        MEMSET(&tbt_array[0], 0, sizeof(u64) * 1024);
+        ctr = 0;
+    }
 }
 
 static void sac(const u64 *restrict run1, const u64 *restrict run2)
@@ -371,11 +386,8 @@ void adam_examine(const u64 limit, adam_data data)
     rsl.sequences       = rate + !!leftovers;
     rsl.expected_chseed = rsl.sequences * (ROUNDS << 2);
 
-    /* 
-        Array for representing 2^10 values 
-        1 idx = corresponding u16 value
-    */
-    rsl.tbt_array = calloc(0, sizeof(u16) * TBT_SEQ_SIZE);
+    // Bit Array for representing 2^16 values
+    rsl.tbt_array = calloc(0, sizeof(u64) * 1024);
 
     const u64 nonce      = data->nonce + 1;
     adam_data sac_runner = adam_setup(data->seed, &nonce);

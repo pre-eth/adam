@@ -603,13 +603,13 @@ void print_avalanche_results(const u16 indent, const rng_test *rsl, const u64 *h
     // Figure out the right amount of padding based on length of expected bin counts
     register u8 pad = 5;
     register u8 tmp = calc_padding((bin_counts[0] > 0) ? (u64) bin_counts[0] : (u64) (bin_counts[0] * -1.0));
-    pad             = pad ^ ((pad ^ tmp) & -(pad < tmp));
+    pad             = MAX(pad, tmp);
     tmp             = calc_padding((bin_counts[1] > 0) ? (u64) bin_counts[1] : (u64) (bin_counts[1] * -1.0));
-    pad             = pad ^ ((pad ^ tmp) & -(pad < tmp));
+    pad             = MAX(pad, tmp);
     tmp             = calc_padding((bin_counts[2] > 0) ? (u64) bin_counts[2] : (u64) (bin_counts[2] * -1.0));
-    pad             = pad ^ ((pad ^ tmp) & -(pad < tmp));
+    pad             = MAX(pad, tmp);
     tmp             = calc_padding((bin_counts[3] > 0) ? (u64) bin_counts[3] : (u64) (bin_counts[3] * -1.0));
-    pad             = pad ^ ((pad ^ tmp) & -(pad < tmp));
+    pad             = MAX(pad, tmp);
 
     const double p_value = igfc1(AVALANCHE_CAT / 2, chi_calc / 2.0, GAMMA_4DF);
 
@@ -624,12 +624,12 @@ void print_avalanche_results(const u16 indent, const rng_test *rsl, const u64 *h
 
 void print_tbt_results(const u16 indent, const rng_test *rsl)
 {
-    const u64 total_u16        = rsl->sequences << 10;
+    const u64 total_u16        = TBT_SEQ_SIZE * (rsl->sequences >> 6);
     const double proportion    = ((double) rsl->tbt_prop / (double) total_u16);
-    const u16 average_distinct = ((double) rsl->tbt_prop / (double) rsl->sequences);
-    const u8 pass_rate         = ((double) rsl->tbt_pass / (double) rsl->sequences) * 100;
+    const u16 average_distinct = ((double) rsl->tbt_prop / (double) (rsl->sequences >> 6));
+    const u8 pass_rate         = ((double) rsl->tbt_pass / (double) (rsl->sequences >> 6)) * 100;
 
-    printf("\033[1;34m\033[%uC   Topological Binary Test:\033[m %llu/%llu (%u%%)\n", indent, rsl->tbt_pass, rsl->sequences, pass_rate);
+    printf("\033[1;34m\033[%uC   Topological Binary Test:\033[m %llu/%llu (%u%%)\n", indent, rsl->tbt_pass, rsl->sequences << 6, pass_rate);
     printf("\033[2m\033[%uCa. Average Distinct Patterns:\033[m %u (cv = %u)\n", indent - 2, average_distinct, TBT_CRITICAL_VALUE);
     printf("\033[2m\033[%uC             b. Proportion:\033[m %.3lf (min. %.3f)\n", indent, proportion, TBT_PROPORTION);
 }
