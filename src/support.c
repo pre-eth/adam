@@ -505,6 +505,84 @@ void print_fp_results(const u16 indent, const rng_test *rsl, const u64 *restrict
     printf("\033[2m\033[%uC  d. Least Common Position:\033[m %u (exp. %llu : \033[1m%+lli\033[m)\n", indent, least_pos + 1, (u64) expected, fp_max_dist[least_pos] - (u64) expected);
 }
 
+void print_sp_results(const u16 indent, const rng_test *rsl, const u64 *sat_dist, const u64 *sat_range)
+{
+    const u64 output              = sat_range[0] + sat_range[1] + sat_range[2] + sat_range[3] + sat_range[4];
+    const double expected[SP_CAT] = {
+        (double) output * SP_PROB1,
+        (double) output * SP_PROB2,
+        (double) output * SP_PROB3,
+        (double) output * SP_PROB4,
+        (double) output * SP_PROB5
+    };
+
+    register double average, chi_calc;
+    average = chi_calc = 0.0;
+
+    register u8 i      = 0;
+    register u64 count = 0;
+    do {
+        count += sat_dist[i];
+        average += sat_dist[i] * (i + 16);
+    } while (++i < SP_DIST);
+
+    average /= count;
+
+    register u64 tmp;
+    tmp = i = 0;
+    for (; i < SP_CAT; ++i) {
+        chi_calc += pow(((double) sat_range[i] - expected[i]), 2) / expected[i];
+        tmp = MAX(tmp, sat_range[i]);
+    }
+
+    register u8 suspect_level = 32 - (SP_CRITICAL_VALUE <= chi_calc);
+
+    const u8 pad         = calc_padding(tmp);
+    const double p_value = cephes_igamc(SP_CAT / 2.0, chi_calc / 2.0);
+
+    printf("\033[1;34m\033[%uC     Saturation Point Test:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
+    printf("\033[2m\033[%uC         a. Raw Chi-Square:\033[m %1.3lf (cv = %.3lf)\n", indent, chi_calc, SP_CRITICAL_VALUE);
+    printf("\033[2m\033[%uCb. Average Saturation Point:\033[m %llu (ideal = %u)\n", indent - 1, (u64) average, SP_EXPECTED);
+    printf("\033[2m\033[%uC               c. [16, 39):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad, sat_range[0], (u64) expected[0], sat_range[0] - (u64) expected[0]);
+    printf("\033[2m\033[%uC               d. [39, 46):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad, sat_range[1], (u64) expected[1], sat_range[1] - (u64) expected[1]);
+    printf("\033[2m\033[%uC               e. [46, 55):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad, sat_range[2], (u64) expected[2], sat_range[2] - (u64) expected[2]);
+    printf("\033[2m\033[%uC               f. [54, 64]:\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad, sat_range[3], (u64) expected[3], sat_range[3] - (u64) expected[3]);
+    printf("\033[2m\033[%uC              g. [65, INF):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad, sat_range[4], (u64) expected[4], sat_range[4] - (u64) expected[4]);
+}
+
+void print_maurer_results(const u16 indent, rng_test *rsl, const u64 sequences)
+{
+    const double lower_bound = MAURER_EXPECTED - (MAURER_Y * rsl->maurer_std_dev);
+    const double upper_bound = MAURER_EXPECTED + (MAURER_Y * rsl->maurer_std_dev);
+    const double pass_rate   = (double) rsl->maurer_pass / (double) sequences;
+
+    const double final_pvalue = cephes_igamc(sequences, rsl->maurer_fisher / 2);
+    register u8 suspect_level = 32 - (final_pvalue < ALPHA_LEVEL);
+
+    rsl->maurer_mean /= sequences;
+
+    printf("\033[1;34m\033[%uCMaurer Universal Statistic:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, final_pvalue);
+    printf("\033[2m\033[%uCa. Raw Fisher's Method Value:\033[m %1.7lf\n", indent - 2, rsl->maurer_fisher);
+    printf("\033[2m\033[%uC                   b. Mean:\033[m %1.7lf (exp. %1.7lf : %1.7lf)\n", indent, rsl->maurer_mean, MAURER_EXPECTED, rsl->maurer_mean - MAURER_EXPECTED);
+    printf("\033[2m\033[%uC              c. Pass Rate:\033[m %llu/%llu (%llu%%)\n", indent, rsl->maurer_pass, sequences, (u64) (pass_rate * 100.0));
+    printf("\033[2m\033[%uC                      d. C:\033[m %1.7lf\n", indent, rsl->maurer_c);
+    printf("\033[2m\033[%uC     e. Standard Deviation:\033[m %1.7lf\n", indent, rsl->maurer_std_dev);
+    printf("\033[2m\033[%uC            f. Lower Bound:\033[m %1.7lf\n", indent, lower_bound);
+    printf("\033[2m\033[%uC            g. Upper Bound:\033[m %1.7lf\n", indent, upper_bound);
+}
+
+void print_tbt_results(const u16 indent, const u64 sequences, const u64 tbt_prop, const u64 tbt_pass)
+{
+    const u64 total_u16        = TBT_SEQ_SIZE * (sequences);
+    const double proportion    = ((double) tbt_prop / (double) total_u16);
+    const u16 average_distinct = ((double) tbt_prop / (double) (sequences));
+    const u8 pass_rate         = ((double) tbt_pass / (double) (sequences)) * 100;
+
+    printf("\033[1;34m\033[%uC   Topological Binary Test:\033[m %llu/%llu (%u%%)\n", indent, tbt_pass, sequences, pass_rate);
+    printf("\033[2m\033[%uCa. Average Distinct Patterns:\033[m %u (cv = %u)\n", indent - 2, average_distinct, TBT_CRITICAL_VALUE);
+    printf("\033[2m\033[%uC             b. Proportion:\033[m %.3lf (min. %.3f)\n", indent, proportion, TBT_PROPORTION);
+}
+
 void print_avalanche_results(const u16 indent, const rng_test *rsl, const u64 *ham_dist)
 {
     // See test.h for more details on these probabilities
