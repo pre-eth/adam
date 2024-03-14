@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 #include "../include/api.h"
-#include "../include/support.h"
+#include "../include/util.h"
 #include "../include/test.h"
 
 #define STRINGIZE(a) #a

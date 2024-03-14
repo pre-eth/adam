@@ -17,7 +17,7 @@ endif
  
 STD_LIB = rng api
 LIB_OBJ = $(STD_LIB:%=src/%.o)
-CLI = ent test support cli
+CLI = ent test util cli
 OBJ := $(CLI:%=src/%.o) $(LIB_OBJ)
 
 all: cli lib

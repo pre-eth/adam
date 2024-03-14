@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include "../include/rng.h"
-#include "../include/support.h"
+#include "../include/util.h"
 #include "../include/test.h"
 
 struct adam_data_s {

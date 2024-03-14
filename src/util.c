@@ -4,7 +4,7 @@
 
 #include "../include/ent.h"
 #include "../include/simd.h"
-#include "../include/support.h"
+#include "../include/util.h"
 #include "../include/test.h"
 
 void get_print_metrics(u16 *center, u16 *indent, u16 *swidth)
