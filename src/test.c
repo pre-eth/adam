@@ -96,6 +96,30 @@ static void sat_point(const u8 *nums)
     } while (i < ADAM_BUF_BYTES);
 }
 
+static void maurer(rng_test *rsl)
+{
+    register u32 i = 0;
+    for (; i < MAURER_Q; ++i)
+        maurer_arr[rsl->maurer_bytes[i]] = i;
+
+    register double sum = 0.0;
+
+    i = 0;
+    for (int i = MAURER_Q; i < MAURER_Q + maurer_k; ++i) {
+        sum += log(i - maurer_arr[rsl->maurer_bytes[i]]) / log(2);
+        maurer_arr[rsl->maurer_bytes[i]] = i;
+    }
+
+    // These 3 lines were pulled from the NIST STS implementation
+    const double phi     = sum / maurer_k;
+    const double x       = fabs(phi - MAURER_EXPECTED) / (sqrt(2) * rsl->maurer_std_dev);
+    const double p_value = erfc(x);
+
+    rsl->maurer_mean += phi;
+    rsl->maurer_pass += (p_value >= ALPHA_LEVEL);
+    rsl->maurer_fisher += log(p_value);
+}
+
 static void tbt(u64 *tbt_array, const u16 *nums)
 {
     static u8 ctr;
