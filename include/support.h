@@ -1,10 +1,10 @@
 #ifndef SUPPORT_H
 #define SUPPORT_H
 	#include "defs.h"
-
+	
 	#define   BITBUF_SIZE     			1024
 	
-	#define   TESTING_BITS    	        8000000ULL
+	#define   TESTING_BITS    	        8011776ULL
 	#define   TESTING_DBL    		    1000ULL
 	#define   BITS_TESTING_LIMIT        1000000
 	#define   DBL_TESTING_LIMIT         1500000
@@ -28,7 +28,8 @@
 	void	 print_ent_results(const u16 indent, const ent_test *ent);
 	void	 print_chseed_results(const u16 indent, const u64 expected, const u64 *chseed_dist, double avg_chseed);
 	void	 print_fp_results(const u16 indent, const rng_test *rsl, const u64 *restrict fpf_dist, const u64 *restrict fpf_quad, const u64 *fp_perm_dist, const u64 *fp_max_dist);
-	void 	 print_sp_results(const u16 indent, const rng_test *rsl, u64 *sat_dist, u64 *sat_range);
+	void 	 print_sp_results(const u16 indent, const rng_test *rsl, const u64 *sat_dist, const u64 *sat_range);
+	void 	 print_maurer_results(const u16 indent, rng_test *rsl, const u64 sequences);
+	void	 print_tbt_results(const u16 indent, const u64 sequences, const u64 tbt_prop, const u64 tbt_pass);
 	void	 print_avalanche_results(const u16 indent, const rng_test *rsl, const u64 *ham_dist);
-	void	 print_tbt_results(const u16 indent, const rng_test *rsl);
 #endif   
