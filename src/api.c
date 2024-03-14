@@ -37,6 +37,8 @@ adam_data adam_setup(const u64 *seed, const u64 *nonce)
 {
     // Allocate the struct
     adam_data data = aligned_alloc(ADAM_ALIGNMENT, sizeof(struct adam_data_s));
+    if (data == NULL)
+        return NULL;
 
     // Get seed and nonce bytes from secure system RNG, or use user provided one(s)
     if (seed == NULL)

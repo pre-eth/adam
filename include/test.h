@@ -97,6 +97,11 @@
     The reason why I included this test is to provide more in-house tests for judging the cryptographic
     qualities of ADAM specifically, as opposed to some of the other tests which are just property reporting
     and traditional PRNG tests that don't necessarily deduce anything about security.
+
+    We analyze each 1MB sequence per the requested examination size, collect each p-value from the subtests
+    using Fisher's method, and then get a final p-value from the Fisher's method statistic at the very end
+    when reporting all test results and printing them. This makes the implementation even stronger, allowing
+    us to conduct a meta-analysis of all the subtests to comb through the output sequence.
   */
   #define   MAURER_ARR_SIZE           1001472
   #define   MAURER_L                  8
