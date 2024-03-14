@@ -128,9 +128,9 @@ static void tbt(u64 *tbt_array, const u16 *nums)
 
     // Checks if this 10-bit pattern has been recorded
     // Each run gives us 1024 u16 which is the TBT_SEQ_SIZE
-    do {
+    do
         tbt_array[nums[i] >> 6] |= 1ULL << (nums[i] & 63);
-    } while (++i < (ADAM_BUF_BYTES >> 1));
+    while (++i < (ADAM_BUF_BYTES >> 1));
 
     // 65536 / 1024 u16 per iteration = 64 iterations
     if (++ctr == 64) {
@@ -328,18 +328,26 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
     // This function tracks their distribution and we check the uniformity at the end.
     chseed_unif(chseeds, &rsl->avg_chseed);
 
-    // Strict Avalanche Criterion (SAC) test
-    // Records the Hamming Distance between this number and the number that
-    // was in the same index in the buffer during the previous iteration
-    sac(_ptr, sac_run);
+    // Saturation Point Test
+    // Determines index where all 2^4 values have appeared at least once
+    sat_point((u8 *) _ptr);
+
+    // Maurer Universal Test
+    // Checks the level of compressiiblity of output
+    MEMCPY(&rsl->maurer_bytes[maurer_ctr << 11], _ptr, ADAM_BUF_BYTES);
+    if (++maurer_ctr == 489) {
+        maurer(rsl);
+        maurer_ctr = 0;
+    }
 
     // Topological Binary Test
     // Checks for distinct patterns in a certain collection of numbers
     tbt(rsl->tbt_array, (u16 *) _ptr);
 
-    // Saturation Point Test
-    // Determines index where all 2^4 values have appeared at least once
-    sat_point((u8 *) _ptr);
+    // Strict Avalanche Criterion (SAC) test
+    // Records the Hamming Distance between this number and the number that
+    // was in the same index in the buffer during the previous iteration
+    sac(_ptr, sac_run);
 
     // 32-bit floating point max-of-T test with T = 8
     fp_max8((u32 *) _ptr);
@@ -360,7 +368,7 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
         // Then record float for FP freq distribution in (0.0, 1.0)
         rsl->avg_fp += d = ((double) num / (double) __UINT64_MAX__);
         ++fpfreq_dist[(u8) (d * 10.0)];
-        ++fpf_quadrants[(d >= 0.25) + (d >= 0.5) + (d >= 0.75)];
+        ++fpfreq_quadrants[(d >= 0.25) + (d >= 0.5) + (d >= 0.75)];
 
         // Collect this floating point value into the permutations tuple
         // Once the tuple reaches 5 elements, the permutation is recorded
@@ -396,31 +404,40 @@ static void run_rng(adam_data data)
 
 void adam_examine(const u64 limit, adam_data data)
 {
-    register long int rate   = limit >> 14;
-    register short leftovers = limit & (SEQ_SIZE - 1);
+    register long int rate = limit >> 14;
 
     rng_test rsl;
     ent_test ent;
 
+    rsl.sequences = rate;
+
+    // General initialization
     MEMCPY(&rsl.init_values[0], data->seed, sizeof(u64) * 4);
     rsl.init_values[4] = data->nonce;
 
     rsl.avg_chseed = rsl.avg_fp = 0.0;
-    rsl.mfreq = rsl.up_runs = rsl.longest_up = rsl.down_runs = rsl.longest_down = rsl.one_runs = rsl.perms = rsl.longest_one = rsl.zero_runs = rsl.longest_zero = rsl.odd = 0;
-
-    rsl.sequences       = rate + !!leftovers;
-    rsl.expected_chseed = rsl.sequences * (ROUNDS << 2);
+    rsl.mfreq = rsl.up_runs = rsl.longest_up = rsl.down_runs = rsl.longest_down = 0;
+    rsl.one_runs = rsl.perms = rsl.longest_one = rsl.zero_runs = rsl.longest_zero = rsl.odd = 0;
 
     // Bit Array for representing 2^16 values
     rsl.tbt_array = calloc(0, sizeof(u64) * 1024);
 
+    // SAC and ENT init values
     const u64 nonce      = data->nonce + 1;
     adam_data sac_runner = adam_setup(data->seed, &nonce);
 
     run_rng(data);
-
     rsl.min = rsl.max = data->out[0];
     ent.sccu0         = data->out[0] & 0xFF;
+
+    // Maurer test init - calculations were pulled from the NIST STS implementation
+    maurer_k           = MAURER_ARR_SIZE - MAURER_Q;
+    rsl.maurer_c       = 0.7 - 0.8 / (double) MAURER_L + (4 + 32 / (double) MAURER_L) * pow(maurer_k, -3 / (double) MAURER_L) / 15.0;
+    rsl.maurer_std_dev = rsl.maurer_c * sqrt(MAURER_VARIANCE / (double) maurer_k);
+    rsl.maurer_bytes   = malloc(MAURER_ARR_SIZE * sizeof(u8));
+    MEMCPY(&rsl.maurer_bytes[maurer_ctr++], data->out, ADAM_BUF_BYTES);
+    rsl.maurer_mean = rsl.maurer_fisher = 0.0;
+    rsl.maurer_pass                     = 0;
 
     do {
         run_rng(sac_runner);
@@ -428,11 +445,11 @@ void adam_examine(const u64 limit, adam_data data)
         MEMCPY(sac_runner, data, sizeof(struct adam_data_s));
         sac_runner->nonce += 1;
         run_rng(data);
-        leftovers -= (u16) (rate <= 0) << 14;
-    } while (LIKELY(--rate > 0) || LIKELY(leftovers > 0));
+    } while (--rate > 0);
 
     adam_results(limit, &rsl, &ent);
     free(rsl.tbt_array);
+    free(rsl.maurer_bytes);
     adam_cleanup(sac_runner);
 }
 
@@ -446,6 +463,7 @@ static void adam_results(const u64 limit, rng_test *rsl, ent_test *ent)
     // First get the ENT results out of the way
     ent_results(ent);
 
+    // Gap related info
     register double average_gaplength = 0.0;
 
     register u16 i = 0;
