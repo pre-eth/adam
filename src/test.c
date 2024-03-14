@@ -333,9 +333,10 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
     sat_point((u8 *) _ptr);
 
     // Maurer Universal Test
-    // Checks the level of compressiiblity of output
+    // Checks the level of compressiiblity of output, assuming 1MB of
+    // bytes have been accumulated
     MEMCPY(&rsl->maurer_bytes[maurer_ctr << 11], _ptr, ADAM_BUF_BYTES);
-    if (++maurer_ctr == 489) {
+    if (++maurer_ctr == TESTING_BITS / SEQ_SIZE) {
         maurer(rsl);
         maurer_ctr = 0;
     }
@@ -432,12 +433,12 @@ void adam_examine(const u64 limit, adam_data data)
 
     // Maurer test init - calculations were pulled from the NIST STS implementation
     maurer_k           = MAURER_ARR_SIZE - MAURER_Q;
+    rsl.maurer_pass    = 0;
     rsl.maurer_c       = 0.7 - 0.8 / (double) MAURER_L + (4 + 32 / (double) MAURER_L) * pow(maurer_k, -3 / (double) MAURER_L) / 15.0;
     rsl.maurer_std_dev = rsl.maurer_c * sqrt(MAURER_VARIANCE / (double) maurer_k);
     rsl.maurer_bytes   = malloc(MAURER_ARR_SIZE * sizeof(u8));
     MEMCPY(&rsl.maurer_bytes[maurer_ctr++], data->out, ADAM_BUF_BYTES);
     rsl.maurer_mean = rsl.maurer_fisher = 0.0;
-    rsl.maurer_pass                     = 0;
 
     do {
         run_rng(sac_runner);
@@ -501,9 +502,14 @@ static void adam_results(const u64 limit, rng_test *rsl, ent_test *ent)
 
 /*    FOLLOWING CODE IS FROM THE CEPHES C MATH LIBRARY    */
 
-static double MACHEP = 1.11022302462515654042E-16;  // 2**-53
-static double MAXLOG = 7.09782712893383996732224E2; // log(MAXNUM)
-static double MAXNUM = 1.7976931348623158E308;      // 2**1024*(1-MACHEP)
+// 2**-53
+static double MACHEP = 1.11022302462515654042E-16;
+
+// log(MAXNUM)
+static double MAXLOG = 7.09782712893383996732224E2;
+
+// 2**1024*(1-MACHEP)
+static double MAXNUM = 1.7976931348623158E308;
 
 static double big    = 4.503599627370496e15;
 static double biginv = 2.22044604925031308085e-16;
@@ -511,7 +517,7 @@ static double biginv = 2.22044604925031308085e-16;
 /*
     A[]: Stirling's formula expansion of log gamma
     B[], C[]: log gamma function between 2 and 3
- */
+*/
 static u16 A[] = {
     0x6661, 0x2733, 0x9850, 0x3f4a,
     0xe943, 0xb580, 0x7fbd, 0xbf43,
@@ -528,7 +534,7 @@ static u16 B[] = {
     0x055e, 0x5418, 0x0c67, 0xc12a
 };
 static u16 C[] = {
-    /*0x0000,0x0000,0x0000,0x3ff0,*/
+    /*  0x0000,0x0000,0x0000,0x3ff0  */
     0x12b2, 0x1cf3, 0xfd0d, 0xc075,
     0xd757, 0x7b89, 0xaa0d, 0xc0d0,
     0x4c9b, 0xb974, 0xeb84, 0xc10a,
@@ -537,7 +543,7 @@ static u16 C[] = {
     0xe14a, 0x6a11, 0xce4b, 0xc13e
 };
 
-#define MAXLGM 2.556348e305
+#define MAXLGM 2.556348E305
 
 static double cephes_polevl(double x, double *coef, int N)
 {

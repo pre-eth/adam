@@ -102,6 +102,9 @@
     using Fisher's method, and then get a final p-value from the Fisher's method statistic at the very end
     when reporting all test results and printing them. This makes the implementation even stronger, allowing
     us to conduct a meta-analysis of all the subtests to comb through the output sequence.
+
+    Maurer, U.M. A universal statistical test for random bit generators. J. Cryptology 5, 89–105 (1992).
+    https://doi.org/10.1007/BF00193563
   */
   #define   MAURER_ARR_SIZE           1001472
   #define   MAURER_L                  8

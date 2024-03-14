@@ -55,16 +55,16 @@ void accumulate(u64 *restrict seed, u64 *restrict IV, u64 *restrict work_buffer,
 
     SIMD_STOREBITS((reg *) &IV[0], r1);
 #else
-    reg r2 = SIMD_LOADBITS((reg *)&IV[4]);
-    reg r3 = SIMD_LOADBITS((reg *)&work_buffer[offset]);
-    reg r4 = SIMD_LOADBITS((reg *)&work_buffer[offset + 4]);
+    reg r2 = SIMD_LOADBITS((reg *) &IV[4]);
+    reg r3 = SIMD_LOADBITS((reg *) &work_buffer[offset]);
+    reg r4 = SIMD_LOADBITS((reg *) &work_buffer[offset + 4]);
 
     do {
         r1 = SIMD_XOR64(r1, r3);
         d1 = SIMD_CASTPD(r1);
         d1 = SIMD_MULPD(d1, factor);
         SIMD_STOREPD((regd *) &chseeds[i], d1);
-        
+
         r2 = SIMD_XOR64(r2, r4);
         d1 = SIMD_CASTPD(r2);
         d1 = SIMD_MULPD(d1, factor);
@@ -222,13 +222,13 @@ void reseed(u64 *restrict seed, u64 *restrict work_buffer, u64 *restrict nonce, 
 {
     // clang-format off
     // Slightly modified macro from ISAAC for reseeding ADAM
-    #define ISAAC_IND(mm, x) (*(u64 *) ((u8 *) (mm) + (2048 + (x & 1016))))
+    #define ISAAC_IND(mm, x) (*(u64 *) ((u8 *) (mm) + (2040 + (x & 2047))))
 
-    cc      += (*nonce >> (*nonce & 15));
+    cc      += (*nonce >> (*nonce & 7));
     seed[0] ^= ~ISAAC_IND(work_buffer, seed[0]);
     seed[1] ^= ~ISAAC_IND(work_buffer, seed[1]);
     seed[2] ^= ~ISAAC_IND(work_buffer, seed[2]);
     seed[3] ^= ~ISAAC_IND(work_buffer, seed[3]);
-    *nonce  ^= ~ISAAC_IND(work_buffer, *nonce);
+    *nonce  ^= (*nonce + ISAAC_IND(work_buffer, *nonce));
     // clang-format on
 }
