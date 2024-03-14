@@ -1,12 +1,9 @@
+#include <math.h>
 #include <stdlib.h>
 
 #include "../include/rng.h"
 #include "../include/support.h"
 #include "../include/test.h"
-
-// https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
-#define MIN(a, b) (b ^ ((a ^ b) & -(a < b)))
-#define MAX(a, b) (a ^ ((a ^ b) & -(a < b)))
 
 struct adam_data_s {
     // 256-bit seed
@@ -42,23 +39,27 @@ static u64 gaplengths[256];
 static u8 lcb[5], mcb[5];
 
 static u64 fpfreq_dist[FPF_CAT];
-static u64 fpf_quadrants[4];
+static u64 fpfreq_quadrants[4];
 static u64 fp_perm_dist[FP_PERM_CAT];
 static u64 fp_max_dist[FP_MAX_CAT];
 static u64 fp_max_runs;
 
-static u64 ham_dist[65];
+static u64 sat_range[SP_CAT + 1];
+static u64 sat_dist[SP_DIST];
+
+static u64 maurer_arr[1U << MAURER_L];
+static u64 maurer_ctr;
+static double maurer_k;
 
 static u64 tbt_pass, tbt_prop_sum;
 
-static u64 sat_range[SP_CAT + 1];
-static u64 sat_dist[SP_DIST];
+static u64 ham_dist[65];
 
 static void sat_point(const u8 *nums)
 {
     // Bitarray to track presence of 2^4 values
     static u16 num_range;
-    static u8 ctr;
+    static u64 ctr;
 
     register u16 i = 0, j = 0;
     do {
