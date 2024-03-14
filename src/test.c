@@ -483,17 +483,19 @@ static void adam_results(const u64 limit, rng_test *rsl, ent_test *ent)
 
     print_range_results(indent, rsl, &range_dist[0]);
     print_ent_results(indent, ent);
-    print_chseed_results(indent, rsl->expected_chseed, &chseed_dist[0], rsl->avg_chseed);
+    print_chseed_results(indent, rsl->sequences * (ROUNDS << 2), &chseed_dist[0], rsl->avg_chseed);
 
     rsl->avg_fp /= (rsl->sequences << 8);
     rsl->fp_max_runs = fp_max_runs;
-    print_fp_results(indent, rsl, &fpfreq_dist[0], &fpf_quadrants[0], &fp_perm_dist[0], &fp_max_dist[0]);
+    print_fp_results(indent, rsl, &fpfreq_dist[0], &fpfreq_quadrants[0], &fp_perm_dist[0], &fp_max_dist[0]);
 
     print_sp_results(indent, rsl, &sat_dist[0], &sat_range[0]);
 
-    print_avalanche_results(indent, rsl, &ham_dist[0]);
+    rsl->maurer_fisher *= -2.0;
+    print_maurer_results(indent, rsl, limit / TESTING_BITS);
 
-    rsl->tbt_pass = tbt_pass;
-    rsl->tbt_prop = tbt_prop_sum;
-    print_tbt_results(indent, rsl);
+    print_tbt_results(indent, rsl->sequences >> 6, tbt_prop_sum, tbt_pass);
+
+    print_avalanche_results(indent, rsl, &ham_dist[0]);
+}
 }
