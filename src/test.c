@@ -405,12 +405,10 @@ static void run_rng(adam_data data)
 
 void adam_examine(const u64 limit, adam_data data)
 {
-    register long int rate = limit >> 14;
-
     rng_test rsl;
     ent_test ent;
 
-    rsl.sequences = rate;
+    rsl.sequences = limit >> 14;
 
     // General initialization
     MEMCPY(&rsl.init_values[0], data->seed, sizeof(u64) * 4);
@@ -426,7 +424,7 @@ void adam_examine(const u64 limit, adam_data data)
     // SAC and ENT init values
     const u64 nonce      = data->nonce + 1;
     adam_data sac_runner = adam_setup(data->seed, &nonce);
-
+    
     run_rng(data);
     rsl.min = rsl.max = data->out[0];
     ent.sccu0         = data->out[0] & 0xFF;
@@ -440,6 +438,7 @@ void adam_examine(const u64 limit, adam_data data)
     MEMCPY(&rsl.maurer_bytes[maurer_ctr++], data->out, ADAM_BUF_BYTES);
     rsl.maurer_mean = rsl.maurer_fisher = 0.0;
 
+    register long long rate = rsl.sequences;
     do {
         run_rng(sac_runner);
         test_loop(&rsl, data->out, data->chseeds, sac_runner->out);
