@@ -2,7 +2,6 @@
 #include <stdlib.h>
 
 #include "../include/rng.h"
-#include "../include/simd.h"
 #include "../include/test.h"
 #include "../include/util.h"
 
@@ -155,87 +154,6 @@ static void tbt(const u16 *nums)
         MEMSET(&tbt_array[0], 0, sizeof(u64) * 1024);
         ctr = 0;
     }
-}
-
-static double wh_transform(const u16 idx, const u32 test)
-{
-    const int8x8_t bitmask = { 128, 64, 32, 16, 8, 4, 2, 1 };
-    const int16x8_t masks  = vmovl_s8(bitmask);
-    const int16x8_t one    = vdupq_n_s16(1);
-
-    int16_t exponents[32];
-
-    // following is 1 - 2X where x is always 0 or 1
-
-    // load each byte and duplicate to 8 positions in int16x8
-    int16x8x4_t bytes;
-    bytes.val[0] = vdupq_n_s16((test >> 24) & 0xFF);
-    bytes.val[1] = vdupq_n_s16((test >> 16) & 0xFF);
-    bytes.val[2] = vdupq_n_s16((test >> 8) & 0xFF);
-    bytes.val[3] = vdupq_n_s16(test & 0xFF);
-
-    // Logical AND each masks value with the bytes in all 8 positions
-    // this gets us the corresponding 1 or 0 in that bit position
-    // also lets us stretch 1 byte into 8 bits as 8 separate ints
-    bytes.val[0] = vandq_s16(bytes.val[0], masks);
-    bytes.val[1] = vandq_s16(bytes.val[1], masks);
-    bytes.val[2] = vandq_s16(bytes.val[2], masks);
-    bytes.val[3] = vandq_s16(bytes.val[3], masks);
-    bytes.val[0] = vcntq_s8(bytes.val[0]);
-    bytes.val[1] = vcntq_s8(bytes.val[1]);
-    bytes.val[2] = vcntq_s8(bytes.val[2]);
-    bytes.val[3] = vcntq_s8(bytes.val[3]);
-
-    // we have now converted the test integer into a bit sequence of size 32
-    // multiply all by 2 and then subtract result from 1
-    bytes.val[0] = vshlq_n_s16(bytes.val[0], 1);
-    bytes.val[1] = vshlq_n_s16(bytes.val[1], 1);
-    bytes.val[2] = vshlq_n_s16(bytes.val[2], 1);
-    bytes.val[3] = vshlq_n_s16(bytes.val[3], 1);
-    bytes.val[0] = vsubq_s16(one, bytes.val[0]);
-    bytes.val[1] = vsubq_s16(one, bytes.val[1]);
-    bytes.val[2] = vsubq_s16(one, bytes.val[2]);
-    bytes.val[3] = vsubq_s16(one, bytes.val[3]);
-
-    // Now the binary sequence has been transformed into a sequence of 1s and -1s
-
-    // This handles the i * j stuff for the powers
-    int16x8x4_t powers;
-
-    // all coefficients from 31..0 (the j values)
-    powers.val[0] = vmovl_s8(vcreate_s8(506097522914230528));
-    powers.val[1] = vmovl_s8(vcreate_s8(1084818905618843912));
-    powers.val[2] = vmovl_s8(vcreate_s8(1663540288323457296));
-    powers.val[3] = vmovl_s8(vcreate_s8(2242261671028070680));
-
-    // multiply by current block idx, aka the i value
-    const int16x8_t i = vdupq_n_s16(idx);
-    powers.val[0]     = vmulq_s16(powers.val[0], i);
-    powers.val[1]     = vmulq_s16(powers.val[1], i);
-    powers.val[2]     = vmulq_s16(powers.val[2], i);
-    powers.val[3]     = vmulq_s16(powers.val[3], i);
-
-    // store computed powers
-    vst1q_s16_x4(&exponents[0], powers);
-
-    // raises all -1 to the computed powers
-    // reuse exponents array
-    register u8 ctr = 0;
-    do {
-        exponents[ctr] = (int16_t) pow(-1.0, (double) exponents[ctr]);
-    } while (++ctr < 32);
-
-    // multiply transformed binary terms with computed powers and sum
-    powers       = vld1q_s16_x4(&exponents[0]);
-    bytes.val[0] = vmulq_s16(bytes.val[0], powers.val[0]);
-    bytes.val[1] = vmulq_s16(bytes.val[1], powers.val[1]);
-    bytes.val[2] = vmulq_s16(bytes.val[2], powers.val[2]);
-    bytes.val[3] = vmulq_s16(bytes.val[3], powers.val[3]);
-
-    const int16_t final = vaddvq_s16(bytes.val[0]) + vaddvq_s16(bytes.val[1]) + vaddvq_s16(bytes.val[2]) + vaddvq_s16(bytes.val[3]);
-
-    // divide by std deviation as per paper and return
-    return (double) final / WH_STD_DEV;
 }
 
 static void wh_test(const u32 *nums)

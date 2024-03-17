@@ -3,7 +3,6 @@
 	#include "defs.h"
 	
 	#define   BITBUF_SIZE     			1024
-	
 	#define   TESTING_BITS    	        8011776ULL
 	#define   TESTING_DBL    		    1000ULL
 	#define   BITS_TESTING_LIMIT        1000000
@@ -20,6 +19,7 @@
 	u64      a_to_u(const char *s, const u64 min, const u64 max);
 	u8       gen_uuid(const u64 higher, const u64 lower, u8 *buf);
 	u8 		 nearest_space(const char *str, u8 offset);
+	double	 wh_transform(const u16 idx, const u32 test);
 	void 	 print_ascii_bits(u64 *_ptr, const u64 limit);
 	void 	 print_basic_results(const u16 indent, const rng_test *rsl, const u64 limit);
 	void	 print_mfreq_results(const u16 indent, const rng_test *rsl);
