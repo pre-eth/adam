@@ -170,6 +170,8 @@
 
     Additonally the number of passing sequences and numbers and distribution of p-values are also reported.
 
+    Oprina, Andrei-George et al. “WALSH-HADAMARD RANDOMNESS TEST AND NEW METHODS OF TEST RESULTS INTEGRATION.”
+    (2009).
   */
   #define WH_DF               512   
   #define WH_CRITICAL_VALUE   588.29779   
