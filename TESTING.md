@@ -4,29 +4,49 @@ Everything you need to know for testing ADAM with different popular RNG test sui
 
 ## adam -e 
 
-This is a collection of miscellaneous heuristics implemented by me, just for logging some properties of some output sequence. It's nowhere near as important as the feedback from tried and true testing suites, but it's good for some quick information about the sequences you generate.
+This is a collection of miscellaneous heuristics and empirical tests implemented by me, just for reporting some notable properties of an output sequence to the user. It's nowhere near as important as the feedback from tried and true testing suites, but it's good for some quick information about the sequences you generate. 
 
-Additionally, the ENT framework is integrated into this collection, for a total of 13 pieces of information (plus initial state) that are returned to the user:
+Additionally, the ENT framework is integrated into this collection, for a total of 23 pieces of information that are returned to the user:
 
-- monobit frequency
-- any generated zeroes
-- range distribution + chi-square
-- max and min values
-- parity: even and odd number totals
-- chaotic seed distribution + chi-square
-- runs: total # of runs and longest run (increasing/decreasing)
-- average gap length
-- entropy                     (ENT)
-- chi-square                  (ENT)
-- arithmetic mean             (ENT)
-- monte carlo value for pi    (ENT)
-- serial correlation          (ENT)
+- Total sequences generated (also reported in terms of numbers generated per width)
+- Monobit frequency (including bit runs and longest runs of 0s/1s)
+- Seed & Nonce
+- Range distribution
+- Max and min values
+- Parity: even and odd number ratio
+- Chaotic seed distribution, average chaotic seed
+- Runs: total # of runs and longest run (increasing/decreasing)
+- Average gap length
+- Most and least common bytes
+- 64-bit floating point frequency + average FP value + distribution
+- 64-bit floating point permutations + total permutations + standard deviation
+- 32-bit floating point Max-of-8 test + total sets + most/least common position
+- Entropy                     	(ENT)
+- Chi-square                  	(ENT)
+- Arithmetic mean             	(ENT)
+- Monte Carlo value for pi    	(ENT)
+- Serial correlation          	(ENT)
+- 4-bit Saturation Point Test*
+- 8-bit Maurer Universal Test**
+- 16-bit Topological Binary Test***
+- 32-bit Walsh-Hadamard Transform test****
+- 64-bit SAC Test*****
+
+*[F. Sulak, “A New Statistical Randomness Test: Saturation Point Test”, IJISS, vol. 2, no. 3, pp. 81–85, 2013.](https://dergipark.org.tr/en/pub/ijiss/issue/16060/167857)
+
+**[Maurer, U.M. A universal statistical test for random bit generators. J. Cryptology 5, 89–105 (1992). https://doi.org/10.1007/BF00193563](https://link.springer.com/article/10.1007/BF00193563)
+
+***[Alcover, Pedro & Guillamón, Antonio & Ruiz, M.D.C.. (2013). A New Randomness Test for Bit Sequences. Informatica (Netherlands). 24. 339-356. 10.15388/Informatica.2013.399.](https://www.researchgate.net/publication/288404484_A_New_Randomness_Test_for_Bit_Sequences)
+
+****[Oprina, Andrei-George et al. “WALSH-HADAMARD RANDOMNESS TEST AND NEW METHODS OF TEST RESULTS INTEGRATION.” (2009).](https://www.semanticscholar.org/paper/WALSH-HADAMARD-RANDOMNESS-TEST-AND-NEW-METHODS-OF-Oprina-Popescu/42de0c0c663461bfded8e5b29171e40f34ffed85)
+
+*****[Hernandez-Castro, Julio & Sierra, José & Seznec, Andre & Izquierdo, Antonio & Ribagorda, Arturo. (2005). The strict avalanche criterion randomness test. Mathematics and Computers in Simulation. 68. 1-7. 10.1016/j.matcom.2004.09.001.](https://www.researchgate.net/publication/222525312_The_strict_avalanche_criterion_randomness_test)
 
 ## NIST
 
 The STS can be downloaded [here](https://csrc.nist.gov/projects/random-bit-generation/documentation-and-software). [This](https://www.slideshare.net/Muhammadhamid23/running-of-nist-test-109375052) is a good little quick start guide.
 
-Results for testing 10Mb, 100Mb, 500Mb, and 1Gb are available in the `tests` subdirectory. 
+Results for testing 10MB, 100MB, 500MB, and 1GB are available in the `tests` subdirectory. Sequences above 1GB weren't tested because based off my reading, the NIST STS struggles with performance and accuracy issues for very large sequences.
 
 Some results for the NonOverlappingTemplate tests may be borderline - this is expected since the output should be random, which means some runs will probability wise be weaker than others. The overall is what's most important, and to confirm for yourself you can run the Dieharder test suite which includes the STS tests and retries any `WEAK` results until a conclusive verdict can be reached.
 
@@ -182,7 +202,7 @@ static adam_data data;
 
 unsigned int adam_get(void)
 {
-    return adam_int(data, 32, 0);
+    return adam_int(data, 32, false);
 }
 
 int main()
@@ -221,8 +241,10 @@ cd practrand
 make
 ```
 
-Then, assuming `adam` is in your path (if not, copy it to the build folder): 
+Then, assuming `adam` is in your path (if not, copy it to the build folder and replace the `adam` call below with `./adam`): 
 
-`adam -b / RNG_test stdin8`
+`adam -b / ./RNG_test stdin8`
 
-PractRand also includes a wealth of great documentation about its test results and thought processes. See any of the text files with the `Test_` prefix to learn more about how the tests work, how the author determines their results and grading system, and the author's thoughts on the other test suites listed here.
+Since ADAM's default work unit is 64-bits, `stdin8` is the right size value to pass according to the documentation. If you'd like to try testing at other integer widths though, go ahead!
+
+PractRand also includes a wealth of great documentation about its test results and thought processes. See any of the text files with the `Test_` prefix to learn more about how the tests work, how the author determines their results, their specific grading system, and the author's thoughts on the other test suites listed here.
