@@ -137,7 +137,7 @@
   #define   TBT_PROPORTION            0.629
 
   /*
-    FOR:    32-bit Walsh-Hadamard Transform Test
+    FOR:    128-bit Walsh-Hadamard Transform Test
 
     The Walsh-Hadamard Transform (WHT) is a concept I had trouble understanding for a while especially
     since I don't have a background in stats or math, and I wasn't really familiar with the Discrete
@@ -147,7 +147,7 @@
     and cryptography. All the details and inner workings of the WHT aren't necessary to understand the
     test, but this is the foundational concept.
 
-    This test works on 32-bit blocks per output sequence, where each sequence is size ADAM_SEQ_SIZE. Each
+    This test works on 4 32-bit blocks per output sequence, where each sequence is size ADAM_SEQ_SIZE. Each
     block is converted to binary form, and the 32 bits fed to the basis function:
 
       F(x) = 1 - 2x (where x is 0 or 1)
@@ -155,8 +155,9 @@
     This maps the sequence to another binary sequence where each value is -1 or 1, and all those values are
     used in a summation AFTER each term is multplied with -1^(i * j), where i is the ith 32-bit block (aka
     the index of the currently transformed 32-bit number) and j is the index of the currently transformed
-    bit. The summation result for the ith block (aka its Walsh-Hadamard transform) is then squared and
-    added to an accumulator, whose final value is used to get a p-value for this sequence's test.
+    bit. The summation result for the ith - (i + 4)th blocks (aka their Walsh-Hadamard transforms) are then
+    added to create a test statistic for that 128-bit block, and the result is squared and added to an
+    accumulator for all 128 128-bit blocks of ADAM_SEQ_SIZE. A p-value is then obtained from the statistic.
 
     We combine all the p-values using Fisher's method just like above with the Maurer test, and report a 
     final p-value with the rest of the examination results.
@@ -173,11 +174,11 @@
     Oprina, Andrei-George et al. “WALSH-HADAMARD RANDOMNESS TEST AND NEW METHODS OF TEST RESULTS INTEGRATION.”
     (2009).
   */
-  #define WH_DF               512   
-  #define WH_CRITICAL_VALUE   588.29779   
-  #define WH_STD_DEV          5.6568542495   
-  #define WH_UPPER_BOUND 	    2.5758
-  #define WH_LOWER_BOUND 	    -2.5758  
+  #define   WH_DF                     128   
+  #define   WH_CRITICAL_VALUE         168.133  
+  #define   WH_STD_DEV                11.313708499 
+  #define   WH_UPPER_BOUND 	          2.5758
+  #define   WH_LOWER_BOUND 	          -2.5758  
 
   /*
     FOR:    64-bit Strict Avalanche Criterion (SAC) Test
