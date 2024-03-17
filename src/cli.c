@@ -3,8 +3,8 @@
 #include <stdlib.h>
 
 #include "../include/api.h"
-#include "../include/util.h"
 #include "../include/test.h"
+#include "../include/util.h"
 
 #define STRINGIZE(a) #a
 #define STRINGIFY(a) STRINGIZE(a)
@@ -340,10 +340,11 @@ int main(int argc, char **argv)
             continue;
         case 'w':
             width = a_to_u(optarg, 8, 32);
-            if (UNLIKELY(width != 8 || width != 16 || width != 32)) {
+            if (UNLIKELY(width != 8 && width != 16 && width != 32)) {
                 adam_cleanup(data);
                 return err("Alternate width must be either 8, 16, 32");
             }
+            results = ADAM_BUF_SIZE * (64 / width);
             continue;
         case 'r':
             results = a_to_u(optarg, 1, ADAM_BUF_SIZE * (64 / width));
@@ -362,8 +363,7 @@ int main(int argc, char **argv)
             return uuid(data, optarg);
         case 'd':
             results = ADAM_BUF_SIZE * (64 / width);
-            dump_buffer(data);
-            break;
+            continue;
         case 'f':
             dbl_mode = true;
             continue;
