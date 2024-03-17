@@ -137,6 +137,47 @@
   #define   TBT_PROPORTION            0.629
 
   /*
+    FOR:    32-bit Walsh-Hadamard Transform Test
+
+    The Walsh-Hadamard Transform (WHT) is a concept I had trouble understanding for a while especially
+    since I don't have a background in stats or math, and I wasn't really familiar with the Discrete
+    Fourier Transform either. But it seems like the basic idea is this: the WHT is a way to map the output
+    of one function to a binary domain of [-1, 1] through a set of "basis functions." This transform is
+    used a lot in areas like compression, quantum computing, and for our purposes, pseudorandom generation
+    and cryptography. All the details and inner workings of the WHT aren't necessary to understand the
+    test, but this is the foundational concept.
+
+    This test works on 32-bit blocks per output sequence, where each sequence is size ADAM_SEQ_SIZE. Each
+    block is converted to binary form, and the 32 bits fed to the basis function:
+
+      F(x) = 1 - 2x (where x is 0 or 1)
+
+    This maps the sequence to another binary sequence where each value is -1 or 1, and all those values are
+    used in a summation AFTER each term is multplied with -1^(i * j), where i is the ith 32-bit block (aka
+    the index of the currently transformed 32-bit number) and j is the index of the currently transformed
+    bit. The summation result for the ith block (aka its Walsh-Hadamard transform) is then squared and
+    added to an accumulator, whose final value is used to get a p-value for this sequence's test.
+
+    We combine all the p-values using Fisher's method just like above with the Maurer test, and report a 
+    final p-value with the rest of the examination results.
+
+    This test is used to detects a general class of randomness defects like frequency and autocorrelation
+    failure. Another goal of this test is to answer to the question if the tested sequence is produced by
+    some binary function. Additionally, it's used in testing several cryptographic criteria like correlation
+    immunity, frequency balance, and strict avalanche. The Walsh-Hadamard is also used in a fast correlation
+    attack for a general class of cryptosystems (a correlation attack assumes the existence of correlations
+    between linear combinations of internal and output bits; fast correlation is based on precomputing data).
+
+    Additonally the number of passing sequences and numbers and distribution of p-values are also reported.
+
+  */
+  #define WH_DF               512   
+  #define WH_CRITICAL_VALUE   588.29779   
+  #define WH_STD_DEV          5.6568542495   
+  #define WH_UPPER_BOUND 	    2.5758
+  #define WH_LOWER_BOUND 	    -2.5758  
+
+  /*
     FOR:    64-bit Strict Avalanche Criterion (SAC) Test
 
     64 different probabilities needed here so instead of polluting the header, see the function
@@ -158,8 +199,7 @@
     average out to n/2. So we use this knowledge to check how the distribution of Hamming distances
     we have recorded matches the given distribution.
     
-    Additionally, the mean Hamming distance across all measurements, the distribution, and the
-    standard deviation of the observed distances is also reported as well.
+    Additionally, the mean Hamming distance and observed distribution are reported as well.
 
     Hernandez-Castro, Julio & Sierra, José & Seznec, Andre & Izquierdo, Antonio & Ribagorda, Arturo. (2005).
     The strict avalanche criterion randomness test. Mathematics and Computers in Simulation. 68. 1-7. 
@@ -186,7 +226,6 @@
     u64 longest_zero;
     double avg_fp;
     u64 perms;
-    u64 *tbt_array;
     double avg_chseed;
     u64 fp_max_runs;
     double maurer_stat;
