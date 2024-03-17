@@ -564,7 +564,7 @@ void print_maurer_results(const u16 indent, rng_test *rsl, const u64 sequences)
     rsl->maurer_mean /= sequences;
 
     printf("\033[1;34m\033[%uCMaurer Universal Statistic:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, final_pvalue);
-    printf("\033[2m\033[%uCa. Raw Fisher's Method Value:\033[m %1.7lf\n", indent - 2, rsl->maurer_fisher);
+    printf("\033[2m\033[%uCa. Raw Fisher's Method Value:\033[m %1.3lf\n", indent - 2, rsl->maurer_fisher);
     printf("\033[2m\033[%uC                   b. Mean:\033[m %1.7lf (exp. %1.7lf : %1.7lf)\n", indent, rsl->maurer_mean, MAURER_EXPECTED, rsl->maurer_mean - MAURER_EXPECTED);
     printf("\033[2m\033[%uC              c. Pass Rate:\033[m %llu/%llu (%llu%%)\n", indent, rsl->maurer_pass, sequences, (u64) (pass_rate * 100.0));
     printf("\033[2m\033[%uC                      d. C:\033[m %1.7lf\n", indent, rsl->maurer_c);
@@ -597,14 +597,14 @@ void print_wht_results(const u16 indent, const double fisher_value, const u64 se
     const u8 suspect_level    = 32 - (final_pvalue <= ALPHA_LEVEL);
 
     printf("\033[1;34m\033[%uC         WH Transform Test:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, final_pvalue);
-    printf("\033[2m\033[%uCa. Raw Fisher's Method Value:\033[m %1.7lf\n", indent - 2, fisher_value);
+    printf("\033[2m\033[%uCa. Raw Fisher's Method Value:\033[m %1.3lf\n", indent - 2, fisher_value);
     printf("\033[2m\033[%uC              b. Pass Rate:\033[m %llu/%llu (%llu%% : SEQUENCES)\n", indent, seq_pass, seq, (u64) (seq_pass_rate * 100.0));
     printf("\033[2m\033[%uC              c. Pass Rate:\033[m %llu/%llu (%llu%% : U32)\n", indent, num_pass, seq << 9, (u64) (u32_pass_rate * 100.0));
-    printf("\033[2m\033[%uC             d. (0.0, 0.2):\033[m %llu (%+lli : exp. %llu)\n", indent, pdist[0], pdist[0] - expected, expected);
-    printf("\033[2m\033[%uC             e. [0.2, 0.4):\033[m %llu (%+lli : exp. %llu)\n", indent, pdist[1], pdist[1] - expected, expected);
-    printf("\033[2m\033[%uC             f. [0.4, 0.6):\033[m %llu (%+lli : exp. %llu)\n", indent, pdist[2], pdist[2] - expected, expected);
-    printf("\033[2m\033[%uC             g. [0.6, 0.8):\033[m %llu (%+lli : exp. %llu)\n", indent, pdist[3], pdist[3] - expected, expected);
-    printf("\033[2m\033[%uC             h. [0.8, 1.0):\033[m %llu (%+lli : exp. %llu)\n", indent, pdist[4], pdist[4] - expected, expected);
+    printf("\033[2m\033[%uC             d. (0.0, 0.2):\033[m %llu (exp. %llu : %+lli)\n", indent, pdist[0], expected, pdist[0] - expected);
+    printf("\033[2m\033[%uC             e. [0.2, 0.4):\033[m %llu (exp. %llu : %+lli)\n", indent, pdist[1], expected, pdist[1] - expected);
+    printf("\033[2m\033[%uC             f. [0.4, 0.6):\033[m %llu (exp. %llu : %+lli)\n", indent, pdist[2], expected, pdist[2] - expected);
+    printf("\033[2m\033[%uC             g. [0.6, 0.8):\033[m %llu (exp. %llu : %+lli)\n", indent, pdist[3], expected, pdist[3] - expected);
+    printf("\033[2m\033[%uC             h. [0.8, 1.0):\033[m %llu (exp. %llu : %+lli)\n", indent, pdist[4], expected, pdist[4] - expected);
 }
 
 void print_avalanche_results(const u16 indent, const rng_test *rsl, const u64 *ham_dist)
