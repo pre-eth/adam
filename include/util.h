@@ -31,5 +31,6 @@
 	void 	 print_sp_results(const u16 indent, const rng_test *rsl, const u64 *sat_dist, const u64 *sat_range);
 	void 	 print_maurer_results(const u16 indent, rng_test *rsl, const u64 sequences);
 	void	 print_tbt_results(const u16 indent, const u64 sequences, const u64 tbt_prop, const u64 tbt_pass);
+	void 	 print_wht_results(const u16 indent, const double fisher_value, const u64 seq_pass, const u64 num_pass, const u64 seq, const u64 *pdist);
 	void	 print_avalanche_results(const u16 indent, const rng_test *rsl, const u64 *ham_dist);
 #endif   

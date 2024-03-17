@@ -4,8 +4,8 @@
 
 #include "../include/ent.h"
 #include "../include/simd.h"
-#include "../include/util.h"
 #include "../include/test.h"
+#include "../include/util.h"
 
 void get_print_metrics(u16 *center, u16 *indent, u16 *swidth)
 {
@@ -583,6 +583,28 @@ void print_tbt_results(const u16 indent, const u64 sequences, const u64 tbt_prop
     printf("\033[1;34m\033[%uC   Topological Binary Test:\033[m %llu/%llu (%u%%)\n", indent, tbt_pass, sequences, pass_rate);
     printf("\033[2m\033[%uCa. Average Distinct Patterns:\033[m %u (cv = %u)\n", indent - 2, average_distinct, TBT_CRITICAL_VALUE);
     printf("\033[2m\033[%uC             b. Proportion:\033[m %.3lf (min. %.3f)\n", indent, proportion, TBT_PROPORTION);
+}
+
+void print_wht_results(const u16 indent, const double fisher_value, const u64 seq_pass, const u64 num_pass, const u64 seq, const u64 *pdist)
+{
+    const double u32_pass_rate = (double) num_pass / (double) (seq << 9);
+    const double seq_pass_rate = (double) seq_pass / (double) seq;
+    const u64 expected         = (double) seq * 0.1;
+
+    // we don't explicitly halve the df value because chi-square for fisher method
+    // value uses 2K df, so after halving it becomes the original value k
+    const double final_pvalue = cephes_igamc(seq, fisher_value / 2);
+    const u8 suspect_level    = 32 - (final_pvalue <= ALPHA_LEVEL);
+
+    printf("\033[1;34m\033[%uC         WH Transform Test:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, final_pvalue);
+    printf("\033[2m\033[%uCa. Raw Fisher's Method Value:\033[m %1.7lf\n", indent - 2, fisher_value);
+    printf("\033[2m\033[%uC              b. Pass Rate:\033[m %llu/%llu (%llu%% : SEQUENCES)\n", indent, seq_pass, seq, (u64) (seq_pass_rate * 100.0));
+    printf("\033[2m\033[%uC              c. Pass Rate:\033[m %llu/%llu (%llu%% : U32)\n", indent, num_pass, seq << 9, (u64) (u32_pass_rate * 100.0));
+    printf("\033[2m\033[%uC             d. (0.0, 0.2):\033[m %llu (%+lli : exp. %llu)\n", indent, pdist[0], pdist[0] - expected, expected);
+    printf("\033[2m\033[%uC             e. [0.2, 0.4):\033[m %llu (%+lli : exp. %llu)\n", indent, pdist[1], pdist[1] - expected, expected);
+    printf("\033[2m\033[%uC             f. [0.4, 0.6):\033[m %llu (%+lli : exp. %llu)\n", indent, pdist[2], pdist[2] - expected, expected);
+    printf("\033[2m\033[%uC             g. [0.6, 0.8):\033[m %llu (%+lli : exp. %llu)\n", indent, pdist[3], pdist[3] - expected, expected);
+    printf("\033[2m\033[%uC             h. [0.8, 1.0):\033[m %llu (%+lli : exp. %llu)\n", indent, pdist[4], pdist[4] - expected, expected);
 }
 
 void print_avalanche_results(const u16 indent, const rng_test *rsl, const u64 *ham_dist)
