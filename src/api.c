@@ -105,7 +105,7 @@ u64 *adam_nonce(const adam_data data)
     return &data->nonce;
 }
 
-const u64 *const adam_buffer(const adam_data data)
+const u64 *adam_buffer(const adam_data data)
 {
     adam(data);
     return &data->out[0];
