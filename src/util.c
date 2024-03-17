@@ -194,7 +194,7 @@ static u8 store_seed(const u64 *seed)
         err("Please enter a valid file name");
     FILE *seed_file = fopen(file_name, "wb+");
     if (!seed_file)
-        return err("Couldn't read seed file");
+        return err("Couldn't open seed file");
     fwrite((void *) seed, sizeof(u64), 4, seed_file);
     fclose(seed_file);
     return 0;
@@ -439,7 +439,7 @@ void print_range_results(const u16 indent, const rng_test *rsl, const u64 *restr
             chi_calc += pow(delta[i], 2) / expected[i];
     }
 
-    const u8 suspect_level = 32 - (RANGE_CRITICAL_VALUE <= chi_calc);
+    const u8 suspect_level = 32 - (RANGE_CRITICAL_VALUE < chi_calc);
 
     const double p_value = cephes_igamc(RANGE_CAT / 2, chi_calc / 2);
 
@@ -489,7 +489,7 @@ void print_chseed_results(const u16 indent, const u64 expected, const u64 *chsee
         chi_calc += pow(delta[i], 2) / (double) expected_chseeds;
     }
 
-    const u8 suspect_level = 32 - (CHSEED_CRITICAL_VALUE <= chi_calc);
+    const u8 suspect_level = 32 - (CHSEED_CRITICAL_VALUE < chi_calc);
     const double p_value   = cephes_igamc(CHSEED_CAT / 2, chi_calc / 2);
 
     printf("\033[1;34m\033[%uC Chaotic Seed Distribution:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
@@ -514,7 +514,7 @@ void print_fp_results(const u16 indent, const rng_test *rsl, const u64 *restrict
     for (; i < FPF_CAT; ++i)
         chi_calc += pow((fpf_dist[i] - expected), 2) / expected;
 
-    register u8 suspect_level = 32 - (FPF_CRITICAL_VALUE <= chi_calc);
+    register u8 suspect_level = 32 - (FPF_CRITICAL_VALUE < chi_calc);
 
     // Divide frequency values into "quadrants" and report observed vs expected values
     double delta[4];
@@ -549,7 +549,7 @@ void print_fp_results(const u16 indent, const rng_test *rsl, const u64 *restrict
     for (; i < FP_PERM_CAT; ++i)
         std_dev += pow(((double) fp_perm_dist[i] - average), 2);
 
-    suspect_level = 32 - (FP_PERM_CRITICAL_VALUE <= chi_calc);
+    suspect_level = 32 - (FP_PERM_CRITICAL_VALUE < chi_calc);
     std_dev       = sqrt(std_dev / (double) FP_PERM_CAT);
 
     p_value = cephes_igamc(FP_PERM_CAT / 2, chi_calc / 2);
@@ -575,7 +575,7 @@ void print_fp_results(const u16 indent, const rng_test *rsl, const u64 *restrict
         chi_calc += pow(((double) fp_max_dist[i] - expected), 2) / expected;
     }
 
-    suspect_level = 32 - (FP_MAX_CRITICAL_VALUE <= chi_calc);
+    suspect_level = 32 - (FP_MAX_CRITICAL_VALUE < chi_calc);
 
     p_value = cephes_igamc(FP_MAX_CAT / 2, chi_calc / 2);
 
@@ -616,7 +616,7 @@ void print_sp_results(const u16 indent, const rng_test *rsl, const u64 *sat_dist
         tmp = MAX(tmp, sat_range[i]);
     }
 
-    const u8 suspect_level = 32 - (SP_CRITICAL_VALUE <= chi_calc);
+    const u8 suspect_level = 32 - (SP_CRITICAL_VALUE < chi_calc);
 
     const u8 pad         = calc_padding(tmp);
     const double p_value = cephes_igamc(SP_CAT / 2.0, chi_calc / 2.0);
@@ -646,7 +646,7 @@ void print_maurer_results(const u16 indent, rng_test *rsl, const u64 sequences)
 
     printf("\033[1;34m\033[%uCMaurer Universal Statistic:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, final_pvalue);
     printf("\033[2m\033[%uCa. Raw Fisher's Method Value:\033[m %1.3lf\n", indent - 2, rsl->maurer_fisher);
-    printf("\033[2m\033[%uC                   b. Mean:\033[m %1.7lf (exp. %1.7lf : %1.7lf)\n", indent, rsl->maurer_mean, MAURER_EXPECTED, rsl->maurer_mean - MAURER_EXPECTED);
+    printf("\033[2m\033[%uC                   b. Mean:\033[m %1.7lf (exp. %1.7lf : %-1.7lf)\n", indent, rsl->maurer_mean, MAURER_EXPECTED, rsl->maurer_mean - MAURER_EXPECTED);
     printf("\033[2m\033[%uC              c. Pass Rate:\033[m %llu/%llu (%llu%%)\n", indent, rsl->maurer_pass, sequences, (u64) (pass_rate * 100.0));
     printf("\033[2m\033[%uC                      d. C:\033[m %1.7lf\n", indent, rsl->maurer_c);
     printf("\033[2m\033[%uC     e. Standard Deviation:\033[m %1.7lf\n", indent, rsl->maurer_std_dev);
@@ -668,9 +668,10 @@ void print_tbt_results(const u16 indent, const u64 sequences, const u64 tbt_prop
 
 void print_wht_results(const u16 indent, const double fisher_value, const u64 seq_pass, const u64 num_pass, const u64 seq, const u64 *pdist)
 {
-    const double u32_pass_rate = (double) num_pass / (double) (seq << 9);
-    const double seq_pass_rate = (double) seq_pass / (double) seq;
-    const u64 expected         = (double) seq * 0.1;
+    const u64 num_total        = seq * 489;
+    const double u32_pass_rate = (double) num_pass / (double) (num_total << 7);
+    const double seq_pass_rate = (double) seq_pass / (double) num_total;
+    const u64 expected         = (double) num_total * 0.1;
 
     // we don't explicitly halve the df value because chi-square for fisher method
     // value uses 2K df, so after halving it becomes the original value k
@@ -679,13 +680,13 @@ void print_wht_results(const u16 indent, const double fisher_value, const u64 se
 
     printf("\033[1;34m\033[%uC         WH Transform Test:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, final_pvalue);
     printf("\033[2m\033[%uCa. Raw Fisher's Method Value:\033[m %1.3lf\n", indent - 2, fisher_value);
-    printf("\033[2m\033[%uC              b. Pass Rate:\033[m %llu/%llu (%llu%% : SEQUENCES)\n", indent, seq_pass, seq, (u64) (seq_pass_rate * 100.0));
-    printf("\033[2m\033[%uC              c. Pass Rate:\033[m %llu/%llu (%llu%% : U32)\n", indent, num_pass, seq << 9, (u64) (u32_pass_rate * 100.0));
-    printf("\033[2m\033[%uC             d. (0.0, 0.2):\033[m %llu (exp. %llu : %+lli)\n", indent, pdist[0], expected, pdist[0] - expected);
-    printf("\033[2m\033[%uC             e. [0.2, 0.4):\033[m %llu (exp. %llu : %+lli)\n", indent, pdist[1], expected, pdist[1] - expected);
-    printf("\033[2m\033[%uC             f. [0.4, 0.6):\033[m %llu (exp. %llu : %+lli)\n", indent, pdist[2], expected, pdist[2] - expected);
-    printf("\033[2m\033[%uC             g. [0.6, 0.8):\033[m %llu (exp. %llu : %+lli)\n", indent, pdist[3], expected, pdist[3] - expected);
-    printf("\033[2m\033[%uC             h. [0.8, 1.0):\033[m %llu (exp. %llu : %+lli)\n", indent, pdist[4], expected, pdist[4] - expected);
+    printf("\033[2m\033[%uC              b. Pass Rate:\033[m %llu/%llu (%llu%% : SEQUENCES)\n", indent, seq_pass, num_total, (u64) (seq_pass_rate * 100.0));
+    printf("\033[2m\033[%uC              c. Pass Rate:\033[m %llu/%llu (%llu%% : U32)\n", indent, num_pass, num_total << 7, (u64) (u32_pass_rate * 100.0));
+    printf("\033[2m\033[%uC             d. (0.0, 0.2):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pdist[0], expected, pdist[0] - expected);
+    printf("\033[2m\033[%uC             e. [0.2, 0.4):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pdist[1], expected, pdist[1] - expected);
+    printf("\033[2m\033[%uC             f. [0.4, 0.6):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pdist[2], expected, pdist[2] - expected);
+    printf("\033[2m\033[%uC             g. [0.6, 0.8):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pdist[3], expected, pdist[3] - expected);
+    printf("\033[2m\033[%uC             h. [0.8, 1.0):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pdist[4], expected, pdist[4] - expected);
 }
 
 void print_avalanche_results(const u16 indent, const rng_test *rsl, const u64 *ham_dist)

@@ -40,14 +40,14 @@ static bool octal;
 //  Number of results to return to user (max 1000)
 static u16 results;
 
-// Flag for floating point output
-static u8 dbl_mode;
+//  Flag for floating point output
+static bool dbl_mode;
 
 //  Number of decimal places for floating point output (default 15)
 static u8 precision;
 
-// Multiplier to scale floating point results, if the user wants
-// This returns doubles within range (0, mult)
+//  Multiplier to scale floating point results, if the user wants
+//  This returns doubles within range (0, mult)
 static u64 mult;
 
 static void print_summary(const u16 swidth, const u16 indent)
@@ -309,7 +309,10 @@ static u8 examine(adam_data data, const char *strlimit)
 
 int main(int argc, char **argv)
 {
-    adam_data data = adam_setup(NULL, NULL);
+    u64 seed[4]    = { 0x31DDB2D8CA1BF5B2, 0x5D7DC65674A5DA0B, 0x8CE34E7A7EE719B0, 0x08106348FF5F09AC };
+    u64 nonce      = 0xD7A7937191906F58;
+    adam_data data = adam_setup(&seed[0], &nonce);
+    // adam_data data = adam_setup(NULL, NULL);
 
     // Initialize the non-zero defaults
     results   = 1;
@@ -333,10 +336,12 @@ int main(int argc, char **argv)
             adam_cleanup(data);
             return 0;
         case 'x':
-            hex = true;
+            hex   = true;
+            octal = false;
             continue;
         case 'o':
             octal = true;
+            hex   = false;
             continue;
         case 'w':
             width = a_to_u(optarg, 8, 32);

@@ -503,7 +503,7 @@ static void adam_results(const u64 limit, rng_test *rsl, ent_test *ent)
     // Screen info for pretty printing
     u16 center, indent, swidth;
     get_print_metrics(&center, &indent, &swidth);
-    indent <<= 1;
+    indent <<= 2;
 
     // First get the ENT results out of the way
     ent_results(ent);
