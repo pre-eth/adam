@@ -165,13 +165,14 @@ u8 gen_uuid(const u64 higher, const u64 lower, u8 *buf)
 static char bitbuffer[BITBUF_SIZE] ALIGN(SIMD_LEN);
 
 #ifdef __AARCH64_SIMD__
-static void print_binary(char *restrict _bptr, u64 num)
+static void print_binary(u8 *restrict _bptr, u64 num)
 {
     // Copying bit masks to high and low halves
     // 72624976668147840 == {128, 64, 32, 16, 8, 4, 2, 1}
-    const reg8q masks = SIMD_COMBINE8(SIMD_CREATE8(72624976668147840),
+    const reg8q masks = SIMD_COMBINE8(
+        SIMD_CREATE8(72624976668147840),
         SIMD_CREATE8(72624976668147840));
-    const reg8q zero  = SIMD_SET8('0');
+    const reg8q zero = SIMD_SET8('0');
 
     // Repeat all 8 bytes 8 times each, to fill up r1 with 64 bytes total
     // Then we bitwise AND with masks to turn each byte into a 1 or 0
@@ -194,7 +195,7 @@ static void print_binary(char *restrict _bptr, u64 num)
     SIMD_STORE8x4(_bptr, r1);
 }
 #else
-static void print_binary(char *restrict _bptr, u64 num)
+static void print_binary(u8 *restrict _bptr, u64 num)
 {
 #define BYTE_REPEAT(n) \
     bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n]
@@ -240,10 +241,10 @@ static void print_binary(char *restrict _bptr, u64 num)
 // prints all bits in a buffer as chunks of 1024 bits
 void print_ascii_bits(u64 *_ptr, const u64 limit)
 {
-#define PRINT_4(i, j) print_binary(&bitbuffer[i], _ptr[j]),           \
-                      print_binary(&bitbuffer[64 + i], _ptr[j + 1]),  \
-                      print_binary(&bitbuffer[128 + i], _ptr[j + 2]), \
-                      print_binary(&bitbuffer[192 + i], _ptr[j + 3])
+#define PRINT_4(i, j) print_binary((u8 *) &bitbuffer[i], _ptr[j]),           \
+                      print_binary((u8 *) &bitbuffer[64 + i], _ptr[j + 1]),  \
+                      print_binary((u8 *) &bitbuffer[128 + i], _ptr[j + 2]), \
+                      print_binary((u8 *) &bitbuffer[192 + i], _ptr[j + 3])
 
     register u64 i = 0;
     do {
@@ -256,7 +257,7 @@ void print_ascii_bits(u64 *_ptr, const u64 limit)
     } while (limit - i >= 16);
 
     do {
-        print_binary(&bitbuffer[0], _ptr[i]);
+        print_binary((u8 *) &bitbuffer[0], _ptr[i]);
         fwrite(&bitbuffer[0], 1, 64, stdout);
     } while (++i < limit);
 }
@@ -308,7 +309,7 @@ void print_mfreq_results(const u16 indent, const rng_test *rsl)
     const u64 expected_bits  = (double) (output << 6) * MFREQ_PROB;
     register double chi_calc = (pow((double) zeroes - expected_bits, 2) / (double) expected_bits) + (pow((double) rsl->mfreq - expected_bits, 2) / (double) expected_bits);
 
-    register u8 suspect_level = 32 - (MFREQ_CRITICAL_VALUE <= chi_calc);
+    const u8 suspect_level = 32 - (MFREQ_CRITICAL_VALUE <= chi_calc);
 
     const double p_value = cephes_igamc(1, chi_calc / 2);
 
@@ -357,7 +358,7 @@ void print_range_results(const u16 indent, const rng_test *rsl, const u64 *restr
             chi_calc += pow(delta[i], 2) / expected[i];
     }
 
-    register u8 suspect_level = 32 - (RANGE_CRITICAL_VALUE <= chi_calc);
+    const u8 suspect_level = 32 - (RANGE_CRITICAL_VALUE <= chi_calc);
 
     const double p_value = cephes_igamc(RANGE_CAT / 2, chi_calc / 2);
 
@@ -380,7 +381,7 @@ void print_ent_results(const u16 indent, const ent_test *ent)
     char *chi_str;
     char chi_tmp[6];
 
-    register u8 suspect_level = 32 - (ent->pochisq < ALPHA_LEVEL);
+    const u8 suspect_level = 32 - (ent->pochisq <= ALPHA_LEVEL);
 
     printf("\033[1;34m\033[%uC                   Entropy:\033[m %.5lf %9s per byte)\n", indent, ent->ent, "(bits");
     printf("\033[1;34m\033[%uC            ENT Chi-Square:\033[m %1.3lf\033[m  %14s\033[1;%um%1.2lf\033[m)\n", indent, ent->chisq, "(p-value = ", suspect_level, ent->pochisq);
@@ -407,9 +408,8 @@ void print_chseed_results(const u16 indent, const u64 expected, const u64 *chsee
         chi_calc += pow(delta[i], 2) / (double) expected_chseeds;
     }
 
-    register u8 suspect_level = 32 - (CHSEED_CRITICAL_VALUE <= chi_calc);
-
-    const double p_value = cephes_igamc(CHSEED_CAT / 2, chi_calc / 2);
+    const u8 suspect_level = 32 - (CHSEED_CRITICAL_VALUE <= chi_calc);
+    const double p_value   = cephes_igamc(CHSEED_CAT / 2, chi_calc / 2);
 
     printf("\033[1;34m\033[%uC Chaotic Seed Distribution:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
     printf("\033[2m\033[%uC         a. Raw Chi-Square:\033[m %1.3lf (cv = %.3lf)\n", indent, chi_calc, CHSEED_CRITICAL_VALUE);
@@ -535,7 +535,7 @@ void print_sp_results(const u16 indent, const rng_test *rsl, const u64 *sat_dist
         tmp = MAX(tmp, sat_range[i]);
     }
 
-    register u8 suspect_level = 32 - (SP_CRITICAL_VALUE <= chi_calc);
+    const u8 suspect_level = 32 - (SP_CRITICAL_VALUE <= chi_calc);
 
     const u8 pad         = calc_padding(tmp);
     const double p_value = cephes_igamc(SP_CAT / 2.0, chi_calc / 2.0);
@@ -556,8 +556,10 @@ void print_maurer_results(const u16 indent, rng_test *rsl, const u64 sequences)
     const double upper_bound = MAURER_EXPECTED + (MAURER_Y * rsl->maurer_std_dev);
     const double pass_rate   = (double) rsl->maurer_pass / (double) sequences;
 
+    // we don't explicitly halve the df value because chi-square for fisher method
+    // value uses 2K df, so after halving it becomes the original value k
     const double final_pvalue = cephes_igamc(sequences, rsl->maurer_fisher / 2);
-    register u8 suspect_level = 32 - (final_pvalue < ALPHA_LEVEL);
+    const u8 suspect_level    = 32 - (final_pvalue <= ALPHA_LEVEL);
 
     rsl->maurer_mean /= sequences;
 
