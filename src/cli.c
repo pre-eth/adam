@@ -126,7 +126,7 @@ static u8 help(void)
         "The amount of numbers to generate and return, written to stdout. Must be within max limit for current width (see -d)",
         "Dump entire buffer using the specified width (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)",
         "Desired alternative size (u8, u16, u32) of returned numbers. Default width is u64",
-        "Just bits... literally",
+        "Just bits... literally. Pass the -f flag beforehand to stream random doubles instead of integers",
         "Write an ASCII or binary sample of bits/doubles to file for external assessment. You can choose a multiplier to output up to 100GB of bits, or 1 billion doubles (with optional scaling factor), at a time",
         "Examine a sample of 1MB with the ENT framework and some other statistical tests to reveal properties of the output sequence. You can choose a multiplier within [1, " STRINGIFY(BITS_TESTING_LIMIT) "] to examine up to 100GB at a time",
         "Print numbers in hexadecimal format with leading prefix",
@@ -136,7 +136,7 @@ static u8 help(void)
         "Multiplier for randomly generated doubles, such that they fall in the range (0, <MULTIPLIER>)"
     };
 
-    const u8 lengths[ARG_COUNT] = { 45, 33, 119, 124, 109, 116, 91, 81, 22, 202, 204, 55, 49, 80, 93, 93 };
+    const u8 lengths[ARG_COUNT] = { 45, 33, 119, 124, 109, 116, 91, 81, 96, 202, 204, 55, 49, 80, 93, 93 };
 
     register short len;
     register u16 line_width;
@@ -222,9 +222,11 @@ static u8 uuid(adam_data data, const char *strlimit)
     return 0;
 }
 
-static void assessf(adam_data data, const u64 limit, bool ascii_mode)
+static u8 assessf(adam_data data, const u64 limit, bool ascii_mode)
 {
     double *_buf = aligned_alloc(ADAM_ALIGNMENT, limit * sizeof(double));
+    if (_buf == NULL)
+        return 1;
 
     adam_dfill(data, _buf, mult, limit);
 
@@ -243,7 +245,22 @@ static void assessf(adam_data data, const u64 limit, bool ascii_mode)
         fwrite(&_buf[0], sizeof(double), limit, stdout);
 
     free(_buf);
-    adam_cleanup(data);
+    return 0;
+}
+
+static void streamf(adam_data data)
+{
+    double *_buf = aligned_alloc(ADAM_ALIGNMENT, ADAM_BUF_SIZE * sizeof(double));
+    if (_buf == NULL)
+        return;
+
+    register u64 written = 0;
+
+    while (written < __UINT64_MAX__) {
+        adam_dfill(data, _buf, 0, ADAM_BUF_SIZE);
+        fwrite(&_buf[0], sizeof(double), ADAM_BUF_SIZE, stdout);
+        written += ADAM_BUF_SIZE;
+    }
 }
 
 static u8 assess(adam_data data)
@@ -263,15 +280,19 @@ static u8 assess(adam_data data)
     if (dbl_mode) {
         ASSESS_PROMPT(&output_mult, "Sequence Size (x 1000):", " %u", (output_mult < 1 || output_mult > DBL_TESTING_LIMIT), "Output multiplier must be between [1, " STRINGIFY(DBL_TESTING_LIMIT) "]");
         limit = TESTING_DBL * output_mult;
-        assessf(data, limit, file_mode);
+        if (assessf(data, limit, file_mode))
+            return err("Could not allocate enough space for adam -a");
     } else {
         ASSESS_PROMPT(&output_mult, "Sequence Size (x 1MB):", " %u", (output_mult < 1 || output_mult > BITS_TESTING_LIMIT), "Output multiplier must be between [1, " STRINGIFY(BITS_TESTING_LIMIT) "]");
 
         limit = TESTING_BITS * output_mult;
         if (file_mode) {
-            const u64 amount     = (limit >> 6) + !!(limit & 63);
+            const u64 amount = (limit >> 6) + !!(limit & 63);
+
             u64 *restrict buffer = aligned_alloc(ADAM_ALIGNMENT, sizeof(u64) * amount);
-            fprintf(stderr, "starting to print the stuff\n");
+            if (buffer == NULL)
+                return err("Could not allocate enough space for adam -a");
+
             adam_fill(data, buffer, 64, amount);
             print_ascii_bits(buffer, amount);
 
@@ -309,10 +330,10 @@ static u8 examine(adam_data data, const char *strlimit)
 
 int main(int argc, char **argv)
 {
-    u64 seed[4]    = { 0x31DDB2D8CA1BF5B2, 0x5D7DC65674A5DA0B, 0x8CE34E7A7EE719B0, 0x08106348FF5F09AC };
-    u64 nonce      = 0xD7A7937191906F58;
-    adam_data data = adam_setup(&seed[0], &nonce);
-    // adam_data data = adam_setup(NULL, NULL);
+    adam_data data = adam_setup(NULL, NULL);
+
+    if (data == NULL)
+        return err("Could not allocate space for adam_data struct! Exiting.");
 
     // Initialize the non-zero defaults
     results   = 1;
@@ -332,7 +353,10 @@ int main(int argc, char **argv)
         case 'a':
             return assess(data);
         case 'b':
-            adam_stream(data, __UINT64_MAX__, NULL);
+            if (dbl_mode)
+                streamf(data);
+            else
+                adam_stream(data, __UINT64_MAX__, NULL);
             adam_cleanup(data);
             return 0;
         case 'x':
