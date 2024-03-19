@@ -1,0 +1,197 @@
+
+***** MCPF version 13 --huge *****
+
+
+
+============
+tri 1/1 (10737418240 doubles)
+=======
+blocksize = 64
+lo  var    0.066306; skew    -0.82363; m5     -0.7885;
+mid var   -0.054833; skew     -1.7719; m5     -2.3673;
+hi  var     0.71785; skew     0.72578; m5     0.27247;
+blocksize = 256
+lo  var     -1.2391; skew    -0.84624; m5    -0.27984;
+mid var     -0.9634; skew    -0.77818; m5    -0.85943;
+hi  var      0.2255; skew     0.12836; m5    -0.32936;
+blocksize = 1024
+lo  var     -1.2715; skew     0.34392; m5     0.89764;
+mid var    -0.26415; skew      0.1376; m5     0.13817;
+hi  var   -0.010827; skew    -0.14046; m5    -0.81255;
+blocksize = 4096
+lo  var     0.16648; skew     -1.0746; m5     -1.5244;    mean    -0.43319;
+mid var     0.17982; skew    -0.54437; m5     0.34256;    mean    -0.45417;
+hi  var     0.85911; skew    -0.39937; m5     0.03249;    mean     0.88736;
+
+processed 1.1e+10 numbers in 45 seconds. Tue Mar 19 11:34:03 2024
+
+one sided P value (very small numbers are bad)
+P = 0.506
+... after 1 tests running guess [p] = 0.51
+
+
+============
+nda8 1/1 (10737418240 doubles)
+=======
+extreme = 4.14e-05   (9 7 28 -)
+transform = 3.69   (5 d 34)
+pvals (0.399 0.934)
+
+processed 1.1e+10 numbers in 33 seconds. Tue Mar 19 11:34:36 2024
+
+one sided P value (very small numbers are bad)
+P = 0.638
+... after 2 tests running guess [p] = 0.76
+
+
+============
+nda4 1/1 (10737418240 doubles)
+=======
+extreme = 0.000159   (3 6 25 -)
+transform = 3.67   (3 8 35)
+pvals (0.859 0.95)
+
+processed 1.1e+10 numbers in 30 seconds. Tue Mar 19 11:35:06 2024
+
+one sided P value (very small numbers are bad)
+P = 0.98
+... after 3 tests running guess [p] = 0.88
+
+
+============
+rda 1/2 (5368709120 doubles)
+=======
+simple
+chis = 10174 (p = 0.107)
+extreme = 2.25e-05 (5457 -) (p = 0.202)
+zero1st = 3.6e-05 (717 -) (p = 0.302)
+ext = 708096 ; exk = 69422 ; expect = 7.05e+04
+
+zero1st
+zero1st = 0.0018 (131 +) (p = 1)
+ext = 771859 ; exk = 14940 ; expect = 1.46e+04
+
+
+processed 5.4e+09 numbers in 16 seconds. Tue Mar 19 11:35:22 2024
+
+one sided P value (very small numbers are bad)
+P = 0.365
+... after 4 tests running guess [p] = 0.84
+
+
+============
+dim3 1/3 (3579139413 doubles)
+=======
+counts  =   -1.92808 sigma (p = 0.0538)
+count   =    4.60391 sigma (p = 0.662) (transformed)
+sums    =    1.92825 sigma (p = 0.0538)
+sum     =    4.67200 sigma (p = 0.542) (transformed)
+abs     =    0.31145 sigma (p = 0.755)
+abs     =    4.56855 sigma (p = 0.724) (transformed)
+
+processed 3.6e+09 numbers in 11 seconds. Tue Mar 19 11:35:33 2024
+
+one sided P value (very small numbers are bad)
+P = 0.282
+... after 5 tests running guess [p] = 0.81
+
+
+============
+dim56 1/4 (2684354560 doubles)
+=======
+sum 1    =    4.53580 sigma (p = 0.778) (transformed)
+abs 1    =    4.55633 sigma (p = 0.745) (transformed)
+sum 2    =    4.98505 sigma (p = 0.15) (transformed)
+abs 2    =    4.78237 sigma (p = 0.365) (transformed)
+
+processed 2.7e+09 numbers in 7 seconds. Tue Mar 19 11:35:40 2024
+
+one sided P value (very small numbers are bad)
+P = 0.478
+... after 6 tests running guess [p] = 0.86
+
+
+============
+dim155 1/4 (2684354560 doubles)
+=======
+counts  =   -1.99526 sigma (p = 0.046)
+count  weight =  5  idx = 280406  p = 0.467 (transformed)
+sums    =   -0.98335 sigma (p = 0.325)
+sum    weight =  2  idx = 004040  p = 0.838 (transformed)
+abs     =   -0.74418 sigma (p = 0.457)
+abs    weight =  6  idx = 14e002  p = 0.336 (transformed)
+
+processed 2.7e+09 numbers in 15 seconds. Tue Mar 19 11:35:55 2024
+
+one sided P value (very small numbers are bad)
+P = 0.246
+... after 7 tests running guess [p] = 0.86
+
+
+============
+diff10 1/4 (2684354560 doubles)
+=======
+order = 0 : chis =      16475 ;  p = 0.610464
+order = 1 : chis =      16422 ;  p = 0.828324
+order = 2 : chis =      16552 ;  p = 0.349538
+order = 3 : chis =      16413 ;  p = 0.863912
+order = 4 : chis =      16434 ;  p = 0.774905
+order = 5 : chis =      16538 ;  p = 0.391366
+order = 6 : chis =      16385 ;  p = 0.988543
+order = 7 : chis =      16555 ;  p = 0.341932
+order = 8 : chis =      16413 ;  p = 0.86588
+order = 9 : chis =      16613 ;  p = 0.204403
+
+processed 2.7e+09 numbers in 42 seconds. Tue Mar 19 11:36:38 2024
+
+one sided P value (very small numbers are bad)
+P = 0.898
+... after 8 tests running guess [p] = 0.9
+
+
+============
+diff3 1/8 (1342177280 doubles)
+=======
+chis =       4129  (0.700375)
+chis =       4044  (0.57913)
+chis =       4149  (0.544791)
+chis =       4097  (0.975173)
+chis =       4154  (0.512166)
+chis =       4144  (0.584536)
+chis =       3970  (0.166737)
+chis =       4123  (0.753165)
+chis =       4078  (0.854794)
+chis =       4198  (0.258192)
+chis =       4269  (0.0569783)
+
+processed 1.3e+09 numbers in 35 seconds. Tue Mar 19 11:37:13 2024
+
+one sided P value (very small numbers are bad)
+P = 0.476
+... after 9 tests running guess [p] = 0.92
+
+
+============
+chi 1/32 (335544320 doubles)
+=======
+expected range [ 191 205 227 284 310 331 ]
+      254.46137
+      246.70636
+      254.40922
+      278.32713
+      218.87376
+      223.21463
+
+processed 3.4e+08 numbers in 1 seconds. Tue Mar 19 11:37:14 2024
+
+one sided P value (very small numbers are bad)
+P = 0.463
+
+
+====================
+completed 10 tests
+10 out of 10 tests ok.
+
+
+Overall summary one sided P-value (smaller numbers bad)
+P = 0.941 : ok
