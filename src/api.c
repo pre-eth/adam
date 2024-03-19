@@ -131,7 +131,10 @@ double adam_dbl(adam_data data, const u64 scale, const bool force_regen)
     if (data->buff_idx == ADAM_BUF_BYTES || force_regen)
         adam(data);
 
-    return ((double) adam_int(data, 64, false) / (double) __UINT64_MAX__) * (double) (scale + !scale);
+    register double out = (double) data->out[data->buff_idx] / (double) __UINT64_MAX__;
+    data->buff_idx += 8;
+
+    return out * (double) (scale + !scale);
 }
 
 int adam_fill(adam_data data, void *buf, u8 width, const u64 amount)
@@ -248,10 +251,10 @@ int adam_dfill(adam_data data, double *buf, const u64 multiplier, const u32 amou
 
     while (tmp >= 8) {
         adam(data);
-        tmp = amount - count;
         out = ((tmp > BUF_SIZE) << 8) | (!(tmp > BUF_SIZE) * tmp);
         dbl_simd_fill(&buf[count], data->out, out);
         count += out;
+        tmp = amount - count;
     }
 
     const u8 leftovers = amount & 7;
@@ -310,6 +313,7 @@ u64 adam_stream(adam_data data, const u64 output, const char *file_name)
         written += leftovers;
     }
 
+    // To force regeneration on next API call for fresh buffer
     data->buff_idx = ADAM_BUF_BYTES;
 
     return written;
