@@ -137,51 +137,27 @@
   #define   TBT_PROPORTION            0.629
 
   /*
-    FOR:    128-bit Walsh-Hadamard Transform Test
+    FOR:   32-bit Von Neumann's Successive Difference Test
+    
+    Simple implementation of a Von Neumann test for randomness that focuses on Mean Squared Successive
+    Difference (MSSD). Sequences are processed 1MB at a time, and the Von Neumann Ratio calculation is
+    applied using all 32-bit quantities in the sample. MSSD is an approximation of variance, and for
+    random sequences will be close to/equal to the variance of the sample. It takes into account the
+    gradual shifts in mean of the sample while calculating a measure of variability, which can be easily
+    converted to p-value after using the VN statistic to calculate the appropriate z-score. P-values are
+    recorded with the same frequency as the Maurer test implementation, meaning the results scale nicely.
 
-    The Walsh-Hadamard Transform (WHT) is a concept I had trouble understanding for a while especially
-    since I don't have a background in stats or math, and I wasn't really familiar with the Discrete
-    Fourier Transform either. But it seems like the basic idea is this: the WHT is a way to map the output
-    of one function to a binary domain of [-1, 1] through a set of "basis functions." This transform is
-    used a lot in areas like compression, quantum computing, and for our purposes, pseudorandom generation
-    and cryptography. All the details and inner workings of the WHT aren't necessary to understand the
-    test, but this is the foundational concept.
+    An easy to implement, classic randomness test, so not much to say. The pass rate is reported as well.
 
-    This test works on 4 32-bit blocks per output sequence, where each sequence is size ADAM_SEQ_SIZE. Each
-    block is converted to binary form, and the 32 bits fed to the basis function:
-
-      F(x) = 1 - 2x (where x is 0 or 1)
-
-    This maps the sequence to another binary sequence where each value is -1 or 1, and all those values are
-    used in a summation AFTER each term is multplied with -1^(i * j), where i is the ith 32-bit block (aka
-    the index of the currently transformed 32-bit number) and j is the index of the currently transformed
-    bit. The summation result for the ith - (i + 4)th blocks (aka their Walsh-Hadamard transforms) are then
-    added to create a test statistic for that 128-bit block, and the result is squared and added to an
-    accumulator for all 128 128-bit blocks of ADAM_SEQ_SIZE. A p-value is then obtained from the statistic.
-
-    We combine all the p-values using Fisher's method just like above with the Maurer test, and report a 
-    final p-value with the rest of the examination results.
-
-    This test is used to detects a general class of randomness defects like frequency and autocorrelation
-    failure. Another goal of this test is to answer to the question if the tested sequence is produced by
-    some binary function. Additionally, it's used in testing several cryptographic criteria like correlation
-    immunity, frequency balance, and strict avalanche. The Walsh-Hadamard is also used in a fast correlation
-    attack for a general class of cryptosystems (a correlation attack assumes the existence of correlations
-    between linear combinations of internal and output bits; fast correlation is based on precomputing data).
-
-    Additonally the number of passing sequences and numbers and distribution of p-values are also reported.
-
-    Oprina, Andrei-George et al. “WALSH-HADAMARD RANDOMNESS TEST AND NEW METHODS OF TEST RESULTS INTEGRATION.”
-    (2009).
+    John von Neumann. "Distribution of the Ratio of the Mean Square Successive Difference to the Variance."
+    Ann. Math. Statist. 12 (4) 367 - 395, December, 1941. https://doi.org/10.1214/aoms/1177731677
   */
-  #define   WH_DF                     128   
-  #define   WH_CRITICAL_VALUE         168.133  
-  #define   WH_STD_DEV                11.313708499 
-  #define   WH_UPPER_BOUND 	          2.5758
-  #define   WH_LOWER_BOUND 	          -2.5758  
+  #define   VNT_N                     250368
+  #define   VNT_MEAN                  2.00000798827
+  #define   VNT_STD_DEV               0.00399705924               
 
   /*
-    FOR:    64-bit Strict Avalanche Criterion (SAC) Test
+    FOR:   64-bit Strict Avalanche Criterion (SAC) Test
 
     64 different probabilities needed here so instead of polluting the header, see the function
     print_avalanche_results() in support.c.
@@ -210,6 +186,53 @@
   */ 
   #define   AVALANCHE_CAT             4
   #define   AVALANCHE_CRITICAL_VALUE  11.345
+
+  /*
+    FOR:   128-bit Walsh-Hadamard Transform Test
+
+    The Walsh-Hadamard Transform (WHT) is a concept I had trouble understanding for a while especially
+    since I don't have a background in stats or math, and I wasn't already familiar with the Discrete
+    Fourier Transform either. But it seems like the basic idea is this: the WHT is a way to map the output
+    of one function to a binary domain of [-1, 1] through a set of "basis functions." This transform is
+    used a lot in areas like compression, quantum computing, and for our purposes, pseudorandom generation
+    and cryptography. All the details and inner workings of the WHT aren't necessary to understand the
+    test, but this is the foundational concept.
+
+    This test works on 4 32-bit blocks per output sequence, where each sequence is size ADAM_SEQ_SIZE. Each
+    block is converted to binary form, and the 32 bits are fed to the basis function:
+
+      F(x) = 1 - 2x (where x is a one of the 32 bits, with value 0 or 1)
+
+    This maps the 32-bit block's binary representation to another binary representation where each value is
+    -1 or 1, and all those values are  used in a summation AFTER each term is multplied with -1^(i . j), where
+    j is the jth 32-bit block (aka the index of the currently transformed 32-bit number) and i is the index
+    of the currently transformed bit (from 0-128). The dot product is done on the binary forms of i and j, so
+    we just do a logical AND operation and then POPCNT to count the 1s. The summation result for the jth -
+    (j + 4)th blocks (aka their Walsh-Hadamard transforms) are then summed together to create a 128-bit test
+    statistic, which is squared and added to an accumulator for all 128 128-bit blocks of ADAM_SEQ_SIZE. A
+    p-value is then obtained from the statistic. We process 128-bits at a time because the paper specifies 
+    a processing size of 2^m for the transformation where m ≥ 7, as this is the minimum value for the normal
+    distribution to be a good approximation of the WHT statistic.
+
+    We combine all the p-values using Fisher's method just like above with the Maurer test, and report a 
+    final p-value with the rest of the examination results. We do multiple meta-combinations to ensure the
+    accuracy doesn't drop off for large sequence values
+
+    This test is used to detects a general class of randomness defects like frequency and autocorrelation
+    failure. Another goal of this test is to answer to the question if the tested sequence is produced by
+    some binary function. Additionally, it's used in testing several cryptographic criteria like correlation
+    immunity, frequency balance, and strict avalanche.
+
+    Additonally the number of passing sequences and numbers, and distribution of p-values, are also reported.
+
+    Oprina, Andrei-George et al. “WALSH-HADAMARD RANDOMNESS TEST AND NEW METHODS OF TEST RESULTS INTEGRATION.”
+    (2009).
+  */
+  #define   WH_DF                     128   
+  #define   WH_CRITICAL_VALUE         168.133  
+  #define   WH_STD_DEV                11.3137084
+  #define   WH_UPPER_BOUND 	          2.5758
+  #define   WH_LOWER_BOUND 	          -2.5758  
 
   typedef struct rng_test {
     u64 init_values[5];
@@ -244,6 +267,7 @@
   #define MIN(a, b) (b ^ ((a ^ b) & -(a < b)))
   #define MAX(a, b) (a ^ ((a ^ b) & -(a < b)))
 
-  void adam_examine(const u64 limit, adam_data data);
-  double cephes_igamc(double a, double x);
+  void    adam_examine(const u64 limit, adam_data data);
+  double  cephes_igamc(double a, double x);
+  double  po_zscore(double z_score);
 #endif
