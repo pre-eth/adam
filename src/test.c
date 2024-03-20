@@ -288,19 +288,18 @@ static void fp_perm(const double num, u64 *perms)
     }
 }
 
-static void update_mcb(const u8 idx, const u64 *freq)
+static void update_mcb_lcb(const u8 idx, const u64 *freq)
 {
+    // Most Common Bytes
     register short i = 3;
     while (freq[idx] > freq[mcb[i]] && i >= 0) {
         mcb[i + 1] = mcb[i];
         --i;
     }
     mcb[i + 1] = idx;
-}
 
-static void update_lcb(const u8 idx, const u64 *freq)
-{
-    register short i = 3;
+    // Least Common Bytes
+    i = 3;
     while (freq[idx] < freq[lcb[i]] && i >= 0) {
         lcb[i + 1] = lcb[i];
         --i;
@@ -559,7 +558,7 @@ static void adam_results(const u64 limit, rng_test *rsl, ent_test *ent)
     // Screen info for pretty printing
     u16 center, indent, swidth;
     get_print_metrics(&center, &indent, &swidth);
-    indent <<= 2;
+    indent += (indent >> 1);
 
     // First get the ENT results out of the way
     ent_results(ent);
@@ -572,8 +571,7 @@ static void adam_results(const u64 limit, rng_test *rsl, ent_test *ent)
     for (; i < BUF_SIZE; ++i) {
         tmp = ent->freq[i];
         average_gaplength += ((double) gaplengths[i] / (double) (tmp - 1));
-        update_lcb(i, ent->freq);
-        update_mcb(i, ent->freq);
+        update_mcb_lcb(i, ent->freq);
     }
 
     print_basic_results(indent, rsl, limit);
@@ -696,8 +694,8 @@ static double MAXLOG = 7.09782712893383996732224E2;
 // 2**1024*(1-MACHEP)
 static double MAXNUM = 1.7976931348623158E308;
 
-static double big    = 4.503599627370496e15;
-static double biginv = 2.22044604925031308085e-16;
+static double big    = 4.503599627370496E15;
+static double biginv = 2.22044604925031308085E-16;
 
 /*
     A[]: Stirling's formula expansion of log gamma
