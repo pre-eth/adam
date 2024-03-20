@@ -13,8 +13,8 @@
 #endif
 
   #define ADAM_BUF_SIZE     256
-  #define ADAM_BUF_BYTES    2048
-  #define ADAM_BUF_BITS     16384
+  #define ADAM_BUF_BYTES    (ADAM_BUF_SIZE << 3)
+  #define ADAM_BUF_BITS     (ADAM_BUF_SIZE << 6)
 
   #define ADAM_FILL_MAX     1000000000
 

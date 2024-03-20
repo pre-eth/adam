@@ -202,7 +202,7 @@ static u8 uuid(adam_data data, const char *strlimit)
 
     register u16 i = 0;
 
-    u64 lower, upper;
+    register u64 lower, upper;
 
     do {
         lower = adam_int(data, 64, false);
@@ -228,7 +228,14 @@ static u8 assessf(adam_data data, const u64 limit, bool ascii_mode)
     if (_buf == NULL)
         return 1;
 
-    adam_dfill(data, _buf, mult, limit);
+    //  We allow higher assess fill values for testing than supported by the API
+    //  so for the larger user provided values we need to split fills
+    if (limit > ADAM_FILL_MAX) {
+        adam_dfill(data, _buf, mult, limit - ADAM_FILL_MAX);
+        adam_dfill(data, &_buf[limit - ADAM_FILL_MAX], mult, ADAM_FILL_MAX);
+    } else {
+        adam_dfill(data, _buf, mult, limit);
+    }
 
     if (ascii_mode) {
         register u32 i = 0;

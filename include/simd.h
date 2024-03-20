@@ -179,5 +179,9 @@
       #define SIMD_SUBPD       _mm256_sub_pd
       #define SIMD_MULPD       _mm256_mul_pd
     #endif
+
+    #define BYTE_REPEAT(n) \
+    bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n]
+    #define BYTE_MASKS 128, 64, 32, 16, 8, 4, 2, 1
   #endif
 #endif

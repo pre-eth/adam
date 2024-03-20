@@ -147,7 +147,7 @@ int adam_fill(adam_data data, void *buf, u8 width, const u64 amount)
 
     // Determine the divisor based on width and bit shifting
     const u16 one_run   = (7 + (64 / width));
-    const u32 leftovers = amount & ((1U << one_run) - 1);
+    const u32 leftovers = amount & ((1UL << one_run) - 1);
 
     register long long runs = amount >> one_run;
 
