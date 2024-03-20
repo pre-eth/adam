@@ -6,7 +6,7 @@ Everything you need to know for testing ADAM with different popular RNG test sui
 
 This is a collection of miscellaneous heuristics and empirical tests implemented by me, just for reporting some notable properties of an output sequence to the user. It's nowhere near as important as the feedback from tried and true testing suites, but it's good for some quick information about the sequences you generate. 
 
-Additionally, the ENT framework is integrated into this collection, for a total of 23 pieces of information that are returned to the user:
+Additionally, the ENT framework is integrated into this collection, for a total of 24 pieces of information that are returned to the user:
 
 - Total sequences generated (also reported in terms of numbers generated per width)
 - Monobit frequency (including bit runs and longest runs of 0s/1s)
@@ -29,8 +29,9 @@ Additionally, the ENT framework is integrated into this collection, for a total 
 - 4-bit Saturation Point Test*
 - 8-bit Maurer Universal Test**
 - 16-bit Topological Binary Test***
-- 32-bit Walsh-Hadamard Transform test****
+- 32-bit Von Neumann Successive Difference Test****
 - 64-bit SAC Test*****
+- 128-bit Walsh-Hadamard Transform test******
 
 *[F. Sulak, “A New Statistical Randomness Test: Saturation Point Test”, IJISS, vol. 2, no. 3, pp. 81–85, 2013.](https://dergipark.org.tr/en/pub/ijiss/issue/16060/167857)
 
@@ -38,9 +39,12 @@ Additionally, the ENT framework is integrated into this collection, for a total 
 
 ***[Alcover, Pedro & Guillamón, Antonio & Ruiz, M.D.C.. (2013). A New Randomness Test for Bit Sequences. Informatica (Netherlands). 24. 339-356. 10.15388/Informatica.2013.399.](https://www.researchgate.net/publication/288404484_A_New_Randomness_Test_for_Bit_Sequences)
 
-****[Oprina, Andrei-George et al. “WALSH-HADAMARD RANDOMNESS TEST AND NEW METHODS OF TEST RESULTS INTEGRATION.” (2009).](https://www.semanticscholar.org/paper/WALSH-HADAMARD-RANDOMNESS-TEST-AND-NEW-METHODS-OF-Oprina-Popescu/42de0c0c663461bfded8e5b29171e40f34ffed85)
+****[John von Neumann. "Distribution of the Ratio of the Mean Square Successive Difference to the Variance." Ann. Math. Statist. 12 (4) 367 - 395, December, 1941. https://doi.org/10.1214/aoms/1177731677](https://projecteuclid.org/journals/annals-of-mathematical-statistics/volume-12/issue-4/Distribution-of-the-Ratio-of-the-Mean-Square-Successive-Difference/10.1214/aoms/1177731677.full?tab=ArticleFirstPage)
 
 *****[Hernandez-Castro, Julio & Sierra, José & Seznec, Andre & Izquierdo, Antonio & Ribagorda, Arturo. (2005). The strict avalanche criterion randomness test. Mathematics and Computers in Simulation. 68. 1-7. 10.1016/j.matcom.2004.09.001.](https://www.researchgate.net/publication/222525312_The_strict_avalanche_criterion_randomness_test)
+
+******[Oprina, Andrei-George et al. “WALSH-HADAMARD RANDOMNESS TEST AND NEW METHODS OF TEST RESULTS INTEGRATION.” (2009).](https://www.semanticscholar.org/paper/WALSH-HADAMARD-RANDOMNESS-TEST-AND-NEW-METHODS-OF-Oprina-Popescu/42de0c0c663461bfded8e5b29171e40f34ffed85)
+
 
 ## NIST
 
