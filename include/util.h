@@ -19,7 +19,7 @@
 	u64      a_to_u(const char *s, const u64 min, const u64 max);
 	u8       gen_uuid(const u64 higher, const u64 lower, u8 *buf);
 	u8 		 nearest_space(const char *str, u8 offset);
-	double	 wh_transform(const u16 idx, const u32 test);
+	double	 wh_transform(const u16 idx, const u32 test, const u8 offset);
 	void 	 print_ascii_bits(u64 *_ptr, const u64 limit);
 	void 	 print_basic_results(const u16 indent, const rng_test *rsl, const u64 limit);
 	void	 print_mfreq_results(const u16 indent, const rng_test *rsl);
@@ -31,6 +31,7 @@
 	void 	 print_sp_results(const u16 indent, const rng_test *rsl, const u64 *sat_dist, const u64 *sat_range);
 	void 	 print_maurer_results(const u16 indent, rng_test *rsl, const u64 sequences);
 	void	 print_tbt_results(const u16 indent, const u64 sequences, const u64 tbt_prop, const u64 tbt_pass);
-	void 	 print_wht_results(const u16 indent, const double fisher_value, const u64 seq_pass, const u64 num_pass, const u64 seq, const u64 *pdist);
+	void	 print_vnt_results(const u16 indent, const double p_value, const double fisher, const u64 sequences, const u64 pass);
 	void	 print_avalanche_results(const u16 indent, const rng_test *rsl, const u64 *ham_dist);
+	void 	 print_wht_results(const u16 indent, double p_value, const double fisher_value, const u64 seq_pass, const u64 num_pass, const u64 seq, const u64 *pdist);
 #endif   

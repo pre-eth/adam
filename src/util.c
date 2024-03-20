@@ -7,7 +7,8 @@
 #include "../include/test.h"
 #include "../include/util.h"
 
-double wh_transform(const u16 idx, const u32 test)
+#ifdef __AARCH64_SIMD__
+double wh_transform(const u16 idx, const u32 test, const u8 offset)
 {
     const int8x8_t bitmask = { 128, 64, 32, 16, 8, 4, 2, 1 };
     const int16x8_t masks  = vmovl_s8(bitmask);
@@ -48,45 +49,53 @@ double wh_transform(const u16 idx, const u32 test)
     bytes.val[3] = vsubq_s16(one, bytes.val[3]);
 
     // Now the binary sequence has been transformed into a sequence of 1s and -1s
+    vst1q_s16_x4(&exponents[0], bytes);
 
-    // This handles the i * j stuff for the powers
-    int16x8x4_t powers;
-
-    // all coefficients from 31..0 (the i values)
-    powers.val[0] = vmovl_s8(vcreate_s8(506097522914230528));
-    powers.val[1] = vmovl_s8(vcreate_s8(1084818905618843912));
-    powers.val[2] = vmovl_s8(vcreate_s8(1663540288323457296));
-    powers.val[3] = vmovl_s8(vcreate_s8(2242261671028070680));
-
-    // multiply by current block idx, aka the j value
-    const int16x8_t j = vdupq_n_s16(idx);
-    powers.val[0]     = vmulq_s16(powers.val[0], j);
-    powers.val[1]     = vmulq_s16(powers.val[1], j);
-    powers.val[2]     = vmulq_s16(powers.val[2], j);
-    powers.val[3]     = vmulq_s16(powers.val[3], j);
-
-    // store computed powers
-    vst1q_s16_x4(&exponents[0], powers);
+    // This handles the i . j dot product stuff for the powers
 
     // raises all -1 to the computed powers
     // reuse exponents array
-    register u8 ctr = 0;
+    const u8 limit        = offset + 32;
+    register u8 ctr       = offset;
+    register double final = 0;
     do {
-        exponents[ctr] = (int16_t) pow(-1.0, (double) exponents[ctr]);
-    } while (++ctr < 32);
+        // mask here is important because ctr needs to step through 128-bit blocks,
+        // so offset needs modulo operation before use
+        exponents[ctr & 31] *= (int16_t) pow(-1.0, (double) POPCNT(idx & ctr));
 
-    // multiply transformed binary terms with computed powers and sum
-    powers       = vld1q_s16_x4(&exponents[0]);
-    bytes.val[0] = vmulq_s16(bytes.val[0], powers.val[0]);
-    bytes.val[1] = vmulq_s16(bytes.val[1], powers.val[1]);
-    bytes.val[2] = vmulq_s16(bytes.val[2], powers.val[2]);
-    bytes.val[3] = vmulq_s16(bytes.val[3], powers.val[3]);
+        // after multiplying transformed binary terms with computed powers, sum to total
+        // final += (double) exponents[ctr & 31] * pow(-1.0, (double) POPCNT(idx & ctr));
+    } while (++ctr < limit);
 
-    const int16_t final = vaddvq_s16(bytes.val[0]) + vaddvq_s16(bytes.val[1]) + vaddvq_s16(bytes.val[2]) + vaddvq_s16(bytes.val[3]);
+    bytes = vld1q_s16_x4(&exponents[0]);
+    final = vaddvq_s16(bytes.val[0]) + vaddvq_s16(bytes.val[1]) + vaddvq_s16(bytes.val[2]) + vaddvq_s16(bytes.val[3]);
 
-    // divide by std deviation as per paper and return
-    return (double) final / WH_STD_DEV;
+    return final;
 }
+#else
+double wh_transform(const u16 idx, const u32 test, const u8 offset)
+{
+    u8 bytes[sizeof(u32)] ALIGN(SIMD_LEN);
+    MEMCPY(&bytes[0], &test, sizeof(u32));
+
+    // Explicitly use AVX2 even if AVX512 is available to match "pace" set by ARM implementation
+    const __m256i masks = _m256_setr_epi8(BYTE_MASKS, BYTE_MASKS, BYTE_MASKS, BYTE_MASKS);
+    const __m256i r1    = _m256_setr_epi8(BYTE_REPEAT(3), BYTE_REPEAT(2), BYTE_REPEAT(1), BYTE_REPEAT(0));
+
+    r1 = _m256_and_epi8(r1, masks);
+    r1 = _m256_cmpeq_epi8(r1, masks);
+
+    register u32 movemask = _mm256_movemask_epi8(r1);
+    register u8 ctr       = offset;
+    register double final = 0;
+    do {
+        final += (double) (1 - ((movemask & 1) << 1)) * pow(-1.0, (double) POPCNT(idx & ctr));
+        ++ctr;
+    } while (movemask >>= 1);
+
+    return final;
+}
+#endif
 
 void get_print_metrics(u16 *center, u16 *indent, u16 *swidth)
 {
@@ -278,10 +287,6 @@ static void print_binary(u8 *restrict _bptr, u64 num)
 #else
 static void print_binary(u8 *restrict _bptr, u64 num)
 {
-#define BYTE_REPEAT(n) \
-    bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n]
-#define BYTE_MASKS 128, 64, 32, 16, 8, 4, 2, 1
-
     u8 bytes[sizeof(u64)];
 
     MEMCPY(bytes, &num, sizeof(u64));
@@ -646,7 +651,7 @@ void print_maurer_results(const u16 indent, rng_test *rsl, const u64 sequences)
 
     printf("\033[1;34m\033[%uCMaurer Universal Statistic:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, final_pvalue);
     printf("\033[2m\033[%uCa. Raw Fisher's Method Value:\033[m %1.3lf\n", indent - 2, rsl->maurer_fisher);
-    printf("\033[2m\033[%uC                   b. Mean:\033[m %1.7lf (exp. %1.7lf : %-1.7lf)\n", indent, rsl->maurer_mean, MAURER_EXPECTED, rsl->maurer_mean - MAURER_EXPECTED);
+    printf("\033[2m\033[%uC                   b. Mean:\033[m %1.7lf (exp. %1.7lf : %+1.7lf)\n", indent, rsl->maurer_mean, MAURER_EXPECTED, rsl->maurer_mean - MAURER_EXPECTED);
     printf("\033[2m\033[%uC              c. Pass Rate:\033[m %llu/%llu (%llu%%)\n", indent, rsl->maurer_pass, sequences, (u64) (pass_rate * 100.0));
     printf("\033[2m\033[%uC                      d. C:\033[m %1.7lf\n", indent, rsl->maurer_c);
     printf("\033[2m\033[%uC     e. Standard Deviation:\033[m %1.7lf\n", indent, rsl->maurer_std_dev);
@@ -666,27 +671,14 @@ void print_tbt_results(const u16 indent, const u64 sequences, const u64 tbt_prop
     printf("\033[2m\033[%uC             b. Proportion:\033[m %.3lf (min. %.3f)\n", indent, proportion, TBT_PROPORTION);
 }
 
-void print_wht_results(const u16 indent, const double fisher_value, const u64 seq_pass, const u64 num_pass, const u64 seq, const u64 *pdist)
+void print_vnt_results(const u16 indent, const double p_value, const double fisher, const u64 sequences, const u64 pass)
 {
-    const u64 num_total        = seq * 489;
-    const double u32_pass_rate = (double) num_pass / (double) (num_total << 7);
-    const double seq_pass_rate = (double) seq_pass / (double) num_total;
-    const u64 expected         = (double) num_total * 0.1;
+    const double seq_pass_rate = (double) pass / (double) sequences;
+    const u8 suspect_level     = 32 - (p_value <= ALPHA_LEVEL);
 
-    // we don't explicitly halve the df value because chi-square for fisher method
-    // value uses 2K df, so after halving it becomes the original value k
-    const double final_pvalue = cephes_igamc(seq, fisher_value / 2);
-    const u8 suspect_level    = 32 - (final_pvalue <= ALPHA_LEVEL);
-
-    printf("\033[1;34m\033[%uC         WH Transform Test:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, final_pvalue);
-    printf("\033[2m\033[%uCa. Raw Fisher's Method Value:\033[m %1.3lf\n", indent - 2, fisher_value);
-    printf("\033[2m\033[%uC              b. Pass Rate:\033[m %llu/%llu (%llu%% : SEQUENCES)\n", indent, seq_pass, num_total, (u64) (seq_pass_rate * 100.0));
-    printf("\033[2m\033[%uC              c. Pass Rate:\033[m %llu/%llu (%llu%% : U32)\n", indent, num_pass, num_total << 7, (u64) (u32_pass_rate * 100.0));
-    printf("\033[2m\033[%uC             d. (0.0, 0.2):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pdist[0], expected, pdist[0] - expected);
-    printf("\033[2m\033[%uC             e. [0.2, 0.4):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pdist[1], expected, pdist[1] - expected);
-    printf("\033[2m\033[%uC             f. [0.4, 0.6):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pdist[2], expected, pdist[2] - expected);
-    printf("\033[2m\033[%uC             g. [0.6, 0.8):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pdist[3], expected, pdist[3] - expected);
-    printf("\033[2m\033[%uC             h. [0.8, 1.0):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pdist[4], expected, pdist[4] - expected);
+    printf("\033[1;34m\033[%uC    Von Neumann Ratio Test:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
+    printf("\033[2m\033[%uCa. Raw Fisher's Method Value:\033[m %1.3lf\n", indent - 2, fisher);
+    printf("\033[2m\033[%uC              b. Pass Rate:\033[m %llu/%llu (%llu%%)\n", indent, pass, sequences, (u64) (seq_pass_rate * 100.0));
 }
 
 void print_avalanche_results(const u16 indent, const rng_test *rsl, const u64 *ham_dist)
@@ -761,4 +753,24 @@ void print_avalanche_results(const u16 indent, const rng_test *rsl, const u64 *h
     printf("\033[2m\033[%uC               d. [16, 32):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad, (u64) quadrants[1], (u64) bin_counts[1], (u64) quadrants[1] - (u64) bin_counts[1]);
     printf("\033[2m\033[%uC               e. [32, 48):\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad, (u64) quadrants[2], (u64) bin_counts[2], (u64) quadrants[2] - (u64) bin_counts[2]);
     printf("\033[2m\033[%uC               f. [48, 64]:\033[m %*llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pad, (u64) quadrants[3], (u64) bin_counts[3], (u64) quadrants[3] - (u64) bin_counts[3]);
+}
+
+void print_wht_results(const u16 indent, double p_value, const double fisher_value, const u64 seq_pass, const u64 num_pass, const u64 seq, const u64 *pdist)
+{
+    const u64 num_total        = seq * 489;
+    const double u32_pass_rate = (double) num_pass / (double) (num_total << 7);
+    const double seq_pass_rate = (double) seq_pass / (double) num_total;
+    const u64 expected         = (double) num_total * 0.1;
+
+    const u8 suspect_level = 32 - (p_value <= ALPHA_LEVEL);
+
+    printf("\033[1;34m\033[%uC         WH Transform Test:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
+    printf("\033[2m\033[%uCa. Raw Fisher's Method Value:\033[m %1.3lf\n", indent - 2, fisher_value);
+    printf("\033[2m\033[%uC              b. Pass Rate:\033[m %llu/%llu (%llu%% : SEQUENCES)\n", indent, seq_pass, num_total, (u64) (seq_pass_rate * 100.0));
+    printf("\033[2m\033[%uC              c. Pass Rate:\033[m %llu/%llu (%llu%% : U128)\n", indent, num_pass, num_total << 7, (u64) (u32_pass_rate * 100.0));
+    printf("\033[2m\033[%uC             d. (0.0, 0.2):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pdist[0], expected, pdist[0] - expected);
+    printf("\033[2m\033[%uC             e. [0.2, 0.4):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pdist[1], expected, pdist[1] - expected);
+    printf("\033[2m\033[%uC             f. [0.4, 0.6):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pdist[2], expected, pdist[2] - expected);
+    printf("\033[2m\033[%uC             g. [0.6, 0.8):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pdist[3], expected, pdist[3] - expected);
+    printf("\033[2m\033[%uC             h. [0.8, 1.0):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, pdist[4], expected, pdist[4] - expected);
 }
