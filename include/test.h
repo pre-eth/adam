@@ -7,6 +7,26 @@
   /*    NOTE: All critical values use an alpha level of 0.01    */
   #define   ALPHA_LEVEL               0.01
 
+  // FOR:   Chaotic seed distribution 
+  #define   CHSEED_CAT                5
+  #define   CHSEED_CRITICAL_VALUE     13.277
+  #define   CHSEED_PROB               (1.0 / 5.0)
+
+  typedef struct basic_test {
+    u64 init_values[5];
+    u64 sequences;
+    u64 up_runs;
+    u64 longest_up;
+    u64 down_runs;
+    u64 longest_down;
+    double avg_gap;
+    u64 mcb[5];
+    u64 lcb[5];
+    double avg_chseed;
+    u64 chseed_exp;
+    u64 chseed_dist[CHSEED_CAT];
+  } basic_test;
+
   // FOR:   Range distribution of output values
   #define   RANGE_CAT                 5
   #define   RANGE_CRITICAL_VALUE      13.277
@@ -16,14 +36,24 @@
   #define   RANGE_PROB4               0.003891050583657
   #define   RANGE_PROB5               0.996093690626375
 
+  typedef struct range_test {
+    u64 max;
+    u64 min;
+    u64 odd;
+    u64 range_dist[RANGE_CAT];
+  } range_test;
+
   // FOR:   Monobit frequency (bit distribution)
   #define   MFREQ_CRITICAL_VALUE      6.635
   #define   MFREQ_PROB                0.5
 
-  // FOR:   Chaotic seed distribution 
-  #define   CHSEED_CAT                5
-  #define   CHSEED_CRITICAL_VALUE     13.277
-  #define   CHSEED_PROB               (1.0 / 5.0)
+  typedef struct mfreq_test {
+    u64 mfreq;
+    u64 one_runs;
+    u64 longest_one;
+    u64 zero_runs;
+    u64 longest_zero;
+  } mfreq_test;
 
   // FOR:   Floating point distribution upon converting integer output accordingly
   #define   FPF_CAT                   10
@@ -40,6 +70,16 @@
   #define   FP_MAX_CAT                8
   #define   FP_MAX_PROB               0.125
   #define   FP_MAX_CRITICAL_VALUE     18.475
+
+  typedef struct fp_test {
+    double avg_fp;
+    u64 perms;
+    u64 fp_max_runs;
+    u64 fpf_dist[FPF_CAT];
+    u64 fpf_quad[4];
+    u64 fp_perms[FP_PERM_CAT];
+    u64 fp_max_dist[FP_MAX_CAT];
+  } fp_test;
 
   /*
     FOR:   4-bit Saturation Point Test
@@ -113,6 +153,17 @@
   #define   MAURER_EXPECTED           7.1836656 
   #define   MAURER_VARIANCE           3.2386622
 
+  typedef struct maurer_test {
+    u64 trials;
+    double stat;
+    u8 *bytes;
+    u64 pass;
+    double mean;
+    double c;
+    double std_dev;
+    double fisher;
+  } maurer_test;
+
   /*
     FOR:   16-bit Topological Binary Test (TBT)
 
@@ -136,14 +187,22 @@
   #define   TBT_CRITICAL_VALUE        41241
   #define   TBT_PROPORTION            0.629
 
+  typedef struct tb_test {
+    u64 trials;
+    u64 total_u16;
+    double fisher;
+    u64 prop_sum;
+    u64 pass_rate;
+  } tb_test;
+
   /*
     FOR:   32-bit Von Neumann's Successive Difference Test
     
     Simple implementation of a Von Neumann test for randomness that focuses on Mean Squared Successive
     Difference (MSSD). Sequences are processed 1MB at a time, and the Von Neumann Ratio calculation is
     applied using all 32-bit quantities in the sample. MSSD is an approximation of variance, and for
-    random sequences will be close to/equal to the variance of the sample. It takes into account the
-    gradual shifts in mean of the sample while calculating a measure of variability, which can be easily
+    random sequences will be close to/equal to the variance of the sample. Gradual shifts in mean of the
+    numbers are accounted for while calculating a measure of variability for the sample, which can be easily
     converted to p-value after using the VN statistic to calculate the appropriate z-score. P-values are
     recorded with the same frequency as the Maurer test implementation, meaning the results scale nicely.
 
@@ -155,6 +214,14 @@
   #define   VNT_N                     250368
   #define   VNT_MEAN                  2.00000798827
   #define   VNT_STD_DEV               0.00399705924               
+
+  typedef struct vn_test {
+    u64 trials;
+    double p_value;
+    double fisher;
+    u64 pass_rate;
+    u64 pdist[10];
+  } vn_test;
 
   /*
     FOR:   64-bit Strict Avalanche Criterion (SAC) Test
@@ -232,35 +299,27 @@
   #define   WH_CRITICAL_VALUE         168.133  
   #define   WH_STD_DEV                11.3137084
   #define   WH_UPPER_BOUND 	          2.5758
-  #define   WH_LOWER_BOUND 	          -2.5758  
+  #define   WH_LOWER_BOUND 	          -2.5758 
+
+  typedef struct wh_test {
+    u64 trials;
+    double p_value;
+    double fisher;
+    u64 pass_seq;
+    u64 pass_num;
+    u64 dist[10];
+  } wh_test;
 
   typedef struct rng_test {
-    u64 init_values[5];
-    u64 sequences;
-    u64 max;
-    u64 min;
-    u64 odd;
-    u64 up_runs;
-    u64 longest_up;
-    u64 down_runs;
-    u64 longest_down;
-    double avg_gap; 
-    u64 mfreq;
-    u64 one_runs;
-    u64 longest_one;
-    u64 zero_runs;
-    u64 longest_zero;
-    double avg_fp;
-    u64 perms;
-    double avg_chseed;
-    u64 fp_max_runs;
-    double maurer_stat;
-    u8 *maurer_bytes;
-    u64 maurer_pass;
-    double maurer_mean;
-    double maurer_c;
-    double maurer_std_dev;
-    double maurer_fisher;
+    basic_test *basic;
+    range_test *range;
+    mfreq_test *mfreq;
+    fp_test *fp;
+    maurer_test *mau;
+    tb_test *topo;
+    vn_test *von;
+    wh_test *walsh;
+    ent_test *ent;
   } rng_test;
 
   // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax

@@ -32,18 +32,8 @@ struct adam_data_s {
     u16 buff_idx;
 };
 
-static u64 range_dist[RANGE_CAT];
-static u64 chseed_dist[CHSEED_CAT];
-
 static u64 gaps[256];
 static u64 gaplengths[256];
-static u8 lcb[5], mcb[5];
-
-static u64 fpfreq_dist[FPF_CAT];
-static u64 fpfreq_quadrants[4];
-static u64 fp_perm_dist[FP_PERM_CAT];
-static u64 fp_max_dist[FP_MAX_CAT];
-static u64 fp_max_runs;
 
 static u64 sat_range[SP_CAT + 1];
 static u64 sat_dist[SP_DIST];
@@ -53,14 +43,11 @@ static u64 maurer_ctr;
 static double maurer_k;
 
 static u64 *tbt_array;
-static u64 tbt_pass, tbt_prop_sum;
 
 static u64 vnt_pass;
 static double vnt_fisher, vnt_fisher_gb;
 
 static u16 wh_gb_ctr;
-static u64 wh_pass_seq, wh_pass_num;
-static u64 wh_pdist[10];
 static double wh_fisher, wh_fisher_mb, wh_fisher_gb;
 
 static u64 ham_dist[65];
@@ -106,43 +93,44 @@ static void sat_point(const u8 *nums)
     } while (i < ADAM_BUF_BYTES);
 }
 
-static void maurer(rng_test *rsl)
+static void maurer(maurer_test *mau)
 {
     register u32 i = 0;
     for (; i < MAURER_Q; ++i)
-        maurer_arr[rsl->maurer_bytes[i]] = i;
+        maurer_arr[mau->bytes[i]] = i;
 
     register double sum = 0.0;
 
     i = 0;
     for (int i = MAURER_Q; i < MAURER_Q + maurer_k; ++i) {
-        sum += log(i - maurer_arr[rsl->maurer_bytes[i]]) / log(2);
-        maurer_arr[rsl->maurer_bytes[i]] = i;
+        sum += log(i - maurer_arr[mau->bytes[i]]) / log(2);
+        maurer_arr[mau->bytes[i]] = i;
     }
 
     // These 3 lines were pulled from the NIST STS implementation
     const double phi     = sum / maurer_k;
-    const double x       = fabs(phi - MAURER_EXPECTED) / (sqrt(2) * rsl->maurer_std_dev);
+    const double x       = fabs(phi - MAURER_EXPECTED) / (sqrt(2) * mau->std_dev);
     const double p_value = erfc(x);
 
-    rsl->maurer_mean += phi;
-    rsl->maurer_pass += (p_value > ALPHA_LEVEL);
-    rsl->maurer_fisher += log(p_value);
+    mau->mean += phi;
+    mau->pass += (p_value > ALPHA_LEVEL);
+    mau->fisher += log(p_value);
 }
 
-static void tbt(const u16 *nums)
+static void tbt(const u16 *nums, tb_test *topo)
 {
     static u8 ctr;
 
     register u16 i = 0;
 
-    // Checks if this 10-bit pattern has been recorded
+    // Checks if this 16-bit pattern has been recorded
     // Each run gives us 1024 u16 which is the TBT_SEQ_SIZE
     do
         tbt_array[nums[i] >> 6] |= 1ULL << (nums[i] & 63);
     while (++i < (ADAM_BUF_BYTES >> 1));
 
-    // 65536 / 1024 u16 per iteration = 64 iterations
+    // 65536 / 1024 u16 per iteration = 64 iterations before
+    // we can update our test metrics
     if (++ctr == 64) {
         register u16 different;
         i = different = 0;
@@ -150,17 +138,15 @@ static void tbt(const u16 *nums)
             different += POPCNT(tbt_array[i]);
         while (++i < 1024);
 
-        tbt_prop_sum += different;
-        tbt_pass += (different >= TBT_CRITICAL_VALUE);
-
-        const double proportion = different / TBT_SEQ_SIZE;
+        topo->prop_sum += different;
+        topo->pass_rate += (different >= TBT_CRITICAL_VALUE);
 
         MEMSET(&tbt_array[0], 0, sizeof(u64) * 1024);
         ctr = 0;
     }
 }
 
-static void vnt(const u32 *nums)
+static void vnt(const u32 *nums, vn_test *von)
 {
     register u32 i      = 0;
     register double avg = 0.0;
@@ -184,11 +170,19 @@ static void vnt(const u32 *nums)
 
     const double stat    = ((numerator / denominator) - VNT_MEAN) / VNT_STD_DEV;
     const double p_value = po_zscore(stat);
-    vnt_pass += (p_value > ALPHA_LEVEL);
+    von->pass_rate += (p_value > ALPHA_LEVEL);
     vnt_fisher += log(p_value);
 }
 
-static void wh_test(const u32 *nums)
+static void sac(const u64 *restrict run1, const u64 *restrict run2)
+{
+    register u16 i = 0;
+    do
+        ++ham_dist[POPCNT(run1[i] ^ run2[i])];
+    while (++i < BUF_SIZE);
+}
+
+static void walsh_test(const u32 *nums, wh_test *walsh)
 {
     register double stat, sum;
     stat = sum = 0.0;
@@ -202,29 +196,20 @@ static void wh_test(const u32 *nums)
             + wh_transform(i >> 2, nums[i + 2], 64)
             + wh_transform(i >> 2, nums[i + 3], 96);
         stat /= WH_STD_DEV;
-        wh_pass_num += (stat >= WH_LOWER_BOUND && stat <= WH_UPPER_BOUND);
+        walsh->pass_num += (stat >= WH_LOWER_BOUND && stat <= WH_UPPER_BOUND);
         sum += pow(stat, 2);
     }
 
     // Now we've compiled 128 statistics, obtain a p-value
     const double p_value = cephes_igamc(WH_DF / 2, sum / 2);
-    // __builtin_printf("pvalue: %1.2lf\n", p_value);
-    wh_pass_seq += (sum <= WH_CRITICAL_VALUE);
+    walsh->pass_seq += (sum <= WH_CRITICAL_VALUE);
 
     // Add to Fisher method accumulator and record in p-value dist
     wh_fisher += log(p_value);
-    ++wh_pdist[(u8) (p_value * 10.0)];
+    walsh->dist[(u8) (p_value * 10.0)]++;
 }
 
-static void sac(const u64 *restrict run1, const u64 *restrict run2)
-{
-    register u16 i = 0;
-    do
-        ++ham_dist[POPCNT(run1[i] ^ run2[i])];
-    while (++i < BUF_SIZE);
-}
-
-static void fp_max8(const u32 *nums)
+static void fp_max8(const u32 *nums, u64 *max_runs, u64 *max_dist)
 {
     register u16 idx = 1;
     register u16 max, count;
@@ -238,8 +223,8 @@ static void fp_max8(const u32 *nums)
         last = d;
         ++idx;
         if (++count == FP_MAX_CAT) {
-            ++fp_max_dist[max];
-            ++fp_max_runs;
+            ++max_dist[max];
+            *max_runs += 1;
             max = count = 0;
             last        = (double) nums[idx] / (double) __UINT32_MAX__;
             ++idx;
@@ -247,7 +232,7 @@ static void fp_max8(const u32 *nums)
     } while (idx < (BUF_SIZE << 1));
 }
 
-static void fp_perm(const double num, u64 *perms)
+static void fp_perm(const double num, u64 *perms, u64 *perm_dist)
 {
     static int perm_idx;
     static double tuple[FP_PERM_SIZE + 1];
@@ -283,12 +268,12 @@ static void fp_perm(const double num, u64 *perms)
             --perm_idx;
         }
 
-        ++fp_perm_dist[f];
+        ++perm_dist[f];
         perm_idx = 0;
     }
 }
 
-static void update_mcb_lcb(const u8 idx, const u64 *freq)
+static void update_mcb_lcb(const u8 idx, const u64 *freq, u64 *mcb, u64 *lcb)
 {
     // Most Common Bytes
     register short i = 3;
@@ -323,7 +308,7 @@ static void gap_lengths(u64 num)
     } while (num > 0);
 }
 
-static void tally_runs(const u64 num, rng_test *rsl)
+static void tally_runs(const u64 num, basic_test *basic)
 {
     // 0 = up, 1 = down, -1 = init
     static short direction = -1;
@@ -332,25 +317,25 @@ static void tally_runs(const u64 num, rng_test *rsl)
 
     if (num > prev) {
         if (direction != 0) {
-            ++rsl->up_runs;
-            rsl->longest_down = MAX(rsl->longest_down, curr_down);
-            curr_down         = 0;
-            direction         = 0;
+            ++basic->up_runs;
+            basic->longest_down = MAX(basic->longest_down, curr_down);
+            curr_down           = 0;
+            direction           = 0;
         }
         ++curr_up;
     } else if (num < prev) {
         if (direction != 1) {
-            ++rsl->down_runs;
-            rsl->longest_up = MAX(rsl->longest_up, curr_up);
-            curr_up         = 0;
-            direction       = 1;
+            ++basic->down_runs;
+            basic->longest_up = MAX(basic->longest_up, curr_up);
+            curr_up           = 0;
+            direction         = 1;
         }
         ++curr_down;
     }
     prev = num;
 }
 
-static void tally_bitruns(u64 num, rng_test *rsl)
+static void tally_bitruns(u64 num, mfreq_test *mfreq)
 {
     // 0 = 0, 1 = 1, -1 = init
     static short direction = -1;
@@ -359,25 +344,25 @@ static void tally_bitruns(u64 num, rng_test *rsl)
     do {
         if (num & 1) {
             if (direction != 1) {
-                ++rsl->one_runs;
-                rsl->longest_zero = MAX(rsl->longest_zero, curr_zero);
-                curr_zero         = 0;
-                direction         = 1;
+                ++mfreq->one_runs;
+                mfreq->longest_zero = MAX(mfreq->longest_zero, curr_zero);
+                curr_zero           = 0;
+                direction           = 1;
             }
             ++curr_one;
         } else {
             if (direction != 0) {
-                ++rsl->zero_runs;
-                rsl->longest_one = MAX(rsl->longest_one, curr_one);
-                curr_one         = 0;
-                direction        = 0;
+                ++mfreq->zero_runs;
+                mfreq->longest_one = MAX(mfreq->longest_one, curr_one);
+                curr_one           = 0;
+                direction          = 0;
             }
             ++curr_zero;
         }
     } while (num >>= 1);
 }
 
-static void chseed_unif(const double *restrict chseeds, double *avg_chseed)
+static void chseed_unif(const double *restrict chseeds, u64 *chseed_dist, double *avg_chseed)
 {
     register u8 i = 0, idx;
     do {
@@ -391,7 +376,7 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
 {
     // Chaotic seeds all occur within (0.0, 0.5).
     // This function tracks their distribution and we check the uniformity at the end.
-    chseed_unif(chseeds, &rsl->avg_chseed);
+    chseed_unif(chseeds, &rsl->basic->chseed_dist[0], &rsl->basic->avg_chseed);
 
     // Saturation Point Test
     // Determines index where all 2^4 values have appeared at least once
@@ -400,9 +385,9 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
     // Maurer Universal Test
     // Checks the level of compressiiblity of output, assuming 1MB of
     // bytes have been accumulated
-    MEMCPY(&rsl->maurer_bytes[maurer_ctr << 11], _ptr, ADAM_BUF_BYTES);
+    MEMCPY(&rsl->mau->bytes[maurer_ctr << 11], _ptr, ADAM_BUF_BYTES);
     if (++maurer_ctr == TESTING_BITS / SEQ_SIZE) {
-        maurer(rsl);
+        maurer(rsl->mau);
         maurer_ctr = 0;
 
         /*
@@ -419,7 +404,7 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
         wh_fisher = 0.0;
 
         // Von Neumann Ratio Test
-        vnt((u32 *) rsl->maurer_bytes);
+        vnt((u32 *) rsl->mau->bytes, rsl->von);
 
         // Counter to determine whether we need to scale even more for (>= 1GB) sequences
         if (++wh_gb_ctr == 1000) {
@@ -438,7 +423,7 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
 
     // Topological Binary Test
     // Checks for distinct patterns in a certain collection of numbers
-    tbt((u16 *) _ptr);
+    tbt((u16 *) _ptr, rsl->topo);
 
     // Strict Avalanche Criterion (SAC) Test
     // Records the Hamming Distance between this number and the number that
@@ -448,41 +433,41 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
     // Walsh-Hadamard Transform Test
     // Related to the frequency and autocorellation test, computes a
     // test statistic per u32 from a transformed binary sequence
-    wh_test((u32 *) _ptr);
+    walsh_test((u32 *) _ptr, rsl->walsh);
 
     // 32-bit floating point max-of-T test with T = 8
-    fp_max8((u32 *) _ptr);
+    fp_max8((u32 *) _ptr, &rsl->fp->fp_max_runs, &rsl->fp->fp_max_dist[0]);
 
     register u16 i = 0;
     register double d;
     u64 num;
     do {
         num = _ptr[i];
-        rsl->odd += (num & 1);
-        rsl->mfreq += POPCNT(num);
+        rsl->range->odd += (num & 1);
+        rsl->mfreq->mfreq += POPCNT(num);
 
         // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
-        rsl->min = MIN(rsl->min, num);
-        rsl->max = MAX(rsl->max, num);
+        rsl->range->min = MIN(rsl->range->min, num);
+        rsl->range->max = MAX(rsl->range->max, num);
 
         // Convert this number to float with same logic used for returning FP results
         // Then record float for FP freq distribution in (0.0, 1.0)
-        rsl->avg_fp += d = ((double) num / (double) __UINT64_MAX__);
-        ++fpfreq_dist[(u8) (d * 10.0)];
-        ++fpfreq_quadrants[(d >= 0.25) + (d >= 0.5) + (d >= 0.75)];
+        rsl->fp->avg_fp += d = ((double) num / (double) __UINT64_MAX__);
+        ++rsl->fp->fpf_dist[(u8) (d * 10.0)];
+        ++rsl->fp->fpf_quad[(d >= 0.25) + (d >= 0.5) + (d >= 0.75)];
 
         // Collect this floating point value into the permutations tuple
         // Once the tuple reaches 5 elements, the permutation is recorded
-        fp_perm(d, &rsl->perms);
+        fp_perm(d, &rsl->fp->perms, rsl->fp->fp_perms);
 
         // Record range that this number falls in
-        ++range_dist[(num >= __UINT32_MAX__) + (num >= (1ULL << 40)) + (num >= (1ULL << 48)) + (num >= (1ULL << 56))];
+        ++rsl->range->range_dist[(num >= __UINT32_MAX__) + (num >= (1ULL << 40)) + (num >= (1ULL << 48)) + (num >= (1ULL << 56))];
 
         // Tracks the amount of runs AND longest run, both increasing and decreasing
-        tally_runs(num, rsl);
+        tally_runs(num, rsl->basic);
 
         // Tracks the amount of runs AND longest runs for the bits in this number
-        tally_bitruns(num, rsl);
+        tally_bitruns(num, rsl->mfreq);
 
         // Checks gap lengths
         gap_lengths(num);
@@ -491,8 +476,6 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
         ent_loop((const u8 *) &num);
     } while (++i < BUF_SIZE);
 }
-
-static void adam_results(const u64 limit, rng_test *rsl, ent_test *ent);
 
 static void run_rng(adam_data data)
 {
@@ -503,42 +486,85 @@ static void run_rng(adam_data data)
     reseed(data->seed, data->work_buffer, &data->nonce, &data->cc);
 }
 
+static void adam_results(const u64 limit, rng_test *rsl);
+
 void adam_examine(const u64 limit, adam_data data)
 {
-    rng_test rsl;
-    ent_test ent;
-
-    rsl.sequences = limit >> 14;
-
     // General initialization
-    MEMCPY(&rsl.init_values[0], data->seed, sizeof(u64) * 4);
-    rsl.init_values[4] = data->nonce;
+    basic_test basic;
+    MEMSET(&basic, 0, sizeof(basic_test));
 
-    rsl.avg_chseed = rsl.avg_fp = 0.0;
-    rsl.mfreq = rsl.up_runs = rsl.longest_up = rsl.down_runs = rsl.longest_down = 0;
-    rsl.one_runs = rsl.perms = rsl.longest_one = rsl.zero_runs = rsl.longest_zero = rsl.odd = 0;
+    basic.sequences  = limit >> 14;
+    basic.chseed_exp = basic.sequences * (ROUNDS << 2);
+
+    MEMCPY(&basic.init_values[0], data->seed, sizeof(u64) * 4);
+    basic.init_values[4] = data->nonce;
+
+    // Number range related testing
+    range_test range;
+    MEMSET(&range, 0, sizeof(range_test));
+
+    // Bit frequency related stuff
+    mfreq_test mfreq;
+    MEMSET(&mfreq, 0, sizeof(mfreq_test));
+
+    // Floating point test related stuf
+    fp_test fp;
+    MEMSET(&fp, 0, sizeof(fp_test));
+
+    // Topological Binary init
+    tb_test topo;
+    MEMSET(&topo, 0, sizeof(tb_test));
+    topo.trials    = basic.sequences >> 6;
+    topo.total_u16 = topo.trials * TBT_SEQ_SIZE;
 
     // Bit Array for representing 2^16 values
     tbt_array = calloc(0, sizeof(u64) * 1024);
 
+    // Von Neumann Ratio init
+    vn_test von;
+    MEMSET(&von, 0, sizeof(vn_test));
+    von.trials = limit / TESTING_BITS;
+
     // SAC and ENT init values
+    ent_test ent;
+
     const u64 nonce      = data->nonce + 1;
     adam_data sac_runner = adam_setup(data->seed, &nonce);
 
     run_rng(data);
-    rsl.min = rsl.max = data->out[0];
-    ent.sccu0         = data->out[0] & 0xFF;
+    ent.sccu0 = data->out[0] & 0xFF;
+    range.min = data->out[0];
+    range.max = data->out[0];
 
     // Maurer test init - calculations were pulled from the NIST STS implementation
-    maurer_k           = MAURER_ARR_SIZE - MAURER_Q;
-    rsl.maurer_pass    = 0;
-    rsl.maurer_c       = 0.7 - 0.8 / (double) MAURER_L + (4 + 32 / (double) MAURER_L) * pow(maurer_k, -3 / (double) MAURER_L) / 15.0;
-    rsl.maurer_std_dev = rsl.maurer_c * sqrt(MAURER_VARIANCE / (double) maurer_k);
-    rsl.maurer_bytes   = malloc(MAURER_ARR_SIZE * sizeof(u8));
-    MEMCPY(&rsl.maurer_bytes[maurer_ctr++], data->out, ADAM_BUF_BYTES);
-    rsl.maurer_mean = rsl.maurer_fisher = 0.0;
+    maurer_test mau;
+    maurer_k    = MAURER_ARR_SIZE - MAURER_Q;
+    mau.trials  = limit / TESTING_BITS;
+    mau.pass    = 0;
+    mau.c       = 0.7 - 0.8 / (double) MAURER_L + (4 + 32 / (double) MAURER_L) * pow(maurer_k, -3 / (double) MAURER_L) / 15.0;
+    mau.std_dev = mau.c * sqrt(MAURER_VARIANCE / (double) maurer_k);
+    mau.bytes   = malloc(MAURER_ARR_SIZE * sizeof(u8));
+    MEMCPY(&mau.bytes[maurer_ctr++], data->out, ADAM_BUF_BYTES);
+    mau.mean = mau.fisher = 0.0;
 
-    register long long rate = rsl.sequences;
+    wh_test walsh;
+    MEMSET(&walsh, 0, sizeof(wh_test));
+    walsh.trials = limit / TESTING_BITS;
+
+    // Aggregation struct
+    rng_test rsl;
+    rsl.basic = &basic;
+    rsl.range = &range;
+    rsl.mfreq = &mfreq;
+    rsl.fp    = &fp;
+    rsl.mau   = &mau;
+    rsl.topo  = &topo;
+    rsl.von   = &von;
+    rsl.walsh = &walsh;
+    rsl.ent   = &ent;
+
+    register long long rate = basic.sequences;
     do {
         run_rng(sac_runner);
         test_loop(&rsl, data->out, data->chseeds, sac_runner->out);
@@ -547,13 +573,13 @@ void adam_examine(const u64 limit, adam_data data)
         run_rng(data);
     } while (--rate > 0);
 
-    adam_results(limit, &rsl, &ent);
+    adam_results(limit, &rsl);
     free(tbt_array);
-    free(rsl.maurer_bytes);
+    free(mau.bytes);
     adam_cleanup(sac_runner);
 }
 
-static void adam_results(const u64 limit, rng_test *rsl, ent_test *ent)
+static void adam_results(const u64 limit, rng_test *rsl)
 {
     // Screen info for pretty printing
     u16 center, indent, swidth;
@@ -561,61 +587,58 @@ static void adam_results(const u64 limit, rng_test *rsl, ent_test *ent)
     indent += (indent >> 1);
 
     // First get the ENT results out of the way
-    ent_results(ent);
+    ent_results(rsl->ent);
 
     // Gap related info
-    register double average_gaplength = 0.0;
+    rsl->basic->avg_gap = 0.0;
 
     register u16 i = 0;
     register u64 tmp;
     for (; i < BUF_SIZE; ++i) {
-        tmp = ent->freq[i];
-        average_gaplength += ((double) gaplengths[i] / (double) (tmp - 1));
-        update_mcb_lcb(i, ent->freq);
+        tmp = rsl->ent->freq[i];
+        rsl->basic->avg_gap += ((double) gaplengths[i] / (double) (tmp - 1));
+        update_mcb_lcb(i, rsl->ent->freq, rsl->basic->mcb, rsl->basic->lcb);
     }
 
-    print_basic_results(indent, rsl, limit);
-    print_mfreq_results(indent, rsl);
+    print_basic_results(indent, limit, rsl->basic);
+    print_mfreq_results(indent, rsl->basic->sequences << 8, rsl->mfreq);
 
-    rsl->avg_gap = average_gaplength / 256.0;
-    print_byte_results(indent, rsl, &mcb[0], &lcb[0]);
+    rsl->basic->avg_gap /= 256.0;
+    print_byte_results(indent, rsl->basic);
 
-    print_range_results(indent, rsl, &range_dist[0]);
-    print_ent_results(indent, ent);
-    print_chseed_results(indent, rsl->sequences * (ROUNDS << 2), &chseed_dist[0], rsl->avg_chseed);
+    print_range_results(indent, rsl->basic->sequences << 8, rsl->range);
+    print_ent_results(indent, rsl->ent);
+    print_chseed_results(indent, rsl->basic);
 
-    rsl->avg_fp /= (rsl->sequences << 8);
-    rsl->fp_max_runs = fp_max_runs;
-    print_fp_results(indent, rsl, &fpfreq_dist[0], &fpfreq_quadrants[0], &fp_perm_dist[0], &fp_max_dist[0]);
+    rsl->fp->avg_fp /= (rsl->basic->sequences << 8);
+    print_fp_results(indent, rsl->basic->sequences << 8, rsl->fp);
 
     print_sp_results(indent, rsl, &sat_dist[0], &sat_range[0]);
 
-    rsl->maurer_fisher *= -2.0;
-    print_maurer_results(indent, rsl, limit / TESTING_BITS);
+    rsl->mau->fisher *= -2.0;
+    print_maurer_results(indent, rsl->mau);
 
-    print_tbt_results(indent, rsl->sequences >> 6, tbt_prop_sum, tbt_pass);
+    print_tbt_results(indent, rsl->topo);
 
-    register double p_value, fisher;
-    p_value = fisher = 0.0;
-    if (rsl->sequences >= 489000) {
-        fisher  = vnt_fisher_gb * -2.0;
-        p_value = cephes_igamc((limit / TESTING_BITS) / 1000, fisher / 2);
+    if (rsl->basic->sequences >= 489000) {
+        rsl->von->fisher  = vnt_fisher_gb * -2.0;
+        rsl->von->p_value = cephes_igamc(rsl->von->trials / 1000, rsl->von->fisher / 2);
     } else {
-        fisher  = vnt_fisher * -2.0;
-        p_value = cephes_igamc(limit / TESTING_BITS, fisher / 2);
+        rsl->von->fisher  = vnt_fisher * -2.0;
+        rsl->von->p_value = cephes_igamc(rsl->von->trials, rsl->von->fisher / 2);
     }
-    print_vnt_results(indent, p_value, fisher, limit / TESTING_BITS, vnt_pass);
+    print_vnt_results(indent, rsl->von);
 
-    print_avalanche_results(indent, rsl, &ham_dist[0]);
+    print_avalanche_results(indent, rsl->basic, &ham_dist[0]);
 
-    if (rsl->sequences >= 489000) {
-        fisher  = wh_fisher_gb * -2.0;
-        p_value = cephes_igamc((limit / TESTING_BITS) / 1000, fisher / 2);
+    if (rsl->basic->sequences >= 489000) {
+        rsl->walsh->fisher  = wh_fisher_gb * -2.0;
+        rsl->walsh->p_value = cephes_igamc(rsl->walsh->trials / 1000, rsl->walsh->fisher / 2);
     } else {
-        fisher  = wh_fisher_mb * -2.0;
-        p_value = cephes_igamc(limit / TESTING_BITS, fisher / 2);
+        rsl->walsh->fisher  = wh_fisher_mb * -2.0;
+        rsl->walsh->p_value = cephes_igamc(rsl->walsh->trials, rsl->walsh->fisher / 2);
     }
-    print_wht_results(indent, p_value, fisher, wh_pass_seq, wh_pass_num, limit / TESTING_BITS, &wh_pdist[0]);
+    print_wht_results(indent, rsl->walsh);
 }
 
 // Positive side only, from 0.00 - 3.99
