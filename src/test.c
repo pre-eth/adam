@@ -548,6 +548,7 @@ void adam_examine(const u64 limit, adam_data data)
     MEMCPY(&mau.bytes[maurer_ctr++], data->out, ADAM_BUF_BYTES);
     mau.mean = mau.fisher = 0.0;
 
+    // Walsh-Hadamard Test init
     wh_test walsh;
     MEMSET(&walsh, 0, sizeof(wh_test));
     walsh.trials = limit / TESTING_BITS;
@@ -564,6 +565,7 @@ void adam_examine(const u64 limit, adam_data data)
     rsl.walsh = &walsh;
     rsl.ent   = &ent;
 
+    // Start testing!
     register long long rate = basic.sequences;
     do {
         run_rng(sac_runner);
@@ -599,6 +601,8 @@ static void adam_results(const u64 limit, rng_test *rsl)
         rsl->basic->avg_gap += ((double) gaplengths[i] / (double) (tmp - 1));
         update_mcb_lcb(i, rsl->ent->freq, rsl->basic->mcb, rsl->basic->lcb);
     }
+
+    // Now print all the results per test / category of stuff
 
     print_basic_results(indent, limit, rsl->basic);
     print_mfreq_results(indent, rsl->basic->sequences << 8, rsl->mfreq);
