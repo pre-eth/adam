@@ -34,7 +34,7 @@ cli: $(OBJ)
 	@echo "\033[1;32mFinished! Run adam -h to get started!\033[m"
 
 lib: $(LIB_OBJ)
-	@echo "\033[1;36mBuilding ADAM library (standard API)...\033[m"
+	@echo "\033[1;36mBuilding ADAM library...\033[m"
 	@ar rcs $(BUILD_DIR)/libadam.a $(LIB_OBJ)
 	@cp include/api.h $(BUILD_DIR)/adam.h
 	@echo "\033[1;32mLibrary and header written to \033[m$(BUILD_DIR)"

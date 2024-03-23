@@ -548,6 +548,7 @@ void adam_examine(const u64 limit, adam_data data)
     MEMCPY(&mau.bytes[maurer_ctr++], data->out, ADAM_BUF_BYTES);
     mau.mean = mau.fisher = 0.0;
 
+    // Walsh-Hadamard Test init
     wh_test walsh;
     MEMSET(&walsh, 0, sizeof(wh_test));
     walsh.trials = limit / TESTING_BITS;
@@ -564,6 +565,7 @@ void adam_examine(const u64 limit, adam_data data)
     rsl.walsh = &walsh;
     rsl.ent   = &ent;
 
+    // Start testing!
     register long long rate = basic.sequences;
     do {
         run_rng(sac_runner);
