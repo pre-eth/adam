@@ -35,7 +35,7 @@
     Returns a pointer to the adam_data. Make sure you remember to pass it
     to adam_cleanup() once you no longer need it!
   */
-  adam_data adam_setup(const unsigned long long *seed, const unsigned long long *nonce);
+  adam_data adam_setup(unsigned long long *seed, unsigned long long *nonce);
 
   /*
     Self-explanatory functions - The first two return a raw pointer to the 
@@ -116,7 +116,7 @@
 
     Returns 0 on success, 1 on error.
   */
-  int adam_dfill(adam_data data, double *buf, const unsigned long long multiplier, const unsigned int amount);
+  int adam_dfill(adam_data data, double *buf, const unsigned long long multiplier, const unsigned long amount);
 
   /*
     Chooses a random item from a provided collection, where param <arr> is a 
