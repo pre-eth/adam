@@ -101,8 +101,8 @@ static void maurer(maurer_test *mau)
 
     register double sum = 0.0;
 
-    i = 0;
-    for (int i = MAURER_Q; i < MAURER_Q + maurer_k; ++i) {
+    i = MAURER_Q;
+    for (; i < MAURER_Q + maurer_k; ++i) {
         sum += log(i - maurer_arr[mau->bytes[i]]) / log(2);
         maurer_arr[mau->bytes[i]] = i;
     }
@@ -277,7 +277,7 @@ static void update_mcb_lcb(const u8 idx, const u64 *freq, u64 *mcb, u64 *lcb)
 {
     // Most Common Bytes
     register short i = 3;
-    while (freq[idx] > freq[mcb[i]] && i >= 0) {
+    while (freq[idx] > freq[mcb[i]] && i > 0) {
         mcb[i + 1] = mcb[i];
         --i;
     }
@@ -285,7 +285,7 @@ static void update_mcb_lcb(const u8 idx, const u64 *freq, u64 *mcb, u64 *lcb)
 
     // Least Common Bytes
     i = 3;
-    while (freq[idx] < freq[lcb[i]] && i >= 0) {
+    while (freq[idx] < freq[lcb[i]] && i > 0) {
         lcb[i + 1] = lcb[i];
         --i;
     }
@@ -529,7 +529,7 @@ void adam_examine(const u64 limit, adam_data data)
     // SAC and ENT init values
     ent_test ent;
 
-    const u64 nonce      = data->nonce + 1;
+    u64 nonce            = data->nonce ^ (1ULL << (data->nonce & 63));
     adam_data sac_runner = adam_setup(data->seed, &nonce);
 
     run_rng(data);
@@ -545,7 +545,8 @@ void adam_examine(const u64 limit, adam_data data)
     mau.c       = 0.7 - 0.8 / (double) MAURER_L + (4 + 32 / (double) MAURER_L) * pow(maurer_k, -3 / (double) MAURER_L) / 15.0;
     mau.std_dev = mau.c * sqrt(MAURER_VARIANCE / (double) maurer_k);
     mau.bytes   = malloc(MAURER_ARR_SIZE * sizeof(u8));
-    MEMCPY(&mau.bytes[maurer_ctr++], data->out, ADAM_BUF_BYTES);
+    MEMCPY(&mau.bytes[maurer_ctr], data->out, ADAM_BUF_BYTES);
+    ++maurer_ctr;
     mau.mean = mau.fisher = 0.0;
 
     // Walsh-Hadamard Test init
@@ -565,8 +566,8 @@ void adam_examine(const u64 limit, adam_data data)
     rsl.walsh = &walsh;
     rsl.ent   = &ent;
 
-    // Start testing!
-    register long long rate = basic.sequences;
+    // Start testing! (subtract 1 because we already did 1 trial)
+    register long long rate = basic.sequences - 1;
     do {
         run_rng(sac_runner);
         test_loop(&rsl, data->out, data->chseeds, sac_runner->out);

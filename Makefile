@@ -1,31 +1,20 @@
 BUILD_DIR = ./build
 CC = @gcc
 
-CFLAGS = -Iinclude -O2 -flto	# -Wall -Wextra -Wpedantic -Werror
-UNAME_P := $(shell uname -p)
+CFLAGS = -Iinclude -O2 -flto -march=native	# -Wall -Wextra -Wpedantic -Werror
 
-ifeq ($(UNAME_P), arm)
-	SIMD_FLAGS = -march=native
-else
-	AVX512 := $(grep -o avx512 /proc/cpuinfo)
-	ifeq ($(AVX512), avx512)
-		SIMD_FLAGS = -mavx512f -mno-vzeroupper
-	else
-		SIMD_FLAGS = -mavx -mavx2 
-	endif
-endif
  
 STD_LIB = rng api
 LIB_OBJ = $(STD_LIB:%=src/%.o)
 CLI = ent test util cli
 OBJ := $(CLI:%=src/%.o) $(LIB_OBJ)
 
+%.o: src/%.c 
+	$(CC) $(CFLAGS) $(SIMD_FLAGS) -c $^ 
+
 all: cli lib
 	@clang-format -i src/*.c
 	@rm $(OBJ)
-
-%.o: src/%.c 
-	$(CC) $(CFLAGS) $(SIMD_FLAGS) -c $^ 
 
 cli: $(OBJ)
 	@echo "\033[1;36mBuilding ADAM CLI...\033[m"

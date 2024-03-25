@@ -33,7 +33,7 @@ struct adam_data_s {
     u16 buff_idx;
 };
 
-adam_data adam_setup(const u64 *seed, const u64 *nonce)
+adam_data adam_setup(u64 *seed, u64 *nonce)
 {
     // Allocate the struct
     adam_data data = aligned_alloc(ADAM_ALIGNMENT, sizeof(struct adam_data_s));

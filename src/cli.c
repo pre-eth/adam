@@ -9,24 +9,12 @@
 #define STRINGIZE(a) #a
 #define STRINGIFY(a) STRINGIZE(a)
 
-#define ASSESS_PROMPT(var, msg, fmt, cond, error)        \
-    {                                                    \
-        while (true) {                                   \
-            fprintf(stderr, "\033[m" msg " \033[1;33m"); \
-            if (!scanf(fmt, var) || cond) {              \
-                err(error);                              \
-                continue;                                \
-            }                                            \
-            break;                                       \
-        }                                                \
-    }
+#define MAJOR        0
+#define MINOR        9
+#define PATCH        0
 
-#define MAJOR     1
-#define MINOR     4
-#define PATCH     0
-
-#define OPTSTR    ":hvdfbxoap:m:w:e:r:u::s::n::"
-#define ARG_COUNT 16
+#define OPTSTR       ":hvdfbxoap:m:w:e:r:u::s::n::"
+#define ARG_COUNT    16
 
 //  Number of bits in results (8, 16, 32, 64)
 static u8 width;
@@ -272,6 +260,20 @@ static void streamf(adam_data data)
 
 static u8 assess(adam_data data)
 {
+    // clang-format off
+    #define ASSESS_PROMPT(var, msg, fmt, cond, error)        \
+    {                                                    \
+        while (true) {                                   \
+            fprintf(stderr, "\033[m" msg " \033[1;33m"); \
+            if (!scanf(fmt, var) || cond) {              \
+                err(error);                              \
+                continue;                                \
+            }                                            \
+            break;                                       \
+        }                                                \
+    }
+    // clang-format on
+
     char file_name[65];
     ASSESS_PROMPT(&file_name[0], "File name:", " %64s", false, "Please enter a valid file name");
 
@@ -342,7 +344,7 @@ int main(int argc, char **argv)
     if (data == NULL)
         return err("Could not allocate space for adam_data struct! Exiting.");
 
-    // Initialize the non-zero defaults
+    //  Initialize the non-zero defaults
     results   = 1;
     precision = 15;
     width     = 64;
