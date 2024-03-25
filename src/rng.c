@@ -174,7 +174,6 @@ void diffuse(u64 *restrict _ptr, const u64 nonce)
     } while ((i += 8) < BUF_SIZE);
     // clang-format on
 }
-
 static void chaotic_iter(u64 *restrict in, u64 *restrict out, const double *restrict chseeds)
 {
 #ifdef __AARCH64_SIMD__
@@ -205,29 +204,66 @@ static void chaotic_iter(u64 *restrict in, u64 *restrict out, const double *rest
         SIMD_STORE64x4(&out[i], r1);
     } while ((i += 8) < BUF_SIZE);
 #else
-    const regd beta        = SIMD_SETQPD(BETA);
-    const regd coefficient = SIMD_SETQPD(COEFFICIENT);
-    const regd one         = SIMD_SETQPD(1.0);
+    const regd one         = SIMD_SETPD(1.0);
+    const regd coeff       = SIMD_SETPD(COEFFICIENT);
+    const regd beta        = SIMD_SETPD(BETA);
 
-    regd d1 = SIMD_LOADPD((regd *) &chseeds[rounds]);
+    regd d1 = SIMD_LOADPD(chseeds);
     regd d2;
     reg r1, r2;
 
+    register u16 i = 0;
+
+#ifdef __AVX512F__
     do {
         // 3.9999 * X * (1 - X) for all X in the register
         d2 = SIMD_SUBPD(one, d1);
-        d2 = SIMD_MULPD(d2, coefficient);
+        d2 = SIMD_MULPD(d2, coeff);
         d1 = SIMD_MULPD(d1, d2);
 
         // Multiply result of chaotic function by beta
         d2 = SIMD_MULPD(d1, beta);
 
         // Cast, XOR, and store
-        r1 = SIMD_CASTPD(d2);
-        r2 = SIMD_LOADBITS((reg *) &in[idx]);
+        r1 = SIMD_CASTBITS(d2);
+        r2 = SIMD_LOADBITS((reg *) &in[i]);
         r1 = SIMD_XORBITS(r1, r2);
-        SIMD_STOREBITS((reg *) &out[idx], r1);
-    } while ((idx += 8) < limit);
+        SIMD_STOREBITS((reg *) &out[i], r1);
+    } while ((i += 8) < BUF_SIZE);
+#else
+    d2 = SIMD_LOADPD(&chseeds[4]);
+    regd d3;
+
+    do {
+        // 3.9999 * X * (1 - X) for all X in the register
+        d3 = SIMD_SUBPD(one, d1);
+        d3 = SIMD_MULPD(d3, coeff);
+        d1 = SIMD_MULPD(d1, d3);
+
+        // Multiply result of chaotic function by beta
+        d3 = SIMD_MULPD(d1, beta);
+
+        // Cast, XOR, and store
+        r1 = SIMD_CVT64(d3);
+        r2 = SIMD_LOADBITS((reg *) &in[i]);
+        r1 = SIMD_XORBITS(r2, r1);
+        SIMD_STOREBITS((reg *) &out[i], r1);
+
+        // 3.9999 * X * (1 - X) for all X in the register
+        d3 = SIMD_SUBPD(one, d2);
+        d3 = SIMD_MULPD(d3, coeff);
+        d2 = SIMD_MULPD(d2, d3);
+
+        // Multiply result of chaotic function by beta
+        d3 = SIMD_MULPD(d2, beta);
+
+        // Cast, XOR, and store
+        r1 = SIMD_CVT64(d3);
+        r2 = SIMD_LOADBITS((reg *) &in[i + 4]);
+        r1 = SIMD_XORBITS(r2, r1);
+        SIMD_STOREBITS((reg *) &out[i + 4], r1);
+    } while ((i += 8) < BUF_SIZE);
+#endif
 #endif
 }
 
@@ -281,7 +317,7 @@ void reseed(u64 *restrict seed, u64 *restrict work_buffer, u64 *restrict nonce, 
     // Slightly modified macro from ISAAC for reseeding ADAM
     #define ISAAC_IND(mm, x) (*(u64 *) ((u8 *) (mm) + (2040 + (x & 2047))))
 
-    cc      += (*nonce >> (*nonce & 7));
+    *cc     += (*nonce >> (*nonce & 7));
     seed[0] ^= ~ISAAC_IND(work_buffer, seed[0]);
     seed[1] ^= ~ISAAC_IND(work_buffer, seed[1]);
     seed[2] ^= ~ISAAC_IND(work_buffer, seed[2]);
