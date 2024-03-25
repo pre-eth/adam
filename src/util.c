@@ -79,7 +79,7 @@ double wh_transform(const u16 idx, const u32 test, const u8 offset)
     // Explicitly use AVX2 even if AVX512 is available to match "pace" set by ARM implementation
     const __m256i masks = _mm256_setr_epi8(BYTE_MASKS, BYTE_MASKS, BYTE_MASKS, BYTE_MASKS);
 
-    __m256i r1 = _m256_setr_epi8(BYTE_REPEAT(3), BYTE_REPEAT(2), BYTE_REPEAT(1), BYTE_REPEAT(0));
+    __m256i r1 = _mm256_setr_epi8(BYTE_REPEAT(3), BYTE_REPEAT(2), BYTE_REPEAT(1), BYTE_REPEAT(0));
     r1         = _mm256_and_si256(r1, masks);
     r1         = _mm256_cmpeq_epi8(r1, masks);
 

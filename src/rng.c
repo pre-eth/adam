@@ -1,6 +1,4 @@
 #include "../include/rng.h"
-#include "../include/defs.h"
-#include "../include/simd.h"
 
 #if !defined(__AARCH64_SIMD__) && !defined(__AVX512F__)
 // Following code courtesy of https://stackoverflow.com/a/41148578
@@ -72,7 +70,7 @@ void accumulate(u64 *restrict seed, u64 *restrict IV, u64 *restrict work_buffer,
     IV[6] ^= seed[3];
     IV[7] ^= ~seed[3];
 
-    register u8 i       = 0;
+    register u8 i      = 0;
     register u8 offset = ((cc & 0xFF) >> 2) << 2;
 #ifdef __AARCH64_SIMD__
     // To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random double D

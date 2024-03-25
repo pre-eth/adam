@@ -1,6 +1,7 @@
 #ifndef RNG_H
 #define RNG_H
   #include "../include/defs.h"
+  #include "../include/simd.h"
 
   /* 
     Sizes of the buffer and bit vector for the binary sequence
@@ -64,4 +65,10 @@
   void apply(u64 *restrict _ptr, u64 *restrict work_buffer, double *restrict chseeds);
   void mix(u64 *restrict _ptr, const u64 *restrict work_buffer);
   void reseed(u64 *restrict seed, u64 *restrict work_buffer, u64 *restrict nonce, u64*restrict cc);
+
+#if !defined(__AARCH64_SIMD__) && !defined(__AVX512F__)
+  regd mm256_cvtpd_epi64(reg r1);
+
+  #define SIMD_CVTPD  mm256_cvtpd_epi64
+#endif
 #endif
