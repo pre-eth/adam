@@ -194,16 +194,21 @@ static void dbl_simd_fill(double *buf, u64 *restrict _ptr, const u16 amount)
     regd d1;
 
     do {
-        r1 = SIMD_LOAD64((reg *) &_ptr[i]);
+#ifdef __AVX512F__
+        r1 = SIMD_LOADBITS((reg *) &_ptr[i]);
         d1 = SIMD_CASTPD(r1);
-        d1 = SIMD_MULPD(d1, max);
-        SIMD_STOREPD((regd *) &buf[i], d1);
+        d1 = SIMD_MULPD(d1, range);
+        SIMD_STOREPD(&buf[i], d1);
+#else
+        r1 = SIMD_LOADBITS((reg *) &_ptr[i]);
+        d1 = SIMD_CVTPD(r1);
+        d1 = SIMD_MULPD(d1, range);
+        SIMD_STOREPD(&buf[i], d1);
 
-#ifndef __AVX512F__
-        r1 = SIMD_LOAD64((reg *) &_ptr[i + 4]);
-        d1 = SIMD_CASTPD(r1);
-        d1 = SIMD_MULPD(d1, max);
-        SIMD_STOREPD((regd *) &buf[i + 4], d1);
+        r1 = SIMD_LOADBITS((reg *) &_ptr[i + 4]);
+        d1 = SIMD_CVTPD(r1);
+        d1 = SIMD_MULPD(d1, range);
+        SIMD_STOREPD(&buf[i + 4], d1);
 #endif
     } while ((i += 8) < amount);
 #endif
