@@ -15,16 +15,16 @@ struct adam_data_s {
     u64 nonce;
 
     // 8 64-bit initialization vectors part of internal state
-    u64 IV[8];
+    u64 IV[8] ALIGN(ADAM_ALIGNMENT);
 
     // Output vector - 256 64-bit integers = 2048 bytes
-    u64 out[BUF_SIZE] ALIGN(SIMD_LEN);
+    u64 out[BUF_SIZE] ALIGN(ADAM_ALIGNMENT);
 
     // Work maps - sizeof(u64) * 512 = 4096 bytes
-    u64 work_buffer[BUF_SIZE << 1] ALIGN(SIMD_LEN);
+    u64 work_buffer[BUF_SIZE << 1] ALIGN(ADAM_ALIGNMENT);
 
     // The seeds supplied to each iteration of the chaotic function
-    double chseeds[ROUNDS << 2] ALIGN(SIMD_LEN);
+    double chseeds[ROUNDS << 2] ALIGN(ADAM_ALIGNMENT);
 
     // Counter
     u64 cc;
@@ -61,7 +61,8 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
         aligned_alloc + memset is used rather than calloc to use the appropriate SIMD alignment.
     */
     MEMSET(&data->out[0], 0, ADAM_BUF_BYTES);
-    MEMSET(&data->work_buffer[0], 0, ADAM_BUF_BYTES * 2);
+    // MEMSET(&data->work_buffer[0], *nonce & 0xFF, ADAM_BUF_BYTES);
+    // MEMSET(&data->work_buffer[BUF_SIZE], (*nonce & 0xFF) - (~*nonce & 0xFF), ADAM_BUF_BYTES);
 
     /*
         8 64-bit IV's that correspond to the verse:
