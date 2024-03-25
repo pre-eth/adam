@@ -19,7 +19,7 @@ all: cli lib
 cli: $(OBJ)
 	@echo "\033[1;36mBuilding ADAM CLI...\033[m"
 	@mkdir -p $(BUILD_DIR)
-	$(CC) -o $(BUILD_DIR)/adam $(OBJ) 
+	$(CC) -o $(BUILD_DIR)/adam $(OBJ) -lm
 	@echo "\033[1;32mFinished! Run adam -h to get started!\033[m"
 
 lib: $(LIB_OBJ)

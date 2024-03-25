@@ -233,14 +233,14 @@ static void dbl_simd_mult(double *buf, const u16 amount, const double multiplier
     regd d1;
 
     do {
-        d1 = SIMD_LOADPD((regd *) &buf[i]);
+        d1 = SIMD_LOADPD(&buf[i]);
         d1 = SIMD_MULPD(d1, mult);
-        SIMD_STOREPD((regd *) &buf[i], d1);
+        SIMD_STOREPD(&buf[i], d1);
 
 #ifndef __AVX512F__
-        d1 = SIMD_LOADPD((regd *) &buf[i + 4]);
+        d1 = SIMD_LOADPD(&buf[i + 4]);
         d1 = SIMD_MULPD(d1, mult);
-        SIMD_STOREPD((regd *) &buf[i + 4], d1);
+        SIMD_STOREPD(&buf[i + 4], d1);
 #endif
     } while ((i += 8) < amount);
 #endif
