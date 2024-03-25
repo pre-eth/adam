@@ -61,8 +61,8 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
         aligned_alloc + memset is used rather than calloc to use the appropriate SIMD alignment.
     */
     MEMSET(&data->out[0], 0, ADAM_BUF_BYTES);
-    MEMSET(&data->work_buffer[0], *nonce & 0xFF, ADAM_BUF_BYTES);
-    MEMSET(&data->work_buffer[BUF_SIZE], (*nonce & 0xFF) - (~*nonce & 0xFF), ADAM_BUF_BYTES);
+    MEMSET(&data->work_buffer[0], data->nonce & 0xFF, ADAM_BUF_BYTES);
+    MEMSET(&data->work_buffer[BUF_SIZE], (data->nonce & 0xFF) - (~data->nonce & 0xFF), ADAM_BUF_BYTES);
 
     /*
         8 64-bit IV's that correspond to the verse:
