@@ -565,7 +565,6 @@ void adam_examine(const u64 limit, adam_data data)
         MEMCPY(sac_runner, data, sizeof(struct adam_data_s));
         sac_runner->nonce ^= (1ULL << (data->nonce & 63));
         run_rng(data);
-        break;
     } while (--rate > 0);
 
     adam_results(limit, &rsl);
