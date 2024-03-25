@@ -23,7 +23,7 @@ static u64 ccount[256] ALIGN(64), // Bins to count occurrences of values
 
 static double prob[256];          // Probabilities per bin for entropy
 
-static u8 mp, ccfirst;
+static u8 mp;
 static u64 monte[MONTEN];
 static u64 inmont, mcount;
 static double incirc = 2.8147494E14;
