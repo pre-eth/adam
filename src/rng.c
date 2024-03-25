@@ -287,27 +287,23 @@ void mix(u64 *restrict _ptr, const u64 *restrict work_buffer)
         SIMD_STORE64x4(&_ptr[i], r1);
     } while ((i += 8) < BUF_SIZE);
 #else
-    reg r1, r2, r3;
+    reg r1, r2;
     do {
-        r1 = SIMD_LOAD64((reg *) &_ptr[i]);
-        r2 = SIMD_LOAD64((reg *) &buffer[i]);
-        r3 = SIMD_LOAD64((reg *) &buffer[BUF_SIZE + i]);
-        r1 = SIMD_XOR64(r1, r2);
-        r1 = SIMD_XOR64(r1, r3);
-        SIMD_STOREBITS((reg *) _ptr, r1);
-
+        r1 = SIMD_LOADBITS((reg *) &_ptr[i]);
+        r2 = SIMD_LOADBITS((reg *) &work_buffer[i]);
+        r1 = SIMD_XORBITS(r1, r2);
+        r2 = SIMD_LOADBITS((reg *) &work_buffer[BUF_SIZE + i]);
+        r1 = SIMD_XORBITS(r1, r2);
+        SIMD_STOREBITS((reg *) &_ptr[i], r1);
 #ifndef __AVX512F__
-        r1 = SIMD_LOAD64((reg *) &_ptr[i + 4]);
-        r2 = SIMD_LOAD64((reg *) &buffer[i + 4]);
-        r3 = SIMD_LOAD64((reg *) &buffer[BUF_SIZE + i + 4]);
-        r1 = SIMD_XOR64(r1, r2);
-        r1 = SIMD_XOR64(r1, r3);
+        r1 = SIMD_LOADBITS((reg *) &_ptr[i + 4]);
+        r2 = SIMD_LOADBITS((reg *) &work_buffer[i + 4]);
+        r1 = SIMD_XORBITS(r1, r2);
+        r2 = SIMD_LOADBITS((reg *) &work_buffer[BUF_SIZE + i + 4]);
+        r1 = SIMD_XORBITS(r1, r2);
         SIMD_STOREBITS((reg *) &_ptr[i + 4], r1);
 #endif
-        _ptr += 8;
-        map_a += 8;
-        map_b += 8;
-    } while (map_a < BUF_SIZE);
+    } while ((i += 8) < BUF_SIZE);
 #endif
 }
 
