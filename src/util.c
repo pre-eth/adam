@@ -5,95 +5,21 @@
 #include "../include/simd.h"
 #include "../include/util.h"
 
-#ifdef __AARCH64_SIMD__
 double wh_transform(const u16 idx, const u32 test, const u8 offset)
 {
-    const int8x8_t bitmask = { 128, 64, 32, 16, 8, 4, 2, 1 };
-    const int16x8_t masks  = vmovl_s8(bitmask);
-    const int16x8_t one    = vdupq_n_s16(1);
-
-    int16_t exponents[32];
-
-    // following is 1 - 2X where x is always 0 or 1
-
-    // load each byte and duplicate to 8 positions in int16x8
-    int16x8x4_t bytes;
-    bytes.val[0] = vdupq_n_s16((test >> 24) & 0xFF);
-    bytes.val[1] = vdupq_n_s16((test >> 16) & 0xFF);
-    bytes.val[2] = vdupq_n_s16((test >> 8) & 0xFF);
-    bytes.val[3] = vdupq_n_s16(test & 0xFF);
-
-    // Logical AND each masks value with the bytes in all 8 positions
-    // this gets us the corresponding 1 or 0 in that bit position
-    // also lets us stretch 1 byte into 8 bits as 8 separate ints
-    bytes.val[0] = vandq_s16(bytes.val[0], masks);
-    bytes.val[1] = vandq_s16(bytes.val[1], masks);
-    bytes.val[2] = vandq_s16(bytes.val[2], masks);
-    bytes.val[3] = vandq_s16(bytes.val[3], masks);
-    bytes.val[0] = vcntq_s8(bytes.val[0]);
-    bytes.val[1] = vcntq_s8(bytes.val[1]);
-    bytes.val[2] = vcntq_s8(bytes.val[2]);
-    bytes.val[3] = vcntq_s8(bytes.val[3]);
-
-    // we have now converted the test integer into a bit sequence of size 32
-    // multiply all by 2 and then subtract result from 1
-    bytes.val[0] = vshlq_n_s16(bytes.val[0], 1);
-    bytes.val[1] = vshlq_n_s16(bytes.val[1], 1);
-    bytes.val[2] = vshlq_n_s16(bytes.val[2], 1);
-    bytes.val[3] = vshlq_n_s16(bytes.val[3], 1);
-    bytes.val[0] = vsubq_s16(one, bytes.val[0]);
-    bytes.val[1] = vsubq_s16(one, bytes.val[1]);
-    bytes.val[2] = vsubq_s16(one, bytes.val[2]);
-    bytes.val[3] = vsubq_s16(one, bytes.val[3]);
-
-    // Now the binary sequence has been transformed into a sequence of 1s and -1s
-    vst1q_s16_x4(&exponents[0], bytes);
-
-    // This handles the i . j dot product stuff for the powers
-
-    // raises all -1 to the computed powers
-    // reuse exponents array
-    const u8 limit        = offset + 32;
+    const u8 limit = offset + 32;
+    register u32 nummask = test;
     register u8 ctr       = offset;
     register double final = 0;
+    int val;
     do {
-        // mask here is important because ctr needs to step through 128-bit blocks,
-        // so offset needs modulo operation before use
-        exponents[ctr & 31] *= (int16_t) pow(-1.0, (double) POPCNT(idx & ctr));
-
-        // after multiplying transformed binary terms with computed powers, sum to total
-        // final += (double) exponents[ctr & 31] * pow(-1.0, (double) POPCNT(idx & ctr));
+        val = (1 - ((nummask & 1) << 1));
+        final += (double) val * pow(-1.0, (double) POPCNT(idx & ctr));
+        nummask >>= 1;
     } while (++ctr < limit);
 
-    bytes = vld1q_s16_x4(&exponents[0]);
-    final = vaddvq_s16(bytes.val[0]) + vaddvq_s16(bytes.val[1]) + vaddvq_s16(bytes.val[2]) + vaddvq_s16(bytes.val[3]);
-
     return final;
 }
-#else
-double wh_transform(const u16 idx, const u32 test, const u8 offset)
-{
-    u8 bytes[sizeof(u32)] ALIGN(SIMD_LEN);
-    MEMCPY(&bytes[0], &test, sizeof(u32));
-
-    // Explicitly use AVX2 even if AVX512 is available to match "pace" set by ARM implementation
-    const __m256i masks = _mm256_setr_epi8(BYTE_MASKS, BYTE_MASKS, BYTE_MASKS, BYTE_MASKS);
-
-    __m256i r1 = _mm256_setr_epi8(BYTE_REPEAT(3), BYTE_REPEAT(2), BYTE_REPEAT(1), BYTE_REPEAT(0));
-    r1         = _mm256_and_si256(r1, masks);
-    r1         = _mm256_cmpeq_epi8(r1, masks);
-
-    register u32 movemask = _mm256_movemask_epi8(r1);
-    register u8 ctr       = offset;
-    register double final = 0;
-    do {
-        final += (double) (1 - ((movemask & 1) << 1)) * pow(-1.0, (double) POPCNT(idx & ctr));
-        ++ctr;
-    } while (movemask >>= 1);
-
-    return final;
-}
-#endif
 
 void get_print_metrics(u16 *center, u16 *indent, u16 *swidth)
 {
