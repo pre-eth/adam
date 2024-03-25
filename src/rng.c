@@ -37,6 +37,7 @@ static regd int64_to_double(reg x)
 
 static reg mm256_cvtepi64_pd(regd d1)
 {
+    d1 = SIMD_ROUNDPD(d1, _MM_FROUND_TO_NEG_INF | _MM_FROUND_NO_EXC);
     const regd k2_32inv_dbl = SIMD_SETPD(1.0 / 4294967296.0); // 1 / 2^32
     const regd k2_32_dbl    = SIMD_SETPD(4294967296.0);       // 2^32
 
@@ -315,7 +316,7 @@ void reseed(u64 *restrict seed, u64 *restrict work_buffer, u64 *restrict nonce, 
     // Slightly modified macro from ISAAC for reseeding ADAM
     #define ISAAC_IND(mm, x) (*(u64 *) ((u8 *) (mm) + (2040 + (x & 2047))))
 
-    *cc     += (*nonce >> (*nonce & 31));
+    *cc     += (*nonce >> (*nonce & 63));
     seed[0] ^= ~ISAAC_IND(work_buffer, seed[0]);
     seed[1] ^= ~ISAAC_IND(work_buffer, seed[1]);
     seed[2] ^= ~ISAAC_IND(work_buffer, seed[2]);
