@@ -2,63 +2,62 @@
 #include "../include/defs.h"
 #include "../include/simd.h"
 
-#if !defined(__AARCH64_SIMD__) && !defined(__AVX512F__) 
-    // Following code courtesy of https://stackoverflow.com/a/41148578
-    regd mm256_cvtpd_epi64(reg r1)
-    {
-        const regd factor = SIMD_SETPD(0x0010000000000000);
-        const regd fix1 = SIMD_SETPD(19342813113834066795298816.0);
-        const regd fix2 = SIMD_SETPD(19342813118337666422669312.0);
-    
-        reg xH, xL;
-        regd d1;
+#if !defined(__AARCH64_SIMD__) && !defined(__AVX512F__)
+// Following code courtesy of https://stackoverflow.com/a/41148578
+regd mm256_cvtpd_epi64(reg r1)
+{
+    const regd factor = SIMD_SETPD(0x0010000000000000);
+    const regd fix1   = SIMD_SETPD(19342813113834066795298816.0);
+    const regd fix2   = SIMD_SETPD(19342813118337666422669312.0);
 
-        xH = SIMD_RSHIFT64(r1, 32);
-        xH = SIMD_ORBITS(xH, SIMD_CASTBITS(fix1));          //  2^84
-        xL = SIMD_BLEND16(r1, SIMD_CASTBITS(factor), 0xCC);   //  2^52
-        d1 = SIMD_SUBPD(SIMD_CASTPD(xH), fix2);     //  2^84 + 2^52
-        d1 = SIMD_ADDPD(d1, SIMD_CASTPD(xL));
-        return d1;
-    }
+    reg xH, xL;
+    regd d1;
 
-    // Remaining code courtesy of https://stackoverflow.com/a/77376595
-    static reg double_to_int64(regd x)
-    {
-        x = SIMD_ADDPD(x, SIMD_SETPD(0x0018000000000000));
-        return SIMD_SUB64(
-            SIMD_CASTBITS(x),
-            SIMD_CASTBITS(SIMD_SETPD(0x0018000000000000))
-        );
-    }
+    xH = SIMD_RSHIFT64(r1, 32);
+    xH = SIMD_ORBITS(xH, SIMD_CASTBITS(fix1));          //  2^84
+    xL = SIMD_BLEND16(r1, SIMD_CASTBITS(factor), 0xCC); //  2^52
+    d1 = SIMD_SUBPD(SIMD_CASTPD(xH), fix2);             //  2^84 + 2^52
+    d1 = SIMD_ADDPD(d1, SIMD_CASTPD(xL));
+    return d1;
+}
 
-    // Only works for inputs in the range: [-2^51, 2^51]
-    static regd int64_to_double(reg x){
-        x = SIMD_ADD64(x, SIMD_CASTBITS(SIMD_SETPD(0x0018000000000000)));
-        return SIMD_SUBPD(SIMD_CASTPD(x), SIMD_SETPD(0x0018000000000000));
-    }
+// Remaining code courtesy of https://stackoverflow.com/a/77376595
+static reg double_to_int64(regd x)
+{
+    x = SIMD_ADDPD(x, SIMD_SETPD(0x0018000000000000));
+    return SIMD_SUB64(
+        SIMD_CASTBITS(x),
+        SIMD_CASTBITS(SIMD_SETPD(0x0018000000000000)));
+}
 
+// Only works for inputs in the range: [-2^51, 2^51]
+static regd int64_to_double(reg x)
+{
+    x = SIMD_ADD64(x, SIMD_CASTBITS(SIMD_SETPD(0x0018000000000000)));
+    return SIMD_SUBPD(SIMD_CASTPD(x), SIMD_SETPD(0x0018000000000000));
+}
 
-    static reg mm256_cvtepi64_pd(regd d1)
-    {
-        const regd k2_32inv_dbl = SIMD_SETPD(1.0/4294967296.0); // 1 / 2^32
-        const regd k2_32_dbl = SIMD_SETPD(4294967296.0); // 2^32
+static reg mm256_cvtepi64_pd(regd d1)
+{
+    const regd k2_32inv_dbl = SIMD_SETPD(1.0 / 4294967296.0); // 1 / 2^32
+    const regd k2_32_dbl    = SIMD_SETPD(4294967296.0);       // 2^32
 
-        // Multiply by inverse instead of dividing.
-        const regd v_hi_dbl = SIMD_MULPD(d1, k2_32inv_dbl);
-        // Convert to integer.
-        const reg v_hi = double_to_int64(v_hi_dbl);
-        // Convert high32 integer to double and multiply by 2^32.
-        const regd v_hi_int_dbl = SIMD_MULPD(int64_to_double(v_hi), k2_32_dbl);
-        // Subtract that from the original to get the remainder.
-        const regd v_lo_dbl = SIMD_SUBPD(d1, v_hi_int_dbl);
-        // Convert to low32 integer.
-        const reg v_lo = double_to_int64(v_lo_dbl);
-        // Reconstruct integer from shifted high32 and remainder.
-        return SIMD_ADD64(SIMD_LSHIFT64(v_hi, 32), v_lo);
-    }
+    // Multiply by inverse instead of dividing.
+    const regd v_hi_dbl = SIMD_MULPD(d1, k2_32inv_dbl);
+    // Convert to integer.
+    const reg v_hi = double_to_int64(v_hi_dbl);
+    // Convert high32 integer to double and multiply by 2^32.
+    const regd v_hi_int_dbl = SIMD_MULPD(int64_to_double(v_hi), k2_32_dbl);
+    // Subtract that from the original to get the remainder.
+    const regd v_lo_dbl = SIMD_SUBPD(d1, v_hi_int_dbl);
+    // Convert to low32 integer.
+    const reg v_lo = double_to_int64(v_lo_dbl);
+    // Reconstruct integer from shifted high32 and remainder.
+    return SIMD_ADD64(SIMD_LSHIFT64(v_hi, 32), v_lo);
+}
 #endif
 
-#define SIMD_CVT64    mm256_cvtepi64_pd
+#define SIMD_CVT64 mm256_cvtepi64_pd
 
 /*     ALGORITHM START     */
 
@@ -140,6 +139,7 @@ void accumulate(u64 *restrict seed, u64 *restrict IV, u64 *restrict work_buffer,
 void diffuse(u64 *restrict _ptr, const u64 nonce)
 {
     // clang-format off
+
     // For diffusing the buffer
     #define ISAAC_MIX(a,b,c,d,e,f,g,h) { \
         a-=e; f^=h>>9;  h+=a; \
@@ -172,6 +172,7 @@ void diffuse(u64 *restrict _ptr, const u64 nonce)
         _ptr[i + 0] = a; _ptr[i + 1] = b; _ptr[i + 2] = c; _ptr[i + 3] = d;
         _ptr[i + 4] = e; _ptr[i + 5] = f; _ptr[i + 6] = g; _ptr[i + 7] = h;
     } while ((i += 8) < BUF_SIZE);
+
     // clang-format on
 }
 static void chaotic_iter(u64 *restrict in, u64 *restrict out, const double *restrict chseeds)
@@ -204,9 +205,9 @@ static void chaotic_iter(u64 *restrict in, u64 *restrict out, const double *rest
         SIMD_STORE64x4(&out[i], r1);
     } while ((i += 8) < BUF_SIZE);
 #else
-    const regd one         = SIMD_SETPD(1.0);
-    const regd coeff       = SIMD_SETPD(COEFFICIENT);
-    const regd beta        = SIMD_SETPD(BETA);
+    const regd one   = SIMD_SETPD(1.0);
+    const regd coeff = SIMD_SETPD(COEFFICIENT);
+    const regd beta  = SIMD_SETPD(BETA);
 
     regd d1 = SIMD_LOADPD(chseeds);
     regd d2;
@@ -227,7 +228,7 @@ static void chaotic_iter(u64 *restrict in, u64 *restrict out, const double *rest
         // Cast, XOR, and store
         r1 = SIMD_CASTBITS(d2);
         r2 = SIMD_LOADBITS((reg *) &in[i]);
-        r1 = SIMD_XORBITS(r1, r2);
+        r1 = SIMD_XORBITS(r2, r1);
         SIMD_STOREBITS((reg *) &out[i], r1);
     } while ((i += 8) < BUF_SIZE);
 #else
@@ -277,6 +278,7 @@ void apply(u64 *restrict _ptr, u64 *restrict work_buffer, double *restrict chsee
 void mix(u64 *restrict _ptr, const u64 *restrict work_buffer)
 {
     register u16 i = 0;
+
 #ifdef __AARCH64_SIMD__
     reg64q4 r1, r2, r3;
     do {
@@ -310,14 +312,16 @@ void mix(u64 *restrict _ptr, const u64 *restrict work_buffer)
 void reseed(u64 *restrict seed, u64 *restrict work_buffer, u64 *restrict nonce, u64 *restrict cc)
 {
     // clang-format off
+
     // Slightly modified macro from ISAAC for reseeding ADAM
     #define ISAAC_IND(mm, x) (*(u64 *) ((u8 *) (mm) + (2040 + (x & 2047))))
 
-    *cc     += (*nonce >> (*nonce & 7));
+    *cc     += (*nonce >> (*nonce & 31));
     seed[0] ^= ~ISAAC_IND(work_buffer, seed[0]);
     seed[1] ^= ~ISAAC_IND(work_buffer, seed[1]);
     seed[2] ^= ~ISAAC_IND(work_buffer, seed[2]);
     seed[3] ^= ~ISAAC_IND(work_buffer, seed[3]);
     *nonce  ^= (*nonce + ISAAC_IND(work_buffer, *nonce));
+
     // clang-format on
 }
