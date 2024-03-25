@@ -2,14 +2,68 @@
 #include "../include/defs.h"
 #include "../include/simd.h"
 
+#if !defined(__AARCH64_SIMD__) && !defined(__AVX512F__) 
+    // Following code courtesy of https://stackoverflow.com/a/41148578
+    regd mm256_cvtpd_epi64(reg r1)
+    {
+        const regd factor = SIMD_SETPD(0x0010000000000000);
+        const regd fix1 = SIMD_SETPD(19342813113834066795298816.0);
+        const regd fix2 = SIMD_SETPD(19342813118337666422669312.0);
+    
+        reg xH, xL;
+        regd d1;
+
+        xH = SIMD_RSHIFT64(r1, 32);
+        xH = SIMD_ORBITS(xH, SIMD_CASTBITS(fix1));          //  2^84
+        xL = SIMD_BLEND16(r1, SIMD_CASTBITS(factor), 0xCC);   //  2^52
+        d1 = SIMD_SUBPD(SIMD_CASTPD(xH), fix2);     //  2^84 + 2^52
+        d1 = SIMD_ADDPD(d1, SIMD_CASTPD(xL));
+        return d1;
+    }
+
+    // Remaining code courtesy of https://stackoverflow.com/a/77376595
+    static reg double_to_int64(regd x)
+    {
+        x = SIMD_ADDPD(x, SIMD_SETPD(0x0018000000000000));
+        return SIMD_SUB64(
+            SIMD_CASTBITS(x),
+            SIMD_CASTBITS(SIMD_SETPD(0x0018000000000000))
+        );
+    }
+
+    // Only works for inputs in the range: [-2^51, 2^51]
+    static regd int64_to_double(reg x){
+        x = SIMD_ADD64(x, SIMD_CASTBITS(SIMD_SETPD(0x0018000000000000)));
+        return SIMD_SUBPD(SIMD_CASTPD(x), SIMD_SETPD(0x0018000000000000));
+    }
+
+
+    static reg mm256_cvtepi64_pd(regd d1)
+    {
+        const regd k2_32inv_dbl = SIMD_SETPD(1.0/4294967296.0); // 1 / 2^32
+        const regd k2_32_dbl = SIMD_SETPD(4294967296.0); // 2^32
+
+        // Multiply by inverse instead of dividing.
+        const regd v_hi_dbl = SIMD_MULPD(d1, k2_32inv_dbl);
+        // Convert to integer.
+        const reg v_hi = double_to_int64(v_hi_dbl);
+        // Convert high32 integer to double and multiply by 2^32.
+        const regd v_hi_int_dbl = SIMD_MULPD(int64_to_double(v_hi), k2_32_dbl);
+        // Subtract that from the original to get the remainder.
+        const regd v_lo_dbl = SIMD_SUBPD(d1, v_hi_int_dbl);
+        // Convert to low32 integer.
+        const reg v_lo = double_to_int64(v_lo_dbl);
+        // Reconstruct integer from shifted high32 and remainder.
+        return SIMD_ADD64(SIMD_LSHIFT64(v_hi, 32), v_lo);
+    }
+#endif
+
+#define SIMD_CVT64    mm256_cvtepi64_pd
+
+/*     ALGORITHM START     */
+
 void accumulate(u64 *restrict seed, u64 *restrict IV, u64 *restrict work_buffer, double *restrict chseeds, const u64 cc)
 {
-    // clang-format off
-    // To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random double D
-    #define DIV   5.4210109E-20
-    #define LIMIT 0.5
-    // clang-format on
-
     IV[0] ^= seed[0];
     IV[1] ^= ~seed[0];
     IV[2] ^= seed[1];
@@ -20,9 +74,10 @@ void accumulate(u64 *restrict seed, u64 *restrict IV, u64 *restrict work_buffer,
     IV[7] ^= ~seed[3];
 
     register u8 i       = 0;
-    register u16 offset = cc & 255;
+    register u8 offset = ((cc & 0xFF) >> 2) << 2;
 #ifdef __AARCH64_SIMD__
-    const dregq range = SIMD_SETQPD(DIV * LIMIT);
+    // To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random double D
+    const dregq range = SIMD_SETQPD(2.7105054E-20);
 
     dreg4q seeds;
     reg64q4 r1 = SIMD_LOAD64x4(&IV[0]);
@@ -36,9 +91,10 @@ void accumulate(u64 *restrict seed, u64 *restrict IV, u64 *restrict work_buffer,
         SIMD_ADD4RQ64(r2, r1, r2);
     } while (++i < (ROUNDS / 2));
 
-    SIMD_STORE64x4(&IV[0], r1);
+    SIMD_STORE64x4(&IV[0], r2);
 #else
-    const regd factor = SIMD_SETPD(DIV * LIMIT);
+    // To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random double D
+    const regd range = SIMD_SETPD(2.7105054E-20);
 
     regd d1;
     reg r1 = SIMD_LOADBITS((reg *) &IV[0]);
@@ -46,36 +102,37 @@ void accumulate(u64 *restrict seed, u64 *restrict IV, u64 *restrict work_buffer,
     reg r2 = SIMD_LOADBITS((reg *) &work_buffer[offset]);
 
     do {
-        r1 = SIMD_XOR64(r1, r2);
+        r1 = SIMD_XORBITS(r1, r2);
         d1 = SIMD_CASTPD(r1);
-        d1 = SIMD_MULPD(d1, factor);
-        SIMD_STOREPD((regd *) &chseeds[i << 3], d1);
-        r2 = SIMD_ADDPD(r1, r2);
-    } while (++i < (ROUNDS << 2));
+        d1 = SIMD_MULPD(d1, range);
+        SIMD_STOREPD(&chseeds[i << 3], d1);
+        r2 = SIMD_ADD64(r1, r2);
+    } while (++i < (ROUNDS / 2));
 
-    SIMD_STOREBITS((reg *) &IV[0], r1);
+    SIMD_STOREBITS((reg *) &IV[0], r2);
 #else
     reg r2 = SIMD_LOADBITS((reg *) &IV[4]);
+
     reg r3 = SIMD_LOADBITS((reg *) &work_buffer[offset]);
     reg r4 = SIMD_LOADBITS((reg *) &work_buffer[offset + 4]);
 
     do {
-        r1 = SIMD_XOR64(r1, r3);
-        d1 = SIMD_CASTPD(r1);
-        d1 = SIMD_MULPD(d1, factor);
-        SIMD_STOREPD((regd *) &chseeds[i], d1);
+        r1 = SIMD_XORBITS(r1, r3);
+        d1 = SIMD_CVTPD(r1);
+        d1 = SIMD_MULPD(d1, range);
+        SIMD_STOREPD(&chseeds[i], d1);
 
-        r2 = SIMD_XOR64(r2, r4);
-        d1 = SIMD_CASTPD(r2);
-        d1 = SIMD_MULPD(d1, factor);
-        SIMD_STOREPD((regd *) &chseeds[i + 4], d1);
+        r2 = SIMD_XORBITS(r2, r4);
+        d1 = SIMD_CVTPD(r2);
+        d1 = SIMD_MULPD(d1, range);
+        SIMD_STOREPD(&chseeds[i + 4], d1);
 
         r3 = SIMD_ADD64(r1, r3);
         r4 = SIMD_ADD64(r2, r4);
     } while ((i += 8) < (ROUNDS << 2));
 
-    SIMD_STOREBITS((reg *) &IV[0], r1);
-    SIMD_STOREBITS((reg *) &IV[4], r2);
+    SIMD_STOREBITS((reg *) &IV[0], r3);
+    SIMD_STOREBITS((reg *) &IV[4], r4);
 #endif
 #endif
 }
