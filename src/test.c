@@ -14,7 +14,7 @@ struct adam_data_s {
     u64 nonce;
 
     // 8 64-bit initialization vectors part of internal state
-    u64 IV[8];
+    u64 IV[8] ALIGN(ADAM_ALIGNMENT);
 
     // Output vector - 256 64-bit integers = 2048 bytes
     u64 out[BUF_SIZE] ALIGN(ADAM_ALIGNMENT);
@@ -44,7 +44,6 @@ static double maurer_k;
 
 static u64 *tbt_array;
 
-static u64 vnt_pass;
 static double vnt_fisher, vnt_fisher_gb;
 
 static u16 wh_gb_ctr;
