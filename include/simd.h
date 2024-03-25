@@ -145,7 +145,7 @@
       #define SIMD_STOREBITS   _mm512_store_si512
       #define SIMD_ANDBITS     _mm512_and_si512
       #define SIMD_XORBITS     _mm512_xor_si512
-      #define SIMD_CASTPD      _mm512_castpd_si512
+      #define SIMD_CASTBITS    _mm512_cvtepi64_pd 
       #define SIMD_LOADPD      _mm512_load_pd
       #define SIMD_STOREPD     _mm512_store_pd
       #define SIMD_STOREUPD    _mm512_storeu_pd
@@ -154,6 +154,7 @@
       #define SIMD_ADDPD       _mm512_add_pd
       #define SIMD_SUBPD       _mm512_sub_pd
       #define SIMD_MULPD       _mm512_mul_pd
+      #define SIMD_CASTBITS    _mm512_cvtpd_epi64 
     #else
       #define SIMD_LEN         32
       typedef __m256i          reg;
@@ -163,14 +164,19 @@
       #define SIMD_SETR8       _mm256_setr_epi8
       #define SIMD_ADD8        _mm256_add_epi8
       #define SIMD_CMPEQ8      _mm256_cmpeq_epi8 
+      #define SIMD_BLEND16     _mm256_blend_epi16
       #define SIMD_SET64       _mm256_set1_epi64x 
       #define SIMD_SETR64      _mm256_setr_epi64x 
       #define SIMD_ADD64       _mm256_add_epi64
+      #define SIMD_SUB64       _mm256_sub_epi64
+      #define SIMD_RSHIFT64    _mm256_srli_epi64
+      #define SIMD_LSHIFT64    _mm256_slli_epi64
       #define SIMD_LOADBITS    _mm256_load_si256
       #define SIMD_STOREBITS   _mm256_store_si256
       #define SIMD_ANDBITS     _mm256_and_si256
       #define SIMD_XORBITS     _mm256_xor_si256
-      #define SIMD_CASTPD      _mm256_castpd_si256
+      #define SIMD_ORBITS      _mm256_or_si256
+      #define SIMD_CASTBITS    _mm256_castpd_si256
       #define SIMD_LOADPD      _mm256_load_pd
       #define SIMD_STOREPD     _mm256_store_pd
       #define SIMD_SETPD       _mm256_set1_pd
@@ -178,6 +184,7 @@
       #define SIMD_ADDPD       _mm256_add_pd
       #define SIMD_SUBPD       _mm256_sub_pd
       #define SIMD_MULPD       _mm256_mul_pd
+      #define SIMD_CASTPD      _mm256_castsi256_pd 
     #endif
 
     #define BYTE_REPEAT(n) \
