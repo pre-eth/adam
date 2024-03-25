@@ -26,7 +26,7 @@ struct adam_data_s {
     // The seeds supplied to each iteration of the chaotic function
     double chseeds[ROUNDS << 2] ALIGN(ADAM_ALIGNMENT);
 
-    // Counter
+    // Counter with non-linear increment
     u64 cc;
 
     //  Current index in buffer (as bytes)
@@ -61,8 +61,8 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
         aligned_alloc + memset is used rather than calloc to use the appropriate SIMD alignment.
     */
     MEMSET(&data->out[0], 0, ADAM_BUF_BYTES);
-    // MEMSET(&data->work_buffer[0], *nonce & 0xFF, ADAM_BUF_BYTES);
-    // MEMSET(&data->work_buffer[BUF_SIZE], (*nonce & 0xFF) - (~*nonce & 0xFF), ADAM_BUF_BYTES);
+    MEMSET(&data->work_buffer[0], *nonce & 0xFF, ADAM_BUF_BYTES);
+    MEMSET(&data->work_buffer[BUF_SIZE], (*nonce & 0xFF) - (~*nonce & 0xFF), ADAM_BUF_BYTES);
 
     /*
         8 64-bit IV's that correspond to the verse:
@@ -77,9 +77,8 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
     data->IV[6] = 0x68202847656E6573;
     data->IV[7] = 0x697320313A323829;
 
-    // Counter with non-uniform increment
     data->cc = 0;
-
+    
     // Last byte idx == regen next API call
     data->buff_idx = ADAM_BUF_BYTES;
 

@@ -298,13 +298,13 @@ static void gap_lengths(u64 num)
     register u8 byte;
     register u64 dist;
 
+    register u8 i = 0;
     do {
-        byte = num & 0xFF;
+        byte = (num >> i) & 0xFF;
         dist = (++ctr - gaps[byte]);
         gaplengths[byte] += dist;
         gaps[byte] = ctr;
-        num >>= 8;
-    } while (num > 0);
+    } while ((i += 8) < 64);
 }
 
 static void tally_runs(const u64 num, basic_test *basic)
@@ -334,14 +334,16 @@ static void tally_runs(const u64 num, basic_test *basic)
     prev = num;
 }
 
-static void tally_bitruns(u64 num, mfreq_test *mfreq)
+static void tally_bitruns(const u64 num, mfreq_test *mfreq)
 {
-    // 0 = 0, 1 = 1, -1 = init
-    static short direction = -1;
+    // __builtin_printf("one runs: %llu, zero runs: %llu\n", mfreq->one_runs, mfreq->zero_runs);
+    // 1 = 0, 2 = 1, 0 = init
+    static u8 direction;
     static u64 curr_zero, curr_one;
 
+    register u8 i = 0;
     do {
-        if (num & 1) {
+        if ((num >> i) & 1) {
             if (direction != 1) {
                 ++mfreq->one_runs;
                 mfreq->longest_zero = MAX(mfreq->longest_zero, curr_zero);
@@ -350,15 +352,15 @@ static void tally_bitruns(u64 num, mfreq_test *mfreq)
             }
             ++curr_one;
         } else {
-            if (direction != 0) {
+            if (direction != 2) {
                 ++mfreq->zero_runs;
                 mfreq->longest_one = MAX(mfreq->longest_one, curr_one);
                 curr_one           = 0;
-                direction          = 0;
+                direction          = 2;
             }
             ++curr_zero;
         }
-    } while (num >>= 1);
+    } while (++i < 64);
 }
 
 static void chseed_unif(const double *restrict chseeds, u64 *chseed_dist, double *avg_chseed)
@@ -442,6 +444,7 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
     u64 num;
     do {
         num = _ptr[i];
+        // __builtin_printf("num: %llu\n", num);
         rsl->range->odd += (num & 1);
         rsl->mfreq->mfreq += POPCNT(num);
 
@@ -451,7 +454,7 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
 
         // Convert this number to float with same logic used for returning FP results
         // Then record float for FP freq distribution in (0.0, 1.0)
-        rsl->fp->avg_fp += d = ((double) num / (double) __UINT64_MAX__);
+        rsl->fp->avg_fp += (d = ((double) num / (double) __UINT64_MAX__));
         ++rsl->fp->fpf_dist[(u8) (d * 10.0)];
         ++rsl->fp->fpf_quad[(d >= 0.25) + (d >= 0.5) + (d >= 0.75)];
 
@@ -490,43 +493,35 @@ static void adam_results(const u64 limit, rng_test *rsl);
 void adam_examine(const u64 limit, adam_data data)
 {
     // General initialization
-    basic_test basic;
-    MEMSET(&basic, 0, sizeof(basic_test));
-
+    basic_test basic = {0};
     basic.sequences  = limit >> 14;
     basic.chseed_exp = basic.sequences * (ROUNDS << 2);
-
     MEMCPY(&basic.init_values[0], data->seed, sizeof(u64) * 4);
     basic.init_values[4] = data->nonce;
 
     // Number range related testing
-    range_test range;
-    MEMSET(&range, 0, sizeof(range_test));
+    range_test range = {0};
 
     // Bit frequency related stuff
-    mfreq_test mfreq;
-    MEMSET(&mfreq, 0, sizeof(mfreq_test));
+    mfreq_test mfreq = {0};
 
     // Floating point test related stuf
-    fp_test fp;
-    MEMSET(&fp, 0, sizeof(fp_test));
+    fp_test fp = {0};
 
     // Topological Binary init
-    tb_test topo;
-    MEMSET(&topo, 0, sizeof(tb_test));
+    tb_test topo = {0};
     topo.trials    = basic.sequences >> 6;
     topo.total_u16 = topo.trials * TBT_SEQ_SIZE;
 
     // Bit Array for representing 2^16 values
-    tbt_array = calloc(0, sizeof(u64) * 1024);
+    tbt_array = calloc(1024, sizeof(u64));
 
     // Von Neumann Ratio init
-    vn_test von;
-    MEMSET(&von, 0, sizeof(vn_test));
+    vn_test von = {0};
     von.trials = limit / TESTING_BITS;
 
     // SAC and ENT init values
-    ent_test ent;
+    ent_test ent = {0};
 
     u64 nonce            = data->nonce ^ (1ULL << (data->nonce & 63));
     adam_data sac_runner = adam_setup(data->seed, &nonce);
@@ -537,20 +532,17 @@ void adam_examine(const u64 limit, adam_data data)
     range.max = data->out[0];
 
     // Maurer test init - calculations were pulled from the NIST STS implementation
-    maurer_test mau;
+    maurer_test mau = {0};
     maurer_k    = MAURER_ARR_SIZE - MAURER_Q;
     mau.trials  = limit / TESTING_BITS;
-    mau.pass    = 0;
     mau.c       = 0.7 - 0.8 / (double) MAURER_L + (4 + 32 / (double) MAURER_L) * pow(maurer_k, -3 / (double) MAURER_L) / 15.0;
     mau.std_dev = mau.c * sqrt(MAURER_VARIANCE / (double) maurer_k);
     mau.bytes   = malloc(MAURER_ARR_SIZE * sizeof(u8));
-    MEMCPY(&mau.bytes[maurer_ctr], data->out, ADAM_BUF_BYTES);
+    MEMCPY(mau.bytes, data->out, ADAM_BUF_BYTES);
     ++maurer_ctr;
-    mau.mean = mau.fisher = 0.0;
 
     // Walsh-Hadamard Test init
-    wh_test walsh;
-    MEMSET(&walsh, 0, sizeof(wh_test));
+    wh_test walsh = {0};
     walsh.trials = limit / TESTING_BITS;
 
     // Aggregation struct
@@ -566,13 +558,14 @@ void adam_examine(const u64 limit, adam_data data)
     rsl.ent   = &ent;
 
     // Start testing! (subtract 1 because we already did 1 trial)
-    register long long rate = basic.sequences - 1;
+    register long long rate = basic.sequences;
     do {
         run_rng(sac_runner);
         test_loop(&rsl, data->out, data->chseeds, sac_runner->out);
         MEMCPY(sac_runner, data, sizeof(struct adam_data_s));
         sac_runner->nonce ^= (1ULL << (data->nonce & 63));
         run_rng(data);
+        break;
     } while (--rate > 0);
 
     adam_results(limit, &rsl);
@@ -591,14 +584,9 @@ static void adam_results(const u64 limit, rng_test *rsl)
     // First get the ENT results out of the way
     ent_results(rsl->ent);
 
-    // Gap related info
-    rsl->basic->avg_gap = 0.0;
-
     register u16 i = 0;
-    register u64 tmp;
     for (; i < BUF_SIZE; ++i) {
-        tmp = rsl->ent->freq[i];
-        rsl->basic->avg_gap += ((double) gaplengths[i] / (double) (tmp - 1));
+        rsl->basic->avg_gap += ((double) gaplengths[i] / (double) (rsl->ent->freq[i] - 1));
         update_mcb_lcb(i, rsl->ent->freq, rsl->basic->mcb, rsl->basic->lcb);
     }
 

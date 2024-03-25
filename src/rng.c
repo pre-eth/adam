@@ -53,9 +53,10 @@ static reg mm256_cvtepi64_pd(regd d1)
     // Reconstruct integer from shifted high32 and remainder.
     return SIMD_ADD64(SIMD_LSHIFT64(v_hi, 32), v_lo);
 }
-#endif
 
 #define SIMD_CVT64 mm256_cvtepi64_pd
+
+#endif
 
 /*     ALGORITHM START     */
 
