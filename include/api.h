@@ -112,7 +112,7 @@
 
     Returns 0 on success, 1 on error.
   */
-  int adam_dfill(adam_data data, double *buf, const unsigned long long multiplier, const unsigned long amount);
+  int adam_dfill(adam_data data, double *buf, const unsigned long long multiplier, const unsigned int amount);
 
   /*
     Chooses a random item from a provided collection, where param <arr> is a 

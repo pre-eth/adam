@@ -286,12 +286,12 @@ static u8 assess(adam_data data)
     register u64 limit;
 
     if (dbl_mode) {
-        ASSESS_PROMPT(&output_mult, "Sequence Size (x 1000):", " %lu", (output_mult < 1 || output_mult > DBL_TESTING_LIMIT), "Output multiplier must be between [1, " STRINGIFY(DBL_TESTING_LIMIT) "]");
+        ASSESS_PROMPT(&output_mult, "Sequence Size (x 1000):", " %u", (output_mult < 1 || output_mult > DBL_TESTING_LIMIT), "Output multiplier must be between [1, " STRINGIFY(DBL_TESTING_LIMIT) "]");
         limit = TESTING_DBL * output_mult;
         if (assessf(data, limit, file_mode))
             return err("Could not allocate enough space for adam -a");
     } else {
-        ASSESS_PROMPT(&output_mult, "Sequence Size (x 1MB):", " %lu", (output_mult < 1 || output_mult > BITS_TESTING_LIMIT), "Output multiplier must be between [1, " STRINGIFY(BITS_TESTING_LIMIT) "]");
+        ASSESS_PROMPT(&output_mult, "Sequence Size (x 1MB):", " %u", (output_mult < 1 || output_mult > BITS_TESTING_LIMIT), "Output multiplier must be between [1, " STRINGIFY(BITS_TESTING_LIMIT) "]");
 
         limit = TESTING_BITS * output_mult;
         if (file_mode) {
