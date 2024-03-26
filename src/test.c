@@ -170,7 +170,6 @@ static void vnt(const u32 *nums, vn_test *von)
 
     const double stat    = ((numer / denom) - VNT_MEAN) / VNT_STD_DEV;
     const double p_value = po_zscore(stat);
-    __builtin_printf("avg: %lf raw: %lf stat: %lf P-VALUE: %lf\n", avg, (numer / denom), stat, p_value);
     von->pass_rate += (p_value > ALPHA_LEVEL);
     vnt_fisher += log(p_value);
 }
