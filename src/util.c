@@ -574,7 +574,7 @@ void print_maurer_results(const u16 indent, maurer_test *rsl)
     printf("\033[2m\033[%uCa. Raw Fisher's Method Value:\033[m %1.3lf\n", indent - 2, rsl->fisher);
     printf("\033[2m\033[%uC                   b. Mean:\033[m %1.7lf (exp. %1.7lf : %+1.7lf)\n", indent, rsl->mean, MAURER_EXPECTED, rsl->mean - MAURER_EXPECTED);
     printf("\033[2m\033[%uC              c. Pass Rate:\033[m %llu/%llu (%llu%%)\n", indent, rsl->pass, rsl->trials, (u64) (pass_rate * 100.0));
-    printf("\033[2m\033[%uC                      d. C:\033[m %1.7lf\n", indent, rsl->c);
+    printf("\033[2m\033[%uC                      d. C:\033[m %1.3lf\n", indent, MAURER_C);
     printf("\033[2m\033[%uC     e. Standard Deviation:\033[m %1.7lf\n", indent, rsl->std_dev);
     printf("\033[2m\033[%uC            f. Lower Bound:\033[m %1.7lf\n", indent, lower_bound);
     printf("\033[2m\033[%uC            g. Upper Bound:\033[m %1.7lf\n", indent, upper_bound);

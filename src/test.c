@@ -40,7 +40,6 @@ static u64 sat_dist[SP_DIST];
 
 static u64 maurer_arr[1U << MAURER_L];
 static u64 maurer_ctr;
-static double maurer_k;
 
 static u64 *tbt_array;
 
@@ -101,13 +100,13 @@ static void maurer(maurer_test *mau)
     register double sum = 0.0;
 
     i = MAURER_Q;
-    for (; i < MAURER_Q + maurer_k; ++i) {
+    for (; i < MAURER_Q + MAURER_K; ++i) {
         sum += log(i - maurer_arr[mau->bytes[i]]) / log(2);
         maurer_arr[mau->bytes[i]] = i;
     }
 
     // These 3 lines were pulled from the NIST STS implementation
-    const double phi     = sum / maurer_k;
+    const double phi     = sum / MAURER_K;
     const double x       = fabs(phi - MAURER_EXPECTED) / (sqrt(2) * mau->std_dev);
     const double p_value = erfc(x);
 
@@ -147,28 +146,31 @@ static void tbt(const u16 *nums, tb_test *topo)
 
 static void vnt(const u32 *nums, vn_test *von)
 {
-    register u32 i      = 0;
-    register double avg = 0.0;
-    do
-        avg += (double) nums[i];
-    while (++i < VNT_N);
+    register u32 i = 0;
+    register u32 prev = nums[0];
+    
+    register double numer, denom, avg;
+    numer = denom = avg = 0.0;
 
-    avg /= (double) VNT_N;
+    do {
+        avg += (double) nums[i];
+        numer += pow((double) prev - (double) nums[i], 2);
+        prev = nums[i];
+    } while (++i < VNT_N);
+
+    avg /= VNT_N;
 
     i = 0;
-    register double numerator, denominator;
-    numerator = denominator = 0.0;
-    do {
-        numerator += pow((double) nums[i] - (double) nums[i + 1], 2);
-        denominator += pow((double) nums[i] - (double) avg, 2);
-    } while (++i < VNT_N - 1);
+    do 
+        denom += pow((double) nums[i] - avg, 2);
+    while (++i < VNT_N);
 
-    numerator *= VNT_N;
-    denominator += pow((double) (nums[VNT_N - 1] - avg), 2);
-    denominator *= (VNT_N - 1);
+    numer *= VNT_N;
+    denom *= (VNT_N - 1);
 
-    const double stat    = ((numerator / denominator) - VNT_MEAN) / VNT_STD_DEV;
+    const double stat    = ((numer / denom) - VNT_MEAN) / VNT_STD_DEV;
     const double p_value = po_zscore(stat);
+    __builtin_printf("avg: %lf raw: %lf stat: %lf P-VALUE: %lf\n", avg, (numer / denom), stat, p_value);
     von->pass_rate += (p_value > ALPHA_LEVEL);
     vnt_fisher += log(p_value);
 }
@@ -189,7 +191,7 @@ static void walsh_test(const u32 *nums, wh_test *walsh)
     // 32-bit work units, but process 128-bits at a time for statistic
     register u8 j = 0;
     for (u16 i = 0; i < (BUF_SIZE << 1); i += 4) {
-        // Divide i by 4 for the ith 128-bit quantity
+        // Divide i by 4 for the nth 128-bit quantity
         stat = wh_transform(i >> 2, nums[i], 0)
             + wh_transform(i >> 2, nums[i + 1], 32)
             + wh_transform(i >> 2, nums[i + 2], 64)
@@ -276,7 +278,7 @@ static void update_mcb_lcb(const u8 idx, const u64 *freq, u64 *mcb, u64 *lcb)
 {
     // Most Common Bytes
     register short i = 3;
-    while (freq[idx] > freq[mcb[i]] && i > 0) {
+    while (freq[idx] > freq[mcb[i]] && i >= 0) {
         mcb[i + 1] = mcb[i];
         --i;
     }
@@ -284,7 +286,7 @@ static void update_mcb_lcb(const u8 idx, const u64 *freq, u64 *mcb, u64 *lcb)
 
     // Least Common Bytes
     i = 3;
-    while (freq[idx] < freq[lcb[i]] && i > 0) {
+    while (freq[idx] < freq[lcb[i]] && i >= 0) {
         lcb[i + 1] = lcb[i];
         --i;
     }
@@ -336,7 +338,6 @@ static void tally_runs(const u64 num, basic_test *basic)
 
 static void tally_bitruns(const u64 num, mfreq_test *mfreq)
 {
-    // __builtin_printf("one runs: %llu, zero runs: %llu\n", mfreq->one_runs, mfreq->zero_runs);
     // 1 = 0, 2 = 1, 0 = init
     static u8 direction;
     static u64 curr_zero, curr_one;
@@ -433,7 +434,7 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
 
     // Walsh-Hadamard Transform Test
     // Related to the frequency and autocorellation test, computes a
-    // test statistic per u32 from a transformed binary sequence
+    // test statistic per u128 from a transformed binary sequence
     walsh_test((u32 *) _ptr, rsl->walsh);
 
     // 32-bit floating point max-of-T test with T = 8
@@ -444,11 +445,8 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
     u64 num;
     do {
         num = _ptr[i];
-        // __builtin_printf("num: %llu\n", num);
         rsl->range->odd += (num & 1);
         rsl->mfreq->mfreq += POPCNT(num);
-
-        // https://graphics.stanford.edu/~seander/bithacks.html#IntegerMinOrMax
         rsl->range->min = MIN(rsl->range->min, num);
         rsl->range->max = MAX(rsl->range->max, num);
 
@@ -513,33 +511,47 @@ void adam_examine(const u64 limit, adam_data data)
     topo.trials    = basic.sequences >> 6;
     topo.total_u16 = topo.trials * TBT_SEQ_SIZE;
 
-    // Bit Array for representing 2^16 values
-    tbt_array = calloc(1024, sizeof(u64));
-
+    // Bitarray for representing 2^16 values
+    tbt_array = calloc(1024, sizeof(u64));  
+    if (tbt_array == NULL) {
+        err("Could not allocate memory for topological binary test");
+        return ;
+    }
+    
     // Von Neumann Ratio init
     vn_test von = {0};
     von.trials = limit / TESTING_BITS;
 
-    // SAC and ENT init values
-    ent_test ent = {0};
-
-    u64 nonce            = data->nonce ^ (1ULL << (data->nonce & 63));
-    adam_data sac_runner = adam_setup(data->seed, &nonce);
-
+    // Need to run RNG once initially to finish setting up ENT, range, Maurer, and SAC tests
     run_rng(data);
+
+    // ENT init values
+    ent_test ent = {0};
     ent.sccu0 = data->out[0] & 0xFF;
+
     range.min = data->out[0];
     range.max = data->out[0];
 
     // Maurer test init - calculations were pulled from the NIST STS implementation
     maurer_test mau = {0};
-    maurer_k    = MAURER_ARR_SIZE - MAURER_Q;
     mau.trials  = limit / TESTING_BITS;
-    mau.c       = 0.7 - 0.8 / (double) MAURER_L + (4 + 32 / (double) MAURER_L) * pow(maurer_k, -3 / (double) MAURER_L) / 15.0;
-    mau.std_dev = mau.c * sqrt(MAURER_VARIANCE / (double) maurer_k);
+    mau.std_dev = MAURER_C * sqrt(MAURER_VARIANCE / (double) MAURER_K);
     mau.bytes   = malloc(MAURER_ARR_SIZE * sizeof(u8));
+    if (mau.bytes == NULL) {
+        err("Could not allocate memory for Maurer test");
+        return ;
+    }
+
     MEMCPY(mau.bytes, data->out, ADAM_BUF_BYTES);
     ++maurer_ctr;
+
+    // SAC test init
+    u64 nonce            = data->nonce ^ (1ULL << (data->nonce & 63));
+    adam_data sac_runner = adam_setup(data->seed, &nonce);
+    if (sac_runner == NULL) {
+        err("Could not allocate memory for strict avalanche test");
+        return ;     
+    }
 
     // Walsh-Hadamard Test init
     wh_test walsh = {0};
@@ -557,7 +569,7 @@ void adam_examine(const u64 limit, adam_data data)
     rsl.walsh = &walsh;
     rsl.ent   = &ent;
 
-    // Start testing! (subtract 1 because we already did 1 trial)
+    // Start testing!
     register long long rate = basic.sequences;
     do {
         run_rng(sac_runner);
@@ -632,8 +644,10 @@ static void adam_results(const u64 limit, rng_test *rsl)
     print_wht_results(indent, rsl->walsh);
 }
 
+#define Z_TABLE_SIZE    390
+
 // Positive side only, from 0.00 - 3.99
-static double z_table[] = {
+static double z_table[Z_TABLE_SIZE] = {
     .50000, .50399, .50798, .51197, .51595, .51994, .52392, .52790, .53188, .53586,
     .53983, .54380, .54776, .55172, .55567, .55962, .56356, .56749, .57142, .57535,
     .57926, .58317, .58706, .59095, .59483, .59871, .60257, .60642, .61026, .61409,
@@ -672,8 +686,7 @@ static double z_table[] = {
     .99977, .99978, .99978, .99979, .99980, .99981, .99981, .99982, .99983, .99983,
     .99984, .99985, .99985, .99986, .99986, .99987, .99987, .99988, .99988, .99989,
     .99989, .99990, .99990, .99990, .99991, .99991, .99992, .99992, .99992, .99992,
-    .99993, .99993, .99993, .99994, .99994, .99994, .99994, .99995, .99995, .99995,
-    .99995, .99995, .99996, .99996, .99996, .99996, .99996, .99996, .99997, .99997
+    .99993, .99993, .99993, .99994, .99994, .99994, .99994, .99995, .99995, .99995
 };
 
 double po_zscore(double z_score)
@@ -683,13 +696,13 @@ double po_zscore(double z_score)
         z_score *= -1.0;
 
     const u16 coord_row = (u16) (z_score * 10);
+    const u16 coord_col = (u16) (z_score * 100) - (coord_row * 10);
+    const u16 coord = (10 * coord_row) + coord_col;
 
-    if (10 * coord_row > 39)
+    if (coord >= Z_TABLE_SIZE)
         return 0.0;
 
-    const u16 coord_col = (u16) (z_score * 100) - (coord_row * 10);
-
-    register double p_value = z_table[(10 * coord_row) + coord_col];
+    register double p_value = z_table[coord];
 
     if (!neg)
         p_value = 1.0 - p_value;

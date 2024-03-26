@@ -149,9 +149,12 @@
   #define   MAURER_ARR_SIZE           1001472
   #define   MAURER_L                  8
   #define   MAURER_Q                  2048
+  #define   MAURER_K                  (MAURER_ARR_SIZE - MAURER_Q)
+  #define   MAURER_C                  0.603
   #define   MAURER_Y                  2.58
   #define   MAURER_EXPECTED           7.1836656 
   #define   MAURER_VARIANCE           3.2386622
+  #define   MAURER_STD_DEV           3.2386622
 
   typedef struct maurer_test {
     u64 trials;
@@ -159,7 +162,6 @@
     u8 *bytes;
     u64 pass;
     double mean;
-    double c;
     double std_dev;
     double fisher;
   } maurer_test;
@@ -212,8 +214,8 @@
     Ann. Math. Statist. 12 (4) 367 - 395, December, 1941. https://doi.org/10.1214/aoms/1177731677
   */
   #define   VNT_N                     250368
-  #define   VNT_MEAN                  2.00000798827
-  #define   VNT_STD_DEV               0.00399705924               
+  #define   VNT_MEAN                  2.000007988273214
+  #define   VNT_STD_DEV               0.003997059246194         
 
   typedef struct vn_test {
     u64 trials;
