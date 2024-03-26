@@ -2,14 +2,10 @@
 #define ADAM_API_H
   #include <stdbool.h>
 
-#ifdef __AARCH64_SIMD__
-  #define ADAM_ALIGNMENT    64
-#else
-#ifdef __AVX512F__
+#if defined(__AARCH64_SIMD__) || defined(__AVX512F__)
   #define ADAM_ALIGNMENT    64
 #else
   #define ADAM_ALIGNMENT    32
-#endif
 #endif
 
   #define ADAM_BUF_SIZE     256
@@ -39,10 +35,10 @@
 
   /*
     Self-explanatory functions - The first two return a raw pointer to the 
-    seed/nonce respectively so you can set them yourself at anytime you'd like.
+    seed/nonce respectively so you can reset them yourself at anytime you'd like.
 
     Since the third function adam_buffer() returns a pointer to the output
-    vector, the return value of this function is a const pointer to const data
+    vector, the return value of this function is a pointer to const data
     to prevent any sort of modification by the user, as technically even the 
     output vector comprises RNG state and the result of each run is dependent
     on its value. This function ALWAYS generates a fresh buffer before returning
@@ -86,7 +82,7 @@
     The caller is responsible for ensuring param <buf> is of at least 
     <amount> * sizeof(u64) bytes in length, and that the pointer is not 
     NULL. If <amount> is 0 or greater than 1 billion, this function  
-    will return 1 and terminate early.
+    will return 1 and exit.
 
     Also, please make sure you use the ADAM_ALIGNMENT macro to align <buf> 
     before you pass it to this function.
@@ -105,14 +101,14 @@
     The caller is responsible for ensuring param <buf> is of at least 
     <amount> * sizeof(double) bytes in length, and that the pointer is 
     not NULL. If <amount> is 0 or greater than 1 billion, this function 
-    will return 1 and terminate early.
+    will return 1 and exit.
 
     Also, please make sure you use the ADAM_ALIGNMENT macro to align <buf> 
     before you pass it to this function.
 
     Param <multiplier> can be supplied to multiply all doubles by a certain 
     scaling factor so they fall within the range (0, <multiplier>). If you
-    do not need a scaling factor, just pass a value of 1.
+    do not need a scaling factor, just pass a value of 1 or 0.
 
     Returns 0 on success, 1 on error.
   */
