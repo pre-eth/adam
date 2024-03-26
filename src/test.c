@@ -146,9 +146,9 @@ static void tbt(const u16 *nums, tb_test *topo)
 
 static void vnt(const u32 *nums, vn_test *von)
 {
-    register u32 i = 0;
+    register u32 i    = 0;
     register u32 prev = nums[0];
-    
+
     register double numer, denom, avg;
     numer = denom = avg = 0.0;
 
@@ -161,7 +161,7 @@ static void vnt(const u32 *nums, vn_test *von)
     avg /= VNT_N;
 
     i = 0;
-    do 
+    do
         denom += pow((double) nums[i] - avg, 2);
     while (++i < VNT_N);
 
@@ -491,55 +491,55 @@ static void adam_results(const u64 limit, rng_test *rsl);
 void adam_examine(const u64 limit, adam_data data)
 {
     // General initialization
-    basic_test basic = {0};
+    basic_test basic = { 0 };
     basic.sequences  = limit >> 14;
     basic.chseed_exp = basic.sequences * (ROUNDS << 2);
     MEMCPY(&basic.init_values[0], data->seed, sizeof(u64) * 4);
     basic.init_values[4] = data->nonce;
 
     // Number range related testing
-    range_test range = {0};
+    range_test range = { 0 };
 
     // Bit frequency related stuff
-    mfreq_test mfreq = {0};
+    mfreq_test mfreq = { 0 };
 
     // Floating point test related stuf
-    fp_test fp = {0};
+    fp_test fp = { 0 };
 
     // Topological Binary init
-    tb_test topo = {0};
+    tb_test topo   = { 0 };
     topo.trials    = basic.sequences >> 6;
     topo.total_u16 = topo.trials * TBT_SEQ_SIZE;
 
     // Bitarray for representing 2^16 values
-    tbt_array = calloc(1024, sizeof(u64));  
+    tbt_array = calloc(1024, sizeof(u64));
     if (tbt_array == NULL) {
         err("Could not allocate memory for topological binary test");
-        return ;
+        return;
     }
-    
+
     // Von Neumann Ratio init
-    vn_test von = {0};
-    von.trials = limit / TESTING_BITS;
+    vn_test von = { 0 };
+    von.trials  = limit / TESTING_BITS;
 
     // Need to run RNG once initially to finish setting up ENT, range, Maurer, and SAC tests
     run_rng(data);
 
     // ENT init values
-    ent_test ent = {0};
-    ent.sccu0 = data->out[0] & 0xFF;
+    ent_test ent = { 0 };
+    ent.sccu0    = data->out[0] & 0xFF;
 
     range.min = data->out[0];
     range.max = data->out[0];
 
     // Maurer test init - calculations were pulled from the NIST STS implementation
-    maurer_test mau = {0};
-    mau.trials  = limit / TESTING_BITS;
-    mau.std_dev = MAURER_C * sqrt(MAURER_VARIANCE / (double) MAURER_K);
-    mau.bytes   = malloc(MAURER_ARR_SIZE * sizeof(u8));
+    maurer_test mau = { 0 };
+    mau.trials      = limit / TESTING_BITS;
+    mau.std_dev     = MAURER_C * sqrt(MAURER_VARIANCE / (double) MAURER_K);
+    mau.bytes       = malloc(MAURER_ARR_SIZE * sizeof(u8));
     if (mau.bytes == NULL) {
         err("Could not allocate memory for Maurer test");
-        return ;
+        return;
     }
 
     MEMCPY(mau.bytes, data->out, ADAM_BUF_BYTES);
@@ -550,12 +550,12 @@ void adam_examine(const u64 limit, adam_data data)
     adam_data sac_runner = adam_setup(data->seed, &nonce);
     if (sac_runner == NULL) {
         err("Could not allocate memory for strict avalanche test");
-        return ;     
+        return;
     }
 
     // Walsh-Hadamard Test init
-    wh_test walsh = {0};
-    walsh.trials = limit / TESTING_BITS;
+    wh_test walsh = { 0 };
+    walsh.trials  = limit / TESTING_BITS;
 
     // Aggregation struct
     rng_test rsl;
@@ -644,7 +644,7 @@ static void adam_results(const u64 limit, rng_test *rsl)
     print_wht_results(indent, rsl->walsh);
 }
 
-#define Z_TABLE_SIZE    390
+#define Z_TABLE_SIZE 390
 
 // Positive side only, from 0.00 - 3.99
 static double z_table[Z_TABLE_SIZE] = {
@@ -697,7 +697,7 @@ double po_zscore(double z_score)
 
     const u16 coord_row = (u16) (z_score * 10);
     const u16 coord_col = (u16) (z_score * 100) - (coord_row * 10);
-    const u16 coord = (10 * coord_row) + coord_col;
+    const u16 coord     = (10 * coord_row) + coord_col;
 
     if (coord >= Z_TABLE_SIZE)
         return 0.0;

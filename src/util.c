@@ -7,8 +7,8 @@
 
 double wh_transform(const u16 idx, const u32 test, const u8 offset)
 {
-    const u8 limit = offset + 32;
-    register u32 nummask = test;
+    const u8 limit        = offset + 32;
+    register u32 nummask  = test;
     register u8 ctr       = offset;
     register double final = 0;
     int val;

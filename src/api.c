@@ -78,7 +78,7 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
     data->IV[7] = 0x697320313A323829;
 
     data->cc = 0;
-    
+
     // Last byte idx == regen next API call
     data->buff_idx = ADAM_BUF_BYTES;
 

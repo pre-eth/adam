@@ -1,7 +1,8 @@
 #include "../include/rng.h"
 
 #if !defined(__AARCH64_SIMD__) && !defined(__AVX512F__)
-// Following code courtesy of https://stackoverflow.com/a/41148578
+
+// Following code found on https://stackoverflow.com/a/41148578
 regd mm256_cvtpd_epi64(reg r1)
 {
     const regd factor = SIMD_SETPD(0x0010000000000000);
@@ -19,7 +20,8 @@ regd mm256_cvtpd_epi64(reg r1)
     return d1;
 }
 
-// Remaining code courtesy of https://stackoverflow.com/a/77376595
+// Remaining code found on https://stackoverflow.com/a/77376595
+
 static reg double_to_int64(regd x)
 {
     x = SIMD_ADDPD(x, SIMD_SETPD(0x0018000000000000));
@@ -37,7 +39,7 @@ static regd int64_to_double(reg x)
 
 static reg mm256_cvtepi64_pd(regd d1)
 {
-    d1 = SIMD_ROUNDPD(d1, _MM_FROUND_TO_NEG_INF | _MM_FROUND_NO_EXC);
+    d1                      = SIMD_ROUNDPD(d1, _MM_FROUND_TO_NEG_INF | _MM_FROUND_NO_EXC);
     const regd k2_32inv_dbl = SIMD_SETPD(1.0 / 4294967296.0); // 1 / 2^32
     const regd k2_32_dbl    = SIMD_SETPD(4294967296.0);       // 2^32
 
@@ -164,17 +166,22 @@ void diffuse(u64 *restrict _ptr, const u64 nonce)
 
     i = 0;
     do {
-        a += _ptr[i + 0]; b += _ptr[i + 1]; c += _ptr[i + 2]; d += _ptr[i + 3];
-        e += _ptr[i + 4]; f += _ptr[i + 5]; g += _ptr[i + 6]; h += _ptr[i + 7];
+        a += _ptr[i + 0]; b += _ptr[i + 1]; 
+        c += _ptr[i + 2]; d += _ptr[i + 3];
+        e += _ptr[i + 4]; f += _ptr[i + 5];
+        g += _ptr[i + 6]; h += _ptr[i + 7];
 
         ISAAC_MIX(a, b, c, d, e, f, g, h);
 
-        _ptr[i + 0] = a; _ptr[i + 1] = b; _ptr[i + 2] = c; _ptr[i + 3] = d;
-        _ptr[i + 4] = e; _ptr[i + 5] = f; _ptr[i + 6] = g; _ptr[i + 7] = h;
+        _ptr[i + 0] = a; _ptr[i + 1] = b;
+        _ptr[i + 2] = c; _ptr[i + 3] = d;
+        _ptr[i + 4] = e; _ptr[i + 5] = f;
+        _ptr[i + 6] = g; _ptr[i + 7] = h;
     } while ((i += 8) < BUF_SIZE);
 
     // clang-format on
 }
+
 static void chaotic_iter(u64 *restrict in, u64 *restrict out, const double *restrict chseeds)
 {
 #ifdef __AARCH64_SIMD__
@@ -250,15 +257,12 @@ static void chaotic_iter(u64 *restrict in, u64 *restrict out, const double *rest
         r1 = SIMD_XORBITS(r2, r1);
         SIMD_STOREBITS((reg *) &out[i], r1);
 
-        // 3.9999 * X * (1 - X) for all X in the register
+        // One more run since AVX2 can only do 4 values at a
+        // time but we need 8 per iteration
         d3 = SIMD_SUBPD(one, d2);
         d3 = SIMD_MULPD(d3, coeff);
         d2 = SIMD_MULPD(d2, d3);
-
-        // Multiply result of chaotic function by beta
         d3 = SIMD_MULPD(d2, beta);
-
-        // Cast, XOR, and store
         r1 = SIMD_CVT64(d3);
         r2 = SIMD_LOADBITS((reg *) &in[i + 4]);
         r1 = SIMD_XORBITS(r2, r1);
@@ -325,3 +329,5 @@ void reseed(u64 *restrict seed, u64 *restrict work_buffer, u64 *restrict nonce, 
 
     // clang-format on
 }
+
+/*     ALGORITHM END     */
