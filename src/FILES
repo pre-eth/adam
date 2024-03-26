@@ -2,8 +2,8 @@
 FILE            IMPLEMENTATION FOCUS   
 ==========================================================================================
 api.c           The standard API functions for libadam and adam_data struct definition
-cli.c           Command line - option parsing, pretty printing info, manipulating ADAM
+cli.c           CLI entry point - option parsing, pretty printing info, manipulating ADAM
 ent.c           ENT framework code with some arrangement tweaks to work with the adam CLI
 rng.c           Where the magic happens! All the necessary primitives for ADAM
 test.c          Some tests and measurements of statistical quality, for the -e CLI option
-util.c          Miscellaneous helpers and utility functions for CLI 
+util.c          Miscellaneous helpers and utility functions for CLI and testing suite

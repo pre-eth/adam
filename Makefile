@@ -25,7 +25,7 @@ cli: $(OBJ)
 
 lib: $(LIB_OBJ)
 	@printf "\n\033[1;36mBuilding ADAM library...\033[m\n"
-	@ar rcs $(BUILD_DIR)/libadam.a $(LIB_OBJ)
+	ar rcs $(BUILD_DIR)/libadam.a $(LIB_OBJ)
 	@cp include/api.h $(BUILD_DIR)/adam.h
 	@printf "\033[1;32mLibrary and header written to \033[m$(BUILD_DIR)\n"
 
