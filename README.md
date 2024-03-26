@@ -16,10 +16,10 @@ ADAM is a cryptographically secure pseudorandom number generator (CSPRNG) origin
 
 Also, just like ISAAC, ADAM is a backronym that describes its operations:
 
-**A**ccumulate a set of chaotic seeds<br>
-**D**iffuse the work buffer with logic from ISAAC<br>
-**A**pply the chaotic function<br>
-**M**ix the work and state buffers to produce the output vector
+**A** ccumulate a set of chaotic seeds<br>
+**D** iffuse the work buffer with logic from ISAAC<br>
+**A** pply the chaotic function<br>
+**M** ix the work and state buffers to produce the output vector
 
 The chaotic algorithm behind the number generation process is detailed in the paper above, and you can learn more about ISAAC and its brilliant author Bob Jenkins [here](http://burtleburtle.net/bob/rand/isaacafa.html). 
 
