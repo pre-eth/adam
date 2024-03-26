@@ -201,8 +201,7 @@ static u8 uuid(adam_data data, const char *strlimit)
         printf("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%"
                "02x%02x%02x%02x",
             buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7],
-            buf[8], buf[9], buf[10], buf[11], buf[12], buf[13], buf[14],
-            buf[15]);
+            buf[8], buf[9], buf[10], buf[11], buf[12], buf[13], buf[14],                                buf[15]);
 
         putchar('\n');
     } while (++i < limit);
@@ -261,7 +260,7 @@ static void streamf(adam_data data)
 static u8 assess(adam_data data)
 {
     // clang-format off
-    #define ASSESS_PROMPT(var, msg, fmt, cond, error)        \
+    #define ASSESS_PROMPT(var, msg, fmt, cond, error)    \
     {                                                    \
         while (true) {                                   \
             fprintf(stderr, "\033[m" msg " \033[1;33m"); \
@@ -339,6 +338,7 @@ static u8 examine(adam_data data, const char *strlimit)
 
 int main(int argc, char **argv)
 {
+
     adam_data data = adam_setup(NULL, NULL);
 
     if (data == NULL)
