@@ -137,7 +137,7 @@ Not too hard to mess around with. Here's some basic examples, for reference:
 
 ### Generate 12 UUIDs
 
-`adam -u 12`
+`adam -u12`
 
 ### Enable floating point mode to get a random double
 
