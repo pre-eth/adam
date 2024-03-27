@@ -117,7 +117,7 @@ Here's the full command summary:
     -p    How many decimal places to print when printing doubles. Must be within [1, 15].
           Default is 15
     -m    Multiplier for randomly generated doubles, such that they fall in the range (0,
-          <MULTIPLIER>)
+          MULTIPLIER)
 </pre>
 
 Not too hard to mess around with. Here's some basic examples, for reference:
