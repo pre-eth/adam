@@ -185,7 +185,7 @@
       #define SIMD_SUBPD       _mm256_sub_pd
       #define SIMD_MULPD       _mm256_mul_pd
       #define SIMD_CASTPD      _mm256_castsi256_pd 
-      #define SIMD_CASTPD      _mm256_round_pd 
+      #define SIMD_ROUNDPD     _mm256_round_pd 
     #endif
 
     #define BYTE_REPEAT(n)     bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n]

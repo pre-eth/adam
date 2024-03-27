@@ -3,9 +3,7 @@
 #include <sys/random.h>
 
 #include "../include/api.h"
-#include "../include/defs.h"
 #include "../include/rng.h"
-#include "../include/simd.h"
 
 struct adam_data_s {
     // 256-bit seed
