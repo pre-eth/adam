@@ -1,6 +1,5 @@
 #ifndef UTIL_H
 #define UTIL_H
-	#include "defs.h"
 	#include "test.h"
 	
 	#define   BITBUF_SIZE     			1024
@@ -8,8 +7,6 @@
 	#define   TESTING_DBL    		    1000ULL
 	#define   BITS_TESTING_LIMIT        1000000
 	#define   DBL_TESTING_LIMIT         1500000
-
-	// Forward declarations - see test.h and ent.h
 
 	void     get_print_metrics(u16 *center, u16 *indent, u16 *swidth);
 	u8       err(const char *s);
