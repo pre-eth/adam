@@ -20,7 +20,7 @@ struct adam_data_s {
     u64 out[BUF_SIZE] ALIGN(ADAM_ALIGNMENT);
 
     // Work maps - sizeof(u64) * 512 = 4096 bytes
-    u64 work_buffer[BUF_SIZE << 1] ALIGN(ADAM_ALIGNMENT);
+    u64 state_buffers[BUF_SIZE << 1] ALIGN(ADAM_ALIGNMENT);
 
     // The seeds supplied to each iteration of the chaotic function
     double chseeds[ROUNDS << 2] ALIGN(ADAM_ALIGNMENT);
@@ -478,11 +478,11 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
 
 static void run_rng(adam_data data)
 {
-    accumulate(data->seed, data->IV, data->work_buffer, data->chseeds, data->cc);
+    accumulate(data->seed, data->IV, data->state_buffers, data->chseeds, data->cc);
     diffuse(data->out, data->nonce);
-    apply(data->out, data->work_buffer, data->chseeds);
-    mix(data->out, data->work_buffer);
-    reseed(data->seed, data->work_buffer, &data->nonce, &data->cc);
+    apply(data->out, data->state_buffers, data->chseeds);
+    mix(data->out, data->state_buffers);
+    reseed(data->seed, data->state_buffers, &data->nonce, &data->cc);
 }
 
 static void adam_results(const u64 limit, rng_test *rsl);

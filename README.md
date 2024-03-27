@@ -54,7 +54,6 @@ The chaotic algorithm behind the number generation process is detailed in the pa
 - Floating point number generation, with configurable precision for output and scaling factor support
 - Generate up to 1 billion integers/doubles per API call
 - Passes all empirical test suites that I am aware of (see table below)
-- FFI bindings for Rust and Go + extension module for Python!
 
 ### Coming Soon!
 - FFI bindings!

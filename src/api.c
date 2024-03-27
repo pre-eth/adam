@@ -19,7 +19,7 @@ struct adam_data_s {
     u64 out[BUF_SIZE] ALIGN(ADAM_ALIGNMENT);
 
     // Work maps - sizeof(u64) * 512 = 4096 bytes
-    u64 work_buffer[BUF_SIZE << 1] ALIGN(ADAM_ALIGNMENT);
+    u64 state_buffers[BUF_SIZE << 1] ALIGN(ADAM_ALIGNMENT);
 
     // The seeds supplied to each iteration of the chaotic function
     double chseeds[ROUNDS << 2] ALIGN(ADAM_ALIGNMENT);
@@ -59,8 +59,8 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
         aligned_alloc + memset is used rather than calloc to use the appropriate SIMD alignment.
     */
     MEMSET(&data->out[0], 0, ADAM_BUF_BYTES);
-    MEMSET(&data->work_buffer[0], data->nonce & 0xFF, ADAM_BUF_BYTES);
-    MEMSET(&data->work_buffer[BUF_SIZE], (data->nonce & 0xFF) - (~data->nonce & 0xFF), ADAM_BUF_BYTES);
+    MEMSET(&data->state_buffers[0], data->nonce & 0xFF, ADAM_BUF_BYTES);
+    MEMSET(&data->state_buffers[BUF_SIZE], (data->nonce & 0xFF) - (~data->nonce & 0xFF), ADAM_BUF_BYTES);
 
     /*
         8 64-bit IV's that correspond to the verse:
@@ -85,11 +85,11 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
 
 static void adam(adam_data data)
 {
-    accumulate(data->seed, data->IV, data->work_buffer, data->chseeds, data->cc);
+    accumulate(data->seed, data->IV, data->state_buffers, data->chseeds, data->cc);
     diffuse(data->out, data->nonce);
-    apply(data->out, data->work_buffer, data->chseeds);
-    mix(data->out, data->work_buffer);
-    reseed(data->seed, data->work_buffer, &data->nonce, &data->cc);
+    apply(data->out, data->state_buffers, data->chseeds);
+    mix(data->out, data->state_buffers);
+    reseed(data->seed, data->state_buffers, &data->nonce, &data->cc);
     data->buff_idx = 0;
 }
 
@@ -329,7 +329,7 @@ void adam_cleanup(adam_data data)
     MEMSET(data->IV, 0, sizeof(u64) * 8);
     MEMSET(data->seed, 0, sizeof(u64) * 4);
     MEMSET(data->out, 0, ADAM_BUF_BYTES);
-    MEMSET(data->work_buffer, 0, ADAM_BUF_BYTES * 2);
+    MEMSET(data->state_buffers, 0, ADAM_BUF_BYTES * 2);
     MEMSET(data->chseeds, 0, sizeof(double) * (ROUNDS << 2));
 
     free(data);
