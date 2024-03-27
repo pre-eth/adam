@@ -59,7 +59,6 @@ The chaotic algorithm behind the number generation process is detailed in the pa
 - FFI bindings!
 - Benchmarks!
 - Pre-compiled binaries?
-- Docker image for testing?
 - Multi-threading the examination test suite?
 
 ## <a id="install"></a> INSTALLATION
@@ -256,6 +255,8 @@ The key things to look for are:
 - There is mathematical basis for at least some of the ideas behind the security proposition
 - Implementation tradeoffs for speed and performance have negligible, if any, empirical impact on the output's cryptographic strength
 
+The CACert Research Lab provides a [public record](https://www.cacert.at/cgi-bin/rngresults) of the properties of different RNGS available today. You can see how ADAM stacks up against other RNGs from a naive run of ENT and Diehard.
+
 ## <a id="test"></a> TESTING
 
 Testing is easy with the `-a` option. The minimum number of bits that can be outputted is 1MB. You can provide a multiplier within [1, 1000] as mentioned above, and then write those bits to a text or binary file which can be supplied to any of the testing frameworks listed below, a different framework, or your own RNG tests!
@@ -271,6 +272,7 @@ Click on a test to learn more.
 | ✅ **PASS** | [Dieharder](https://webhome.phy.duke.edu/~rgb/General/dieharder.php) | Cleaned up version of George Marsaglia's DIEHARD suite plus the STS tests from above and RGB tests. Mostly of historical interest.
 | ✅ **PASS** | [testunif - gjrand](https://gjrand.sourceforge.net) | Extensive tests not within DIEHARD or NIST that analyze the randomness of bit sequences. Very particular and supposedly pretty tough!
 | ✅ **PASS** | [testfunif - gjrand](https://gjrand.sourceforge.net) | Another series of tests specifically for analyzing the uniformity of double precision floating point numbers in [0.0, 1.0).
+| ✅ **PASS** | [CACert](https://www.cacert.at/cgi-bin/rngresults) | Cryptographic certificate provider that maintains test results of various RNGs. ADAM is among the top 8 crypto RNG entries which had a flawless test run.
 | ✅ **PASS** | [Rabbit - TestU01](http://simul.iro.umontreal.ca/testu01/tu01.html) | For analyzing bitstreams. Treats input as one large binary sequence and applies 40 different statistical tests.
 | ✅ **PASS** | [SmallCrush - TestU01](http://simul.iro.umontreal.ca/testu01/tu01.html) | 10 different tests. Small but effective at spotting deficiencies missed by other test suites. Lots of good generators fail this one.
 | ✅ **PASS** | [Crush - TestU01](http://simul.iro.umontreal.ca/testu01/tu01.html) | 96 different tests. Very thorough and stringent, requires around 2³⁵ numbers in total. 
