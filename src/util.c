@@ -145,7 +145,7 @@ u8 rwnonce(u64 *nonce, const char *strnonce)
     if (strnonce != NULL)
         *nonce = a_to_u(strnonce, 0, __UINT64_MAX__);
     else
-        fprintf(stderr, "\033[1;96mNONCE:\033[m %llu", *nonce);
+        fprintf(stderr, "\033[1;96mNONCE:\033[m %llu\n", *nonce);
     return 0;
 }
 
