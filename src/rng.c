@@ -63,7 +63,7 @@ static reg mm256_cvtepi64_pd(regd d1)
 
 /*     ALGORITHM START     */
 
-void accumulate(u64 *restrict seed, u64 *restrict IV, u64 *restrict work_buffer, double *restrict chseeds, const u64 cc)
+void accumulate(u64 *restrict seed, u64 *restrict IV, u64 *restrict state_buffers, double *restrict chseeds, const u64 cc)
 {
     IV[0] ^= seed[0];
     IV[1] ^= ~seed[0];
@@ -82,7 +82,7 @@ void accumulate(u64 *restrict seed, u64 *restrict IV, u64 *restrict work_buffer,
 
     dreg4q seeds;
     reg64q4 r1 = SIMD_LOAD64x4(&IV[0]);
-    reg64q4 r2 = SIMD_LOAD64x4(&work_buffer[offset]);
+    reg64q4 r2 = SIMD_LOAD64x4(&state_buffers[offset]);
 
     do {
         SIMD_XOR4RQ64(r1, r1, r2);
@@ -100,7 +100,7 @@ void accumulate(u64 *restrict seed, u64 *restrict IV, u64 *restrict work_buffer,
     regd d1;
     reg r1 = SIMD_LOADBITS((reg *) &IV[0]);
 #ifdef __AVX512F__
-    reg r2 = SIMD_LOADBITS((reg *) &work_buffer[offset]);
+    reg r2 = SIMD_LOADBITS((reg *) &state_buffers[offset]);
 
     do {
         r1 = SIMD_XORBITS(r1, r2);
@@ -114,8 +114,8 @@ void accumulate(u64 *restrict seed, u64 *restrict IV, u64 *restrict work_buffer,
 #else
     reg r2 = SIMD_LOADBITS((reg *) &IV[4]);
 
-    reg r3 = SIMD_LOADBITS((reg *) &work_buffer[offset]);
-    reg r4 = SIMD_LOADBITS((reg *) &work_buffer[offset + 4]);
+    reg r3 = SIMD_LOADBITS((reg *) &state_buffers[offset]);
+    reg r4 = SIMD_LOADBITS((reg *) &state_buffers[offset + 4]);
 
     do {
         r1 = SIMD_XORBITS(r1, r3);
@@ -272,14 +272,14 @@ static void chaotic_iter(u64 *restrict in, u64 *restrict out, const double *rest
 #endif
 }
 
-void apply(u64 *restrict _ptr, u64 *restrict work_buffer, double *restrict chseeds)
+void apply(u64 *restrict _ptr, u64 *restrict state_buffers, double *restrict chseeds)
 {
-    chaotic_iter(_ptr, &work_buffer[0], &chseeds[0]);
-    chaotic_iter(&work_buffer[0], &work_buffer[BUF_SIZE], &chseeds[8]);
-    chaotic_iter(&work_buffer[BUF_SIZE], _ptr, &chseeds[16]);
+    chaotic_iter(_ptr, &state_buffers[0], &chseeds[0]);
+    chaotic_iter(&state_buffers[0], &state_buffers[BUF_SIZE], &chseeds[8]);
+    chaotic_iter(&state_buffers[BUF_SIZE], _ptr, &chseeds[16]);
 }
 
-void mix(u64 *restrict _ptr, const u64 *restrict work_buffer)
+void mix(u64 *restrict _ptr, const u64 *restrict state_buffers)
 {
     register u16 i = 0;
 
@@ -287,8 +287,8 @@ void mix(u64 *restrict _ptr, const u64 *restrict work_buffer)
     reg64q4 r1, r2, r3;
     do {
         r1 = SIMD_LOAD64x4(&_ptr[i]);
-        r2 = SIMD_LOAD64x4(&work_buffer[i]);
-        r3 = SIMD_LOAD64x4(&work_buffer[BUF_SIZE + i]);
+        r2 = SIMD_LOAD64x4(&state_buffers[i]);
+        r3 = SIMD_LOAD64x4(&state_buffers[BUF_SIZE + i]);
         SIMD_3XOR4Q64(r1, r2, r3);
         SIMD_STORE64x4(&_ptr[i], r1);
     } while ((i += 8) < BUF_SIZE);
@@ -296,16 +296,16 @@ void mix(u64 *restrict _ptr, const u64 *restrict work_buffer)
     reg r1, r2;
     do {
         r1 = SIMD_LOADBITS((reg *) &_ptr[i]);
-        r2 = SIMD_LOADBITS((reg *) &work_buffer[i]);
+        r2 = SIMD_LOADBITS((reg *) &state_buffers[i]);
         r1 = SIMD_XORBITS(r1, r2);
-        r2 = SIMD_LOADBITS((reg *) &work_buffer[BUF_SIZE + i]);
+        r2 = SIMD_LOADBITS((reg *) &state_buffers[BUF_SIZE + i]);
         r1 = SIMD_XORBITS(r1, r2);
         SIMD_STOREBITS((reg *) &_ptr[i], r1);
 #ifndef __AVX512F__
         r1 = SIMD_LOADBITS((reg *) &_ptr[i + 4]);
-        r2 = SIMD_LOADBITS((reg *) &work_buffer[i + 4]);
+        r2 = SIMD_LOADBITS((reg *) &state_buffers[i + 4]);
         r1 = SIMD_XORBITS(r1, r2);
-        r2 = SIMD_LOADBITS((reg *) &work_buffer[BUF_SIZE + i + 4]);
+        r2 = SIMD_LOADBITS((reg *) &state_buffers[BUF_SIZE + i + 4]);
         r1 = SIMD_XORBITS(r1, r2);
         SIMD_STOREBITS((reg *) &_ptr[i + 4], r1);
 #endif
@@ -313,7 +313,7 @@ void mix(u64 *restrict _ptr, const u64 *restrict work_buffer)
 #endif
 }
 
-void reseed(u64 *restrict seed, u64 *restrict work_buffer, u64 *restrict nonce, u64 *restrict cc)
+void reseed(u64 *restrict seed, u64 *restrict state_buffers, u64 *restrict nonce, u64 *restrict cc)
 {
     // clang-format off
 
@@ -321,11 +321,11 @@ void reseed(u64 *restrict seed, u64 *restrict work_buffer, u64 *restrict nonce, 
     #define ISAAC_IND(mm, x) (*(u64 *) ((u8 *) (mm) + (2040 + (x & 2047))))
 
     *cc     += (*nonce >> (*nonce & 63));
-    seed[0] ^= ~ISAAC_IND(work_buffer, seed[0]);
-    seed[1] ^= ~ISAAC_IND(work_buffer, seed[1]);
-    seed[2] ^= ~ISAAC_IND(work_buffer, seed[2]);
-    seed[3] ^= ~ISAAC_IND(work_buffer, seed[3]);
-    *nonce  ^= (*nonce + ISAAC_IND(work_buffer, *nonce));
+    seed[0] ^= ~ISAAC_IND(state_buffers, seed[0]);
+    seed[1] ^= ~ISAAC_IND(state_buffers, seed[1]);
+    seed[2] ^= ~ISAAC_IND(state_buffers, seed[2]);
+    seed[3] ^= ~ISAAC_IND(state_buffers, seed[3]);
+    *nonce  ^= (*nonce + ISAAC_IND(state_buffers, *nonce));
 
     // clang-format on
 }
