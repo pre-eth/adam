@@ -277,7 +277,7 @@ static void update_mcb_lcb(const u8 idx, const u64 *freq, u64 *mcb, u64 *lcb)
 {
     // Most Common Bytes
     register short i = 3;
-    while (freq[idx] > freq[mcb[i]] && i >= 0) {
+    while (i >= 0 && freq[idx] > freq[mcb[i]]) {
         mcb[i + 1] = mcb[i];
         --i;
     }
@@ -285,7 +285,7 @@ static void update_mcb_lcb(const u8 idx, const u64 *freq, u64 *mcb, u64 *lcb)
 
     // Least Common Bytes
     i = 3;
-    while (freq[idx] < freq[lcb[i]] && i >= 0) {
+    while (i >= 0 && freq[idx] < freq[lcb[i]]) {
         lcb[i + 1] = lcb[i];
         --i;
     }
