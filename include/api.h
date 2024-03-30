@@ -1,6 +1,6 @@
 #ifndef ADAM_API_H
 #define ADAM_API_H
-  #include <stdbool.h>
+  #include "defs.h"
 
 #if defined(__AARCH64_SIMD__) || defined(__AVX512F__)
   #define ADAM_ALIGNMENT    64
@@ -31,7 +31,7 @@
     Returns a pointer to the adam_data. Make sure you remember to pass it
     to adam_cleanup() once you no longer need it!
   */
-  adam_data adam_setup(unsigned long long *seed, unsigned long long *nonce);
+  adam_data adam_setup(u64 *seed, u64 *nonce);
 
   /*
     Self-explanatory functions - The first two return a raw pointer to the 
@@ -44,9 +44,9 @@
     on its value. This function ALWAYS generates a fresh buffer before returning
     the pointer, as the API assumes you use the whole buffer each time.
   */
-  unsigned long long *adam_seed(adam_data data);
-  unsigned long long *adam_nonce(adam_data data);
-  const unsigned long long *adam_buffer(const adam_data data);
+  u64 *adam_seed(adam_data data);
+  u64 *adam_nonce(adam_data data);
+  const u64 *adam_buffer(const adam_data data);
 
   /*
     Returns a random unsigned integer of the specified <width>. Param
@@ -60,7 +60,7 @@
     ensure that you can safely expect to call this function and 
     always receive a randomly generated integer.
   */
-  unsigned long long adam_int(adam_data data, unsigned char width, const bool force_regen);
+  u64 adam_int(adam_data data, unsigned char width, const bool force_regen);
 
   /*
     Returns a random double after multiplying it by param <scale>. Param
@@ -74,7 +74,7 @@
     ensure that you can safely expect to call this function and 
     always receive a randomly generated double.
   */
-  double adam_dbl(adam_data data, const unsigned long long scale, const bool force_regen);
+  double adam_dbl(adam_data data, const u64 scale, const bool force_regen);
 
   /*
     Fills a given buffer with random integers.
@@ -93,7 +93,7 @@
 
     Returns 0 on success, 1 on error.
   */
-  int adam_fill(adam_data data, void *buf, unsigned char width, const unsigned long long amount);
+  int adam_fill(adam_data data, void *buf, unsigned char width, const u64 amount);
 
   /*
     Fills a given buffer with random doubles.
@@ -112,7 +112,7 @@
 
     Returns 0 on success, 1 on error.
   */
-  int adam_dfill(adam_data data, double *buf, const unsigned long long multiplier, const unsigned int amount);
+  int adam_dfill(adam_data data, double *buf, const u64 multiplier, const unsigned int amount);
 
   /*
     Chooses a random item from a provided collection, where param <arr> is a 
@@ -125,7 +125,7 @@
 
     Returns a randomly picked member of <arr>.
   */
-  void *adam_choice(adam_data data, void *arr, const unsigned long long size);
+  void *adam_choice(adam_data data, void *arr, const u64 size);
 
   /*
     Writes param <output> BITS (not bytes!) to a file descriptor of your choice.
@@ -138,7 +138,7 @@
 
     Returns the total number of bits written out, or 0 if invalid value for <output>
   */
-  unsigned long long adam_stream(adam_data data, const unsigned long long output, const char *file_name);
+  u64 adam_stream(adam_data data, const u64 output, const char *file_name);
 
   /*
     Zeroizes adam_data members and frees any allocated memory.

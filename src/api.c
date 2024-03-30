@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <sys/random.h>
 
-#include "../include/api.h"
 #include "../include/rng.h"
+#include "../include/api.h"
 
 struct adam_data_s {
     // 256-bit seed
@@ -262,8 +262,9 @@ static void dbl_simd_mult(double *buf, const u16 amount, const double multiplier
 
 int adam_dfill(adam_data data, double *buf, const u64 multiplier, const u32 amount)
 {
-    if (!amount || amount > ADAM_FILL_MAX)
+    if (!amount || amount > ADAM_FILL_MAX) {
         return 1;
+    }
 
     register u32 count = 0;
     register u32 out;
@@ -289,8 +290,9 @@ int adam_dfill(adam_data data, double *buf, const u64 multiplier, const u32 amou
 
     if (multiplier > 1) {
         const double mult = multiplier;
-        if (amount >= 8)
+        if (amount >= 8) {
             dbl_simd_mult(buf, amount, mult);
+        }
 
         if (LIKELY(leftovers)) {
             count = amount - leftovers;
@@ -312,11 +314,13 @@ void *adam_choice(adam_data data, void *arr, const u64 size)
 
 u64 adam_stream(adam_data data, const u64 output, const char *file_name)
 {
-    if (output < ADAM_BUF_BITS)
+    if (output < ADAM_BUF_BITS) {
         return 0;
+    }
 
-    if (file_name != NULL)
+    if (file_name != NULL) {
         freopen(file_name, "wb+", stdout);
+    }
 
     const u16 leftovers = output & (SEQ_SIZE - 1);
 
