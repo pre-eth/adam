@@ -12,9 +12,6 @@ struct adam_data_s {
     // 64-bit nonce
     u64 nonce;
 
-    // 8 64-bit initialization vectors part of internal state
-    u64 IV[8] ALIGN(ADAM_ALIGNMENT);
-
     // Output vector - 256 64-bit integers = 2048 bytes
     u64 out[BUF_SIZE] ALIGN(ADAM_ALIGNMENT);
 
@@ -24,8 +21,8 @@ struct adam_data_s {
     // The seeds supplied to each iteration of the chaotic function
     double chseeds[ROUNDS << 2] ALIGN(ADAM_ALIGNMENT);
 
-    // Counter with non-linear increment
-    u64 cc;
+    // Work array to store intermediate chaotic function results
+    u64 chaotic_rsl[8] ALIGN(ADAM_ALIGNMENT);
 
     //  Current index in buffer (as bytes)
     u16 buff_idx;
@@ -35,20 +32,15 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
 {
     // Allocate the struct
     adam_data data = aligned_alloc(ADAM_ALIGNMENT, sizeof(struct adam_data_s));
-    if (data == NULL)
+    if (data == NULL) {
         return NULL;
-
-    // Get seed and nonce bytes from secure system RNG, or use user provided one(s)
-    if (seed == NULL)
-        getentropy(&data->seed[0], sizeof(u64) * 4);
-    else
-        MEMCPY(&data->seed[0], &seed[0], sizeof(u64) * 4);
-
-    if (nonce == NULL)
+    }
+    
+    if (nonce == NULL) {
         getentropy(&data->nonce, sizeof(u64));
-    else
-        data->nonce = *nonce;
-
+    } else {
+        data->nonce = *nonce; 
+    }
     /*
         The algorithm requres 3 u64 buffers of size BUF_SIZE - 2 internal maps used for generating
         the chaotic function output, and an output vector. 
@@ -66,30 +58,50 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
         8 64-bit IV's that correspond to the verse:
         "Be fruitful and multiply, and replenish the earth (Genesis 1:28)"
     */
-    data->IV[0] = 0x4265206672756974;
-    data->IV[1] = 0x66756C20616E6420;
-    data->IV[2] = 0x6D756C7469706C79;
-    data->IV[3] = 0x2C20616E64207265;
-    data->IV[4] = 0x706C656E69736820;
-    data->IV[5] = 0x7468652065617274;
-    data->IV[6] = 0x68202847656E6573;
-    data->IV[7] = 0x697320313A323829;
+    data->out[0] = 0x4265206672756974;
+    data->out[1] = 0x66756C20616E6420;
+    data->out[2] = 0x6D756C7469706C79;
+    data->out[3] = 0x2C20616E64207265;
+    data->out[4] = 0x706C656E69736820;
+    data->out[5] = 0x7468652065617274;
+    data->out[6] = 0x68202847656E6573;
+    data->out[7] = 0x697320313A323829;
 
-    data->cc = 0;
+    // Get seed and nonce bytes from secure system RNG, or use user provided one(s)
+    if (seed == NULL) {
+        getentropy(&data->seed[0], sizeof(u64) * 4);
+    } else {
+        data->seed[0] = seed[0];
+        data->seed[1] = seed[1];
+        data->seed[2] = seed[2];
+        data->seed[3] = seed[3];
+    }
+
+    data->out[0] ^= data->seed[0];
+    data->out[1] ^= (~data->seed[1] << (data->nonce & 63)) | (~data->seed[3] >> (data->nonce & 63));
+    data->out[2] ^= data->seed[1];
+    data->out[3] ^= (~data->seed[0] << 32) | (~data->seed[2] >> 32);
+    data->out[4] ^= data->seed[2];
+    data->out[5] ^= (~data->seed[2] << (data->nonce & 63)) | (~data->seed[0] >> (data->nonce & 63));
+    data->out[6] ^= data->seed[3];
+    data->out[7] ^= (~data->seed[3] << 32) | (~data->seed[1] >> 32);
+
+    accumulate(data->out, data->state_buffers, data->chseeds);
+
+    diffuse(data->out, data->nonce);
+    apply(data->out, data->state_buffers, data->chseeds, data->chaotic_rsl);
+    mix(data->out, data->state_buffers);
 
     // Last byte idx == regen next API call
-    data->buff_idx = ADAM_BUF_BYTES;
+    data->buff_idx = 0;
 
     return data;
 }
 
 static void adam(adam_data data)
 {
-    accumulate(data->seed, data->IV, data->state_buffers, data->chseeds, data->cc);
-    diffuse(data->out, data->nonce);
-    apply(data->out, data->state_buffers, data->chseeds);
+    apply(data->out, data->state_buffers, data->chseeds, data->chaotic_rsl);
     mix(data->out, data->state_buffers);
-    reseed(data->seed, data->state_buffers, &data->nonce, &data->cc);
     data->buff_idx = 0;
 }
 
@@ -111,11 +123,13 @@ const u64 *adam_buffer(const adam_data data)
 
 u64 adam_int(adam_data data, u8 width, const bool force_regen)
 {
-    if (data->buff_idx == ADAM_BUF_BYTES || force_regen)
+    if (data->buff_idx == ADAM_BUF_BYTES || force_regen) {
         adam(data);
+    }
 
-    if (width != 8 && width != 16 && width != 32 && width != 64)
+    if (width != 8 && width != 16 && width != 32 && width != 64) {
         width = 64;
+    }
 
     u64 num = 0;
     MEMCPY(&num, (((u8 *) data->out) + data->buff_idx), width >> 3);
@@ -126,8 +140,9 @@ u64 adam_int(adam_data data, u8 width, const bool force_regen)
 
 double adam_dbl(adam_data data, const u64 scale, const bool force_regen)
 {
-    if (data->buff_idx == ADAM_BUF_BYTES || force_regen)
+    if (data->buff_idx == ADAM_BUF_BYTES || force_regen) {
         adam(data);
+    }
 
     register double out = (double) data->out[data->buff_idx] / (double) __UINT64_MAX__;
     data->buff_idx += 8;
@@ -137,11 +152,13 @@ double adam_dbl(adam_data data, const u64 scale, const bool force_regen)
 
 int adam_fill(adam_data data, void *buf, u8 width, const u64 amount)
 {
-    if (!amount || amount > ADAM_FILL_MAX)
+    if (!amount || amount > ADAM_FILL_MAX) {
         return 1;
+    }
 
-    if (width != 8 && width != 16 && width != 32 && width != 64)
+    if (width != 8 && width != 16 && width != 32 && width != 64) {
         width = 64;
+    }
 
     // Determine the divisor based on width and bit shifting
     const u16 one_run   = (7 + (64 / width));
@@ -265,9 +282,9 @@ int adam_dfill(adam_data data, double *buf, const u64 multiplier, const u32 amou
     if (LIKELY(leftovers)) {
         adam(data);
         register u8 i = 0;
-        do
+        do {
             buf[count] = (double) data->out[i++] / (double) __UINT64_MAX__;
-        while (++count < amount);
+        } while (++count < amount);
     }
 
     if (multiplier > 1) {
@@ -276,11 +293,10 @@ int adam_dfill(adam_data data, double *buf, const u64 multiplier, const u32 amou
             dbl_simd_mult(buf, amount, mult);
 
         if (LIKELY(leftovers)) {
-            count         = amount - leftovers;
-            register u8 i = 0;
-            do
+            count = amount - leftovers;
+            do {
                 buf[count] *= mult;
-            while (++count < amount);
+            } while (++count < amount);
         }
     }
 
@@ -302,7 +318,8 @@ u64 adam_stream(adam_data data, const u64 output, const char *file_name)
     if (file_name != NULL)
         freopen(file_name, "wb+", stdout);
 
-    const u16 leftovers  = output & (SEQ_SIZE - 1);
+    const u16 leftovers = output & (SEQ_SIZE - 1);
+
     register u64 written = 0;
     while (output - written >= SEQ_SIZE) {
         adam(data);
@@ -324,13 +341,6 @@ u64 adam_stream(adam_data data, const u64 output, const char *file_name)
 
 void adam_cleanup(adam_data data)
 {
-    data->cc = data->nonce = data->buff_idx = 0;
-
-    MEMSET(data->IV, 0, sizeof(u64) * 8);
-    MEMSET(data->seed, 0, sizeof(u64) * 4);
-    MEMSET(data->out, 0, ADAM_BUF_BYTES);
-    MEMSET(data->state_buffers, 0, ADAM_BUF_BYTES * 2);
-    MEMSET(data->chseeds, 0, sizeof(double) * (ROUNDS << 2));
-
+    MEMSET(data, 0, sizeof(*data));
     free(data);
 }

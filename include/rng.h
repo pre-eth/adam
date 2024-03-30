@@ -60,11 +60,10 @@
 
   /*  The main primitives for using ADAM's algorithm  */
 
-  void accumulate(u64 *restrict seed, u64 *restrict IV, u64 *restrict work_buffer, double *restrict chseeds, const u64 cc);
+  void accumulate(u64 *restrict IV, u64 *restrict state_buffers, double *restrict chseeds);
   void diffuse(u64 *restrict _ptr, const u64 nonce);
-  void apply(u64 *restrict _ptr, u64 *restrict work_buffer, double *restrict chseeds);
+  void apply(u64 *restrict _ptr, u64 *restrict work_buffer, double *restrict chseeds, u64 *restrict arr);
   void mix(u64 *restrict _ptr, const u64 *restrict work_buffer);
-  void reseed(u64 *restrict seed, u64 *restrict work_buffer, u64 *restrict nonce, u64*restrict cc);
 
 #if !defined(__AARCH64_SIMD__) && !defined(__AVX512F__)
   regd mm256_cvtpd_epi64(reg r1);
