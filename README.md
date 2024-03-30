@@ -34,7 +34,7 @@ The chaotic algorithm behind the number generation process is detailed in the pa
 
 ## <a id="features"></a> FEATURES
 
-- Statespace: 2⁵¹⁵²⁸
+- Statespace: 2⁵¹⁵²⁰
 - Multi-cyclic: minimum cycle length (period) is 2²⁵⁶
 - 2¹⁴⁰⁶ possible pseudorandom sequences per cycle
 - Free choice of input vector + seeding routine which really facilitates experimentation         
@@ -42,7 +42,6 @@ The chaotic algorithm behind the number generation process is detailed in the pa
 - Two (optional) input parameters: one 256-bit seed and one 64-bit nonce
 - Space Complexity: O(N)
 - Output sequence is irreversible
-- Generator reseeds itself
 - Natively examine statistical properties of a generated sequence with the in-house test suite
 - Easy interface for bit generation in both ASCII and binary form. Output up to 100GB at a time.
 - Alternatively, stream bits directly to the `stdin` of your own programs, RNG test suites, etc.
