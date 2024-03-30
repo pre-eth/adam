@@ -7,11 +7,6 @@
   /*    NOTE: All critical values use an alpha level of 0.01    */
   #define   ALPHA_LEVEL               0.01
 
-  // FOR:   Chaotic seed distribution 
-  #define   CHSEED_CAT                5
-  #define   CHSEED_CRITICAL_VALUE     13.277
-  #define   CHSEED_PROB               (1.0 / 5.0)
-
   typedef struct basic_test {
     u64 init_values[5];
     u64 sequences;
@@ -22,9 +17,6 @@
     double avg_gap;
     u64 mcb[5];
     u64 lcb[5];
-    double avg_chseed;
-    u64 chseed_exp;
-    u64 chseed_dist[CHSEED_CAT];
   } basic_test;
 
   // FOR:   Range distribution of output values
@@ -154,7 +146,7 @@
   #define   MAURER_Y                  2.58
   #define   MAURER_EXPECTED           7.1836656 
   #define   MAURER_VARIANCE           3.2386622
-  #define   MAURER_STD_DEV           3.2386622
+  #define   MAURER_STD_DEV            1.7996283
 
   typedef struct maurer_test {
     u64 trials;
