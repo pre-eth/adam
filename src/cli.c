@@ -10,7 +10,7 @@
 #define STRINGIFY(a) STRINGIZE(a)
 
 #define MAJOR        0
-#define MINOR        9
+#define MINOR        10
 #define PATCH        0
 
 #define OPTSTR       ":hvdfbxoap:m:w:e:r:u::s::n::"
