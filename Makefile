@@ -1,7 +1,7 @@
 BUILD_DIR = ./build
 CC = gcc
 
-CFLAGS = -Iinclude -O2 -flto -march=native
+CFLAGS = -std=c99 -Iinclude -O3 -flto -march=native # -Wall -Wextra -pedantic
 
 STD_LIB = rng api
 LIB_OBJ = $(STD_LIB:%=src/%.o)
