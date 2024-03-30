@@ -121,10 +121,10 @@ static u8 help(void)
         "Print numbers in octal format with leading prefix",
         "Enable floating point mode to generate doubles in (0.0, 1.0) instead of integers",
         "How many decimal places to print when printing doubles. Must be within [1, 15]. Default is 15",
-        "Multiplier for randomly generated doubles, such that they fall in the range (0, <MULTIPLIER>)"
+        "Multiplier for randomly generated doubles, such that they fall in the range (0, MULTIPLIER)"
     };
 
-    const u8 lengths[ARG_COUNT] = { 45, 33, 119, 124, 109, 116, 91, 81, 96, 202, 204, 55, 49, 80, 93, 93 };
+    const u8 lengths[ARG_COUNT] = { 45, 33, 119, 124, 109, 116, 91, 81, 96, 202, 204, 55, 49, 80, 93, 91 };
 
     register short len;
     register u16 line_width;
@@ -148,12 +148,13 @@ static u8 help(void)
 static void print_int(adam_data data)
 {
     const u64 num = adam_int(data, width, false);
-    if (hex)
+    if (hex) {
         printf("0x%llx", num);
-    else if (octal)
+    } else if (octal) {
         printf("0o%llo", num);
-    else
+    } else {
         printf("%llu", num);
+    }
 }
 
 static void print_dbl(adam_data data)
@@ -183,8 +184,9 @@ static u8 dump_buffer(adam_data data)
 static u8 uuid(adam_data data, const char *strlimit)
 {
     register u16 limit = a_to_u(optarg, 1, 1000);
-    if (!limit)
+    if (!limit) {
         return err("Invalid amount specified. Value must be within range [1, 1000]");
+    }
 
     u8 buf[16];
 
@@ -212,8 +214,9 @@ static u8 uuid(adam_data data, const char *strlimit)
 static u8 assessf(adam_data data, const u64 limit, bool ascii_mode)
 {
     double *_buf = aligned_alloc(ADAM_ALIGNMENT, limit * sizeof(double));
-    if (_buf == NULL)
+    if (_buf == NULL) {
         return 1;
+    }
 
     //  We allow higher assess fill values for testing than supported by the API
     //  so for the larger user provided values we need to split fills
@@ -233,10 +236,12 @@ static u8 assessf(adam_data data, const u64 limit, bool ascii_mode)
             i += 8;
         }
 
-        while (i < limit)
+        while (i < limit) {
             fprintf(stdout, "%.*lf\n", precision, _buf[i++]);
-    } else
+        }
+    } else {
         fwrite(&_buf[0], sizeof(double), limit, stdout);
+    }
 
     free(_buf);
     return 0;
@@ -245,8 +250,9 @@ static u8 assessf(adam_data data, const u64 limit, bool ascii_mode)
 static void streamf(adam_data data)
 {
     double *_buf = aligned_alloc(ADAM_ALIGNMENT, ADAM_BUF_SIZE * sizeof(double));
-    if (_buf == NULL)
+    if (_buf == NULL) {
         return;
+    }
 
     register u64 written = 0;
 
@@ -288,8 +294,9 @@ static u8 assess(adam_data data)
     if (dbl_mode) {
         ASSESS_PROMPT(&output_mult, "Sequence Size (x 1000):", " %u", (output_mult < 1 || output_mult > DBL_TESTING_LIMIT), "Output multiplier must be between [1, " STRINGIFY(DBL_TESTING_LIMIT) "]");
         limit = TESTING_DBL * output_mult;
-        if (assessf(data, limit, file_mode))
+        if (assessf(data, limit, file_mode)) {
             return err("Could not allocate enough space for adam -a");
+        }
     } else {
         ASSESS_PROMPT(&output_mult, "Sequence Size (x 1MB):", " %u", (output_mult < 1 || output_mult > BITS_TESTING_LIMIT), "Output multiplier must be between [1, " STRINGIFY(BITS_TESTING_LIMIT) "]");
 
@@ -298,8 +305,9 @@ static u8 assess(adam_data data)
             const u64 amount = (limit >> 6) + !!(limit & 63);
 
             u64 *restrict buffer = aligned_alloc(ADAM_ALIGNMENT, sizeof(u64) * amount);
-            if (buffer == NULL)
+            if (buffer == NULL) {
                 return err("Could not allocate enough space for adam -a");
+            }
 
             adam_fill(data, buffer, 64, amount);
             print_ascii_bits(buffer, amount);
@@ -322,8 +330,9 @@ static u8 assess(adam_data data)
 static u8 examine(adam_data data, const char *strlimit)
 {
     register u64 limit = TESTING_BITS;
-    if (strlimit != NULL)
+    if (strlimit != NULL) {
         limit *= a_to_u(strlimit, 1, BITS_TESTING_LIMIT);
+    }
 
     printf("\033[1;33mExamining %llu bits of ADAM...\033[m\n", limit);
 
@@ -338,11 +347,11 @@ static u8 examine(adam_data data, const char *strlimit)
 
 int main(int argc, char **argv)
 {
-
     adam_data data = adam_setup(NULL, NULL);
 
-    if (data == NULL)
+    if (data == NULL) {
         return err("Could not allocate space for adam_data struct! Exiting.");
+    }
 
     //  Initialize the non-zero defaults
     results   = 1;
