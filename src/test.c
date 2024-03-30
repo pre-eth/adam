@@ -7,28 +7,12 @@
 
 // Redefinition of API struct here so we can access internals
 struct adam_data_s {
-    // 256-bit seed
     u64 seed[4];
-
-    // 64-bit nonce
     u64 nonce;
-
-    // 8 64-bit initialization vectors part of internal state
-    u64 IV[8] ALIGN(ADAM_ALIGNMENT);
-
-    // Output vector - 256 64-bit integers = 2048 bytes
     u64 out[BUF_SIZE] ALIGN(ADAM_ALIGNMENT);
-
-    // Work maps - sizeof(u64) * 512 = 4096 bytes
     u64 state_buffers[BUF_SIZE << 1] ALIGN(ADAM_ALIGNMENT);
-
-    // The seeds supplied to each iteration of the chaotic function
     double chseeds[ROUNDS << 2] ALIGN(ADAM_ALIGNMENT);
-
-    // Counter
-    u64 cc;
-
-    //  Current index in buffer (as bytes)
+    u64 chaotic_rsl[8] ALIGN(ADAM_ALIGNMENT);
     u16 buff_idx;
 };
 
@@ -67,22 +51,24 @@ static void sat_point(const u8 *nums)
         // Ranges derived from probability table in paper
         if (num_range == __UINT16_MAX__) {
             // Log the actual saturation point
-            if (ctr > SP_OBS_MAX)
+            if (ctr > SP_OBS_MAX) {
                 ++sat_dist[49];
-            else
+            } else {
                 ++sat_dist[ctr - SP_OBS_MIN];
-
-            if (ctr >= SP_OBS_MIN && ctr < 39)
+            }
+            
+            if (ctr >= SP_OBS_MIN && ctr < 39) {
                 ++sat_range[0];
-            else if (ctr >= 39 && ctr < 46)
+            } else if (ctr >= 39 && ctr < 46) {
                 ++sat_range[1];
-            else if (ctr >= 46 && ctr < 54)
+            } else if (ctr >= 46 && ctr < 54) {
                 ++sat_range[2];
-            else if (ctr >= 54 && ctr <= SP_OBS_MAX)
+            } else if (ctr >= 54 && ctr <= SP_OBS_MAX) {
                 ++sat_range[3];
-            else if (ctr > SP_OBS_MAX)
+            } else if (ctr > SP_OBS_MAX) {
                 ++sat_range[4];
-
+            }
+            
             ctr = num_range = 0;
         }
 
@@ -94,8 +80,9 @@ static void sat_point(const u8 *nums)
 static void maurer(maurer_test *mau)
 {
     register u32 i = 0;
-    for (; i < MAURER_Q; ++i)
+    for (; i < MAURER_Q; ++i) {
         maurer_arr[mau->bytes[i]] = i;
+    }
 
     register double sum = 0.0;
 
@@ -123,18 +110,18 @@ static void tbt(const u16 *nums, tb_test *topo)
 
     // Checks if this 16-bit pattern has been recorded
     // Each run gives us 1024 u16 which is the TBT_SEQ_SIZE
-    do
+    do {
         tbt_array[nums[i] >> 6] |= 1ULL << (nums[i] & 63);
-    while (++i < (ADAM_BUF_BYTES >> 1));
+    } while (++i < (ADAM_BUF_BYTES >> 1));
 
     // 65536 / 1024 u16 per iteration = 64 iterations before
     // we can update our test metrics
     if (++ctr == 64) {
         register u16 different;
         i = different = 0;
-        do
+        do {
             different += POPCNT(tbt_array[i]);
-        while (++i < 1024);
+        } while (++i < 1024);
 
         topo->prop_sum += different;
         topo->pass_rate += (different >= TBT_CRITICAL_VALUE);
@@ -161,9 +148,9 @@ static void vnt(const u32 *nums, vn_test *von)
     avg /= VNT_N;
 
     i = 0;
-    do
+    do {
         denom += pow((double) nums[i] - avg, 2);
-    while (++i < VNT_N);
+    } while (++i < VNT_N);
 
     numer *= VNT_N;
     denom *= (VNT_N - 1);
@@ -177,9 +164,9 @@ static void vnt(const u32 *nums, vn_test *von)
 static void sac(const u64 *restrict run1, const u64 *restrict run2)
 {
     register u16 i = 0;
-    do
+    do {
         ++ham_dist[POPCNT(run1[i] ^ run2[i])];
-    while (++i < BUF_SIZE);
+    } while (++i < BUF_SIZE);
 }
 
 static void walsh_test(const u32 *nums, wh_test *walsh)
@@ -188,7 +175,6 @@ static void walsh_test(const u32 *nums, wh_test *walsh)
     stat = sum = 0.0;
 
     // 32-bit work units, but process 128-bits at a time for statistic
-    register u8 j = 0;
     for (u16 i = 0; i < (BUF_SIZE << 1); i += 4) {
         // Divide i by 4 for the nth 128-bit quantity
         stat = wh_transform(i >> 2, nums[i], 0)
@@ -363,22 +349,8 @@ static void tally_bitruns(const u64 num, mfreq_test *mfreq)
     } while (++i < 64);
 }
 
-static void chseed_unif(const double *restrict chseeds, u64 *chseed_dist, double *avg_chseed)
-{
-    register u8 i = 0, idx;
-    do {
-        idx = (chseeds[i] >= 0.1) + (chseeds[i] >= 0.2) + (chseeds[i] >= 0.3) + (chseeds[i] >= 0.4);
-        *avg_chseed += chseeds[i];
-        ++chseed_dist[idx];
-    } while (++i < (ROUNDS << 2));
-}
-
 static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict chseeds, const u64 *sac_run)
 {
-    // Chaotic seeds all occur within (0.0, 0.5).
-    // This function tracks their distribution and we check the uniformity at the end.
-    chseed_unif(chseeds, &rsl->basic->chseed_dist[0], &rsl->basic->avg_chseed);
-
     // Saturation Point Test
     // Determines index where all 2^4 values have appeared at least once
     sat_point((u8 *) _ptr);
@@ -478,11 +450,8 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
 
 static void run_rng(adam_data data)
 {
-    accumulate(data->seed, data->IV, data->state_buffers, data->chseeds, data->cc);
-    diffuse(data->out, data->nonce);
-    apply(data->out, data->state_buffers, data->chseeds);
+    apply(data->out, data->state_buffers, data->chseeds, data->chaotic_rsl);
     mix(data->out, data->state_buffers);
-    reseed(data->seed, data->state_buffers, &data->nonce, &data->cc);
 }
 
 static void adam_results(const u64 limit, rng_test *rsl);
@@ -492,7 +461,6 @@ void adam_examine(const u64 limit, adam_data data)
     // General initialization
     basic_test basic = { 0 };
     basic.sequences  = limit >> 14;
-    basic.chseed_exp = basic.sequences * (ROUNDS << 2);
     MEMCPY(&basic.init_values[0], data->seed, sizeof(u64) * 4);
     basic.init_values[4] = data->nonce;
 
@@ -573,8 +541,6 @@ void adam_examine(const u64 limit, adam_data data)
     do {
         run_rng(sac_runner);
         test_loop(&rsl, data->out, data->chseeds, sac_runner->out);
-        MEMCPY(sac_runner, data, sizeof(struct adam_data_s));
-        sac_runner->nonce ^= (1ULL << (data->nonce & 63));
         run_rng(data);
     } while (--rate > 0);
 
@@ -610,7 +576,6 @@ static void adam_results(const u64 limit, rng_test *rsl)
 
     print_range_results(indent, rsl->basic->sequences << 8, rsl->range);
     print_ent_results(indent, rsl->ent);
-    print_chseed_results(indent, rsl->basic);
 
     rsl->fp->avg_fp /= (rsl->basic->sequences << 8);
     print_fp_results(indent, rsl->basic->sequences << 8, rsl->fp);
@@ -691,20 +656,23 @@ static double z_table[Z_TABLE_SIZE] = {
 double po_zscore(double z_score)
 {
     const bool neg = (z_score < 0.0);
-    if (neg)
+    if (neg) {
         z_score *= -1.0;
+    }
 
     const u16 coord_row = (u16) (z_score * 10);
     const u16 coord_col = (u16) (z_score * 100) - (coord_row * 10);
     const u16 coord     = (10 * coord_row) + coord_col;
 
-    if (coord >= Z_TABLE_SIZE)
+    if (coord >= Z_TABLE_SIZE) {
         return 0.0;
+    }
 
     register double p_value = z_table[coord];
 
-    if (!neg)
+    if (!neg) {
         p_value = 1.0 - p_value;
+    }
 
     return p_value;
 }
@@ -764,9 +732,9 @@ static double cephes_polevl(double x, double *coef, int N)
     ans = *p++;
     i   = N;
 
-    do
+    do {
         ans = ans * x + *p++;
-    while (--i);
+    } while (--i);
 
     return ans;
 }
@@ -781,9 +749,9 @@ static double cephes_p1evl(double x, double *coef, int N)
     ans = x + *p++;
     i   = N - 1;
 
-    do
+    do {
         ans = ans * x + *p++;
-    while (--i);
+    } while (--i);
 
     return ans;
 }
@@ -805,10 +773,11 @@ static double cephes_lgam(double x)
             goto loverf;
         }
         i = (int) p;
-        if ((i & 1) == 0)
+        if ((i & 1) == 0) {
             sgngam = -1;
-        else
+        } else {
             sgngam = 1;
+        }
         z = q - p;
         if (z > 0.5) {
             p += 1.0;
@@ -832,8 +801,9 @@ static double cephes_lgam(double x)
             z *= u;
         }
         while (u < 2.0) {
-            if (u == 0.0)
+            if (u == 0.0) {
                 goto lgsing;
+            }
             z /= u;
             p += 1.0;
             u = x + p;
@@ -841,10 +811,12 @@ static double cephes_lgam(double x)
         if (z < 0.0) {
             sgngam = -1;
             z      = -z;
-        } else
+        } else {
             sgngam = 1;
-        if (u == 2.0)
+        }
+        if (u == 2.0) {
             return (log(z));
+        }
         p -= 2.0;
         x = x + p;
         p = x * cephes_polevl(x, (double *) B, 5) / cephes_p1evl(x, (double *) C, 6);
@@ -858,18 +830,20 @@ static double cephes_lgam(double x)
     }
 
     q = (x - 0.5) * log(x) - x + log(sqrt(2 * PI));
-    if (x > 1.0e8)
+    if (x > 1.0E8) {
         return q;
+    }
 
     p = 1.0 / (x * x);
-    if (x >= 1000.0)
+    if (x >= 1000.0) {
         q += ((7.9365079365079365079365e-4 * p
                   - 2.7777777777777777777778e-3)
                      * p
                  + 0.0833333333333333333333)
             / x;
-    else
+    } else {
         q += cephes_polevl(p, (double *) A, 4) / x;
+    }
 
     return q;
 }
@@ -878,16 +852,19 @@ static double cephes_igam(double a, double x)
 {
     double ans, ax, c, r;
 
-    if ((x <= 0) || (a <= 0))
+    if ((x <= 0) || (a <= 0)) {
         return 0.0;
+    }
 
-    if ((x > 1.0) && (x > a))
-        return 1.e0 - cephes_igamc(a, x);
+    if ((x > 1.0) && (x > a)) {
+        return 1.E0 - cephes_igamc(a, x);
+    }
 
     /* Compute  x**a * exp(-x) / gamma(a)  */
     ax = a * log(x) - x - cephes_lgam(a);
-    if (ax < -MAXLOG)
+    if (ax < -MAXLOG) {
         return 0.0;
+    }
 
     ax = exp(ax);
 
@@ -910,16 +887,19 @@ double cephes_igamc(double a, double x)
     double ans, ax, c, yc, r, t, y, z;
     double pk, pkm1, pkm2, qk, qkm1, qkm2;
 
-    if ((x <= 0) || (a <= 0))
+    if ((x <= 0) || (a <= 0)) {
         return (1.0);
+    }
 
-    if ((x < 1.0) || (x < a))
+    if ((x < 1.0) || (x < a)) {
         return (1.e0 - cephes_igam(a, x));
+    }
 
     ax = a * log(x) - x - cephes_lgam(a);
 
-    if (ax < -MAXLOG)
+    if (ax < -MAXLOG) {
         return 0.0;
+    }
 
     ax = exp(ax);
 
@@ -944,8 +924,9 @@ double cephes_igamc(double a, double x)
             r   = pk / qk;
             t   = fabs((ans - r) / r);
             ans = r;
-        } else
+        } else {
             t = 1.0;
+        }
         pkm2 = pkm1;
         pkm1 = pk;
         qkm2 = qkm1;

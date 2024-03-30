@@ -195,14 +195,16 @@ void ent_results(ent_test *rsl)
         datasum += ((double) i) * ccount[i];
     }
 
-    for (i = 0; i < 256; ++i)
-        if (prob[i] > 0.0)
+    for (i = 0; i < 256; ++i) {
+        if (prob[i] > 0.0) {
             ent += prob[i] * LOG2(1.0 / prob[i]); // change to (prob[i] > 0.0) * prob[i] * LOG2(1 / prob[i]);
+        }
+    }
 
     /*
         Calculate Monte Carlo value for PI from percentage of hits
         within the circle
-  */
+    */
     montepi = 4.0 * (((double) inmont) / mcount);
 
     rsl->ent         = ent;
