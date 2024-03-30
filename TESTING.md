@@ -6,7 +6,7 @@ Everything you need to know for testing ADAM with different popular RNG test sui
 
 This is a collection of miscellaneous heuristics and empirical tests implemented by me, just for reporting some notable properties of an output sequence to the user. It's nowhere near as important as the feedback from tried and true testing suites, but it's good for some quick information about the sequences you generate. 
 
-Additionally, the ENT framework is integrated into this collection, for a total of 24 pieces of information that are returned to the user:
+Additionally, the ENT framework is integrated into this collection, for a total of 23 pieces of information that are returned to the user:
 
 - Total sequences generated (also reported in terms of numbers generated per width)
 - Monobit frequency (including bit runs and longest runs of 0s/1s)
@@ -14,7 +14,6 @@ Additionally, the ENT framework is integrated into this collection, for a total 
 - Range distribution
 - Max and min values
 - Parity: even and odd number ratio
-- Chaotic seed distribution, average chaotic seed
 - Runs: total # of runs and longest run (increasing/decreasing)
 - Average gap length
 - Most and least common bytes
@@ -44,7 +43,6 @@ Additionally, the ENT framework is integrated into this collection, for a total 
 *****[Hernandez-Castro, Julio & Sierra, José & Seznec, Andre & Izquierdo, Antonio & Ribagorda, Arturo. (2005). The strict avalanche criterion randomness test. Mathematics and Computers in Simulation. 68. 1-7. 10.1016/j.matcom.2004.09.001.](https://www.researchgate.net/publication/222525312_The_strict_avalanche_criterion_randomness_test)
 
 ******[Oprina, Andrei-George et al. “WALSH-HADAMARD RANDOMNESS TEST AND NEW METHODS OF TEST RESULTS INTEGRATION.” (2009).](https://www.semanticscholar.org/paper/WALSH-HADAMARD-RANDOMNESS-TEST-AND-NEW-METHODS-OF-Oprina-Popescu/42de0c0c663461bfded8e5b29171e40f34ffed85)
-
 
 ## NIST
 
