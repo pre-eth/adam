@@ -35,11 +35,13 @@ u8 nearest_space(const char *str, u8 offset)
     register u8 a = offset;
     register u8 b = offset;
 
-    while (str[a] && str[a] != ' ')
+    while (str[a] && str[a] != ' ') {
         --a;
-
-    while (str[b] && str[b] != ' ')
+    }
+    
+    while (str[b] && str[b] != ' ') {
         ++b;
+    }
 
     return (b - offset < offset - a) ? b : a;
 }
@@ -52,17 +54,18 @@ u8 err(const char *s)
 
 u64 a_to_u(const char *s, const u64 min, const u64 max)
 {
-    if (UNLIKELY(s == NULL || s[0] == '-'))
+    if (UNLIKELY(s == NULL || s[0] == '-')) {
         return min;
+    }
 
     register u8 len  = 0;
     register u64 val = 0;
 
-    for (; s[len] != '\0'; ++len)
-        if (UNLIKELY(s[len] < '0' || s[len] > '9'))
+    for (; s[len] != '\0'; ++len) {
+        if (UNLIKELY(s[len] < '0' || s[len] > '9')) {
             return 0;
-    ;
-
+        }
+    }
     switch (len) {
     case 20:
         val += 10000000000000000000LU;
@@ -112,8 +115,9 @@ u64 a_to_u(const char *s, const u64 min, const u64 max)
 static u8 load_seed(u64 *seed, const char *strseed)
 {
     FILE *seed_file = fopen(strseed, "rb");
-    if (!seed_file)
+    if (!seed_file) {
         return err("Couldn't read seed file");
+    }
     fread((void *) seed, sizeof(u64), 4, seed_file);
     fclose(seed_file);
     return 0;
@@ -123,11 +127,14 @@ static u8 store_seed(const u64 *seed)
 {
     char file_name[65];
     printf("File name: \033[1;93m");
-    while (!scanf(" %64s", &file_name[0]))
+    while (!scanf(" %64s", &file_name[0])) {
         err("Please enter a valid file name");
+    }
+
     FILE *seed_file = fopen(file_name, "wb+");
-    if (!seed_file)
+    if (!seed_file) {
         return err("Couldn't open seed file");
+    }
     fwrite((void *) seed, sizeof(u64), 4, seed_file);
     fclose(seed_file);
     return 0;
@@ -135,8 +142,9 @@ static u8 store_seed(const u64 *seed)
 
 u8 rwseed(u64 *seed, const char *strseed)
 {
-    if (strseed != NULL)
+    if (strseed != NULL) {
         return load_seed(seed, strseed);
+    }
     return store_seed(seed);
 }
 
@@ -275,9 +283,9 @@ void print_ascii_bits(u64 *_ptr, const u64 limit)
 static u8 calc_padding(u64 num)
 {
     register u8 pad = 0;
-    do
+    do {
         ++pad;
-    while ((num /= 10) > 0);
+    } while ((num /= 10) > 0);
     return pad;
 }
 
@@ -403,30 +411,6 @@ void print_ent_results(const u16 indent, const ent_test *rsl)
         printf("\033[1;34m\033[%uC        Serial Correlation: \033[m%1.6f%32s\n", indent, scc, "(totally uncorrelated = 0.0)");
     } else
         printf("\033[1;34m\033[%uC        Serial Correlation: \033[1;31mUNDEFINED\033[m %32s\n", indent, "(all values equal!)");
-}
-
-void print_chseed_results(const u16 indent, const basic_test *rsl)
-{
-    const u64 expected_chseeds = (rsl->chseed_exp * CHSEED_PROB);
-
-    double delta[5];
-    register double chi_calc = 0.0;
-    for (u8 i = 0; i < CHSEED_CAT; ++i) {
-        delta[i] = (double) rsl->chseed_dist[i] - (double) expected_chseeds;
-        chi_calc += pow(delta[i], 2) / (double) expected_chseeds;
-    }
-
-    const u8 suspect_level = 32 - (CHSEED_CRITICAL_VALUE < chi_calc);
-    const double p_value   = cephes_igamc(CHSEED_CAT / 2, chi_calc / 2);
-
-    printf("\033[1;34m\033[%uC Chaotic Seed Distribution:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
-    printf("\033[2m\033[%uC         a. Raw Chi-Square:\033[m %1.3lf (cv = %.3lf)\n", indent, chi_calc, CHSEED_CRITICAL_VALUE);
-    printf("\033[2m\033[%uC   b. Average Chaotic Seed:\033[m %1.15lf (ideal = 0.25)\n", indent, rsl->avg_chseed / (double) rsl->chseed_exp);
-    printf("\033[2m\033[%uC             c. (0.0, 0.1):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, rsl->chseed_dist[0], expected_chseeds, (long long) delta[0]);
-    printf("\033[2m\033[%uC             d. [0.1, 0.2):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, rsl->chseed_dist[1], expected_chseeds, (long long) delta[1]);
-    printf("\033[2m\033[%uC             e. [0.2, 0.3):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, rsl->chseed_dist[2], expected_chseeds, (long long) delta[2]);
-    printf("\033[2m\033[%uC             f. [0.3, 0.4):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, rsl->chseed_dist[3], expected_chseeds, (long long) delta[3]);
-    printf("\033[2m\033[%uC             g. [0.4, 0.5):\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, rsl->chseed_dist[4], expected_chseeds, (long long) delta[4]);
 }
 
 void print_fp_results(const u16 indent, const u64 output, const fp_test *rsl)
@@ -646,9 +630,9 @@ void print_avalanche_results(const u16 indent, const basic_test *rsl, const u64 
 
     register double chi_calc = 0.0;
     i                        = 0;
-    do
+    do {
         chi_calc += pow((quadrants[i] - bin_counts[i]), 2) / bin_counts[i];
-    while (++i < AVALANCHE_CAT);
+    } while (++i < AVALANCHE_CAT);
 
     register u8 suspect_level = 32 - (AVALANCHE_CRITICAL_VALUE <= chi_calc);
     average                   = average / (quadrants[0] + quadrants[1] + quadrants[2] + quadrants[3]);
