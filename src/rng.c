@@ -233,8 +233,6 @@ static inline void chaotic_iter(u64 *restrict in, u64 *restrict out, double *res
     regd d2;
     reg r1, r2;
 
-    register u16 i = 0;
-
 #ifdef __AVX512F__
     do {
         // 3.9999 * X * (1 - X) for all X in the register
