@@ -3,7 +3,6 @@
 #include <stdlib.h>
 
 #include "../include/api.h"
-#include "../include/test.h"
 #include "../include/util.h"
 
 #define STRINGIZE(a) #a
@@ -371,10 +370,11 @@ int main(int argc, char **argv)
         case 'a':
             return assess(data);
         case 'b':
-            if (dbl_mode)
+            if (dbl_mode) {
                 streamf(data);
-            else
+            } else {
                 adam_stream(data, __UINT64_MAX__, NULL);
+            }
             adam_cleanup(data);
             return 0;
         case 'x':
