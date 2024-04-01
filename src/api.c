@@ -12,21 +12,28 @@ struct adam_data_s {
     // 64-bit nonce
     u64 nonce;
 
-    // Output vector - 256 64-bit integers = 2048 bytes
+    // Output vector (work buffer) - 256 64-bit integers = 2048 bytes
     u64 out[BUF_SIZE] ALIGN(ADAM_ALIGNMENT);
 
-    // Work maps - sizeof(u64) * 512 = 4096 bytes
+    // Chaotic state maps - sizeof(u64) * 512 = 4096 bytes
     u64 state_buffers[BUF_SIZE << 1] ALIGN(ADAM_ALIGNMENT);
 
     // The seeds supplied to each iteration of the chaotic function
     double chseeds[ROUNDS << 2] ALIGN(ADAM_ALIGNMENT);
 
-    // Work array to store intermediate chaotic function results
-    u64 chaotic_rsl[8] ALIGN(ADAM_ALIGNMENT);
+    // Work array to store intermediate mix results
+    u64 work_rsl[8] ALIGN(ADAM_ALIGNMENT);
 
-    //  Current index in buffer (as bytes)
+    // Current index in buffer (as bytes)
     u16 buff_idx;
 };
+
+static void adam(adam_data data)
+{
+    apply(data->out, data->state_buffers, data->chseeds, data->work_rsl);
+    mix(data->out, data->state_buffers);
+    data->buff_idx = 0;
+}
 
 adam_data adam_setup(u64 *seed, u64 *nonce)
 {
@@ -41,6 +48,7 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
     } else {
         data->nonce = *nonce; 
     }
+
     /*
         The algorithm requres 3 u64 buffers of size BUF_SIZE - 2 internal maps used for generating
         the chaotic function output, and an output vector. 
@@ -51,8 +59,7 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
         aligned_alloc + memset is used rather than calloc to use the appropriate SIMD alignment.
     */
     MEMSET(&data->out[0], 0, ADAM_BUF_BYTES);
-    MEMSET(&data->state_buffers[0], data->nonce & 0xFF, ADAM_BUF_BYTES);
-    MEMSET(&data->state_buffers[BUF_SIZE], (data->nonce & 0xFF) - (~data->nonce & 0xFF), ADAM_BUF_BYTES);
+    MEMSET(&data->state_buffers[0], 0, ADAM_BUF_BYTES << 1);
 
     /*
         8 64-bit IV's that correspond to the verse:
@@ -76,7 +83,8 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
         data->seed[2] = seed[2];
         data->seed[3] = seed[3];
     }
-
+    
+    // Mix IV's with different configurations of seed values
     data->out[0] ^= data->seed[0];
     data->out[1] ^= (~data->seed[1] << (data->nonce & 63)) | (~data->seed[3] >> (data->nonce & 63));
     data->out[2] ^= data->seed[1];
@@ -86,23 +94,16 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
     data->out[6] ^= data->seed[3];
     data->out[7] ^= (~data->seed[3] << 32) | (~data->seed[1] >> 32);
 
-    accumulate(data->out, data->state_buffers, data->chseeds);
+    // Initialize chaotic seeds, work buffer, and chaotic maps
+    accumulate(data->out, data->work_rsl, data->chseeds);
+    diffuse(data->out, data->work_rsl, data->nonce);
+    diffuse(data->state_buffers, data->work_rsl, ~data->nonce);
+    diffuse(&data->state_buffers[BUF_SIZE], data->work_rsl, data->nonce);
 
-    diffuse(data->out, data->nonce);
-    apply(data->out, data->state_buffers, data->chseeds, data->chaotic_rsl);
-    mix(data->out, data->state_buffers);
-
-    // Last byte idx == regen next API call
-    data->buff_idx = 0;
+    // Get first batch of results
+    adam(data);
 
     return data;
-}
-
-static void adam(adam_data data)
-{
-    apply(data->out, data->state_buffers, data->chseeds, data->chaotic_rsl);
-    mix(data->out, data->state_buffers);
-    data->buff_idx = 0;
 }
 
 u64 *adam_seed(const adam_data data)
@@ -260,7 +261,7 @@ static void dbl_simd_mult(double *buf, const u16 amount, const double multiplier
 #endif
 }
 
-int adam_dfill(adam_data data, double *buf, const u64 multiplier, const u32 amount)
+int adam_dfill(adam_data data, double *buf, const u64 multiplier, const u64 amount)
 {
     if (!amount || amount > ADAM_FILL_MAX) {
         return 1;
