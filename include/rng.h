@@ -11,8 +11,6 @@
   */
   #define MAGNITUDE           8  
   #define BUF_SIZE            (1U << MAGNITUDE)   
-  #define SEQ_BYTES           (BUF_SIZE << 3)    
-  #define SEQ_SIZE            (BUF_SIZE << 6)  
   
   /* 
     ROUNDS must satisfy k = T / 3 where T % 3 = 0, where k is 
@@ -48,7 +46,7 @@
     iterations to produce the final output sequence in place. The 
     chaotic function is given as:
 
-    3.9999 * X * (1 - X)
+      3.9999 * X * (1 - X)
   */
   #define COEFFICIENT           3.9999      
 
