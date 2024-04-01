@@ -61,9 +61,21 @@ static reg mm256_cvtepi64_pd(regd d1)
 
 #endif
 
+// For diffusing the buffer - from https://burtleburtle.net/bob/c/isaac64.c
+#define ISAAC_MIX(a,b,c,d,e,f,g,h) { \
+    a-=e; f^=h>>9;  h+=a; \
+    b-=f; g^=a<<9;  a+=b; \
+    c-=g; h^=b>>23; b+=c; \
+    d-=h; a^=c<<15; c+=d; \
+    e-=a; b^=d>>14; d+=e; \
+    f-=b; c^=e<<20; e+=f; \
+    g-=c; d^=f>>17; f+=g; \
+    h-=d; e^=g<<14; g+=h; \
+}
+
 /*     ALGORITHM START     */
 
-void accumulate(u64 *restrict IV, u64 *restrict state_buffers, double *restrict chseeds)
+void accumulate(u64 *restrict _ptr, u64 *work_arr, double *restrict chseeds)
 {
     register u8 i = 0;
 
@@ -72,116 +84,100 @@ void accumulate(u64 *restrict IV, u64 *restrict state_buffers, double *restrict 
     const dregq range = SIMD_SETQPD(2.7105054E-20);
 
     dreg4q seeds;
-    reg64q4 r1 = SIMD_LOAD64x4(&IV[0]);
-    reg64q4 r2 = SIMD_LOAD64x4(&state_buffers[0]);
-
+    reg64q4 r1 = SIMD_LOAD64x4(&_ptr[0]);
+    reg64q4 r2 = SIMD_LOAD64x4(&_ptr[0]);
     do {
+        SIMD_ADD4RQ64(r2, r2, r1);
         SIMD_XOR4RQ64(r1, r1, r2);
         SIMD_CAST4QPD(seeds, r1);
         SIMD_MUL4QPD(seeds, seeds, range);
         SIMD_STORE4PD(&chseeds[i << 3], seeds);
-        SIMD_ADD4RQ64(r2, r2, r1);
     } while (++i < (ROUNDS / 2));
 
-    SIMD_STORE64x4(&IV[0], r2);
+    SIMD_STORE64x4(work_arr, r2);
 #else
     // To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random double D
     const regd range = SIMD_SETPD(2.7105054E-20);
 
     regd d1;
-    reg r1 = SIMD_LOADBITS((reg *) &IV[0]);
+    reg r1 = SIMD_LOADBITS((reg *) &_ptr[0]);
 #ifdef __AVX512F__
-    reg r2 = SIMD_LOADBITS((reg *) &state_buffers[0]);
+    reg r2 = SIMD_LOADBITS((reg *) &_ptr[0]);
 
     do {
+        r2 = SIMD_ADD64(r1, r2);
         r1 = SIMD_XORBITS(r1, r2);
         d1 = SIMD_CASTPD(r1);
         d1 = SIMD_MULPD(d1, range);
         SIMD_STOREPD(&chseeds[i << 3], d1);
-        r2 = SIMD_ADD64(r1, r2);
     } while (++i < (ROUNDS / 2));
 
-    SIMD_STOREBITS((reg *) &IV[0], r2);
+    SIMD_STOREBITS((reg *) &work_arr[0], r2);
 #else
-    const regd factor = SIMD_SETPD(0x0010000000000000);
-    const regd fix1   = SIMD_SETPD(19342813113834066795298816.0);
-    const regd fix2   = SIMD_SETPD(19342813118337666422669312.0);
+    reg r2 = SIMD_LOADBITS((reg *) &_ptr[4]);
 
-    reg r2 = SIMD_LOADBITS((reg *) &IV[4]);
-
-    reg r3 = SIMD_LOADBITS((reg *) &state_buffers[0]);
-    reg r4 = SIMD_LOADBITS((reg *) &state_buffers[4]);
-    reg xH, xL;
+    reg r3 = SIMD_LOADBITS((reg *) &_ptr[0]);
+    reg r4 = SIMD_LOADBITS((reg *) &_ptr[4]);
 
     do {
+        r3 = SIMD_ADD64(r1, r3);
         r1 = SIMD_XORBITS(r1, r3);
         d1 = SIMD_CVTPD(r1);
         d1 = SIMD_MULPD(d1, range);
         SIMD_STOREPD(&chseeds[i], d1);
 
+        r4 = SIMD_ADD64(r2, r4);
         r2 = SIMD_XORBITS(r2, r4);
         d1 = SIMD_CVTPD(r2);
         d1 = SIMD_MULPD(d1, range);
         SIMD_STOREPD(&chseeds[i + 4], d1);
-
-        r3 = SIMD_ADD64(r1, r3);
-        r4 = SIMD_ADD64(r2, r4);
     } while ((i += 8) < (ROUNDS << 2));
 
-    SIMD_STOREBITS((reg *) &IV[0], r3);
-    SIMD_STOREBITS((reg *) &IV[4], r4);
+    SIMD_STOREBITS((reg *) &work_arr[0], r3);
+    SIMD_STOREBITS((reg *) &work_arr[4], r4);
 #endif
 #endif
-}
-
-void diffuse(u64 *restrict _ptr, const u64 nonce)
-{
-    // clang-format off
-    // For diffusing the buffer
-    #define ISAAC_MIX(a,b,c,d,e,f,g,h) { \
-        a-=e; f^=h>>9;  h+=a; \
-        b-=f; g^=a<<9;  a+=b; \
-        c-=g; h^=b>>23; b+=c; \
-        d-=h; a^=c<<15; c+=d; \
-        e-=a; b^=d>>14; d+=e; \
-        f-=b; c^=e<<20; e+=f; \
-        g-=c; d^=f>>17; f+=g; \
-        h-=d; e^=g<<14; g+=h; \
-    }
-    // clang-format on
-
-    // Following logic is adapted from ISAAC64, by Bob Jenkins
-    register u64 a, b, c, d, e, f, g, h;
-    a = b = c = d = nonce;
-    e = f = g = h = ~nonce;
 
     // Scramble
-    register u16 i = 0;
-    for (; i < 4; ++i) {
-        ISAAC_MIX(a, b, c, d, e, f, g, h);
-    }
-    
     i = 0;
+    for (; i < 4; ++i) {
+        ISAAC_MIX(work_arr[0], work_arr[1], work_arr[2], work_arr[3], work_arr[4], work_arr[5], work_arr[6], work_arr[7]);
+    }
+}
+
+void diffuse(u64 *restrict _ptr, u64 *restrict mix, const u64 nonce)
+{
+    register u16 i = 0;
+
+    mix[0] ^= nonce;
+    mix[1] ^= nonce;
+    mix[2] ^= nonce;
+    mix[3] ^= nonce;
+    mix[4] ^= nonce;
+    mix[5] ^= nonce;
+    mix[6] ^= nonce;
+    mix[7] ^= nonce;
+
     do {
-        a += _ptr[i + 0];
-        b += _ptr[i + 1];
-        c += _ptr[i + 2];
-        d += _ptr[i + 3];
-        e += _ptr[i + 4];
-        f += _ptr[i + 5];
-        g += _ptr[i + 6];
-        h += _ptr[i + 7];
+        mix[0] += _ptr[i + 0];
+        mix[1] += _ptr[i + 1];
+        mix[2] += _ptr[i + 2];
+        mix[3] += _ptr[i + 3];
+        mix[4] += _ptr[i + 4];
+        mix[5] += _ptr[i + 5];
+        mix[6] += _ptr[i + 6];
+        mix[7] += _ptr[i + 7];
 
-        ISAAC_MIX(a, b, c, d, e, f, g, h);
+        ISAAC_MIX(mix[0], mix[1], mix[2], mix[3], mix[4], mix[5], mix[6], mix[7]);
 
-        _ptr[i + 0] = a;
-        _ptr[i + 1] = b;
-        _ptr[i + 2] = c;
-        _ptr[i + 3] = d;
-        _ptr[i + 4] = e;
-        _ptr[i + 5] = f;
-        _ptr[i + 6] = g;
-        _ptr[i + 7] = h;
+        _ptr[i + 0] = mix[0];
+        _ptr[i + 1] = mix[1];
+        _ptr[i + 2] = mix[2];
+        _ptr[i + 3] = mix[3];
+        _ptr[i + 4] = mix[4];
+        _ptr[i + 5] = mix[5];
+        _ptr[i + 6] = mix[6];
+        _ptr[i + 7] = mix[7];
     } while ((i += 8) < BUF_SIZE);
 }
 
