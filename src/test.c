@@ -12,7 +12,7 @@ struct adam_data_s {
     u64 out[BUF_SIZE] ALIGN(ADAM_ALIGNMENT);
     u64 state_buffers[BUF_SIZE << 1] ALIGN(ADAM_ALIGNMENT);
     double chseeds[ROUNDS << 2] ALIGN(ADAM_ALIGNMENT);
-    u64 chaotic_rsl[8] ALIGN(ADAM_ALIGNMENT);
+    u64 work_rsl[8] ALIGN(ADAM_ALIGNMENT);
     u16 buff_idx;
 };
 
@@ -349,7 +349,7 @@ static void tally_bitruns(const u64 num, mfreq_test *mfreq)
     } while (++i < 64);
 }
 
-static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict chseeds, const u64 *sac_run)
+static void test_loop(rng_test *rsl, u64 *restrict _ptr, const u64 *sac_run)
 {
     // Saturation Point Test
     // Determines index where all 2^4 values have appeared at least once
@@ -450,7 +450,7 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const double *restrict 
 
 static void run_rng(adam_data data)
 {
-    apply(data->out, data->state_buffers, data->chseeds, data->chaotic_rsl);
+    apply(data->out, data->state_buffers, data->chseeds, data->work_rsl);
     mix(data->out, data->state_buffers);
 }
 
@@ -489,15 +489,11 @@ void adam_examine(const u64 limit, adam_data data)
     vn_test von = { 0 };
     von.trials  = limit / TESTING_BITS;
 
-    // Need to run RNG once initially to finish setting up ENT, range, Maurer, and SAC tests
-    run_rng(data);
-
     // ENT init values
     ent_test ent = { 0 };
     ent.sccu0    = data->out[0] & 0xFF;
 
-    range.min = data->out[0];
-    range.max = data->out[0];
+    range.min = range.max = data->out[0];
 
     // Maurer test init - calculations were pulled from the NIST STS implementation
     maurer_test mau = { 0 };
@@ -539,9 +535,9 @@ void adam_examine(const u64 limit, adam_data data)
     // Start testing!
     register long long rate = basic.sequences;
     do {
-        run_rng(sac_runner);
-        test_loop(&rsl, data->out, data->chseeds, sac_runner->out);
+        test_loop(&rsl, data->out, sac_runner->out);
         run_rng(data);
+        run_rng(sac_runner);
     } while (--rate > 0);
 
     adam_results(limit, &rsl);
@@ -677,7 +673,7 @@ double po_zscore(double z_score)
     return p_value;
 }
 
-/*    FOLLOWING CODE IS FROM THE CEPHES C MATH LIBRARY    */
+/*    FOLLOWING CODE UNTIL END IS FROM THE CEPHES C MATH LIBRARY    */
 
 // 2**-53
 static double MACHEP = 1.11022302462515654042E-16;
