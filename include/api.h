@@ -41,7 +41,7 @@
     vector, the return value of this function is a pointer to const data
     to prevent any sort of modification by the user, as technically even the 
     output vector comprises RNG state and the result of each run is dependent
-    on its value. This function ALWAYS generates a fresh buffer before returning
+    on its value. adam_buffer() ALWAYS generates a fresh buffer before returning
     the pointer, as the API assumes you use the whole buffer each time.
   */
   u64 *adam_seed(adam_data data);
@@ -60,7 +60,7 @@
     ensure that you can safely expect to call this function and 
     always receive a randomly generated integer.
   */
-  u64 adam_int(adam_data data, unsigned char width, const bool force_regen);
+  u64 adam_int(adam_data data, u8 width, const bool force_regen);
 
   /*
     Returns a random double after multiplying it by param <scale>. Param
@@ -93,7 +93,7 @@
 
     Returns 0 on success, 1 on error.
   */
-  int adam_fill(adam_data data, void *buf, unsigned char width, const u64 amount);
+  int adam_fill(adam_data data, void *buf, u8 width, const u64 amount);
 
   /*
     Fills a given buffer with random doubles.
@@ -112,7 +112,7 @@
 
     Returns 0 on success, 1 on error.
   */
-  int adam_dfill(adam_data data, double *buf, const u64 multiplier, const unsigned int amount);
+  int adam_dfill(adam_data data, double *buf, const u64 multiplier, const u64 amount);
 
   /*
     Chooses a random item from a provided collection, where param <arr> is a 
