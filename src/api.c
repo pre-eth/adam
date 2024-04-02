@@ -58,8 +58,8 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
 
         aligned_alloc + memset is used rather than calloc to use the appropriate SIMD alignment.
     */
-    MEMSET(&data->out[0], 0, ADAM_BUF_BYTES);
-    MEMSET(&data->state_buffers[0], 0, ADAM_BUF_BYTES << 1);
+    MEMSET(data->out, 0, ADAM_BUF_BYTES);
+    MEMSET(data->state_buffers, 0, ADAM_BUF_BYTES << 1);
 
     /*
         8 64-bit IV's that correspond to the verse:
@@ -169,8 +169,8 @@ int adam_fill(adam_data data, void *buf, u8 width, const u64 amount)
 
     while (runs > 0) {
         adam(data);
-        MEMCPY(buf, data->out, SEQ_BYTES);
-        buf += SEQ_BYTES;
+        MEMCPY(buf, data->out, ADAM_BUF_BYTES);
+        buf += ADAM_BUF_BYTES;
         --runs;
     }
 
@@ -323,13 +323,13 @@ u64 adam_stream(adam_data data, const u64 output, const char *file_name)
         freopen(file_name, "wb+", stdout);
     }
 
-    const u16 leftovers = output & (SEQ_SIZE - 1);
+    const u16 leftovers = output & (ADAM_BUF_BITS - 1);
 
     register u64 written = 0;
-    while (output - written >= SEQ_SIZE) {
+    while (output - written >= ADAM_BUF_BITS) {
         adam(data);
         fwrite(data->out, sizeof(u64), BUF_SIZE, stdout);
-        written += SEQ_SIZE;
+        written += ADAM_BUF_BITS;
     }
 
     if (LIKELY(leftovers)) {
