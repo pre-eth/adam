@@ -10,11 +10,13 @@ struct adam_data_s {
     u64 seed[4];
     u64 nonce;
     u64 out[BUF_SIZE] ALIGN(ADAM_ALIGNMENT);
-    u64 state_buffers[BUF_SIZE << 1] ALIGN(ADAM_ALIGNMENT);
+    u64 state_maps[BUF_SIZE << 1] ALIGN(ADAM_ALIGNMENT);
     double chseeds[ROUNDS << 2] ALIGN(ADAM_ALIGNMENT);
     u64 work_rsl[8] ALIGN(ADAM_ALIGNMENT);
     u16 buff_idx;
 };
+
+static void adam_results(const u64 limit, rng_test *rsl);
 
 static u64 gaps[256];
 static u64 gaplengths[256];
@@ -359,7 +361,7 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const u64 *sac_run)
     // Checks the level of compressiiblity of output, assuming 1MB of
     // bytes have been accumulated
     MEMCPY(&rsl->mau->bytes[maurer_ctr << 11], _ptr, ADAM_BUF_BYTES);
-    if (++maurer_ctr == TESTING_BITS / SEQ_SIZE) {
+    if (++maurer_ctr == TESTING_BITS / ADAM_BUF_BITS) {
         maurer(rsl->mau);
         maurer_ctr = 0;
 
@@ -372,7 +374,7 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const u64 *sac_run)
             twice, this time per MB
         */
         wh_fisher *= -2.0;
-        double wh_pvalue = cephes_igamc(TESTING_BITS / SEQ_SIZE, wh_fisher / 2);
+        double wh_pvalue = cephes_igamc(TESTING_BITS / ADAM_BUF_BITS, wh_fisher / 2);
         wh_fisher_mb += log(wh_pvalue);
         wh_fisher = 0.0;
 
@@ -450,11 +452,9 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const u64 *sac_run)
 
 static void run_rng(adam_data data)
 {
-    apply(data->out, data->state_buffers, data->chseeds, data->work_rsl);
-    mix(data->out, data->state_buffers);
+    apply(data->out, data->state_maps, data->chseeds, data->work_rsl);
+    mix(data->out, data->state_maps);
 }
-
-static void adam_results(const u64 limit, rng_test *rsl);
 
 void adam_examine(const u64 limit, adam_data data)
 {

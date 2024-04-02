@@ -16,7 +16,7 @@ struct adam_data_s {
     u64 out[BUF_SIZE] ALIGN(ADAM_ALIGNMENT);
 
     // Chaotic state maps - sizeof(u64) * 512 = 4096 bytes
-    u64 state_buffers[BUF_SIZE << 1] ALIGN(ADAM_ALIGNMENT);
+    u64 state_maps[BUF_SIZE << 1] ALIGN(ADAM_ALIGNMENT);
 
     // The seeds supplied to each iteration of the chaotic function
     double chseeds[ROUNDS << 2] ALIGN(ADAM_ALIGNMENT);
@@ -30,8 +30,8 @@ struct adam_data_s {
 
 static void adam(adam_data data)
 {
-    apply(data->out, data->state_buffers, data->chseeds, data->work_rsl);
-    mix(data->out, data->state_buffers);
+    apply(data->out, data->state_maps, data->chseeds, data->work_rsl);
+    mix(data->out, data->state_maps);
     data->buff_idx = 0;
 }
 
@@ -59,7 +59,7 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
         aligned_alloc + memset is used rather than calloc to use the appropriate SIMD alignment.
     */
     MEMSET(data->out, 0, ADAM_BUF_BYTES);
-    MEMSET(data->state_buffers, 0, ADAM_BUF_BYTES << 1);
+    MEMSET(data->state_maps, 0, ADAM_BUF_BYTES << 1);
 
     /*
         8 64-bit IV's that correspond to the verse:
@@ -97,8 +97,8 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
     // Initialize chaotic seeds, work buffer, and chaotic maps
     accumulate(data->out, data->work_rsl, data->chseeds);
     diffuse(data->out, data->work_rsl, data->nonce);
-    diffuse(data->state_buffers, data->work_rsl, ~data->nonce);
-    diffuse(&data->state_buffers[BUF_SIZE], data->work_rsl, data->nonce);
+    diffuse(data->state_maps, data->work_rsl, ~data->nonce);
+    diffuse(&data->state_maps[BUF_SIZE], data->work_rsl, data->nonce);
 
     // Get first batch of results
     adam(data);
