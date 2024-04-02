@@ -79,19 +79,28 @@ void accumulate(u64 *restrict _ptr, u64 *work_arr, double *restrict chseeds)
 {
     register u8 i = 0;
 
+    MEMCPY(&work_arr[0], &_ptr[4], sizeof(u64) * 4);
+    MEMCPY(&work_arr[4], &_ptr[0], sizeof(u64) * 4);
+
+    // Scramble
+    for (; i < 4; ++i) {
+        ISAAC_MIX(work_arr[0], work_arr[1], work_arr[2], work_arr[3], work_arr[4], work_arr[5], work_arr[6], work_arr[7]);
+    }
+
 #ifdef __AARCH64_SIMD__
     // To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random double D
     const dregq range = SIMD_SETQPD(2.7105054E-20);
 
     dreg4q seeds;
     reg64q4 r1 = SIMD_LOAD64x4(&_ptr[0]);
-    reg64q4 r2 = SIMD_LOAD64x4(&_ptr[0]);
+    reg64q4 r2 = SIMD_LOAD64x4(&work_arr[0]);
+    i = 0;
     do {
-        SIMD_ADD4RQ64(r2, r2, r1);
         SIMD_XOR4RQ64(r1, r1, r2);
         SIMD_CAST4QPD(seeds, r1);
         SIMD_MUL4QPD(seeds, seeds, range);
         SIMD_STORE4PD(&chseeds[i << 3], seeds);
+        SIMD_ADD4RQ64(r2, r2, r1);
     } while (++i < (ROUNDS / 2));
 
     SIMD_STORE64x4(work_arr, r2);
@@ -102,11 +111,11 @@ void accumulate(u64 *restrict _ptr, u64 *work_arr, double *restrict chseeds)
     regd d1;
     reg r1 = SIMD_LOADBITS((reg *) &_ptr[0]);
 #ifdef __AVX512F__
-    reg r2 = SIMD_LOADBITS((reg *) &_ptr[0]);
+    reg r2 = SIMD_LOADBITS((reg *) &work_arr[0]);
 
     do {
-        r2 = SIMD_ADD64(r1, r2);
         r1 = SIMD_XORBITS(r1, r2);
+        r2 = SIMD_ADD64(r1, r2);
         d1 = SIMD_CASTPD(r1);
         d1 = SIMD_MULPD(d1, range);
         SIMD_STOREPD(&chseeds[i << 3], d1);
@@ -116,18 +125,18 @@ void accumulate(u64 *restrict _ptr, u64 *work_arr, double *restrict chseeds)
 #else
     reg r2 = SIMD_LOADBITS((reg *) &_ptr[4]);
 
-    reg r3 = SIMD_LOADBITS((reg *) &_ptr[0]);
-    reg r4 = SIMD_LOADBITS((reg *) &_ptr[4]);
+    reg r3 = SIMD_LOADBITS((reg *) &work_arr[0]);
+    reg r4 = SIMD_LOADBITS((reg *) &work_arr[4]);
 
     do {
-        r3 = SIMD_ADD64(r1, r3);
         r1 = SIMD_XORBITS(r1, r3);
+        r3 = SIMD_ADD64(r1, r3);
         d1 = SIMD_CVTPD(r1);
         d1 = SIMD_MULPD(d1, range);
         SIMD_STOREPD(&chseeds[i], d1);
 
-        r4 = SIMD_ADD64(r2, r4);
         r2 = SIMD_XORBITS(r2, r4);
+        r4 = SIMD_ADD64(r2, r4);
         d1 = SIMD_CVTPD(r2);
         d1 = SIMD_MULPD(d1, range);
         SIMD_STOREPD(&chseeds[i + 4], d1);
@@ -137,12 +146,6 @@ void accumulate(u64 *restrict _ptr, u64 *work_arr, double *restrict chseeds)
     SIMD_STOREBITS((reg *) &work_arr[4], r4);
 #endif
 #endif
-
-    // Scramble
-    i = 0;
-    for (; i < 4; ++i) {
-        ISAAC_MIX(work_arr[0], work_arr[1], work_arr[2], work_arr[3], work_arr[4], work_arr[5], work_arr[6], work_arr[7]);
-    }
 }
 
 void diffuse(u64 *restrict _ptr, u64 *restrict mix, const u64 nonce)
