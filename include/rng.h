@@ -54,7 +54,7 @@
     BETA is derived from the number of digits we'd like to pull from the mantissa
     before converting a chaotic seed output to an integer value
   */
-  #define BETA                  10E18
+  #define BETA                  10E15
 
   /*  The main primitives for using ADAM's algorithm  */
 
