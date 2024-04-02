@@ -192,8 +192,9 @@ static inline void chaotic_iter(u64 *restrict in, u64 *restrict out, double *res
     const dregq one   = SIMD_SETQPD(1.0);
     const dregq coeff = SIMD_SETQPD(COEFFICIENT);
     const dregq beta  = SIMD_SETQPD(BETA);
+    const reg64q mask = SIMD_SETQ64(0xFFULL);
 
-    reg64q4 r1;
+    reg64q4 r1, r2;
 
     // Load 8 consecutive seeds at a time
     dreg4q d1 = SIMD_LOAD4PD(chseeds);
@@ -210,16 +211,26 @@ static inline void chaotic_iter(u64 *restrict in, u64 *restrict out, double *res
 
         // Cast, XOR, and store
         SIMD_CAST4Q64(r1, d2);
+        SIMD_AND4Q64(r1, r1, mask);
         SIMD_STORE64x4(&arr[0], r1);
 
-        out[i + 0] ^= in[(arr[0] + 1 + i) & 0xFF];
-        out[i + 1] ^= in[(arr[1] + 2 + i) & 0xFF];
-        out[i + 2] ^= in[(arr[2] + 3 + i) & 0xFF];
-        out[i + 3] ^= in[(arr[3] + 4 + i) & 0xFF];
-        out[i + 4] ^= in[(arr[4] + 5 + i) & 0xFF];
-        out[i + 5] ^= in[(arr[5] + 6 + i) & 0xFF];
-        out[i + 6] ^= in[(arr[6] + 7 + i) & 0xFF];
-        out[i + 7] ^= in[(arr[7] + 8 + i) & 0xFF];
+        arr[0] = (arr[0] + 1 + i) & 0xFF;
+        arr[1] = (arr[1] + 2 + i) & 0xFF;
+        arr[2] = (arr[2] + 3 + i) & 0xFF;
+        arr[3] = (arr[3] + 4 + i) & 0xFF;
+        arr[4] = (arr[4] + 5 + i) & 0xFF;
+        arr[5] = (arr[5] + 6 + i) & 0xFF;
+        arr[6] = (arr[6] + 7 + i) & 0xFF;
+        arr[7] = (arr[7] + 8 + i) & 0xFF;
+
+        out[i + 0] ^= in[arr[0]];
+        out[i + 1] ^= in[arr[1]];
+        out[i + 2] ^= in[arr[2]];
+        out[i + 3] ^= in[arr[3]];
+        out[i + 4] ^= in[arr[4]];
+        out[i + 5] ^= in[arr[5]];
+        out[i + 6] ^= in[arr[6]];
+        out[i + 7] ^= in[arr[7]];
     } while ((i += 8) < BUF_SIZE);
 
     SIMD_STORE4PD(chseeds, d1);
@@ -227,6 +238,8 @@ static inline void chaotic_iter(u64 *restrict in, u64 *restrict out, double *res
     const regd one   = SIMD_SETPD(1.0);
     const regd coeff = SIMD_SETPD(COEFFICIENT);
     const regd beta  = SIMD_SETPD(BETA);
+
+    const reg mask = SIMD_SET64(0xFFULL);
 
     regd d1 = SIMD_LOADPD(chseeds);
     regd d2;
@@ -244,16 +257,26 @@ static inline void chaotic_iter(u64 *restrict in, u64 *restrict out, double *res
 
         // Cast, XOR, and store
         r1 = SIMD_CASTPD(d2);
+        r1 = SIMD_AND64(r1, mask);
         SIMD_STOREBITS((reg *) &arr[0], r1);
 
-        out[i + 0] ^= in[(arr[0] + 1 + i) & 0xFF];
-        out[i + 1] ^= in[(arr[1] + 2 + i) & 0xFF];
-        out[i + 2] ^= in[(arr[2] + 3 + i) & 0xFF];
-        out[i + 3] ^= in[(arr[3] + 4 + i) & 0xFF];
-        out[i + 4] ^= in[(arr[4] + 5 + i) & 0xFF];
-        out[i + 5] ^= in[(arr[5] + 6 + i) & 0xFF];
-        out[i + 6] ^= in[(arr[6] + 7 + i) & 0xFF];
-        out[i + 7] ^= in[(arr[7] + 8 + i) & 0xFF];
+        arr[0] = (arr[0] + 1 + i) & 0xFF;
+        arr[1] = (arr[1] + 2 + i) & 0xFF;
+        arr[2] = (arr[2] + 3 + i) & 0xFF;
+        arr[3] = (arr[3] + 4 + i) & 0xFF;
+        arr[4] = (arr[4] + 5 + i) & 0xFF;
+        arr[5] = (arr[5] + 6 + i) & 0xFF;
+        arr[6] = (arr[6] + 7 + i) & 0xFF;
+        arr[7] = (arr[7] + 8 + i) & 0xFF;
+
+        out[i + 0] ^= in[arr[0]];
+        out[i + 1] ^= in[arr[1]];
+        out[i + 2] ^= in[arr[2]];
+        out[i + 3] ^= in[arr[3]];
+        out[i + 4] ^= in[arr[4]];
+        out[i + 5] ^= in[arr[5]];
+        out[i + 6] ^= in[arr[6]];
+        out[i + 7] ^= in[arr[7]];
     } while ((i += 8) < BUF_SIZE);
 
     SIMD_STOREPD(chseeds, d1);
@@ -272,6 +295,7 @@ static inline void chaotic_iter(u64 *restrict in, u64 *restrict out, double *res
 
         // Cast, XOR, and store
         r1 = SIMD_CVT64(d3);
+        r1 = SIMD_AND64(r1, mask);
         SIMD_STOREBITS((reg *) &arr[0], r1);
 
         // One more run since AVX2 can only do 4 values at a
@@ -281,16 +305,26 @@ static inline void chaotic_iter(u64 *restrict in, u64 *restrict out, double *res
         d2 = SIMD_MULPD(d2, d3);
         d3 = SIMD_MULPD(d2, beta);
         r1 = SIMD_CVT64(d3);
+        r1 = SIMD_AND64(r1, mask);
         SIMD_STOREBITS((reg *) &arr[4], r1);
 
-        out[i + 0] ^= in[(arr[0] + 1 + i) & 0xFF];
-        out[i + 1] ^= in[(arr[1] + 2 + i) & 0xFF];
-        out[i + 2] ^= in[(arr[2] + 3 + i) & 0xFF];
-        out[i + 3] ^= in[(arr[3] + 4 + i) & 0xFF];
-        out[i + 4] ^= in[(arr[4] + 5 + i) & 0xFF];
-        out[i + 5] ^= in[(arr[5] + 6 + i) & 0xFF];
-        out[i + 6] ^= in[(arr[6] + 7 + i) & 0xFF];
-        out[i + 7] ^= in[(arr[7] + 8 + i) & 0xFF];
+        arr[0] = (arr[0] + 1 + i) & 0xFF;
+        arr[1] = (arr[1] + 2 + i) & 0xFF;
+        arr[2] = (arr[2] + 3 + i) & 0xFF;
+        arr[3] = (arr[3] + 4 + i) & 0xFF;
+        arr[4] = (arr[4] + 5 + i) & 0xFF;
+        arr[5] = (arr[5] + 6 + i) & 0xFF;
+        arr[6] = (arr[6] + 7 + i) & 0xFF;
+        arr[7] = (arr[7] + 8 + i) & 0xFF;
+
+        out[i + 0] ^= in[arr[0]];
+        out[i + 1] ^= in[arr[1]];
+        out[i + 2] ^= in[arr[2]];
+        out[i + 3] ^= in[arr[3]];
+        out[i + 4] ^= in[arr[4]];
+        out[i + 5] ^= in[arr[5]];
+        out[i + 6] ^= in[arr[6]];
+        out[i + 7] ^= in[arr[7]];
     } while ((i += 8) < BUF_SIZE);
 
     SIMD_STOREPD(chseeds, d1);
