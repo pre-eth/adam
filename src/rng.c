@@ -96,8 +96,7 @@ void accumulate(u64 *restrict out, u64 *arr, double *restrict chseeds)
     i = 0;
 
 #ifdef __AARCH64_SIMD__
-    // To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random double D
-    const dregq range = SIMD_SETQPD(2.7105054E-20);
+    const dregq range = SIMD_SETQPD(RANGE_LIMIT);
 
     dreg4q seeds;
     reg64q4 r1 = SIMD_LOAD64x4(&out[0]);
@@ -112,8 +111,7 @@ void accumulate(u64 *restrict out, u64 *arr, double *restrict chseeds)
 
     SIMD_STORE64x4(arr, r2);
 #else
-    // To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random double D
-    const regd range = SIMD_SETPD(2.7105054E-20);
+    const regd range = SIMD_SETPD(RANGE_LIMIT);
 
     regd d1;
     reg r1 = SIMD_LOADBITS((reg *) &out[0]);

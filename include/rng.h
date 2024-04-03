@@ -56,6 +56,9 @@
   */
   #define BETA                  10E15
 
+  // To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random double D
+  #define RANGE_LIMIT           2.7105054E-20
+
   /*  The main primitives for using ADAM's algorithm  */
 
   void accumulate(u64 *restrict out, u64 *work_arr, double *restrict chseeds);
