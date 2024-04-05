@@ -62,7 +62,7 @@
   /*  The main primitives for using ADAM's algorithm  */
 
   void accumulate(u64 *restrict out, u64 *work_arr, double *restrict chseeds);
-  void diffuse(u64 *restrict out, u64 *restrict mix, const u64 nonce);
+  void diffuse(u64 *restrict out, const u64 amount, u64 *restrict mix);
   void apply(u64 *restrict out, u64 *restrict state_maps, double *restrict chseeds, u64 *restrict arr);
   void mix(u64 *restrict out, const u64 *restrict state_maps);
 

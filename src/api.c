@@ -38,11 +38,12 @@ static void adam(adam_data data)
 adam_data adam_setup(u64 *seed, u64 *nonce)
 {
     // Allocate the struct
-    adam_data data = aligned_alloc(ADAM_ALIGNMENT, sizeof(struct adam_data_s));
+    adam_data data = aligned_alloc(ADAM_ALIGNMENT, sizeof(*data));
     if (data == NULL) {
         return NULL;
     }
     
+    // Get nonce from secure system RNG, or use user provided nonce
     if (nonce == NULL) {
         getentropy(&data->nonce, sizeof(u64));
     } else {
@@ -57,9 +58,11 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
         user without any fears of them indexing into the internal state maps.
 
         aligned_alloc + memset is used rather than calloc to use the appropriate SIMD alignment.
+
+        We only need to memset the first 8 bytes of the array containing the state maps, because
+        the ISAAC_MIX diffuses and assigns the previous 512 bits to the current section of 512 bits
     */
-    MEMSET(data->out, 0, ADAM_BUF_BYTES);
-    MEMSET(data->state_maps, 0, ADAM_BUF_BYTES << 1);
+    MEMSET(data->state_maps, 0, sizeof(u64) * 8);
 
     /*
         8 64-bit IV's that correspond to the verse:
@@ -74,7 +77,7 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
     data->out[6] = 0x68202847656E6573;
     data->out[7] = 0x697320313A323829;
 
-    // Get seed and nonce bytes from secure system RNG, or use user provided one(s)
+    // Get seed bytes from secure system RNG, or use user provided seed
     if (seed == NULL) {
         getentropy(&data->seed[0], sizeof(u64) * 4);
     } else {
@@ -96,9 +99,18 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
 
     // Initialize chaotic seeds, work buffer, and chaotic maps
     accumulate(data->out, data->work_rsl, data->chseeds);
-    diffuse(data->out, data->work_rsl, data->nonce);
-    diffuse(data->state_maps, data->work_rsl, ~data->nonce);
-    diffuse(&data->state_maps[BUF_SIZE], data->work_rsl, data->nonce);
+
+    data->work_rsl[0] ^= data->nonce;
+    data->work_rsl[1] ^= data->nonce;
+    data->work_rsl[2] ^= data->nonce;
+    data->work_rsl[3] ^= data->nonce;
+    data->work_rsl[4] ^= data->nonce;
+    data->work_rsl[5] ^= data->nonce;
+    data->work_rsl[6] ^= data->nonce;
+    data->work_rsl[7] ^= data->nonce;
+
+    diffuse(data->out, 256, data->work_rsl);
+    diffuse(data->state_maps, 512, data->work_rsl);
 
     // Get first batch of results
     adam(data);
