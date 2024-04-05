@@ -61,6 +61,7 @@ static reg mm256_cvtepi64_pd(regd d1)
 
 #endif
 
+// clang-format off
 // For diffusing the buffer - from https://burtleburtle.net/bob/c/isaac64.c
 #define ISAAC_MIX(a,b,c,d,e,f,g,h) { \
     a-=e; f^=h>>9;  h+=a; \
@@ -72,6 +73,8 @@ static reg mm256_cvtepi64_pd(regd d1)
     g-=c; d^=f>>17; f+=g; \
     h-=d; e^=g<<14; g+=h; \
 }
+// clang-format on
+
 
 /*     ALGORITHM START     */
 
@@ -208,14 +211,14 @@ static inline void chaotic_iter(u64 *restrict in, u64 *restrict out, double *res
         SIMD_CAST4Q64(r1, d2);
         SIMD_STORE64x4(&arr[0], r1);
 
-        out[i + 0] ^= in[(arr[0] + 1 + i) & 0xFF];
-        out[i + 1] ^= in[(arr[1] + 2 + i) & 0xFF];
-        out[i + 2] ^= in[(arr[2] + 3 + i) & 0xFF];
-        out[i + 3] ^= in[(arr[3] + 4 + i) & 0xFF];
-        out[i + 4] ^= in[(arr[4] + 5 + i) & 0xFF];
-        out[i + 5] ^= in[(arr[5] + 6 + i) & 0xFF];
-        out[i + 6] ^= in[(arr[6] + 7 + i) & 0xFF];
-        out[i + 7] ^= in[(arr[7] + 8 + i) & 0xFF];
+        in[arr[0] & 0xFF] ^= out[i + 0] ^= in[arr[0] & 0xFF];
+        in[arr[1] & 0xFF] ^= out[i + 1] ^= in[arr[1] & 0xFF];
+        in[arr[2] & 0xFF] ^= out[i + 2] ^= in[arr[2] & 0xFF];
+        in[arr[3] & 0xFF] ^= out[i + 3] ^= in[arr[3] & 0xFF];
+        in[arr[4] & 0xFF] ^= out[i + 4] ^= in[arr[4] & 0xFF];
+        in[arr[5] & 0xFF] ^= out[i + 5] ^= in[arr[5] & 0xFF];
+        in[arr[6] & 0xFF] ^= out[i + 6] ^= in[arr[6] & 0xFF];
+        in[arr[7] & 0xFF] ^= out[i + 7] ^= in[arr[7] & 0xFF];
     } while ((i += 8) < BUF_SIZE);
 
     SIMD_STORE4PD(chseeds, d1);
@@ -242,14 +245,14 @@ static inline void chaotic_iter(u64 *restrict in, u64 *restrict out, double *res
         r1 = SIMD_CASTPD(d2);
         SIMD_STOREBITS((reg *) &arr[0], r1);
 
-        out[i + 0] ^= in[(arr[0] + 1 + i) & 0xFF];
-        out[i + 1] ^= in[(arr[1] + 2 + i) & 0xFF];
-        out[i + 2] ^= in[(arr[2] + 3 + i) & 0xFF];
-        out[i + 3] ^= in[(arr[3] + 4 + i) & 0xFF];
-        out[i + 4] ^= in[(arr[4] + 5 + i) & 0xFF];
-        out[i + 5] ^= in[(arr[5] + 6 + i) & 0xFF];
-        out[i + 6] ^= in[(arr[6] + 7 + i) & 0xFF];
-        out[i + 7] ^= in[(arr[7] + 8 + i) & 0xFF];
+        in[arr[0] & 0xFF] ^= out[i + 0] ^= in[arr[0] & 0xFF];
+        in[arr[1] & 0xFF] ^= out[i + 1] ^= in[arr[1] & 0xFF];
+        in[arr[2] & 0xFF] ^= out[i + 2] ^= in[arr[2] & 0xFF];
+        in[arr[3] & 0xFF] ^= out[i + 3] ^= in[arr[3] & 0xFF];
+        in[arr[4] & 0xFF] ^= out[i + 4] ^= in[arr[4] & 0xFF];
+        in[arr[5] & 0xFF] ^= out[i + 5] ^= in[arr[5] & 0xFF];
+        in[arr[6] & 0xFF] ^= out[i + 6] ^= in[arr[6] & 0xFF];
+        in[arr[7] & 0xFF] ^= out[i + 7] ^= in[arr[7] & 0xFF];
     } while ((i += 8) < BUF_SIZE);
 
     SIMD_STOREPD(chseeds, d1);
@@ -279,14 +282,14 @@ static inline void chaotic_iter(u64 *restrict in, u64 *restrict out, double *res
         r1 = SIMD_CVT64(d3);
         SIMD_STOREBITS((reg *) &arr[4], r1);
 
-        out[i + 0] ^= in[(arr[0] + 1 + i) & 0xFF];
-        out[i + 1] ^= in[(arr[1] + 2 + i) & 0xFF];
-        out[i + 2] ^= in[(arr[2] + 3 + i) & 0xFF];
-        out[i + 3] ^= in[(arr[3] + 4 + i) & 0xFF];
-        out[i + 4] ^= in[(arr[4] + 5 + i) & 0xFF];
-        out[i + 5] ^= in[(arr[5] + 6 + i) & 0xFF];
-        out[i + 6] ^= in[(arr[6] + 7 + i) & 0xFF];
-        out[i + 7] ^= in[(arr[7] + 8 + i) & 0xFF];
+        in[arr[0] & 0xFF] ^= out[i + 0] ^= in[arr[0] & 0xFF];
+        in[arr[1] & 0xFF] ^= out[i + 1] ^= in[arr[1] & 0xFF];
+        in[arr[2] & 0xFF] ^= out[i + 2] ^= in[arr[2] & 0xFF];
+        in[arr[3] & 0xFF] ^= out[i + 3] ^= in[arr[3] & 0xFF];
+        in[arr[4] & 0xFF] ^= out[i + 4] ^= in[arr[4] & 0xFF];
+        in[arr[5] & 0xFF] ^= out[i + 5] ^= in[arr[5] & 0xFF];
+        in[arr[6] & 0xFF] ^= out[i + 6] ^= in[arr[6] & 0xFF];
+        in[arr[7] & 0xFF] ^= out[i + 7] ^= in[arr[7] & 0xFF];
     } while ((i += 8) < BUF_SIZE);
 
     SIMD_STOREPD(chseeds, d1);
