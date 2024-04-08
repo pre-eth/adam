@@ -149,7 +149,7 @@ static void print_int(adam_data data)
     const u64 num = adam_int(data, width, false);
     if (hex) {
         printf("0x%llx", num);
-    } else if (octal) {
+    } else if (UNLIKELY(octal)) {
         printf("0o%llo", num);
     } else {
         printf("%llu", num);
@@ -180,8 +180,13 @@ static u8 dump_buffer(adam_data data)
     return 0;
 }
 
-static u8 uuid(adam_data data, const char *strlimit)
+static u8 uuid(u64 *seed, u64 *nonce, const char *strlimit)
 {
+    adam_data data = adam_setup(seed, nonce);
+    if (data == NULL) {
+        return err("Could not allocate space for adam_data struct! Exiting.");
+    }
+
     register u16 limit = a_to_u(optarg, 1, 1000);
     if (!limit) {
         return err("Invalid amount specified. Value must be within range [1, 1000]");
@@ -207,6 +212,8 @@ static u8 uuid(adam_data data, const char *strlimit)
         putchar('\n');
     } while (++i < limit);
 
+    adam_cleanup(data);
+
     return 0;
 }
 
@@ -219,7 +226,7 @@ static u8 assessf(adam_data data, const u64 limit, bool ascii_mode)
 
     //  We allow higher assess fill values for testing than supported by the API
     //  so for the larger user provided values we need to split fills
-    if (limit > ADAM_FILL_MAX) {
+    if (UNLIKELY(limit > ADAM_FILL_MAX)) {
         adam_dfill(data, _buf, mult, limit - ADAM_FILL_MAX);
         adam_dfill(data, &_buf[limit - ADAM_FILL_MAX], mult, ADAM_FILL_MAX);
     } else {
@@ -246,8 +253,14 @@ static u8 assessf(adam_data data, const u64 limit, bool ascii_mode)
     return 0;
 }
 
-static void streamf(adam_data data)
+static void streamf(u64 *seed, u64 *nonce)
 {
+    adam_data data = adam_setup(seed, nonce);
+    if (data == NULL) {
+        err("Could not allocate space for adam_data struct! Exiting.");
+        return;
+    }
+
     double *_buf = aligned_alloc(ADAM_ALIGNMENT, ADAM_BUF_SIZE * sizeof(double));
     if (_buf == NULL) {
         return;
@@ -260,9 +273,24 @@ static void streamf(adam_data data)
         fwrite(&_buf[0], sizeof(double), ADAM_BUF_SIZE, stdout);
         written += ADAM_BUF_SIZE;
     }
+
+    adam_cleanup(data);
 }
 
-static u8 assess(adam_data data)
+static void stream(u64 *seed, u64 *nonce)
+{
+    adam_data data = adam_setup(seed, nonce);
+    if (data == NULL) {
+        err("Could not allocate space for adam_data struct! Exiting.");
+        return;
+    }
+
+    adam_stream(data, __UINT64_MAX__, NULL);
+
+    adam_cleanup(data);
+}
+
+static u8 assess(u64 *seed, u64 *nonce)
 {
     // clang-format off
     #define ASSESS_PROMPT(var, msg, fmt, cond, error)    \
@@ -277,6 +305,8 @@ static u8 assess(adam_data data)
         }                                                \
     }
     // clang-format on
+
+    adam_data data = adam_setup(seed, nonce);
 
     char file_name[65];
     ASSESS_PROMPT(&file_name[0], "File name:", " %64s", false, "Please enter a valid file name");
@@ -326,8 +356,13 @@ static u8 assess(adam_data data)
     return 0;
 }
 
-static u8 examine(adam_data data, const char *strlimit)
+static u8 examine(u64 *seed, u64 *nonce, const char *strlimit)
 {
+    adam_data data = adam_setup(seed, nonce);
+    if (data == NULL) {
+        return err("Could not allocate space for adam_data struct! Exiting.");
+    }
+
     register u64 limit = TESTING_BITS;
     if (strlimit != NULL) {
         limit *= a_to_u(strlimit, 1, BITS_TESTING_LIMIT);
@@ -346,11 +381,11 @@ static u8 examine(adam_data data, const char *strlimit)
 
 int main(int argc, char **argv)
 {
-    adam_data data = adam_setup(NULL, NULL);
+    u64 seed[4];
+    u64 nonce;
 
-    if (data == NULL) {
-        return err("Could not allocate space for adam_data struct! Exiting.");
-    }
+    u64 *seed_ptr = NULL;
+    u64 *nonce_ptr = NULL;
 
     //  Initialize the non-zero defaults
     results   = 1;
@@ -361,21 +396,18 @@ int main(int argc, char **argv)
     while ((opt = getopt(argc, argv, OPTSTR)) != EOF) {
         switch (opt) {
         case 'h':
-            adam_cleanup(data);
             return help();
         case 'v':
-            adam_cleanup(data);
             puts("v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH));
             return 0;
         case 'a':
-            return assess(data);
+            return assess(seed_ptr, nonce_ptr);
         case 'b':
             if (dbl_mode) {
-                streamf(data);
+                streamf(seed_ptr, nonce_ptr);
             } else {
-                adam_stream(data, __UINT64_MAX__, NULL);
+                stream(seed_ptr, nonce_ptr);
             }
-            adam_cleanup(data);
             return 0;
         case 'x':
             hex   = true;
@@ -388,7 +420,6 @@ int main(int argc, char **argv)
         case 'w':
             width = a_to_u(optarg, 8, 32);
             if (UNLIKELY(width != 8 && width != 16 && width != 32)) {
-                adam_cleanup(data);
                 return err("Alternate width must be either 8, 16, 32");
             }
             results = ADAM_BUF_SIZE * (64 / width);
@@ -396,18 +427,19 @@ int main(int argc, char **argv)
         case 'r':
             results = a_to_u(optarg, 1, ADAM_BUF_SIZE * (64 / width));
             if (!results) {
-                adam_cleanup(data);
                 return err("Invalid number of results specified for desired width");
             }
             continue;
         case 's':
-            rwseed(adam_seed(data), optarg);
+            rwseed(&seed[0], optarg);
+            seed_ptr = &seed[0];
             continue;
         case 'n':
-            rwnonce(adam_nonce(data), optarg);
+            rwnonce(&nonce, optarg);
+            nonce_ptr = &nonce;
             continue;
         case 'u':
-            return uuid(data, optarg);
+            return uuid(seed_ptr, nonce_ptr, optarg);
         case 'd':
             results = ADAM_BUF_SIZE * (64 / width);
             continue;
@@ -418,27 +450,28 @@ int main(int argc, char **argv)
             dbl_mode  = true;
             precision = a_to_u(optarg, 1, 15);
             if (!precision) {
-                adam_cleanup(data);
                 return err("Floating point precision must be between [1, 15]");
             }
             continue;
         case 'm':
             dbl_mode = true;
             mult     = a_to_u(optarg, 1, __UINT64_MAX__);
-            if (!mult) {
-                adam_cleanup(data);
+            if (UNLIKELY(!mult)) {
                 return err("Floating point scaling factor must be between [1, " STRINGIFY(__UINT64_MAX__) "]");
             }
             continue;
         case 'e':
-            return examine(data, optarg);
+            return examine(seed_ptr, nonce_ptr, optarg);
         default:
-            adam_cleanup(data);
             return err("Option is invalid or missing required argument");
         }
     }
 
-    dump_buffer(data);
+    adam_data data = adam_setup(seed_ptr, nonce_ptr);
+    if (data == NULL) {
+        return err("Could not allocate space for adam_data struct! Exiting.");
+    }
+
 
     return 0;
 }
