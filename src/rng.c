@@ -82,14 +82,14 @@ void accumulate(u64 *restrict out, u64 *arr, double *restrict chseeds)
 {
     register u8 i = 0;
 
-    arr[0] = ~out[4];
-    arr[1] = ~out[5];
-    arr[2] = ~out[6];
-    arr[3] = ~out[7];
-    arr[4] = ~out[0];
-    arr[5] = ~out[1];
-    arr[6] = ~out[2];
-    arr[7] = ~out[3];
+    arr[0] = out[4];
+    arr[1] = out[6];
+    arr[2] = out[5];
+    arr[3] = out[7];
+    arr[4] = out[0];
+    arr[5] = out[2];
+    arr[6] = out[1];
+    arr[7] = out[3];
 
     // Scramble
     for (; i < 4; ++i) {
