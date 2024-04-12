@@ -101,13 +101,13 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
     accumulate(data->out, data->work_rsl, data->chseeds);
 
     data->work_rsl[0] ^= data->nonce;
-    data->work_rsl[1] ^= data->nonce;
+    data->work_rsl[1] ^= ~data->nonce;
     data->work_rsl[2] ^= data->nonce;
-    data->work_rsl[3] ^= data->nonce;
+    data->work_rsl[3] ^= ~data->nonce;
     data->work_rsl[4] ^= data->nonce;
-    data->work_rsl[5] ^= data->nonce;
+    data->work_rsl[5] ^= ~data->nonce;
     data->work_rsl[6] ^= data->nonce;
-    data->work_rsl[7] ^= data->nonce;
+    data->work_rsl[7] ^= ~data->nonce;
 
     diffuse(data->out, 256, data->work_rsl);
     diffuse(data->state_maps, 512, data->work_rsl);
@@ -118,12 +118,12 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
     return data;
 }
 
-u64 *adam_seed(const adam_data data)
+u64 *adam_seed(adam_data data)
 {
     return &data->seed[0];
 }
 
-u64 *adam_nonce(const adam_data data)
+u64 *adam_nonce(adam_data data)
 {
     return &data->nonce;
 }
