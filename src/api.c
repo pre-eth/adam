@@ -153,14 +153,7 @@ u64 adam_int(adam_data data, u8 width, const bool force_regen)
 
 double adam_dbl(adam_data data, const u64 scale, const bool force_regen)
 {
-    if (data->buff_idx == ADAM_BUF_BYTES || force_regen) {
-        adam(data);
-    }
-
-    register double out = (double) data->out[data->buff_idx] / (double) __UINT64_MAX__;
-    data->buff_idx += 8;
-
-    return out * (double) (scale + !scale);
+    return (double) (scale + !scale) * ((double) adam_int(data, 64, force_regen) / (double) __UINT64_MAX__);
 }
 
 int adam_fill(adam_data data, void *buf, u8 width, const u64 amount)
