@@ -31,23 +31,23 @@ static double cexp, montex, montey, montepi, scc, sccun, scclast,
     scct1, scct2, scct3, ent, chisq, datasum;
 
 /*
-  Module:       z.c
-  Purpose:      compute approximations to normal z distribution probabilities
-  Programmer:   Gary Perlman
-  Organization: Wang Institute, Tyngsboro, MA 01879
-  Copyright:    none
-  Tabstops:     4
+    Module:       z.c
+    Purpose:      compute approximations to normal z distribution probabilities
+    Programmer:   Gary Perlman
+    Organization: Wang Institute, Tyngsboro, MA 01879
+    Copyright:    none
+    Tabstops:     4
 
-  poz: probability of normal z value
+    poz: probability of normal z value
 
-  PARAM z: normal z value
+    PARAM z: normal z value
 
-  Adapted from a polynomial approximation in:
-    Ibbetson D, Algorithm 209
-    Collected Algorithms of the CACM 1963 p. 616
-  Note:
-    This routine has six digit accuracy, so it is only useful for absolute
-    z values < 6.  For z values >= to 6.0, poz() returns 0.0.
+    Adapted from a polynomial approximation in:
+        Ibbetson D, Algorithm 209
+        Collected Algorithms of the CACM 1963 p. 616
+    Note:
+        This routine has six digit accuracy, so it is only useful for absolute
+        z values < 6.  For z values >= to 6.0, poz() returns 0.0.
 */
 static double ent_poz(const double z)
 {
@@ -72,24 +72,24 @@ static double ent_poz(const double z)
 }
 
 /*
-  Module:       chisq.c
-  Purpose:      compute approximations to chisquare distribution probabilities
-  Contents:     pochisq()
-  Uses:         poz() in z.c (Algorithm 209)
-  Programmer:   Gary Perlman
-  Organization: Wang Institute, Tyngsboro, MA 01879
-  Copyright:    none
-  Tabstops:     4
+    Module:       chisq.c
+    Purpose:      compute approximations to chisquare distribution probabilities
+    Contents:     pochisq()
+    Uses:         poz() in z.c (Algorithm 209)
+    Programmer:   Gary Perlman
+    Organization: Wang Institute, Tyngsboro, MA 01879
+    Copyright:    none
+    Tabstops:     4
 
-  pochisq: probability of chi sqaure value
+    pochisq: probability of chi sqaure value
 
-  PARAM ax: the obtained chi-square value from previous calculations
+    PARAM ax: the obtained chi-square value from previous calculations
 
-  Adapted from:
-    Hill, I. D. and Pike, M. C.  Algorithm 299
-    Collected Algorithms for the CACM 1967 p. 243
-  Updated for rounding errors based on remark in
-    ACM TOMS June 1985, page 185
+    Adapted from:
+        Hill, I. D. and Pike, M. C.  Algorithm 299
+        Collected Algorithms for the CACM 1967 p. 243
+        Updated for rounding errors based on remark in
+        ACM TOMS June 1985, page 185
 */
 static double ent_pochisq(const double ax)
 {
@@ -144,9 +144,9 @@ void ent_loop(const u8 *byte)
     register u8 i = 0;
     do {
         /*
-      Update inside / outside circle counts
-      for Monte Carlo computation of PI
-    */
+            Update inside / outside circle counts
+            for Monte Carlo computation of PI
+        */
 
         // Save 6 bytes for Monte Carlo
         monte[mp++] = byte[i];
@@ -181,11 +181,11 @@ void ent_results(ent_test *rsl)
     scc = (scc == 0.0) ? -100000 : ((totalc * scct1 - scct2) / scc);
 
     /*
-    Scan bins and calculate probability for each bin and
-    Chi-Square distribution.  The probability will be reused
-    in the entropy calculation below.  While we're at it, we
-    sum of all the data which will be used to compute the mean.
-  */
+        Scan bins and calculate probability for each bin and
+        Chi-Square distribution.  The probability will be reused
+        in the entropy calculation below.  While we're at it, we
+        sum of all the data which will be used to compute the mean.
+    */
     register double a;
     cexp = totalc / 256.0; // Expected count per bin
     for (i = 0; i < 256; ++i) {
