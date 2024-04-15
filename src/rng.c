@@ -75,8 +75,8 @@ static reg mm256_cvtepi64_pd(regd d1)
 }
 // clang-format on
 
-// For permutation-mixing in apply()
-#define XOR_ASSIGN(a,b,c,d) a[c[d] & 0xFF] ^= b[i + d] ^= a[c[d] & 0xFF]
+// For mixing in apply()
+#define XOR_ASSIGN(a,b,c,d) b[i + d] ^= a[(i + d + c[d]) & (BUF_SIZE - 1)]
 
 /*     ALGORITHM START     */
 
