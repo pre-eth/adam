@@ -85,13 +85,13 @@ void accumulate(u64 *restrict out, u64 *arr, double *restrict chseeds)
     register u8 i = 0;
 
     arr[0] = out[4];
-    arr[1] = out[6];
-    arr[2] = out[5];
-    arr[3] = out[7];
+    arr[1] = ~out[5];
+    arr[2] = out[6];
+    arr[3] = ~out[7];
     arr[4] = out[0];
-    arr[5] = out[2];
-    arr[6] = out[1];
-    arr[7] = out[3];
+    arr[5] = ~out[1];
+    arr[6] = out[2];
+    arr[7] = ~out[3];
 
     // Scramble
     for (; i < 4; ++i) {
@@ -104,17 +104,19 @@ void accumulate(u64 *restrict out, u64 *arr, double *restrict chseeds)
     const dregq range = SIMD_SETQPD(RANGE_LIMIT);
 
     dreg4q seeds;
-    reg64q4 r1 = SIMD_LOAD64x4(&out[0]);
-    reg64q4 r2 = SIMD_LOAD64x4(&arr[0]);
+    reg64q4 r1 = SIMD_LOAD64x4(out);
+    reg64q4 r2 = SIMD_LOAD64x4(arr);
     do {
-        SIMD_XOR4RQ64(r1, r1, r2);
-        SIMD_ADD4RQ64(r2, r2, r1);
+        r1.val[0] = vxarq_u64(r1.val[0], r2.val[0], 8);
+        r1.val[1] = vxarq_u64(r1.val[1], r2.val[1], 8);
+        r1.val[2] = vxarq_u64(r1.val[2], r2.val[2], 8);
+        r1.val[3] = vxarq_u64(r1.val[3], r2.val[3], 8);
         SIMD_CAST4QPD(seeds, r1);
         SIMD_MUL4QPD(seeds, seeds, range);
         SIMD_STORE4PD(&chseeds[i << 3], seeds);
     } while (++i < (ROUNDS / 2));
 
-    SIMD_STORE64x4(arr, r2);
+    SIMD_STORE64x4(arr, r1);
 #else
     const regd range = SIMD_SETPD(RANGE_LIMIT);
 
