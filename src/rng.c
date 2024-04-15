@@ -121,41 +121,59 @@ void accumulate(u64 *restrict out, u64 *arr, double *restrict chseeds)
     const regd range = SIMD_SETPD(RANGE_LIMIT);
 
     regd d1;
-    reg r1 = SIMD_LOADBITS((reg *) &out[0]);
 #ifdef __AVX512F__
-    reg r2 = SIMD_LOADBITS((reg *) &arr[0]);
+    reg r1 = SIMD_LOADBITS((reg *) out);
+    reg r2 = SIMD_LOADBITS((reg *) arr);
 
     do {
+        r1 = SIMD_ROTR64(r1, 8);
         r1 = SIMD_XORBITS(r1, r2);
-        r2 = SIMD_ADD64(r1, r2);
         d1 = SIMD_CASTPD(r1);
         d1 = SIMD_MULPD(d1, range);
         SIMD_STOREPD(&chseeds[i << 3], d1);
     } while (++i < (ROUNDS / 2));
 
-    SIMD_STOREBITS((reg *) &arr[0], r2);
+    SIMD_STOREBITS((reg *) arr, r1);
 #else
-    reg r2 = SIMD_LOADBITS((reg *) &out[4]);
+    register a,b,c,d,e,f,g,h;
 
-    reg r3 = SIMD_LOADBITS((reg *) &arr[0]);
-    reg r4 = SIMD_LOADBITS((reg *) &arr[4]);
+    a = out[0];
+    b = out[1];
+    c = out[2];
+    d = out[3];
+    e = out[4];
+    f = out[5];
+    g = out[6];
+    h = out[7];
 
     do {
-        r1 = SIMD_XORBITS(r1, r3);
-        r3 = SIMD_ADD64(r1, r3);
-        d1 = SIMD_CVTPD(r1);
-        d1 = SIMD_MULPD(d1, range);
-        SIMD_STOREPD(&chseeds[i], d1);
+        a = _rotr64(a, 8) ^ arr[0];
+        b = _rotr64(b, 8) ^ arr[1];
+        c = _rotr64(c, 8) ^ arr[2];
+        d = _rotr64(d, 8) ^ arr[3];
+        e = _rotr64(e, 8) ^ arr[4];
+        f = _rotr64(f, 8) ^ arr[5];
+        g = _rotr64(g, 8) ^ arr[6];
+        h = _rotr64(h, 8) ^ arr[7];
 
-        r2 = SIMD_XORBITS(r2, r4);
-        r4 = SIMD_ADD64(r2, r4);
-        d1 = SIMD_CVTPD(r2);
-        d1 = SIMD_MULPD(d1, range);
-        SIMD_STOREPD(&chseeds[i + 4], d1);
+        chseeds[i + 0] = (double) a * RANGE_LIMIT;
+        chseeds[i + 1] = (double) b * RANGE_LIMIT;
+        chseeds[i + 2] = (double) c * RANGE_LIMIT;
+        chseeds[i + 3] = (double) d * RANGE_LIMIT;
+        chseeds[i + 4] = (double) e * RANGE_LIMIT;
+        chseeds[i + 5] = (double) f * RANGE_LIMIT;
+        chseeds[i + 6] = (double) g * RANGE_LIMIT;
+        chseeds[i + 7] = (double) h * RANGE_LIMIT;
     } while ((i += 8) < (ROUNDS << 2));
 
-    SIMD_STOREBITS((reg *) &arr[0], r3);
-    SIMD_STOREBITS((reg *) &arr[4], r4);
+    arr[0] = a;
+    arr[1] = b;
+    arr[2] = c;
+    arr[3] = d;
+    arr[4] = e;
+    arr[5] = f;
+    arr[6] = g;
+    arr[7] = h;
 #endif
 #endif
 }

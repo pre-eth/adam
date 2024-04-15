@@ -141,6 +141,7 @@
       #define SIMD_SETR64      _mm512_setr_epi64 
       #define SIMD_SET64       _mm512_set1_epi64
       #define SIMD_ADD64       _mm512_add_epi64
+      #define SIMD_ROTR64      _mm512_ror_epi64 
       #define SIMD_LOADBITS    _mm512_load_si512
       #define SIMD_STOREBITS   _mm512_store_si512
       #define SIMD_ANDBITS     _mm512_and_si512
