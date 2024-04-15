@@ -109,8 +109,8 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
     data->work_rsl[6] ^= data->nonce;
     data->work_rsl[7] ^= ~data->nonce;
 
-    diffuse(data->out, 256, data->work_rsl);
-    diffuse(data->state_maps, 512, data->work_rsl);
+    diffuse(data->out, ADAM_BUF_SIZE, data->work_rsl);
+    diffuse(data->state_maps, ADAM_BUF_SIZE << 1, data->work_rsl);
 
     // Get first batch of results
     adam(data);

@@ -100,7 +100,7 @@ static void maurer(maurer_test *mau)
     const double p_value = erfc(x);
 
     mau->mean += phi;
-    mau->pass += (p_value > ALPHA_LEVEL);
+    mau->pass += (p_value >= ALPHA_LEVEL);
     mau->fisher += log(p_value);
 }
 
@@ -360,7 +360,7 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const u64 *sac_run)
     // Maurer Universal Test
     // Checks the level of compressiiblity of output, assuming 1MB of
     // bytes have been accumulated
-    MEMCPY(&rsl->mau->bytes[maurer_ctr << 11], _ptr, ADAM_BUF_BYTES);
+    MEMCPY(&rsl->mau->bytes[maurer_ctr << CTZ(ADAM_BUF_BYTES)], _ptr, ADAM_BUF_BYTES);
     if (++maurer_ctr == TESTING_BITS / ADAM_BUF_BITS) {
         maurer(rsl->mau);
         maurer_ctr = 0;
