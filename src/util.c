@@ -333,8 +333,8 @@ void print_mfreq_results(const u16 indent, const u64 output, const mfreq_test *r
     const u8 suspect_level = 32 - (p_value < ALPHA_LEVEL);
     printf("\033[1;34m\033[%uC         Monobit Frequency:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
     printf("\033[2m\033[%uC         a. Raw Chi-Square:\033[m %1.3lf (cv = %.3lf)\n", indent, chi_calc, MFREQ_CRITICAL_VALUE);
-    printf("\033[2m\033[%uC                   b. Ones:\033[m %llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, rsl->mfreq, rsl->mfreq - expected_bits, expected_bits);
-    printf("\033[2m\033[%uC                 c. Zeroes:\033[m %llu (\033[1m%+lli\033[m: exp. %llu)\n", indent, zeroes, zeroes - expected_bits, expected_bits);
+    printf("\033[2m\033[%uC                   b. Ones:\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, rsl->mfreq, expected_bits, rsl->mfreq - expected_bits);
+    printf("\033[2m\033[%uC                 c. Zeroes:\033[m %llu (exp. %llu : \033[1m%+lli\033[m)\n", indent, zeroes, expected_bits, zeroes - expected_bits);
     printf("\033[2m\033[%uC   d. Total Number of Runs:\033[m %llu\n", indent, rsl->one_runs + rsl->zero_runs);
     printf("\033[2m\033[%uC           e. Runs Of Ones:\033[m %llu\n", indent, rsl->one_runs);
     printf("\033[2m\033[%uC         f. Runs Of Zeroes:\033[m %llu\n", indent, rsl->zero_runs);
