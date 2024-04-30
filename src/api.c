@@ -64,19 +64,6 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
     */
     MEMSET(data->state_maps, 0, sizeof(u64) * 8);
 
-    /*
-        8 64-bit IV's that correspond to the verse:
-        "Be fruitful and multiply, and replenish the earth (Genesis 1:28)"
-    */
-    data->out[0] = 0x4265206672756974;
-    data->out[1] = 0x66756C20616E6420;
-    data->out[2] = 0x6D756C7469706C79;
-    data->out[3] = 0x2C20616E64207265;
-    data->out[4] = 0x706C656E69736820;
-    data->out[5] = 0x7468652065617274;
-    data->out[6] = 0x68202847656E6573;
-    data->out[7] = 0x697320313A323829;
-
     // Get seed bytes from secure system RNG, or use user provided seed
     if (seed == NULL) {
         getentropy(&data->seed[0], sizeof(u64) * 4);
@@ -86,16 +73,21 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
         data->seed[2] = seed[2];
         data->seed[3] = seed[3];
     }
-    
-    // Mix IV's with different configurations of seed values
-    data->out[0] ^= data->seed[0];
-    data->out[1] ^= (~data->seed[1] << (data->nonce & 63)) | (~data->seed[3] >> (data->nonce & 63));
-    data->out[2] ^= data->seed[1];
-    data->out[3] ^= (~data->seed[0] << 32) | (~data->seed[2] >> 32);
-    data->out[4] ^= data->seed[2];
-    data->out[5] ^= (~data->seed[2] << (data->nonce & 63)) | (~data->seed[0] >> (data->nonce & 63));
-    data->out[6] ^= data->seed[3];
-    data->out[7] ^= (~data->seed[3] << 32) | (~data->seed[1] >> 32);
+
+    /*
+        8 64-bit IV's that correspond to the verse:
+        "Be fruitful and multiply, and replenish the earth (Genesis 1:28)"
+
+        Mix IV's with different configurations of seed values
+    */
+    data->out[0] = 0x4265206672756974 ^ data->seed[0];
+    data->out[1] = 0x66756C20616E6420 ^ (~data->seed[1] << (data->nonce & 63)) | (~data->seed[3] >> (data->nonce & 63));
+    data->out[2] = 0x6D756C7469706C79 ^ data->seed[1];
+    data->out[3] = 0x2C20616E64207265 ^ (~data->seed[0] << 32) | (~data->seed[2] >> 32);
+    data->out[4] = 0x706C656E69736820 ^ data->seed[2];
+    data->out[5] = 0x7468652065617274 ^ (~data->seed[2] << (data->nonce & 63)) | (~data->seed[0] >> (data->nonce & 63));
+    data->out[6] = 0x68202847656E6573 ^ data->seed[3];
+    data->out[7] = 0x697320313A323829 ^ (~data->seed[3] << 32) | (~data->seed[1] >> 32);
 
     // Initialize chaotic seeds, work buffer, and chaotic maps
     accumulate(data->out, data->work_rsl, data->chseeds);
