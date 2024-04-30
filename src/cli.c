@@ -431,12 +431,12 @@ int main(int argc, char **argv)
             }
             continue;
         case 's':
-            rwseed(&seed[0], optarg);
             seed_ptr = &seed[0];
+            rwseed(seed_ptr, optarg);
             continue;
         case 'n':
-            rwnonce(&nonce, optarg);
             nonce_ptr = &nonce;
+            rwnonce(nonce_ptr, optarg);
             continue;
         case 'u':
             return uuid(seed_ptr, nonce_ptr, optarg);
