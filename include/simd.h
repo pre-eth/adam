@@ -146,7 +146,7 @@
       #define SIMD_STOREBITS   _mm512_store_si512
       #define SIMD_ANDBITS     _mm512_and_si512
       #define SIMD_XORBITS     _mm512_xor_si512
-      #define SIMD_CASTBITS    _mm512_cvtepi64_pd 
+      #define SIMD_CVTPD       _mm512_cvtepi64_pd 
       #define SIMD_LOADPD      _mm512_load_pd
       #define SIMD_STOREPD     _mm512_store_pd
       #define SIMD_STOREUPD    _mm512_storeu_pd
@@ -155,7 +155,7 @@
       #define SIMD_ADDPD       _mm512_add_pd
       #define SIMD_SUBPD       _mm512_sub_pd
       #define SIMD_MULPD       _mm512_mul_pd
-      #define SIMD_CASTBITS    _mm512_cvtpd_epi64 
+      #define SIMD_CVT64       _mm512_cvtpd_epi64 
     #else
       #define SIMD_LEN         32
       typedef __m256i          reg;
