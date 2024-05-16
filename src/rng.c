@@ -80,22 +80,22 @@ static reg mm256_cvtepi64_pd(regd d1)
 
 /*     ALGORITHM START     */
 
-void accumulate(u64 *restrict out, u64 *arr, double *restrict chseeds)
+void accumulate(u64 *restrict out, u64 *work_arr, double *restrict chseeds)
 {
     register u8 i = 0;
 
-    arr[0] = out[4];
-    arr[1] = ~out[5];
-    arr[2] = out[6];
-    arr[3] = ~out[7];
-    arr[4] = out[0];
-    arr[5] = ~out[1];
-    arr[6] = out[2];
-    arr[7] = ~out[3];
+    work_arr[0] = out[4];
+    work_arr[1] = ~out[5];
+    work_arr[2] = out[6];
+    work_arr[3] = ~out[7];
+    work_arr[4] = out[0];
+    work_arr[5] = ~out[1];
+    work_arr[6] = out[2];
+    work_arr[7] = ~out[3];
 
     // Scramble
     for (; i < 4; ++i) {
-        ISAAC_MIX(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7]);
+        ISAAC_MIX(work_arr[0], work_arr[1], work_arr[2], work_arr[3], work_arr[4], work_arr[5], work_arr[6], work_arr[7]);
     }
     
     i = 0;
@@ -105,7 +105,7 @@ void accumulate(u64 *restrict out, u64 *arr, double *restrict chseeds)
 
     dreg4q seeds;
     reg64q4 r1 = SIMD_LOAD64x4(out);
-    reg64q4 r2 = SIMD_LOAD64x4(arr);
+    reg64q4 r2 = SIMD_LOAD64x4(work_arr);
     do {
         r1.val[0] = vxarq_u64(r1.val[0], r2.val[0], 8);
         r1.val[1] = vxarq_u64(r1.val[1], r2.val[1], 8);
@@ -116,7 +116,7 @@ void accumulate(u64 *restrict out, u64 *arr, double *restrict chseeds)
         SIMD_STORE4PD(&chseeds[i << 3], seeds);
     } while (++i < (ROUNDS / 2));
 
-    SIMD_STORE64x4(arr, r1);
+    SIMD_STORE64x4(work_arr, r1);
 #else
     const regd range = SIMD_SETPD(RANGE_LIMIT);
 
