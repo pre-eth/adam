@@ -77,9 +77,9 @@ static u8 help(void)
     get_print_metrics(&center, &indent, &swidth);
 
     const u8 CENTER      = center - 4;
-    const u8 INDENT      = indent - 1;                    // subtract 1 because it is half of width for arg (ex. "-d")
-    const u8 HELP_INDENT = INDENT + INDENT + 1;           // total indent for help descriptions if they have to go to next line
-    const u8 HELP_WIDTH  = swidth - HELP_INDENT - indent; // max length for help description in COL 2 before it needs to wrap
+    const u8 INDENT      = indent - 1;                      // subtract 1 because it is half of width for arg (ex. "-d")
+    const u8 HELP_INDENT = INDENT + INDENT + 1;             // total indent for help descriptions if they have to go to next line
+    const u8 HELP_WIDTH  = swidth - HELP_INDENT - indent;   // max length for help description in COL 2 before it needs to wrap
 
     print_summary(swidth, INDENT);
 

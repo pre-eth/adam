@@ -11,6 +11,7 @@ double wh_transform(const u16 idx, const u32 test, const u8 offset)
     register u32 nummask  = test;
     register u8 ctr       = offset;
     register double final = 0;
+
     int val;
     do {
         val = (1 - ((nummask & 1) << 1));
@@ -32,8 +33,8 @@ void get_print_metrics(u16 *center, u16 *indent, u16 *swidth)
 
 u8 nearest_space(const char *str, u8 offset)
 {
-    register u8 a = offset;
-    register u8 b = offset;
+    register u8 a, b;
+    a = b = offset;
 
     while (str[a] && str[a] != ' ') {
         --a;
@@ -183,9 +184,9 @@ u8 gen_uuid(const u64 higher, const u64 lower, u8 *buf)
 }
 
 /*
-  To make writes more efficient, rather than writing one
-  number at a time, 16 numbers are parsed together and then
-  written to stdout with 1 fwrite call.
+    To make writes more efficient, rather than writing one
+    number at a time, 16 numbers are parsed together and then
+    written to stdout with 1 fwrite call.
 */
 static char bitbuffer[BITBUF_SIZE] ALIGN(SIMD_LEN);
 
