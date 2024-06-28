@@ -5,6 +5,8 @@
 #include "../include/simd.h"
 #include "../include/util.h"
 
+#define BITBUF_SIZE    1024
+
 double wh_transform(const u16 idx, const u32 test, const u8 offset)
 {
     const u8 limit        = offset + 32;

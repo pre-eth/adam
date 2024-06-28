@@ -2,7 +2,6 @@
 #define UTIL_H
 	#include "test.h"
 	
-	#define   BITBUF_SIZE     			1024
 	#define   TESTING_BITS    	        8011776ULL
 	#define   TESTING_DBL    		    1000ULL
 	#define   BITS_TESTING_LIMIT        1000000
