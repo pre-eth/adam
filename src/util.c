@@ -5,7 +5,7 @@
 #include "../include/simd.h"
 #include "../include/util.h"
 
-#define BITBUF_SIZE    1024
+#define BITBUF_SIZE 1024
 
 double wh_transform(const u16 idx, const u32 test, const u8 offset)
 {
@@ -41,7 +41,7 @@ u8 nearest_space(const char *str, u8 offset)
     while (str[a] && str[a] != ' ') {
         --a;
     }
-    
+
     while (str[b] && str[b] != ' ') {
         ++b;
     }
@@ -69,50 +69,51 @@ u64 a_to_u(const char *s, const u64 min, const u64 max)
             return 0;
         }
     }
+
     switch (len) {
-    case 20:
-        val += 10000000000000000000LU;
-    case 19:
-        val += (s[len - 19] - '0') * 1000000000000000000LU;
-    case 18:
-        val += (s[len - 18] - '0') * 100000000000000000LU;
-    case 17:
-        val += (s[len - 17] - '0') * 10000000000000000LU;
-    case 16:
-        val += (s[len - 16] - '0') * 1000000000000000LU;
-    case 15:
-        val += (s[len - 15] - '0') * 100000000000000LU;
-    case 14:
-        val += (s[len - 14] - '0') * 10000000000000LU;
-    case 13:
-        val += (s[len - 13] - '0') * 1000000000000LU;
-    case 12:
-        val += (s[len - 12] - '0') * 100000000000LU;
-    case 11:
-        val += (s[len - 11] - '0') * 10000000000LU;
-    case 10:
-        val += (s[len - 10] - '0') * 1000000000LU;
-    case 9:
-        val += (s[len - 9] - '0') * 100000000LU;
-    case 8:
-        val += (s[len - 8] - '0') * 10000000LU;
-    case 7:
-        val += (s[len - 7] - '0') * 1000000LU;
-    case 6:
-        val += (s[len - 6] - '0') * 100000LU;
-    case 5:
-        val += (s[len - 5] - '0') * 10000LU;
-    case 4:
-        val += (s[len - 4] - '0') * 1000LU;
-    case 3:
-        val += (s[len - 3] - '0') * 100LU;
-    case 2:
-        val += (s[len - 2] - '0') * 10LU;
-    case 1:
-        val += (s[len - 1] - '0');
-        break;
-    default:
-        return 0;
+        case 20:
+            val += 10000000000000000000LU;
+        case 19:
+            val += (s[len - 19] - '0') * 1000000000000000000LU;
+        case 18:
+            val += (s[len - 18] - '0') * 100000000000000000LU;
+        case 17:
+            val += (s[len - 17] - '0') * 10000000000000000LU;
+        case 16:
+            val += (s[len - 16] - '0') * 1000000000000000LU;
+        case 15:
+            val += (s[len - 15] - '0') * 100000000000000LU;
+        case 14:
+            val += (s[len - 14] - '0') * 10000000000000LU;
+        case 13:
+            val += (s[len - 13] - '0') * 1000000000000LU;
+        case 12:
+            val += (s[len - 12] - '0') * 100000000000LU;
+        case 11:
+            val += (s[len - 11] - '0') * 10000000000LU;
+        case 10:
+            val += (s[len - 10] - '0') * 1000000000LU;
+        case 9:
+            val += (s[len - 9] - '0') * 100000000LU;
+        case 8:
+            val += (s[len - 8] - '0') * 10000000LU;
+        case 7:
+            val += (s[len - 7] - '0') * 1000000LU;
+        case 6:
+            val += (s[len - 6] - '0') * 100000LU;
+        case 5:
+            val += (s[len - 5] - '0') * 10000LU;
+        case 4:
+            val += (s[len - 4] - '0') * 1000LU;
+        case 3:
+            val += (s[len - 3] - '0') * 100LU;
+        case 2:
+            val += (s[len - 2] - '0') * 10LU;
+        case 1:
+            val += (s[len - 1] - '0');
+            break;
+        default:
+            return 0;
     }
     return (val >= min || val < max + 1) ? val : 0;
 }
@@ -332,7 +333,7 @@ void print_mfreq_results(const u16 indent, const u64 output, const mfreq_test *r
     const u64 expected_bits  = (double) (output << 6) * MFREQ_PROB;
     register double chi_calc = (pow((double) zeroes - expected_bits, 2) / (double) ((output << 6) - expected_bits)) + (pow((double) rsl->mfreq - expected_bits, 2) / (double) expected_bits);
 
-    const double p_value = cephes_igamc(1, chi_calc / 2);
+    const double p_value   = cephes_igamc(1, chi_calc / 2);
     const u8 suspect_level = 32 - (p_value < ALPHA_LEVEL);
     printf("\033[1;34m\033[%uC         Monobit Frequency:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
     printf("\033[2m\033[%uC         a. Raw Chi-Square:\033[m %1.3lf (cv = %.3lf)\n", indent, chi_calc, MFREQ_CRITICAL_VALUE);
@@ -358,7 +359,7 @@ void print_byte_results(const u16 indent, const basic_test *rsl)
 }
 
 void print_range_results(const u16 indent, const u64 output, const range_test *rsl)
-{  
+{
     const u64 expected[RANGE_CAT] = {
         output * RANGE_PROB1,
         output * RANGE_PROB2,
@@ -367,8 +368,8 @@ void print_range_results(const u16 indent, const u64 output, const range_test *r
         output * RANGE_PROB5
     };
 
-    const u8 pad      = calc_padding(rsl->range_dist[4]) + 1;      
-    const u8 exp_pad  = calc_padding(expected[4]) + 2;      
+    const u8 pad     = calc_padding(rsl->range_dist[4]) + 1;
+    const u8 exp_pad = calc_padding(expected[4]) + 2;
 
     printf("\033[1;34m\033[%uC             Minimum Value:\033[m %llu\n", indent, rsl->min);
     printf("\033[1;34m\033[%uC             Maximum Value:\033[m %llu\n", indent, rsl->max);
@@ -449,9 +450,9 @@ void print_fp_results(const u16 indent, const u64 output, const fp_test *rsl)
     register double std_dev = 0.0;
     for (; i < FP_PERM_CAT; ++i)
         std_dev += pow(((double) rsl->fp_perms[i] - average), 2);
-    std_dev       = sqrt(std_dev / (double) FP_PERM_CAT);
+    std_dev = sqrt(std_dev / (double) FP_PERM_CAT);
 
-    p_value = cephes_igamc(FP_PERM_CAT / 2, chi_calc / 2);
+    p_value       = cephes_igamc(FP_PERM_CAT / 2, chi_calc / 2);
     suspect_level = 32 - (p_value < ALPHA_LEVEL);
 
     printf("\033[1;34m\033[%uC           FP Permutations:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
@@ -463,7 +464,7 @@ void print_fp_results(const u16 indent, const u64 output, const fp_test *rsl)
     /*   MAX-OF-8   */
 
     expected = (rsl->fp_max_runs) * FP_MAX_PROB;
-    i =  0;
+    i        = 0;
     average = chi_calc = 0.0;
 
     register u8 most_pos, least_pos;
@@ -474,7 +475,7 @@ void print_fp_results(const u16 indent, const u64 output, const fp_test *rsl)
         chi_calc += pow(((double) rsl->fp_max_dist[i] - expected), 2) / expected;
     }
 
-    p_value = cephes_igamc(FP_MAX_CAT / 2, chi_calc / 2);
+    p_value       = cephes_igamc(FP_MAX_CAT / 2, chi_calc / 2);
     suspect_level = 32 - (p_value < ALPHA_LEVEL);
 
     printf("\033[1;34m\033[%uC               FP Max-of-8:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
@@ -514,8 +515,8 @@ void print_sp_results(const u16 indent, const rng_test *rsl, const u64 *sat_dist
         tmp = MAX(tmp, sat_range[i]);
     }
 
-    const u8 pad         = calc_padding(tmp);
-    const double p_value = cephes_igamc(SP_CAT / 2.0, chi_calc / 2.0);
+    const u8 pad           = calc_padding(tmp);
+    const double p_value   = cephes_igamc(SP_CAT / 2.0, chi_calc / 2.0);
     const u8 suspect_level = 32 - (p_value < ALPHA_LEVEL);
 
     printf("\033[1;34m\033[%uC     Saturation Point Test:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
@@ -536,8 +537,8 @@ void print_maurer_results(const u16 indent, maurer_test *rsl)
 
     // we don't explicitly halve the df value because chi-square for fisher method
     // value uses 2K df, so after halving it becomes the original value k
-    const double p_value = cephes_igamc(rsl->trials, rsl->fisher / 2);
-    const u8 suspect_level    = 32 - (p_value < ALPHA_LEVEL);
+    const double p_value   = cephes_igamc(rsl->trials, rsl->fisher / 2);
+    const u8 suspect_level = 32 - (p_value < ALPHA_LEVEL);
 
     rsl->mean /= rsl->trials;
 
@@ -603,7 +604,7 @@ void print_avalanche_results(const u16 indent, const basic_test *rsl, const u64 
     double quadrants[4]  = { 0.0, 0.0, 0.0, 0.0 };
 
     register double average = 0.0;
-    register u8 i = 0;
+    register u8 i           = 0;
     do {
         quadrants[i >> 4] += ham_dist[i];
         expected[i] *= output;
@@ -611,8 +612,7 @@ void print_avalanche_results(const u16 indent, const basic_test *rsl, const u64 
         average += ham_dist[i] * i;
     } while (++i < 65);
 
-
-    // In addition to the usual chisq calc logic, we also figure out the 
+    // In addition to the usual chisq calc logic, we also figure out the
     // right amount of padding based on length of expected bin counts
     register double chi_calc = 0.0;
     register u32 tmp         = 0;
@@ -621,22 +621,22 @@ void print_avalanche_results(const u16 indent, const basic_test *rsl, const u64 
     do {
         chi_calc += pow((quadrants[i] - bin_counts[i]), 2) / bin_counts[i];
         tmp |= (u32) calc_padding(bin_counts[i]) << (i << 3);
-        bin_pad = MAX(bin_pad, ((u8)(tmp >> (i << 3))));
+        bin_pad = MAX(bin_pad, ((u8) (tmp >> (i << 3))));
     } while (++i < AVALANCHE_CAT);
 
     ++bin_pad;
     average /= (quadrants[0] + quadrants[1] + quadrants[2] + quadrants[3]);
 
-    const double p_value = cephes_igamc(AVALANCHE_CAT / 2, chi_calc / 2.0);
+    const double p_value   = cephes_igamc(AVALANCHE_CAT / 2, chi_calc / 2.0);
     const u8 suspect_level = 32 - (p_value < ALPHA_LEVEL);
 
     printf("\033[1;34m\033[%uCStrict Avalanche Criterion:\033[m\033[1;%um %1.2lf\033[m\n", indent, suspect_level, p_value);
     printf("\033[2m\033[%uC         a. Raw Chi-Square:\033[m %1.3lf (cv = %.3lf)\033[m\n", indent, chi_calc, AVALANCHE_CRITICAL_VALUE);
     printf("\033[2m\033[%uC  b. Mean Hamming Distance:\033[m %2.3lf (ideal = %u)\n", indent, average, 32);
     printf("\033[2m\033[%uC               c.  [0, 16):\033[m %*llu (exp. %llu%*s \033[1m%+lli\033[m)\n", indent, bin_pad, (u64) quadrants[0], (u64) bin_counts[0], bin_pad - (tmp & 0xFF), ":", (u64) quadrants[0] - (u64) bin_counts[0]);
-    printf("\033[2m\033[%uC               d. [16, 32):\033[m %*llu (exp. %llu%*s \033[1m%+lli\033[m)\n", indent, bin_pad, (u64) quadrants[1], (u64) bin_counts[1], bin_pad - (u8)(tmp >> 8), ":", (u64) quadrants[1] - (u64) bin_counts[1]);
-    printf("\033[2m\033[%uC               e. [32, 48):\033[m %*llu (exp. %llu%*s \033[1m%+lli\033[m)\n", indent, bin_pad, (u64) quadrants[2], (u64) bin_counts[2], bin_pad - (u8)(tmp >> 16), ":", (u64) quadrants[2] - (u64) bin_counts[2]);
-    printf("\033[2m\033[%uC               f. [48, 64]:\033[m %*llu (exp. %llu%*s \033[1m%+lli\033[m)\n", indent, bin_pad, (u64) quadrants[3], (u64) bin_counts[3], bin_pad - (u8)(tmp >> 24), ":", (u64) quadrants[3] - (u64) bin_counts[3]);
+    printf("\033[2m\033[%uC               d. [16, 32):\033[m %*llu (exp. %llu%*s \033[1m%+lli\033[m)\n", indent, bin_pad, (u64) quadrants[1], (u64) bin_counts[1], bin_pad - (u8) (tmp >> 8), ":", (u64) quadrants[1] - (u64) bin_counts[1]);
+    printf("\033[2m\033[%uC               e. [32, 48):\033[m %*llu (exp. %llu%*s \033[1m%+lli\033[m)\n", indent, bin_pad, (u64) quadrants[2], (u64) bin_counts[2], bin_pad - (u8) (tmp >> 16), ":", (u64) quadrants[2] - (u64) bin_counts[2]);
+    printf("\033[2m\033[%uC               f. [48, 64]:\033[m %*llu (exp. %llu%*s \033[1m%+lli\033[m)\n", indent, bin_pad, (u64) quadrants[3], (u64) bin_counts[3], bin_pad - (u8) (tmp >> 24), ":", (u64) quadrants[3] - (u64) bin_counts[3]);
 }
 
 void print_wht_results(const u16 indent, const wh_test *walsh)
