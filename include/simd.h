@@ -28,18 +28,13 @@
     #define SIMD_SET64        vdup_n_u64
     #define SIMD_SETQ64       vdupq_n_u64
     #define SIMD_ADD64        vaddq_u64
-    #define SIMD_AND64        vandq_u64
     #define SIMD_XOR64        veorq_u64
-    #define SIMD_CAST64       vcvtq_u64_f64
-    #define SIMD_COMBINE64    vcombine_u64
+    #define SIMD_XAR64        vxarq_u64
+    #define SIMD_STOREPD      vst1q_f64
     #define SIMD_STORE4PD     vst1q_f64_x4
     #define SIMD_LOAD4PD      vld1q_f64_x4
-    #define SIMD_CREATEPD     vcreate_f64
-    #define SIMD_COMBINEPD    vcombine_f64
     #define SIMD_CASTPD       vcvtq_f64_u64
-    #define SIMD_SETPD        vdup_n_f64
     #define SIMD_SETQPD       vdupq_n_f64
-    #define SIMD_ADDPD        vaddq_f64
     #define SIMD_SUBPD        vsubq_f64
     #define SIMD_MULPD        vmulq_f64
 
@@ -61,35 +56,11 @@
       s1.val[2] = SIMD_AND8(s2.val[2], s3), \
       s1.val[3] = SIMD_AND8(s2.val[3], s3)       
 
-    #define SIMD_ADD4Q64(s1, s2, s3) \
-      s1.val[0] = SIMD_ADD64(s2.val[0], s3), \
-      s1.val[1] = SIMD_ADD64(s2.val[1], s3), \
-      s1.val[2] = SIMD_ADD64(s2.val[2], s3), \
-      s1.val[3] = SIMD_ADD64(s2.val[3], s3)
-
     #define SIMD_ADD4RQ64(s1, s2, s3) \
       s1.val[0] = SIMD_ADD64(s2.val[0], s3.val[0]), \
       s1.val[1] = SIMD_ADD64(s2.val[1], s3.val[1]), \
       s1.val[2] = SIMD_ADD64(s2.val[2], s3.val[2]), \
       s1.val[3] = SIMD_ADD64(s2.val[3], s3.val[3])      
-
-    #define SIMD_AND4Q64(s1, s2, s3) \
-      s1.val[0] = SIMD_AND64(s2.val[0], s3), \
-      s1.val[1] = SIMD_AND64(s2.val[1], s3), \
-      s1.val[2] = SIMD_AND64(s2.val[2], s3), \
-      s1.val[3] = SIMD_AND64(s2.val[3], s3)      
-
-    #define SIMD_XOR4RQ64(s1, s2, s3) \
-      s1.val[0] = SIMD_XOR64(s2.val[0], s3.val[0]), \
-      s1.val[1] = SIMD_XOR64(s2.val[1], s3.val[1]), \
-      s1.val[2] = SIMD_XOR64(s2.val[2], s3.val[2]), \
-      s1.val[3] = SIMD_XOR64(s2.val[3], s3.val[3])      
-
-    #define SIMD_CAST4Q64(s1, s2) \
-      s1.val[0] = SIMD_CAST64(s2.val[0]), \
-      s1.val[1] = SIMD_CAST64(s2.val[1]), \
-      s1.val[2] = SIMD_CAST64(s2.val[2]), \
-      s1.val[3] = SIMD_CAST64(s2.val[3])
 
     #define SIMD_3XOR4Q64(s1, s2, s3) \
       s1.val[0] = veor3q_u64(s1.val[0], s2.val[0], s3.val[0]), \
@@ -103,11 +74,11 @@
       s1.val[2] = SIMD_CASTPD(s2.val[2]), \
       s1.val[3] = SIMD_CASTPD(s2.val[3])
 
-    #define SIMD_ADD4RQPD(s1, s2, s3) \
-      s1.val[0] = SIMD_ADDPD(s2.val[0], s3.val[0]), \
-      s1.val[1] = SIMD_ADDPD(s2.val[1], s3.val[1]), \
-      s1.val[2] = SIMD_ADDPD(s2.val[2], s3.val[2]), \
-      s1.val[3] = SIMD_ADDPD(s2.val[3], s3.val[3])
+    #define SIMD_XAR64RQ(s1, s2, s3, n, m) \
+      s1.val[0] = vxarq_u64(s2.val[0], s3.val[0], n), \
+      s1.val[1] = vxarq_u64(s2.val[1], s3.val[1], m), \
+      s1.val[2] = vxarq_u64(s2.val[2], s3.val[2], n), \
+      s1.val[3] = vxarq_u64(s2.val[3], s3.val[3], m)  \
 
     #define SIMD_SUB4QPD(s1, s2, s3) \
       s1.val[0] = SIMD_SUBPD(s2, s3.val[0]), \
@@ -126,6 +97,12 @@
       s1.val[1] = SIMD_MULPD(s2.val[1], s3.val[1]), \
       s1.val[2] = SIMD_MULPD(s2.val[2], s3.val[2]), \
       s1.val[3] = SIMD_MULPD(s2.val[3], s3.val[3])
+
+    #define SIMD_REINTERP_ADD64(s1, d1, s2) \
+        s1.val[0] = SIMD_ADD64(vreinterpretq_u64_f64(d1.val[0]), s2.val[0]); \
+        s1.val[1] = SIMD_ADD64(vreinterpretq_u64_f64(d1.val[1]), s2.val[1]); \
+        s1.val[2] = SIMD_ADD64(vreinterpretq_u64_f64(d1.val[2]), s2.val[2]); \
+        s1.val[3] = SIMD_ADD64(vreinterpretq_u64_f64(d1.val[3]), s2.val[3]);
   #else
     #include <immintrin.h>    // AVX/AVX2
 
