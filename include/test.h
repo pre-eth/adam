@@ -6,6 +6,11 @@
 
   /*    NOTE: All critical values use an alpha level of 0.01    */
   #define   ALPHA_LEVEL               0.01
+  #define   STRICT_LEVEL              0.001
+	#define   TESTING_BITS    	        8011776ULL
+	#define   TESTING_DBL    		        1000ULL
+	#define   BITS_TESTING_LIMIT        1000000
+	#define   DBL_TESTING_LIMIT         1500000
 
   typedef struct basic_test {
     u64 init_values[5];
@@ -162,9 +167,8 @@
     FOR:   16-bit Topological Binary Test (TBT)
 
     The 16-bit TBT looks for the number of distinct 16-bit patterns per 2^16 patterns, where a "pattern"
-    is a 16-bit block of bits. Since we provide 1024 such patterns per iteration (each iteration of
-    ADAM produces 1024 u16), we count the number of distinct 16-bit patterns over 64 RNG iterations. If
-    the number of distinct numbers found is greater than or equal to TBT_CRITICAL_VALUE, then we fail to 
+    is a 16-bit block of bits. Once TBT_SEQ_SIZE patterns have been supplied, we see if the number of 
+    distinct numbers found is greater than or equal to TBT_CRITICAL_VALUE, and if so then we fail to
     reject the null hypothesis.
 
     The pass rate, average number of distinct patterns, and overall proportion are reported in addition
@@ -173,13 +177,14 @@
     difficult due to the large values involved, especially the Stirling Numbers of the Second Kind. So
     only the collected results of each discrete outcome is reported.
 
-    Alcover, Pedro & Guillamón, Antonio & Ruiz, M.D.C.. (2013). A New Randomness Test for Bit Sequences.
+    Alcover, Pedro & Guillamón, Antonio & Ruiz, M.D.C. (2013). A New Randomness Test for Bit Sequences.
     Informatica (Netherlands). 24. 339-356. 10.15388/Informatica.2013.399.
   */ 
   #define   TBT_M                     16
   #define   TBT_SEQ_SIZE              (1UL << TBT_M)
   #define   TBT_CRITICAL_VALUE        41241
   #define   TBT_PROPORTION            0.629
+  #define   TBT_ARR_SIZE              1024
 
   typedef struct tb_test {
     u64 trials;
@@ -265,12 +270,12 @@
       F(x) = 1 - 2x (where x is a one of the 32 bits, with value 0 or 1)
 
     This maps the 32-bit block's binary representation to another binary representation where each value is
-    -1 or 1, and all those values are  used in a summation AFTER each term is multplied with -1^(i . j), where
+    -1 or 1, and all those values are  used in a summation AFTER each term is multplied with -1^(i • j), where
     j is the jth 32-bit block (aka the index of the currently transformed 32-bit number) and i is the index
     of the currently transformed bit (from 0-128). The dot product is done on the binary forms of i and j, so
     we just do a logical AND operation and then POPCNT to count the 1s. The summation result for the jth -
     (j + 4)th blocks (aka their Walsh-Hadamard transforms) are then summed together to create a 128-bit test
-    statistic, which is squared and added to an accumulator for all 128 128-bit blocks of ADAM_SEQ_SIZE. A
+    statistic, which is squared and added to an accumulator for all 128 128-bit blocks we measure. Then, a
     p-value is then obtained from the statistic. We process 128-bits at a time because the paper specifies 
     a processing size of 2^m for the transformation where m ≥ 7, as this is the minimum value for the normal
     distribution to be a good approximation of the WHT statistic.
@@ -284,7 +289,7 @@
     some binary function. Additionally, it's used in testing several cryptographic criteria like correlation
     immunity, frequency balance, and strict avalanche.
 
-    Additonally the number of passing sequences and numbers, and distribution of p-values, are also reported.
+    Additonally the number of passing runs and numbers, and distribution of p-values, are also reported.
 
     Oprina, Andrei-George et al. “WALSH-HADAMARD RANDOMNESS TEST AND NEW METHODS OF TEST RESULTS INTEGRATION.”
     (2009).
