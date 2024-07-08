@@ -10,15 +10,15 @@
 double wh_transform(const u16 idx, const u32 test, const u8 offset)
 {
     const u8 limit        = offset + 32;
-    register u32 nummask  = test;
+    register u32 num_mask = test;
     register u8 ctr       = offset;
     register double final = 0;
 
     int val;
     do {
-        val = (1 - ((nummask & 1) << 1));
+        val = (1 - ((num_mask & 1) << 1));
         final += (double) val * pow(-1.0, (double) POPCNT(idx & ctr));
-        nummask >>= 1;
+        num_mask >>= 1;
     } while (++ctr < limit);
 
     return final;
