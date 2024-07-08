@@ -4,7 +4,7 @@ BasedOnStyle:  Webkit
 IndentWidth:     4
 IndentWrappedFunctionNames: false
 InsertBraces:    false
-InsertNewlineAtEOF: false
+InsertNewlineAtEOF: true
 InsertTrailingCommas: None
 IntegerLiteralSeparator:
   Binary:          0
@@ -35,7 +35,7 @@ PPIndentWidth:   -1
 QualifierAlignment: Leave
 ReferenceAlignment: Pointer
 ReflowComments:  false
-RemoveBracesLLVM: true
+RemoveBracesLLVM: false
 RemoveParentheses: Leave
 AlignConsecutiveAssignments: true
 AlignTrailingComments:
