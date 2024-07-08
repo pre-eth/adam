@@ -8,6 +8,7 @@
   typedef uint32_t                u32;
   typedef uint64_t                u64;
   typedef __uint128_t             u128;
+  typedef __SIZE_TYPE__           size_t;
 
   #define ALIGN(x)                __attribute__ ((aligned (x)))
   #define CTZ                     __builtin_ctz 
