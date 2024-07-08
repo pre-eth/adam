@@ -1,11 +1,6 @@
 #ifndef UTIL_H
 #define UTIL_H
 	#include "test.h"
-	
-	#define   TESTING_BITS    	        8011776ULL
-	#define   TESTING_DBL    		    1000ULL
-	#define   BITS_TESTING_LIMIT        1000000
-	#define   DBL_TESTING_LIMIT         1500000
 
 	void     get_print_metrics(u16 *center, u16 *indent, u16 *swidth);
 	u8       err(const char *s);
@@ -16,6 +11,9 @@
 	u8 		 nearest_space(const char *str, u8 offset);
 	double	 wh_transform(const u16 idx, const u32 test, const u8 offset);
 	void 	 print_ascii_bits(u64 *_ptr, const u64 limit);
+
+	/*  adam_examine() RESULTS PRINTING STUFF  */
+
 	void 	 print_basic_results(const u16 indent, const u64 limit, const basic_test *rsl);
 	void	 print_mfreq_results(const u16 indent, const u64 output, const mfreq_test *rsl);
 	void	 print_byte_results(const u16 indent, const basic_test *rsl);
