@@ -39,16 +39,15 @@ static u64 mult;
 
 static void print_summary(const u16 swidth, const u16 indent)
 {
-#define SUMM_PIECES 11
+#define SUMM_PIECES 9
 
     const char *pieces[SUMM_PIECES] = {
-        "\033[1madam\033[m [-h|-v|-b]", "[-s[\033[3mseed?\033[m]]", "[-n[\033[3mnonce?\033[m]]", "[-dxof]",
+        "\033[1madam\033[m [-h|-v|-a|-b]", "[-i[\033[3mfilename?\033[m]]", "[-xof]",
         "[-w \033[1mwidth\033[m]", "[-m \033[1mmultiplier\033[m]", "[-p \033[1mprecision\033[m]",
-        "[-a \033[1mmultiplier\033[m]", "[-e \033[1mmultiplier\033[m]", "[-r \033[1mresults\033[m]",
-        "[-u[\033[3mamount?\033[m]]"
+        "[-e \033[1mmultiplier\033[m]", "[-r \033[1mresults\033[m]", "[-u[\033[3mamount?\033[m]]"
     };
 
-    const u8 sizes[SUMM_PIECES] = { 15, 11, 12, 7, 11, 15, 14, 15, 15, 12, 13 };
+    const u8 sizes[SUMM_PIECES] = { 18, 15, 6, 10, 15, 14, 15, 12, 13 };
 
     register u8 i = 0;
 
@@ -66,9 +65,8 @@ static void print_summary(const u16 swidth, const u16 indent)
             running_length = indent + 5;
         }
     }
-    printf("%s", pieces[SUMM_PIECES - 1]);
 
-    printf("\n\n");
+    printf("%s\n\n", pieces[SUMM_PIECES - 1]);
 }
 
 static u8 help(void)
@@ -77,9 +75,9 @@ static u8 help(void)
     get_print_metrics(&center, &indent, &swidth);
 
     const u8 CENTER      = center - 4;
-    const u8 INDENT      = indent - 1;                      // subtract 1 because it is half of width for arg (ex. "-d")
-    const u8 HELP_INDENT = INDENT + INDENT + 1;             // total indent for help descriptions if they have to go to next line
-    const u8 HELP_WIDTH  = swidth - HELP_INDENT - indent;   // max length for help description in COL 2 before it needs to wrap
+    const u8 INDENT      = indent - 1;                    // subtract 1 because it is half of width for arg (ex. "-d")
+    const u8 HELP_INDENT = INDENT + INDENT + 1;           // total indent for help descriptions if they have to go to next line
+    const u8 HELP_WIDTH  = swidth - HELP_INDENT - indent; // max length for help description in COL 2 before it needs to wrap
 
     print_summary(swidth, INDENT);
 
@@ -88,11 +86,9 @@ static u8 help(void)
     const char ARGS[ARG_COUNT] = {
         'h',
         'v',
-        's',
-        'n',
+        'i',
         'u',
         'r',
-        'd',
         'w',
         'b',
         'a',
@@ -107,11 +103,9 @@ static u8 help(void)
     const char *ARGSHELP[ARG_COUNT] = {
         "Get command summary and all available options",
         "Version of this software (v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH) ")",
-        "Get the seed for the generated buffer (no parameter), or provide your own. Seeds are reusable but should be kept secret",
-        "Get the nonce for the generated buffer (no parameter), or provide your own. Nonces should be unique per seed and kept secret",
+        "Get the input parameters for the last run, or provide your own.",
         "Generate a universally unique identifier (UUID). Optionally specify a number of UUID's to generate (max 1000)",
-        "The amount of numbers to generate and return, written to stdout. Must be within max limit for current width (see -d)",
-        "Dump entire buffer using the specified width (up to 256 u64, 512 u32, 1024 u16, or 2048 u8)",
+        "The amount of numbers to generate and return, written to stdout. Must be within [1, 1000]",
         "Desired alternative size (u8, u16, u32) of returned numbers. Default width is u64",
         "Just bits... literally. Pass the -f flag beforehand to stream random doubles instead of integers",
         "Write an ASCII or binary sample of bits/doubles to file for external assessment. You can choose a multiplier to output up to 100GB of bits, or 1 billion doubles (with optional scaling factor), at a time",
@@ -123,7 +117,7 @@ static u8 help(void)
         "Multiplier for randomly generated doubles, such that they fall in the range (0, MULTIPLIER)"
     };
 
-    const u8 lengths[ARG_COUNT] = { 45, 33, 119, 124, 109, 116, 91, 81, 96, 202, 204, 55, 49, 80, 93, 91 };
+    const u8 lengths[ARG_COUNT] = { 45, 33, 63, 109, 89, 81, 96, 202, 204, 55, 49, 80, 93, 91 };
 
     register short len;
     register u16 line_width;
