@@ -443,13 +443,16 @@ void print_fp_results(const u16 indent, const u64 output, const fp_test *rsl)
         average += rsl->fp_perms[i];
         chi_calc += pow(((double) rsl->fp_perms[i] - expected), 2) / expected;
     }
-
+    
     // Get standard deviation for observed permutation orderings
     average /= FP_PERM_CAT;
     register double std_dev = 0.0;
-    for (; i < FP_PERM_CAT; ++i)
+    i = 0;
+    for (; i < FP_PERM_CAT; ++i) {
         std_dev += pow(((double) rsl->fp_perms[i] - average), 2);
-    std_dev = sqrt(std_dev / (double) FP_PERM_CAT);
+    }
+
+    std_dev = sqrt(std_dev / (double) (FP_PERM_CAT - 1));
 
     p_value       = cephes_igamc(FP_PERM_CAT / 2, chi_calc / 2);
     suspect_level = CALC_SUS(p_value);
