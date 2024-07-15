@@ -151,38 +151,45 @@ static void vnt(const u32 *nums, vn_test *von)
     vnt_fisher += log(p_value);
 }
 
-static void sac(const u64 *restrict run1, const u64 *restrict run2)
-{
-    register u16 i = 0;
-    do {
-        ++ham_dist[POPCNT(run1[i] ^ run2[i])];
-    } while (++i < BUF_SIZE);
-}
-
 static void walsh_test(const u32 *nums, wh_test *walsh)
 {
-    register double stat, sum;
-    stat = sum = 0.0;
+    static u32 walsh_arr[4];
+    static u16 idx;
+    static double sum;
 
-    // 32-bit work units, but process 128-bits at a time for statistic
-    for (u16 i = 0; i < (BUF_SIZE << 1); i += 4) {
-        // Divide i by 4 for the nth 128-bit quantity
-        stat = wh_transform(i >> 2, nums[i], 0)
-            + wh_transform(i >> 2, nums[i + 1], 32)
-            + wh_transform(i >> 2, nums[i + 2], 64)
-            + wh_transform(i >> 2, nums[i + 3], 96);
+    walsh_arr[(idx & 1) << 2] = nums[0];
+    walsh_arr[((idx & 1) << 2) + 1] = nums[1];
+
+    idx += 2;
+
+    if (!(idx & 3)) {
+        const u8 start = (idx >> 2);
+
+        // 32-bit work units, but process 128-bits at a time for statistic
+        register double stat = wh_transform(start, walsh_arr[0], 0)
+                             + wh_transform(start, walsh_arr[1], 32)
+                             + wh_transform(start, walsh_arr[2], 64)
+                             + wh_transform(start, walsh_arr[3], 96);
+
         stat /= WH_STD_DEV;
         walsh->pass_num += (stat >= WH_LOWER_BOUND && stat <= WH_UPPER_BOUND);
         sum += pow(stat, 2);
+    }   
+
+    // If we've compiled 128 statistics, obtain a p-value
+    // If idx == 512 (WH_DF << 2), we have processed 128 * 128 bits
+    if (idx == (WH_DF << 2)) {
+        const double p_value = cephes_igamc(WH_DF / 2, sum / 2);
+
+        // Add to Fisher method accumulator and record in p-value dist
+        wh_fisher += log(p_value);
+        walsh->dist[(u8) (p_value * 10.0)]++;
+        walsh->pass_seq += (sum <= WH_CRITICAL_VALUE);
+
+        // Reset counters
+        idx = 0;
+        sum = 0.0;
     }
-
-    // Now we've compiled 128 statistics, obtain a p-value
-    const double p_value = cephes_igamc(WH_DF / 2, sum / 2);
-    walsh->pass_seq += (sum <= WH_CRITICAL_VALUE);
-
-    // Add to Fisher method accumulator and record in p-value dist
-    wh_fisher += log(p_value);
-    walsh->dist[(u8) (p_value * 10.0)]++;
 }
 
 static void fp_max8(const u32 *nums, u64 *max_runs, u64 *max_dist)
