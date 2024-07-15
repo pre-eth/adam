@@ -74,11 +74,11 @@
       s1.val[2] = SIMD_CASTPD(s2.val[2]), \
       s1.val[3] = SIMD_CASTPD(s2.val[3])
 
-    #define SIMD_XAR64RQ(s1, s2, s3, n, m) \
+    #define SIMD_XAR64RQ(s1, s2, s3, n) \
       s1.val[0] = vxarq_u64(s2.val[0], s3.val[0], n), \
-      s1.val[1] = vxarq_u64(s2.val[1], s3.val[1], m), \
+      s1.val[1] = vxarq_u64(s2.val[1], s3.val[1], n), \
       s1.val[2] = vxarq_u64(s2.val[2], s3.val[2], n), \
-      s1.val[3] = vxarq_u64(s2.val[3], s3.val[3], m)  \
+      s1.val[3] = vxarq_u64(s2.val[3], s3.val[3], n)  \
 
     #define SIMD_SUB4QPD(s1, s2, s3) \
       s1.val[0] = SIMD_SUBPD(s2, s3.val[0]), \
@@ -99,10 +99,10 @@
       s1.val[3] = SIMD_MULPD(s2.val[3], s3.val[3])
 
     #define SIMD_REINTERP_ADD64(s1, d1, s2) \
-        s1.val[0] = SIMD_ADD64(vreinterpretq_u64_f64(d1.val[0]), s2.val[0]); \
-        s1.val[1] = SIMD_ADD64(vreinterpretq_u64_f64(d1.val[1]), s2.val[1]); \
-        s1.val[2] = SIMD_ADD64(vreinterpretq_u64_f64(d1.val[2]), s2.val[2]); \
-        s1.val[3] = SIMD_ADD64(vreinterpretq_u64_f64(d1.val[3]), s2.val[3]);
+        s1.val[0] = SIMD_ADD64(vandq_u64(vreinterpretq_u64_f64(d1.val[0]), mask), s2.val[0]); \
+        s1.val[1] = SIMD_ADD64(vandq_u64(vreinterpretq_u64_f64(d1.val[1]), mask), s2.val[1]); \
+        s1.val[2] = SIMD_ADD64(vandq_u64(vreinterpretq_u64_f64(d1.val[2]), mask), s2.val[2]); \
+        s1.val[3] = SIMD_ADD64(vandq_u64(vreinterpretq_u64_f64(d1.val[3]), mask), s2.val[3]);
   #else
     #include <immintrin.h>    // AVX/AVX2
 
