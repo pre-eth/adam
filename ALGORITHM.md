@@ -4,7 +4,7 @@ This file illustrates what ADAM does visually and explains things in clear langu
 
 All analysis here will be updated as needed to include new insights and observations, and fleshed out with more detail as time goes on.
 
-LAST EDITED: 
+**LAST EDITED:** 2024-07-15
 
 ## <a id="quick"></a> Quickstart
 
@@ -56,7 +56,7 @@ But in addition to everything I mentioned in my first answer, there are some ess
 
 Sure! I provide instructions on how to test ADAM, whether you want to use the tests that comes with the CLI or your own choice of external test suite in the file [TESTING.md](TESTING.md).
 
-If you want to see the results already compiled from different popular RNG test suites, check the [tests](tests) directory. A summary table is also available in [README.md](README.md).
+If you want to see the results already compiled from different popular RNG test suites, check the [tests](tests) directory. A summary table is also available in TESTING.md.
 
 ### What else do I need to know to understand this file?
 
@@ -143,8 +143,8 @@ struct adam_data_s {
     // 256-bit seed
     u64 seed[4];
 
-    // 64-bit nonce
-    u64 nonce;
+    // 96-bit nonce
+    u32 nonce[3];
 
     // Chaotic work buffer - 256 64-bit integers = 2048 bytes
     u64 out[BUF_SIZE] ALIGN(ADAM_ALIGNMENT);
@@ -163,18 +163,18 @@ typedef struct adam_data_s * adam_data;
 
 Let's look at some properties of ADAM as a result of this internal state configuration.
 
-### ADAM has a statespace of 2¹⁶⁷¹²
+### ADAM has a statespace of 2¹⁷²⁵⁶
 
 If internal state has `M` bits, total state space is `pow(2, M)` values. 
 
 | State Member | Bits |
 | ------------ | ---- |
 | Seed | 256 | 
-| Nonce | 64 |
+| Nonce | 96 |
 | Output Index | 8 |
 | Output Buffer | 16384 | 
 | Chaotic Seeds | 512 | 
-| Total | **16712** |
+| Total | **17256** |
 
 ### ADAM has futureproof minimum and average periods
 
@@ -182,9 +182,9 @@ Pseudorandom number generators are deterministic and finite, since their scope i
 
 Because ADAM does not reseed itself, and it evolves in a highly chaotic manner, it is difficult to draw definite conclusions about its period. But some observations can be noted.
 
-- **Minimum Period**: If we assume that ADAM does indeed act as a random permutation after its setup stage, that would mean all 2¹⁶⁷¹² possible cycle lengths are equally likely. This means that the probability of a minimum period less than or equal to 2ⁿ is `2ⁿ / 2¹⁶⁷¹² = 2ⁿ⁻¹⁶⁷¹²`. Using this formula, it is clearly evident that the probability of a minimum period exponentially decreases based on how small/insecure it may be. For example, any period less than say 2²⁵⁶ has a probability of `2²⁵⁶⁻¹⁶⁷¹² = 2⁻¹⁶⁴⁵⁶`.
+- **Minimum Period**: If we assume that ADAM does indeed act as a random permutation after its setup stage, that would mean all 2¹⁷²⁵⁶ possible cycle lengths are equally likely. This means that the probability of a minimum period less than or equal to 2ⁿ is `2ⁿ / 2¹⁷²⁵⁶ = 2ⁿ⁻¹⁷²⁵⁶`. Using this formula, it is clearly evident that the probability of a minimum period exponentially decreases based on how small/insecure it may be. For example, any period less than say 2²⁵⁶ has a probability of `2²⁵⁶⁻¹⁷²⁵⁶ = 2⁻¹⁷⁰⁰⁰`.
 
-- **Average Period**: Simple math tells us that the average cycle length assuming all are equally likely would be `2¹⁶⁷¹² / 2 = 2¹⁶⁷¹²⁻¹ = 2¹⁶⁷¹¹`. 
+- **Average Period**: Simple math tells us that the average cycle length assuming all are equally likely would be `2¹⁷²⁵⁶ / 2 = 2¹⁷²⁵⁶⁻¹ = 2¹⁷²⁵⁵`. 
 
 ### ADAM is multi-cyclic
 
@@ -274,6 +274,8 @@ mix[5] = ~out[1] ^ (nonce + 5);
 mix[6] = ~out[2] ^ (nonce + 6);
 mix[7] = ~out[3] ^ (nonce + 7);
 ```
+
+We use the lower 64 bits of the nonce here.
 
 `out` refers to our internal buffer. We use the first 8 indices to store our initialization vectors (IVs). The values in these indices are later overwritten entirely in `diffuse()` with different data.
 
@@ -409,7 +411,7 @@ void diffuse(u64 *restrict out, u64 *restrict mix, const u64 nonce);
 
 So we have our chaotic seeds. Next, we fill our internal buffer `out` with initial integer data using logic from an inner loop in the `randinit()` function from ISAAC64 mentioned earlier. In fact, `diffuse()` doesn't require any SIMD at all. We still process 512-bits at a time though, and use the ISAAC_MIX macro on our intermediate chaotic `mix` 32 times before this function completes, significantly reducing the correlation between its use now versus later in the `mix()` function. Also notice how the nonce comes back into play here to help us consistently add entropy before each use of the macro.
 
-This is what we do each iteration of the loop in `diffuse()`.
+This is what we do each iteration of the loop in `diffuse()`. We use the high 64 bits of the nonce here.
 
 ```c
 mix[0] += nonce;
@@ -627,13 +629,13 @@ const u64 m = (u64) CHMANT32(*idx, chseeds) << 32;
 // Update value again with chaotic function
 chseeds[*idx & 7] = CHFUNCTION(*idx, chseeds);
 
-// OR the lower 32 bits of this binary output onto <m>
-// Form our output number by XORing <elem> with new <m>
-const u64 num = elem ^ (m | CHMANT32(*idx, chseeds));
-
 // Find two random indices within the top and bottom halves
 const u8 a = *idx + 1 + (elem & 0x7F);
 const u8 b = *idx + 128 + (elem & 0x7F);
+
+// OR the lower 32 bits of this binary output onto <m>
+// Form our output number by XORing <out[a]> with new <m> and <out[b]>
+const u64 num = out[a] ^ out[b] ^ (m | CHMANT32(*idx, chseeds));
 
 // Three-way XOR to replace current value
 out[*idx] ^= out[a] ^ out[b];

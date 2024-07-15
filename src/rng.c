@@ -316,10 +316,10 @@ u64 generate(u64 *restrict out, u8 *restrict idx, double *restrict chseeds)
 
     chseeds[*idx & 7] = CHFUNCTION(*idx, chseeds);
    
-    const u64 num = elem ^ (m | CHMANT32(*idx, chseeds));
-
     const u8 a = *idx + 1 + (elem & 0x7F);
     const u8 b = *idx + 128 + (elem & 0x7F);
+
+    const u64 num = out[a] ^ out[b] ^ (m | CHMANT32(*idx, chseeds));
 
     out[*idx] ^= out[a] ^ out[b];
 
