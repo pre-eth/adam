@@ -647,4 +647,6 @@ out[*idx] ^= out[a] ^ out[b];
 return num;
 ```
 
-A random buffer index is chosen and stored prior to the `mix()` step. This function progresses through the internal buffer beginning at that index, and XORs the current value at that index with a temporary chaotic quantity to produce our output. The current value at `idx` is mutated via a three-way XOR operation with two values selected via modulo from different halves of the buffer. Each value in our `chseeds` array is updated twice per call as we continue to make use of the logistic function as an additional entropy source for generating results. 
+A random buffer index is chosen and stored prior to the `mix()` step. This function progresses through the internal buffer beginning at that index, and XORs two values selected via modulo from different halves of the `out` buffer with a temporary chaotic quantity to produce our output. The current value at `idx` is mutated via a three-way XOR operation with these other two values, and then `idx` is incremented. When each value in `out` is revisited, it will be a completely different value.
+
+Because the computed indices `a` and `b` may repeat across different iterations, each value in the buffer can affect the output multiple times per revolution before they are replaced, and the modulo lookup scheme adds some confusion to prevent the observation of any fixed patterns. In addition, each value in `chseeds` is updated twice per call as we continue to make use of the logistic function as an additional entropy source for generating results. 
