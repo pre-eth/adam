@@ -13,7 +13,8 @@
 	#define   DBL_TESTING_LIMIT         1500000
 
   typedef struct basic_test {
-    u64 init_values[5];
+    u64 seed[ADAM_SEED_SIZE / sizeof(u64)];
+    u32 nonce[ADAM_NONCE_SIZE / sizeof(u32)];
     u64 sequences;
     u64 up_runs;
     u64 longest_up;
@@ -91,9 +92,9 @@
     since we have a version that accepts double inputs. However, the test still works as expected and 
     ADAM meets all the expected values, including hovering right around the expected SP (50 vs 51).
 
-    We check all 4-bit quantities per iteration (so basically ADAM_BUF_BYTES * 2), record the SP value
-    and then do a chi-square test for goodness of fit over the observed ranges of the SP values. The
-    probabilities were directly provided by the author in the paper.
+    We gather all 4-bit quantities, record the SP value and then do a chi-square test for goodness of
+    fit over the observed ranges of the SP values. The probabilities were directly provided by the
+    author in the paper.
 
     Additionally, the raw chi-square, average SP, and overall distribution of values are reported.
 
@@ -132,7 +133,7 @@
         potential damage they would cause in a cryptographic application. 
 
     The reason why I included this test is to provide more in-house tests for judging the cryptographic
-    qualities of ADAM specifically, as opposed to some of the other tests which are just property reporting
+    qualities of ADAM specifically, as opposed to some of the other tests which are just property reports
     and traditional PRNG tests that don't necessarily deduce anything about security.
 
     We analyze each 1MB sequence per the requested examination size, collect each p-value from the subtests
@@ -264,8 +265,8 @@
     and cryptography. All the details and inner workings of the WHT aren't necessary to understand the
     test, but this is the foundational concept.
 
-    This test works on 4 32-bit blocks per output sequence, where each sequence is size ADAM_SEQ_SIZE. Each
-    block is converted to binary form, and the 32 bits are fed to the basis function:
+    This test works on 4 32-bit blocks per output sequence, where each sequence has 128 quantities of 128 bits.
+    Each of the 4 blocks are converted to binary form, and the 32 bits are fed to the basis function:
 
       F(x) = 1 - 2x (where x is a one of the 32 bits, with value 0 or 1)
 
