@@ -9,32 +9,32 @@
 #define STRINGIFY(a) STRINGIZE(a)
 
 #define MAJOR        0
-#define MINOR        10
+#define MINOR        11
 #define PATCH        0
 
-#define OPTSTR       ":hvdfbxoap:m:w:e:r:u::s::n::"
-#define ARG_COUNT    16
+#define OPTSTR       ":hvfbxoap:m:w:e:r:u::i::"
+#define ARG_COUNT    14
 
-//  Number of bits in results (8, 16, 32, 64)
-static u8 width;
+// Number of bits in results (8, 16, 32, 64)
+static NumWidth width;
 
-//  Print hex?
+// Print hex?
 static bool hex;
 
-//  Print octal?
+// Print octal?
 static bool octal;
 
-//  Number of results to return to user (max 1000)
+// Number of results to return to user (max 1000)
 static u16 results;
 
-//  Flag for floating point output
+// Flag for floating point output
 static bool dbl_mode;
 
-//  Number of decimal places for floating point output (default 15)
+// Number of decimal places for floating point output (default 15)
 static u8 precision;
 
-//  Multiplier to scale floating point results, if the user wants
-//  This returns doubles within range (0, mult)
+// Multiplier to scale floating point results, if the user wants
+// This returns doubles within range (0, mult)
 static u64 mult;
 
 static void print_summary(const u16 swidth, const u16 indent)
