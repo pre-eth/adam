@@ -2,11 +2,27 @@
 
 Everything you need to know for testing ADAM with different popular RNG test suites.
 
+Click on a test to learn more.
+
+| Status            | Name        | Description | 
+| ------------------| ----------- | ----------- | 
+| ✅ **PASS** | [ent](https://www.fourmilab.ch/random) | Calculates various values for a supplied pseudo random sequence like entropy, arithmetic mean, Monte Carlo value for pi, and more. Included with the CLI tool
+| ✅ **PASS** | [NIST STS](https://csrc.nist.gov/projects/random-bit-generation/documentation-and-software) | Set of statistical tests of randomness for generators intended for cryptographic applications. The general standard.
+| ✅ **PASS** | [Dieharder](https://webhome.phy.duke.edu/~rgb/General/dieharder.php) | Cleaned up version of George Marsaglia's DIEHARD suite plus the STS tests from above and RGB tests. Mostly of historical interest.
+| ✅ **PASS** | [testunif - gjrand](https://gjrand.sourceforge.net) | Extensive tests not within DIEHARD or NIST that analyze the randomness of bit sequences. Very particular and supposedly pretty tough!
+| ✅ **PASS** | [testfunif - gjrand](https://gjrand.sourceforge.net) | Another series of tests specifically for analyzing the uniformity of double precision floating point numbers in [0.0, 1.0).
+| ✅ **PASS** | [CACert](https://www.cacert.at/cgi-bin/rngresults) | Cryptographic certificate provider that maintains test results of various RNGs. ADAM is among the top 8 crypto RNG entries which had a flawless test run.
+| ✅ **PASS** | [Rabbit - TestU01](http://simul.iro.umontreal.ca/testu01/tu01.html) | For analyzing bitstreams. Treats input as one large binary sequence and applies 40 different statistical tests.
+| ✅ **PASS** | [SmallCrush - TestU01](http://simul.iro.umontreal.ca/testu01/tu01.html) | 10 different tests. Small but effective at spotting deficiencies missed by other test suites. Lots of good generators fail this one.
+| ✅ **PASS** | [Crush - TestU01](http://simul.iro.umontreal.ca/testu01/tu01.html) | 96 different tests. Very thorough and stringent, requires around 2³⁵ numbers in total. 
+| ✅ **PASS** | [BigCrush - TestU01](http://simul.iro.umontreal.ca/testu01/tu01.html) | 106 different tests. Even more stringent, requires "close to" 2³⁸ numbers in total. 
+| ✅ **PASS** | [PractRand](https://sourceforge.net/projects/pracrand/) | Final Boss - The most rigorous and effective test suite for PRNGs available. Can test unlimited lengths of sequences - ADAM has been tested up to 16TB!
+
 ## adam -e 
 
 This is a collection of miscellaneous heuristics and empirical tests implemented by me, just for reporting some notable properties of an output sequence to the user. It's nowhere near as important as the feedback from tried and true testing suites, but it's good for some quick information about the sequences you generate. 
 
-Additionally, the ENT framework is integrated into this collection, for a total of 23 pieces of information that are returned to the user:
+Additionally, the [ENT](https://www.fourmilab.ch/random/) framework is integrated into this collection, for a total of 23 pieces of information that are returned to the user:
 
 - Total sequences generated (also reported in terms of numbers generated per width)
 - Monobit frequency (including bit runs and longest runs of 0s/1s)
@@ -25,24 +41,12 @@ Additionally, the ENT framework is integrated into this collection, for a total 
 - Arithmetic mean             	(ENT)
 - Monte Carlo value for pi    	(ENT)
 - Serial correlation          	(ENT)
-- 4-bit Saturation Point Test*
-- 8-bit Maurer Universal Test**
-- 16-bit Topological Binary Test***
-- 32-bit Von Neumann Successive Difference Test****
-- 64-bit SAC Test*****
-- 128-bit Walsh-Hadamard Transform test******
-
-*[F. Sulak, “A New Statistical Randomness Test: Saturation Point Test”, IJISS, vol. 2, no. 3, pp. 81–85, 2013.](https://dergipark.org.tr/en/pub/ijiss/issue/16060/167857)
-
-**[Maurer, U.M. A universal statistical test for random bit generators. J. Cryptology 5, 89–105 (1992). https://doi.org/10.1007/BF00193563](https://link.springer.com/article/10.1007/BF00193563)
-
-***[Alcover, Pedro & Guillamón, Antonio & Ruiz, M.D.C.. (2013). A New Randomness Test for Bit Sequences. Informatica (Netherlands). 24. 339-356. 10.15388/Informatica.2013.399.](https://www.researchgate.net/publication/288404484_A_New_Randomness_Test_for_Bit_Sequences)
-
-****[John von Neumann. "Distribution of the Ratio of the Mean Square Successive Difference to the Variance." Ann. Math. Statist. 12 (4) 367 - 395, December, 1941. https://doi.org/10.1214/aoms/1177731677](https://projecteuclid.org/journals/annals-of-mathematical-statistics/volume-12/issue-4/Distribution-of-the-Ratio-of-the-Mean-Square-Successive-Difference/10.1214/aoms/1177731677.full?tab=ArticleFirstPage)
-
-*****[Hernandez-Castro, Julio & Sierra, José & Seznec, Andre & Izquierdo, Antonio & Ribagorda, Arturo. (2005). The strict avalanche criterion randomness test. Mathematics and Computers in Simulation. 68. 1-7. 10.1016/j.matcom.2004.09.001.](https://www.researchgate.net/publication/222525312_The_strict_avalanche_criterion_randomness_test)
-
-******[Oprina, Andrei-George et al. “WALSH-HADAMARD RANDOMNESS TEST AND NEW METHODS OF TEST RESULTS INTEGRATION.” (2009).](https://www.semanticscholar.org/paper/WALSH-HADAMARD-RANDOMNESS-TEST-AND-NEW-METHODS-OF-Oprina-Popescu/42de0c0c663461bfded8e5b29171e40f34ffed85)
+- 4-bit [Saturation Point Test](https://dergipark.org.tr/en/pub/ijiss/issue/16060/167857)
+- 8-bit [Maurer Universal Test](https://link.springer.com/article/10.1007/BF00193563)
+- 16-bit [Topological Binary Test](https://www.researchgate.net/publication/288404484_A_New_Randomness_Test_for_Bit_Sequences)
+- 32-bit [Von Neumann Successive Difference Test](https://projecteuclid.org/journals/annals-of-mathematical-statistics/volume-12/issue-4/Distribution-of-the-Ratio-of-the-Mean-Square-Successive-Difference/10.1214/aoms/1177731677.full?tab=ArticleFirstPage)
+- 64-bit [SAC Test](https://www.researchgate.net/publication/222525312_The_strict_avalanche_criterion_randomness_test)
+- 128-bit [Walsh-Hadamard Transform Test](https://www.semanticscholar.org/paper/WALSH-HADAMARD-RANDOMNESS-TEST-AND-NEW-METHODS-OF-Oprina-Popescu/42de0c0c663461bfded8e5b29171e40f34ffed85)
 
 ## NIST
 
@@ -204,7 +208,7 @@ static adam_data data;
 
 unsigned int adam_get(void)
 {
-    return adam_int(data, 32, false);
+    return adam_int(data, UINT32);
 }
 
 int main()
