@@ -5,21 +5,10 @@
 #include "../include/test.h"
 #include "../include/util.h"
 
-// Redefinition of API struct here so we can access internals
-struct adam_data_s {
-    u64 seed[4];
-    u64 nonce;
-    u64 out[BUF_SIZE] ALIGN(ADAM_ALIGNMENT);
-    u64 state_maps[BUF_SIZE << 1] ALIGN(ADAM_ALIGNMENT);
-    double chseeds[ROUNDS << 2] ALIGN(ADAM_ALIGNMENT);
-    u64 work_rsl[8] ALIGN(ADAM_ALIGNMENT);
-    u16 buff_idx;
-};
-
 static void adam_results(const u64 limit, rng_test *rsl);
 
-static u64 gaps[256];
-static u64 gaplengths[256];
+static u64 gaps[__UINT8_MAX__ + 1];
+static u64 gaplengths[__UINT8_MAX__ + 1];
 
 static u64 sat_range[SP_CAT + 1];
 static u64 sat_dist[SP_DIST];
@@ -34,7 +23,7 @@ static double vnt_fisher, vnt_fisher_gb;
 static u16 wh_gb_ctr;
 static double wh_fisher, wh_fisher_mb, wh_fisher_gb;
 
-static u64 ham_dist[65];
+static u64 ham_dist[ADAM_WORD_BITS + 1];
 
 static void sat_point(const u8 *nums)
 {
