@@ -30,6 +30,7 @@ cli: $(OBJ)
 	$(CC) -o $(BIN_PATH) $(OBJ) -lm
 	@size=$$(ls -lh $(BIN_PATH) | grep -oE "\d+[KMB]"); \
 	printf "\033[1;32mFinished building command line tool!\033[m (\033[1m%sB\033[m)\n" "$$size"
+	
 lib: $(LIB_OBJ)
 	@printf "\n\033[1;36mBuilding ADAM library...\033[m\n"
 	ar rcs $(LIB_PATH) $(LIB_OBJ)
