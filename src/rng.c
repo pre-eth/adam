@@ -265,45 +265,46 @@ void apply(u64 *restrict out, double *restrict chseeds)
 #endif
 }
 
-void apply(u64 *restrict out, u64 *restrict state_maps, double *restrict chseeds, u64 *restrict arr)
-{
-    chaotic_iter(out, &state_maps[0], &chseeds[0], arr);
-    chaotic_iter(&state_maps[0], &state_maps[BUF_SIZE], &chseeds[8], arr);
-    chaotic_iter(&state_maps[BUF_SIZE], out, &chseeds[16], arr);
-}
-
-void mix(u64 *restrict out, const u64 *restrict state_maps)
+void mix(u64 *restrict out, const u64 *restrict mix)
 {
     register u16 i = 0;
 
 #ifdef __AARCH64_SIMD__
-    reg64q4 r1, r2, r3;
+    reg64q4 mr = SIMD_LOAD64x4(mix);
+    reg64q4 r1, r2;
+
     do {
         r1 = SIMD_LOAD64x4(&out[i]);
-        r2 = SIMD_LOAD64x4(&state_maps[i]);
-        r3 = SIMD_LOAD64x4(&state_maps[BUF_SIZE + i]);
-        SIMD_3XOR4Q64(r1, r2, r3);
+        SIMD_XAR64RQ(r2, r1, mr, 32);
+        SIMD_ADD4RQ64(mr, mr, r1);
+        SIMD_3XOR4Q64(r1, r2, mr);
         SIMD_STORE64x4(&out[i], r1);
     } while ((i += 8) < BUF_SIZE);
 #else
+    reg mr = SIMD_LOADBITS((reg *) mix);
+
     reg r1, r2;
+
     do {
         r1 = SIMD_LOADBITS((reg *) &out[i]);
-        r2 = SIMD_LOADBITS((reg *) &state_maps[i]);
+        r2 = SIMD_XORBITS(r1, mr);
+        r2 = SIMD_ORBITS(SIMD_RSHIFT64(r2, 32), SIMD_LSHIFT64(r2, 32));
+        mr = SIMD_ADD64(mr, r1);
         r1 = SIMD_XORBITS(r1, r2);
-        r2 = SIMD_LOADBITS((reg *) &state_maps[BUF_SIZE + i]);
-        r1 = SIMD_XORBITS(r1, r2);
+        r1 = SIMD_XORBITS(r1, mr);
         SIMD_STOREBITS((reg *) &out[i], r1);
 #ifndef __AVX512F__
         r1 = SIMD_LOADBITS((reg *) &out[i + 4]);
-        r2 = SIMD_LOADBITS((reg *) &state_maps[i + 4]);
+        r2 = SIMD_XORBITS(r1, mr);
+        r2 = SIMD_ORBITS(SIMD_LSHIFT64(r2, 32), SIMD_RSHIFT64(r2, 32));
+        mr = SIMD_ADD64(mr, r1);
         r1 = SIMD_XORBITS(r1, r2);
-        r2 = SIMD_LOADBITS((reg *) &state_maps[BUF_SIZE + i + 4]);
-        r1 = SIMD_XORBITS(r1, r2);
+        r1 = SIMD_XORBITS(r1, mr);
         SIMD_STOREBITS((reg *) &out[i + 4], r1);
 #endif
     } while ((i += 8) < BUF_SIZE);
 #endif
 }
+
 
 /*     ALGORITHM END     */
