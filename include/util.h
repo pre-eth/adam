@@ -4,8 +4,6 @@
 
 	void     get_print_metrics(u16 *center, u16 *indent, u16 *swidth);
 	u8       err(const char *s);
-	u8       rwseed(u64 *seed, const char *strseed);
-	u8       rwnonce(u64 *nonce, const char *strnonce);
 	u64      a_to_u(const char *s, const u64 min, const u64 max);
 	u8       gen_uuid(const u64 higher, const u64 lower, u8 *buf);
 	u8 		 nearest_space(const char *str, u8 offset);

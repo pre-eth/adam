@@ -120,52 +120,6 @@ u64 a_to_u(const char *s, const u64 min, const u64 max)
     return (val >= min || val < max + 1) ? val : 0;
 }
 
-static u8 load_seed(u64 *seed, const char *strseed)
-{
-    FILE *seed_file = fopen(strseed, "rb");
-    if (!seed_file) {
-        return err("Couldn't read seed file");
-    }
-    fread((void *) seed, sizeof(u64), 4, seed_file);
-    fclose(seed_file);
-    return 0;
-}
-
-static u8 store_seed(const u64 *seed)
-{
-    char file_name[65];
-    printf("File name: \033[1;93m");
-    while (!scanf(" %64s", &file_name[0])) {
-        err("Please enter a valid file name");
-    }
-
-    FILE *seed_file = fopen(file_name, "wb+");
-    if (!seed_file) {
-        return err("Couldn't open seed file");
-    }
-    fwrite((void *) seed, sizeof(u64), 4, seed_file);
-    fclose(seed_file);
-    return 0;
-}
-
-u8 rwseed(u64 *seed, const char *strseed)
-{
-    if (strseed != NULL) {
-        return load_seed(seed, strseed);
-    }
-    return store_seed(seed);
-}
-
-u8 rwnonce(u64 *nonce, const char *strnonce)
-{
-    if (strnonce != NULL) {
-        *nonce = a_to_u(strnonce, 0, __UINT64_MAX__);
-    } else {
-        fprintf(stderr, "\033[1;96mNONCE:\033[m %llu\n", *nonce);
-    }
-    return 0;
-}
-
 u8 gen_uuid(const u64 higher, const u64 lower, u8 *buf)
 {
     // Fill buf with 16 random bytes
@@ -311,15 +265,15 @@ void print_basic_results(const u16 indent, const u64 limit, const basic_test *rs
     } else {
         bytes /= 1000000UL;
     }
-
+    
     printf("\033[1;34m\033[%uC               Output Size: \033[m%llu BITS (%llu%cB)\n", indent, output << 6, bytes, unit);
     printf("\033[2m\033[%uC                    a. u64: \033[m%llu\n", indent, output);
     printf("\033[2m\033[%uC                    b. u32: \033[m%llu\n", indent, output << 1);
     printf("\033[2m\033[%uC                    c. u16: \033[m%llu\n", indent, output << 2);
     printf("\033[2m\033[%uC                    d.  u8: \033[m%llu\n", indent, output << 3);
-    printf("\033[1;34m\033[%uC    256-bit Seed (u64 x 4): \033[m0x%016llX, 0x%016llX,\n", indent, rsl->init_values[0], rsl->init_values[1]);
-    printf("\033[%uC                            0x%016llX, 0x%016llX\n", indent, rsl->init_values[2], rsl->init_values[3]);
-    printf("\033[1;34m\033[%uC              64-bit Nonce: \033[m0x%016llX\n", indent, rsl->init_values[4]);
+    printf("\033[1;34m\033[%uC    256-bit Seed (u64 x 4): \033[m0x%016llX, 0x%016llX,\n", indent, rsl->seed[0], rsl->seed[1]);
+    printf("\033[%uC                            0x%016llX, 0x%016llX\n", indent, rsl->seed[2], rsl->seed[3]);
+    printf("\033[1;34m\033[%uC    96-bit Nonce (u32 x 3): \033[m0x%08X, 0x%08X, 0x%08X\n", indent, rsl->nonce[0], rsl->nonce[1], rsl->nonce[2]);
 }
 
 void print_mfreq_results(const u16 indent, const u64 output, const mfreq_test *rsl)
