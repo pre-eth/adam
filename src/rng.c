@@ -162,16 +162,16 @@ void diffuse(u64 *restrict out, u64 *restrict mix, const u64 nonce)
     } while ((i += 8) < BUF_SIZE);
 }
 
-static inline void chaotic_iter(u64 *restrict in, u64 *restrict out, double *restrict chseeds, u64 *restrict arr)
+void apply(u64 *restrict out, double *restrict chseeds)
 {
     register u16 i = 0;
 
 #ifdef __AARCH64_SIMD__
     const dregq one   = SIMD_SETQPD(1.0);
     const dregq coeff = SIMD_SETQPD(COEFFICIENT);
-    const dregq beta  = SIMD_SETQPD(BETA);
+    const dregq mask = SIMD_SETQPD(0xFFFFFFFFFFFFF); // 2^52 bits
 
-    reg64q4 r1;
+    reg64q4 r1, r2;
 
     // Load 8 consecutive seeds at a time
     dreg4q d1 = SIMD_LOAD4PD(chseeds);
@@ -183,28 +183,21 @@ static inline void chaotic_iter(u64 *restrict in, u64 *restrict out, double *res
         SIMD_MUL4QPD(d2, d2, coeff);
         SIMD_MUL4RQPD(d1, d1, d2);
 
-        // Multiply chaotic result by BETA to obtain ints
-        SIMD_MUL4QPD(d2, d1, beta);
+        // Load data at current offset
+        r1 = SIMD_LOAD64x4(&out[i]);
 
-        // Cast, XOR, and store
-        SIMD_CAST4Q64(r1, d2);
-        SIMD_STORE64x4(&arr[0], r1);
+        // Reinterpret results of d1 as binary floating point
+        // Add the mantissa value to r1
+        SIMD_REINTERP_ADD64(r2, d1, r1);
 
-        XOR_ASSIGN(in, out, arr, 0);
-        XOR_ASSIGN(in, out, arr, 1);
-        XOR_ASSIGN(in, out, arr, 2);
-        XOR_ASSIGN(in, out, arr, 3);
-        XOR_ASSIGN(in, out, arr, 4);
-        XOR_ASSIGN(in, out, arr, 5);
-        XOR_ASSIGN(in, out, arr, 6);
-        XOR_ASSIGN(in, out, arr, 7);
+        // Store
+        SIMD_STORE64x4(&out[i], r1);
     } while ((i += 8) < BUF_SIZE);
 
     SIMD_STORE4PD(chseeds, d1);
 #else
     const regd one   = SIMD_SETPD(1.0);
     const regd coeff = SIMD_SETPD(COEFFICIENT);
-    const regd beta  = SIMD_SETPD(BETA);
 
     regd d1 = SIMD_LOADPD(chseeds);
     regd d2;
@@ -232,9 +225,7 @@ static inline void chaotic_iter(u64 *restrict in, u64 *restrict out, double *res
         XOR_ASSIGN(in, out, arr, 5);
         XOR_ASSIGN(in, out, arr, 6);
         XOR_ASSIGN(in, out, arr, 7);
-    } while ((i += 8) < BUF_SIZE);
-
-    SIMD_STOREPD(chseeds, d1);
+    } while ((i += 8) < 8);
 #else
     d2 = SIMD_LOADPD(&chseeds[4]);
     regd d3;
@@ -270,9 +261,6 @@ static inline void chaotic_iter(u64 *restrict in, u64 *restrict out, double *res
         XOR_ASSIGN(in, out, arr, 6);
         XOR_ASSIGN(in, out, arr, 7);
     } while ((i += 8) < BUF_SIZE);
-
-    SIMD_STOREPD(chseeds, d1);
-    SIMD_STOREPD(&chseeds[4], d2);
 #endif
 #endif
 }
