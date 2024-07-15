@@ -2,71 +2,53 @@
 #include <stdlib.h>
 #include <sys/random.h>
 
-#include "../include/rng.h"
 #include "../include/api.h"
+#include "../include/rng.h"
 
 struct adam_data_s {
     // 256-bit seed
     u64 seed[4];
 
     // 64-bit nonce
-    u64 nonce;
+    u32 nonce[3];
 
-    // Output vector (work buffer) - 256 64-bit integers = 2048 bytes
+    // Chaotic work buffer - 256 64-bit integers = 2048 bytes
     u64 out[BUF_SIZE] ALIGN(ADAM_ALIGNMENT);
 
-    // Chaotic state maps - sizeof(u64) * 512 = 4096 bytes
-    u64 state_maps[BUF_SIZE << 1] ALIGN(ADAM_ALIGNMENT);
-
     // The seeds supplied to each iteration of the chaotic function
-    double chseeds[ROUNDS << 2] ALIGN(ADAM_ALIGNMENT);
+    double chseeds[ROUNDS] ALIGN(ADAM_ALIGNMENT);
 
-    // Work array to store intermediate mix results
-    u64 work_rsl[8] ALIGN(ADAM_ALIGNMENT);
-
-    // Current index in buffer (as bytes)
-    u16 buff_idx;
+    // Current index in buffer
+    u8 buff_idx;
 };
 
-static void adam(adam_data data)
-{
-    apply(data->out, data->state_maps, data->chseeds, data->work_rsl);
-    mix(data->out, data->state_maps);
-    data->buff_idx = 0;
-}
-
-adam_data adam_setup(u64 *seed, u64 *nonce)
+adam_data adam_setup(u64 *seed, u32 *nonce)
 {
     // Allocate the struct
     adam_data data = aligned_alloc(ADAM_ALIGNMENT, sizeof(*data));
     if (data == NULL) {
         return NULL;
     }
-    
+
+    adam_reset(data, seed, nonce);
+
+    return data;    
+}
+
+int adam_reset(adam_data data, u64 *seed, u32 *nonce)
+{
     // Get nonce from secure system RNG, or use user provided nonce
     if (nonce == NULL) {
-        getentropy(&data->nonce, sizeof(u64));
+        getentropy(data->nonce, ADAM_NONCE_SIZE);
     } else {
-        data->nonce = *nonce; 
+        data->nonce[0] = nonce[0];
+        data->nonce[1] = nonce[1];
+        data->nonce[2] = nonce[2];
     }
-
-    /*
-        The algorithm requres 3 u64 buffers of size BUF_SIZE - 2 internal maps used for generating
-        the chaotic function output, and an output vector. 
-        
-        The final output vector isn't stored contiguously so the pointer can be returned to the 
-        user without any fears of them indexing into the internal state maps.
-
-        aligned_alloc + memset is used rather than calloc to use the appropriate SIMD alignment.
-
-        We only need to memset the first 8 bytes of the array containing the state maps, because
-        the ISAAC_MIX diffuses and assigns the previous 512 bits to the current section of 512 bits
-    */
-    MEMSET(data->state_maps, 0, sizeof(u64) * 8);
 
     // Get seed bytes from secure system RNG, or use user provided seed
     if (seed == NULL) {
-        getentropy(&data->seed[0], sizeof(u64) * 4);
+        getentropy(data->seed, ADAM_SEED_SIZE);
     } else {
         data->seed[0] = seed[0];
         data->seed[1] = seed[1];
@@ -74,40 +56,29 @@ adam_data adam_setup(u64 *seed, u64 *nonce)
         data->seed[3] = seed[3];
     }
 
-    /*
-        8 64-bit IV's that correspond to the verse:
-        "Be fruitful and multiply, and replenish the earth (Genesis 1:28)"
+    // Intermediate chaotic mix - WORD_SIZE * 8 = 64 bytes
+    u64 mix_arr[ROUNDS] ALIGN(ADAM_ALIGNMENT);
 
-        Mix IV's with different configurations of seed values
-    */
-    data->out[0] = 0x4265206672756974 ^ data->seed[0];
-    data->out[1] = 0x66756C20616E6420 ^ (~data->seed[1] << (data->nonce & 63)) | (~data->seed[3] >> (data->nonce & 63));
-    data->out[2] = 0x6D756C7469706C79 ^ data->seed[1];
-    data->out[3] = 0x2C20616E64207265 ^ (~data->seed[0] << 32) | (~data->seed[2] >> 32);
-    data->out[4] = 0x706C656E69736820 ^ data->seed[2];
-    data->out[5] = 0x7468652065617274 ^ (~data->seed[2] << (data->nonce & 63)) | (~data->seed[0] >> (data->nonce & 63));
-    data->out[6] = 0x68202847656E6573 ^ data->seed[3];
-    data->out[7] = 0x697320313A323829 ^ (~data->seed[3] << 32) | (~data->seed[1] >> 32);
+    // Create IV's and initialize chaotic mix
+    initialize(data->seed, *((u64 *)&data->nonce[0]), data->out, mix_arr);
 
-    // Initialize chaotic seeds, work buffer, and chaotic maps
-    accumulate(data->out, data->work_rsl, data->chseeds);
+    // Accumulate set of chaotic seeds
+    accumulate(data->out, mix_arr, data->chseeds);
 
-    data->work_rsl[0] ^= data->nonce;
-    data->work_rsl[1] ^= ~data->nonce;
-    data->work_rsl[2] ^= data->nonce;
-    data->work_rsl[3] ^= ~data->nonce;
-    data->work_rsl[4] ^= data->nonce;
-    data->work_rsl[5] ^= ~data->nonce;
-    data->work_rsl[6] ^= data->nonce;
-    data->work_rsl[7] ^= ~data->nonce;
+    // Diffuse our internal work buffer
+    diffuse(data->out, mix_arr, *((u64 *)&data->nonce[1]));
 
-    diffuse(data->out, ADAM_BUF_SIZE, data->work_rsl);
-    diffuse(data->state_maps, ADAM_BUF_SIZE << 1, data->work_rsl);
+    // Apply the chaotic function to the buffer
+    apply(data->out, data->chseeds);
 
-    // Get first batch of results
-    adam(data);
+    // Set index to random starting point
+    // We do this BEFORE mix() so that the byte used here is replaced
+    data->buff_idx = data->out[BUF_SIZE - 1] & (BUF_SIZE - 1);
 
-    return data;
+    // Mix buffer one last time before it's ready for use!
+    mix(data->out, mix_arr);
+
+    return 0;
 }
 
 u64 *adam_seed(adam_data data)
