@@ -17,7 +17,34 @@
 
 /*     ALGORITHM START     */
 
-void accumulate(u64 *restrict out, u64 *work_arr, double *restrict chseeds)
+void initialize(const u64 *restrict seed, const u64 nonce, u64 *restrict out, u64 *restrict mix)
+{
+    /*
+        8 64-bit IV's that correspond to the verse:
+        "Be fruitful and multiply, and replenish the earth (Genesis 1:28)"
+
+        Mix IV's with different configurations of seed values
+    */
+    out[0] = 0x4265206672756974 ^ seed[0];
+    out[1] = 0x66756C20616E6420 ^ ((seed[1] << (nonce & 63)) | (seed[3] >> (64 - (nonce & 63))));
+    out[2] = 0x6D756C7469706C79 ^ seed[1];
+    out[3] = 0x2C20616E64207265 ^ ((seed[0] << 32) | (seed[2] >> 32));
+    out[4] = 0x706C656E69736820 ^ seed[2];
+    out[5] = 0x7468652065617274 ^ ((seed[2] << (nonce & 63)) | (seed[0] >> (64 - (nonce & 63))));
+    out[6] = 0x68202847656E6573 ^ seed[3];
+    out[7] = 0x697320313A323829 ^ ((seed[3] << 32) | (seed[1] >> 32));
+
+    // Initialize intermediate chaotic mix
+    mix[0] = ~out[4] ^ nonce;
+    mix[1] = ~out[5] ^ (nonce + 1);
+    mix[2] = ~out[6] ^ (nonce + 2);
+    mix[3] = ~out[7] ^ (nonce + 3);
+    mix[4] = ~out[0] ^ (nonce + 4);
+    mix[5] = ~out[1] ^ (nonce + 5);
+    mix[6] = ~out[2] ^ (nonce + 6);
+    mix[7] = ~out[3] ^ (nonce + 7);
+}
+
 {
     register u8 i = 0;
 
