@@ -135,19 +135,19 @@ void accumulate(u64 *restrict out, u64 *restrict mix, double *restrict chseeds)
 #endif
 }
 
-void diffuse(u64 *restrict out, const u64 amount, u64 *restrict mix)
+void diffuse(u64 *restrict out, u64 *restrict mix, const u64 nonce)
 {
     register u16 i = 0;
 
     do {
-        mix[0] += out[i + 0];
-        mix[1] += out[i + 1];
-        mix[2] += out[i + 2];
-        mix[3] += out[i + 3];
-        mix[4] += out[i + 4];
-        mix[5] += out[i + 5];
-        mix[6] += out[i + 6];
-        mix[7] += out[i + 7];
+        mix[0] += nonce;
+        mix[1] += nonce;
+        mix[2] += nonce;
+        mix[3] += nonce;
+        mix[4] += nonce;
+        mix[5] += nonce;
+        mix[6] += nonce;
+        mix[7] += nonce;
 
         ISAAC_MIX(mix[0], mix[1], mix[2], mix[3], mix[4], mix[5], mix[6], mix[7]);
 
@@ -159,7 +159,7 @@ void diffuse(u64 *restrict out, const u64 amount, u64 *restrict mix)
         out[i + 5] = mix[5];
         out[i + 6] = mix[6];
         out[i + 7] = mix[7];
-    } while ((i += 8) < amount);
+    } while ((i += 8) < BUF_SIZE);
 }
 
 static inline void chaotic_iter(u64 *restrict in, u64 *restrict out, double *restrict chseeds, u64 *restrict arr)
