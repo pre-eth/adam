@@ -95,29 +95,28 @@ static void maurer(maurer_test *mau)
 
 static void tbt(const u16 *nums, tb_test *topo)
 {
-    static u8 ctr;
-
-    register u16 i = 0;
+    static u32 ctr;
 
     // Checks if this 16-bit pattern has been recorded
-    // Each run gives us 1024 u16 which is the TBT_SEQ_SIZE
-    do {
-        tbt_array[nums[i] >> 6] |= 1ULL << (nums[i] & 63);
-    } while (++i < (ADAM_BUF_BYTES >> 1));
+    tbt_array[nums[0] >> 6] |= 1ULL << (nums[0] & 63);
+    tbt_array[nums[1] >> 6] |= 1ULL << (nums[1] & 63);
+    tbt_array[nums[2] >> 6] |= 1ULL << (nums[2] & 63);
+    tbt_array[nums[3] >> 6] |= 1ULL << (nums[3] & 63);
 
-    // 65536 / 1024 u16 per iteration = 64 iterations before
-    // we can update our test metrics
-    if (++ctr == 64) {
-        register u16 different;
+    // TBT_SEQ_SIZE iterations before we can update our test metrics
+    ctr += 4;
+    if (ctr == TBT_SEQ_SIZE) {
+        register u32 i, different;
         i = different = 0;
         do {
             different += POPCNT(tbt_array[i]);
-        } while (++i < 1024);
+        } while (++i < TBT_ARR_SIZE);
 
+        ++topo->trials;
         topo->prop_sum += different;
         topo->pass_rate += (different >= TBT_CRITICAL_VALUE);
 
-        MEMSET(&tbt_array[0], 0, sizeof(u64) * 1024);
+        MEMSET(&tbt_array[0], 0, sizeof(u64) * TBT_ARR_SIZE);
         ctr = 0;
     }
 }
