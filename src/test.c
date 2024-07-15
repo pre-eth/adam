@@ -194,25 +194,26 @@ static void walsh_test(const u32 *nums, wh_test *walsh)
 
 static void fp_max8(const u32 *nums, u64 *max_runs, u64 *max_dist)
 {
-    register u16 idx = 1;
-    register u16 max, count;
-    max = count = 0;
+    static double fp_max_arr[FP_MAX_CAT];
+    static u16 idx;
 
-    register double d;
-    register double last = (double) nums[0] / (double) __UINT32_MAX__;
-    do {
-        d    = (double) nums[idx] / (double) __UINT32_MAX__;
-        max  = (d > last) ? (idx & 7) : max;
-        last = d;
-        ++idx;
-        if (++count == FP_MAX_CAT) {
-            ++max_dist[max];
-            *max_runs += 1;
-            max = count = 0;
-            last        = (double) nums[idx] / (double) __UINT32_MAX__;
-            ++idx;
-        }
-    } while (idx < (BUF_SIZE << 1));
+    fp_max_arr[idx] = (double) nums[0] / (double) __UINT32_MAX__;
+    fp_max_arr[idx + 1] = (double) nums[1] / (double) __UINT32_MAX__;
+
+    idx += 2;
+
+    if (idx == FP_MAX_CAT) {
+        register u8 max = 0;    
+        register u8 i = 1;
+
+        do {
+            max  = (fp_max_arr[i] > fp_max_arr[max]) ? i : max;
+        } while (++i < FP_MAX_CAT);
+
+        ++max_dist[max];
+        *max_runs += 1;
+        idx = 0;
+    }
 }
 
 static void fp_perm(const double num, u64 *perms, u64 *perm_dist)
@@ -230,17 +231,17 @@ static void fp_perm(const double num, u64 *perms, u64 *perm_dist)
         while (perm_idx > 1) {
             s = perm_idx;
             switch (perm_idx) {
-            case 5:
-                s = (tuple[4] > tuple[s]) ? 4 : s;
-            case 4:
-                s = (tuple[3] > tuple[s]) ? 3 : s;
-            case 3:
-                s = (tuple[2] > tuple[s]) ? 2 : s;
-            case 2:
-                s = (tuple[1] > tuple[s]) ? 1 : s;
-                break;
-            default:
-                break;
+                case 5:
+                    s = (tuple[4] > tuple[s]) ? 4 : s;
+                case 4:
+                    s = (tuple[3] > tuple[s]) ? 3 : s;
+                case 3:
+                    s = (tuple[2] > tuple[s]) ? 2 : s;
+                case 2:
+                    s = (tuple[1] > tuple[s]) ? 1 : s;
+                    break;
+                default:
+                    break;
             }
 
             f               = (perm_idx * f) + s - 1;
