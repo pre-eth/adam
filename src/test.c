@@ -30,10 +30,10 @@ static void sat_point(const u8 *nums)
     // Bitarray to track presence of 2^4 values
     static u16 num_range;
     static u64 ctr;
-
+ 
     register u16 i = 0, j = 0;
     do {
-        // 2 4-bit quantities per 8 -bits
+        // 2 4-bit quantities per 8-bits
         // so we only increment <i> every other iteration
         num_range |= (1U << ((nums[i] >> ((j & 1) << 2)) & 15));
 
@@ -65,7 +65,7 @@ static void sat_point(const u8 *nums)
 
         i += j;
         j = !j;
-    } while (i < ADAM_BUF_BYTES);
+    } while (i < 8);
 }
 
 static void maurer(maurer_test *mau)
