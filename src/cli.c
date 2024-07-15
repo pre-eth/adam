@@ -377,16 +377,21 @@ static bool rwparams(u64 *seed, u32 *nonce, const char *file_name)
 
 int main(int argc, char **argv)
 {
-    u64 seed[4];
-    u64 nonce;
-
-    u64 *seed_ptr = NULL;
-    u64 *nonce_ptr = NULL;
-
-    //  Initialize the non-zero defaults
+    // Initialize the non-zero defaults
     results   = 1;
     precision = 15;
-    width     = 64;
+    width     = UINT64;
+
+    u64 seed[ADAM_SEED_SIZE / sizeof(u64)] = {0, 0, 0, 0};
+    u64 *seed_ptr  = NULL; // &seed[0];
+
+    u32 nonce[ADAM_NONCE_SIZE / sizeof(u32)] = {0, 0, 0};
+    u32 *nonce_ptr = NULL; // &nonce;
+
+    adam_data data = adam_setup(seed_ptr, nonce_ptr);
+    if (data == NULL) {
+        return err("Could not allocate space for adam_data struct! Exiting.");
+    }
 
     register char opt;
     while ((opt = getopt(argc, argv, OPTSTR)) != EOF) {
@@ -394,51 +399,48 @@ int main(int argc, char **argv)
         case 'h':
             return help();
         case 'v':
-            puts("v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH));
-            return 0;
+            return !puts("v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH));
         case 'a':
-            return assess(seed_ptr, nonce_ptr);
+            return assess(data);
         case 'b':
-            if (dbl_mode) {
-                streamf(seed_ptr, nonce_ptr);
-            } else {
-                stream(seed_ptr, nonce_ptr);
-            }
-            return 0;
+            return stream(data);
         case 'x':
             hex   = true;
             octal = false;
             continue;
         case 'o':
-            octal = true;
             hex   = false;
+            octal = true;
             continue;
         case 'w':
             width = a_to_u(optarg, 8, 32);
-            if (UNLIKELY(width != 8 && width != 16 && width != 32)) {
+            if (UNLIKELY((width & (width - 1)) & !!width)) {
                 return err("Alternate width must be either 8, 16, 32");
             }
-            results = ADAM_BUF_SIZE * (64 / width);
+            width >>= 3;
             continue;
         case 'r':
-            results = a_to_u(optarg, 1, ADAM_BUF_SIZE * (64 / width));
+            results = a_to_u(optarg, 1, 1000);
             if (!results) {
-                return err("Invalid number of results specified for desired width");
+                return err("Invalid number of results specified");
             }
             continue;
-        case 's':
+        case 'i':
             seed_ptr = &seed[0];
-            rwseed(seed_ptr, optarg);
-            continue;
-        case 'n':
-            nonce_ptr = &nonce;
-            rwnonce(nonce_ptr, optarg);
+            nonce_ptr = &nonce[0];
+
+            // TODO ADD VERSION CHECKING AND check that all of this -i logic works!!!
+            // also add chseed set to state figma svg
+
+            // If we load user provided input params, then
+            // we need to call adam_reset() to rebuild state
+            if (rwparams(seed_ptr, nonce_ptr, optarg)) {
+                adam_reset(data, seed_ptr, nonce_ptr);
+            }
+
             continue;
         case 'u':
-            return uuid(seed_ptr, nonce_ptr, optarg);
-        case 'd':
-            results = ADAM_BUF_SIZE * (64 / width);
-            continue;
+            return uuid(data, optarg);
         case 'f':
             dbl_mode = true;
             continue;
@@ -457,17 +459,13 @@ int main(int argc, char **argv)
             }
             continue;
         case 'e':
-            return examine(seed_ptr, nonce_ptr, optarg);
+            return examine(data, optarg);
         default:
             return err("Option is invalid or missing required argument");
         }
     }
 
-    adam_data data = adam_setup(seed_ptr, nonce_ptr);
-    if (data == NULL) {
-        return err("Could not allocate space for adam_data struct! Exiting.");
-    }
-
+    dump_buffer(data);
 
     return 0;
 }
