@@ -8,8 +8,6 @@
     */
     #define MAGNITUDE               8
     #define BUF_SIZE                (1U << MAGNITUDE)   
-    #define WORD_BITS               64
-    #define WORD_SIZE               (WORD_BITS >> 3)
 
     // Number of rounds we perform at a time
     #define ROUNDS                  8
@@ -31,7 +29,6 @@
     #define CHFUNCTION(x, ch)       (COEFFICIENT * ch[x & 7] * (1.0 - ch[x & 7]))
     #define CHMANT32(x, ch)         (*((u64 *) &ch[x & 7]) & __UINT32_MAX__) 
     
-
     // To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random int casted to double D
     #define RANGE_LIMIT             2.7105054E-20
 
@@ -42,5 +39,5 @@
     void diffuse(u64 *restrict out, u64 *restrict mix, const u64 nonce);
     void apply(u64 *restrict out, double *restrict chseeds);
     void mix(u64 *restrict out, const u64 *restrict mix);
-    u64 generate(u64 *restrict out, u8 *restrict idx, double *restrict chseeds);
+    u64  generate(u64 *restrict out, u8 *restrict idx, double *restrict chseeds);
 #endif
