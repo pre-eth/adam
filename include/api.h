@@ -3,12 +3,16 @@
     #include "defs.h"
 
 #if defined(__AARCH64_SIMD__) || defined(__AVX512F__)
-    #define ADAM_ALIGNMENT      64
+    #define ADAM_ALIGNMENT          64
 #else
-    #define ADAM_ALIGNMENT      32
+    #define ADAM_ALIGNMENT          32
 #endif
 
-    #define ADAM_FILL_MAX       1000000000
+    #define ADAM_WORD_BITS          64
+    #define ADAM_WORD_SIZE          (ADAM_WORD_BITS >> 3)
+    #define ADAM_SEED_SIZE          (ADAM_WORD_SIZE * 4)
+    #define ADAM_NONCE_SIZE         (sizeof(u32) * 3)
+    #define ADAM_FILL_MAX           1000000000
 
     typedef struct adam_data_s  *adam_data;
 
@@ -29,19 +33,36 @@
         Params <seed> and <nonce> are optional - set to NULL if you'd like
         to seed the generator with secure random bytes from the operating
         system itself. Otherwise, the caller must ensure that <seed> points
-        to 256-bits of data, and that nonce points to a u64.
+        to 256 bits of data [u64; 4], and that nonce points to 96 bits [u32; 3].
 
-        Returns an opaque pointer to the internal adam_data_s struct. Make sure
-        you remember to adam_cleanup() once you no longer need it!
+        Returns an opaque pointer to the internal adam_data_s struct. Make
+        sure you remember to adam_cleanup() once you no longer need it!
     */
-    adam_data adam_setup(u64 *seed, u64 *nonce);
+    adam_data adam_setup(u64 *seed, u32 *nonce);
 
     /*
-        Self-explanatory functions - Return a raw pointer to the seed/nonce 
-        respectively so you can reset them yourself at anytime you'd like.
+        Resets and reconstructs ADAM's internal state based on a new
+        <seed> and <nonce>. 
+
+        If provided, the caller must ensure that <seed> points to 256 bits
+        of data [u64; 4], and that nonce points to 96 bits [u32; 3]. If they
+        do not, then the program is ill-formed.
+
+        Returns 0 on success.
     */
-    u64 *adam_seed(adam_data data);
-    u64 *adam_nonce(adam_data data);
+    int adam_reset(adam_data data, u64 *seed, u32 *nonce);
+
+    /*
+        Save the current seed and nonce, if you didn't set it yourself and
+        would like to record the parameters.
+
+        The caller must ensure that <seed> points to 256 bits of data 
+        [u64; 4], and that nonce points to 96 bits [u32; 3]. If they do 
+        not, then the program is ill-formed.
+
+        Returns 0 on success.
+    */
+    int adam_record(adam_data data, u64 *seed, u32 *nonce);
 
     /*
         Returns a random unsigned integer of the specified <width>.
