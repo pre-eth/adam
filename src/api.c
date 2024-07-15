@@ -81,20 +81,11 @@ int adam_reset(adam_data data, u64 *seed, u32 *nonce)
     return 0;
 }
 
-u64 *adam_seed(adam_data data)
+int adam_record(adam_data data, u64 *seed, u32 *nonce)
 {
-    return &data->seed[0];
-}
-
-u64 *adam_nonce(adam_data data)
-{
-    return &data->nonce;
-}
-
-const u64 *adam_buffer(const adam_data data)
-{
-    adam(data);
-    return &data->out[0];
+    MEMCPY(seed, data->seed, ADAM_SEED_SIZE);
+    MEMCPY(nonce, data->nonce, ADAM_NONCE_SIZE);
+    return 0;
 }
 
 u64 adam_int(adam_data data, u8 width, const bool force_regen)
