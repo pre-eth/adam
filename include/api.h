@@ -1,149 +1,133 @@
 #ifndef ADAM_API_H
 #define ADAM_API_H
-  #include "defs.h"
+    #include "defs.h"
 
 #if defined(__AARCH64_SIMD__) || defined(__AVX512F__)
-  #define ADAM_ALIGNMENT    64
+    #define ADAM_ALIGNMENT      64
 #else
-  #define ADAM_ALIGNMENT    32
+    #define ADAM_ALIGNMENT      32
 #endif
 
-  #define ADAM_BUF_SIZE     256
-  #define ADAM_BUF_BYTES    (ADAM_BUF_SIZE << 3)
-  #define ADAM_BUF_BITS     (ADAM_BUF_SIZE << 6)
+    #define ADAM_FILL_MAX       1000000000
 
-  #define ADAM_FILL_MAX     1000000000
+    typedef struct adam_data_s  *adam_data;
 
-  typedef struct adam_data_s *adam_data;
+    typedef enum {
+        UINT8  = 1,
+        UINT16 = 2,
+        UINT32 = 4,
+        UINT64 = 8
+    } NumWidth;
 
-  /*
-    Configures ADAM's initial state by allocating the adam_data
-    struct and preparing it for random generation.
-    
-    Call this ONCE at the start of your program, before generating 
-    any numbers.
+    /*
+        Configures ADAM's initial state by allocating the adam_data
+        struct and preparing it for random generation.
 
-    Params <seed> and <nonce> are optional - set to NULL if you'd like
-    to seed the generator with secure random bytes from the operating
-    system itself. Otherwise, the caller must ensure that <seed> points
-    to 256-bits of data, and that nonce points to a u64.
+        Call this ONCE at the start of your program, before generating 
+        any numbers.
 
-    Returns a pointer to the adam_data. Make sure you remember to pass it
-    to adam_cleanup() once you no longer need it!
-  */
-  adam_data adam_setup(u64 *seed, u64 *nonce);
+        Params <seed> and <nonce> are optional - set to NULL if you'd like
+        to seed the generator with secure random bytes from the operating
+        system itself. Otherwise, the caller must ensure that <seed> points
+        to 256-bits of data, and that nonce points to a u64.
 
-  /*
-    Self-explanatory functions - The first two return a raw pointer to the 
-    seed/nonce respectively so you can reset them yourself at anytime you'd like.
+        Returns an opaque pointer to the internal adam_data_s struct. Make sure
+        you remember to adam_cleanup() once you no longer need it!
+    */
+    adam_data adam_setup(u64 *seed, u64 *nonce);
 
-    Since the third function adam_buffer() returns a pointer to the output
-    vector, the return value of this function is a pointer to const data
-    to prevent any sort of modification by the user, as technically even the 
-    output vector comprises RNG state and the result of each run is dependent
-    on its value. adam_buffer() ALWAYS generates a fresh buffer before returning
-    the pointer, as the API assumes you use the whole buffer each time.
-  */
-  u64 *adam_seed(adam_data data);
-  u64 *adam_nonce(adam_data data);
-  const u64 *adam_buffer(const adam_data data);
+    /*
+        Self-explanatory functions - Return a raw pointer to the seed/nonce 
+        respectively so you can reset them yourself at anytime you'd like.
+    */
+    u64 *adam_seed(adam_data data);
+    u64 *adam_nonce(adam_data data);
 
-  /*
-    Returns a random unsigned integer of the specified <width>. Param
-    <force_regen> can be used to force the generation of a new output
-    vector before returning any results.
-  
-    Param <width> must ALWAYS be either 8, 16, 32, or 64. Any other
-    value will be ignored and revert to the default width of 64.
+    /*
+        Returns a random unsigned integer of the specified <width>.
 
-    Automatically makes internal calls when regeneration is needed to 
-    ensure that you can safely expect to call this function and 
-    always receive a randomly generated integer.
-  */
-  u64 adam_int(adam_data data, u8 width, const bool force_regen);
+        Param <width> must ALWAYS be a member of the NumWidth enum. Other
+        arbitrary values will probably result in undefined behavior or a
+        seg fault. Your program is ill-formed if other values are passed!
+    */
+    u64 adam_int(adam_data data, const NumWidth width);
 
-  /*
-    Returns a random double after multiplying it by param <scale>. Param
-    <force_regen> can be used to force the generation of a new output
-    vector before returning any results.
-  
-    For no scaling factor, just set <scale> to 1. Also, a <scale> value
-    of 0 is ignored and treated as 1.
+    /*
+        Returns a random double after multiplying it by param <scale>.
 
-    Automatically makes internal calls when regeneration is needed to 
-    ensure that you can safely expect to call this function and 
-    always receive a randomly generated double.
-  */
-  double adam_dbl(adam_data data, const u64 scale, const bool force_regen);
+        For no scaling factor, just set <scale> to 1. Also, a <scale> value
+        of 0 is ignored and treated as 1.
+    */
+    double adam_dbl(adam_data data, const u64 scale);
 
-  /*
-    Fills a given buffer with random integers.
+    /*
+        Fills a given buffer with random integers.
 
-    The caller is responsible for ensuring param <buf> is of at least 
-    <amount> * sizeof(u64) bytes in length, and that the pointer is not 
-    NULL. If <amount> is 0 or greater than 1 billion, this function  
-    will return 1 and exit.
+        The caller is responsible for ensuring param <buf> is of at least 
+        <amount> * sizeof(u64) bytes in length, and that the pointer is not 
+        NULL. If <amount> is 0 or greater than 1 billion, this function  
+        will return 1 and exit.
 
-    Also, please make sure you use the ADAM_ALIGNMENT macro to align <buf> 
-    before you pass it to this function.
+        Also, please make sure you use the ADAM_ALIGNMENT macro to align the
+        array underlying <buf> before you pass it to this function.
 
-    Param <width> must be 8, 16, 32, or 64. If you provide an invalid 
-    width value, the default of 64 is used instead and the argument is 
-    ignored.
+        Param <width> must ALWAYS be a member of the NumWidth enum. Other
+        arbitrary values will probably result in undefined behavior or a
+        seg fault. Your program is ill-formed if other values are passed!
 
-    Returns 0 on success, 1 on error.
-  */
-  int adam_fill(adam_data data, void *buf, u8 width, const u64 amount);
+        Returns 0 on success, 1 on error.
+    */
+    int adam_fill(adam_data data, void *buf, const NumWidth width, const size_t amount);
 
-  /*
-    Fills a given buffer with random doubles.
+    /*
+        Fills a given buffer with random doubles.
 
-    The caller is responsible for ensuring param <buf> is of at least 
-    <amount> * sizeof(double) bytes in length, and that the pointer is 
-    not NULL. If <amount> is 0 or greater than 1 billion, this function 
-    will return 1 and exit.
+        The caller is responsible for ensuring param <buf> is of at least 
+        <amount> * sizeof(double) bytes in length, and that the pointer is 
+        not NULL. If <amount> is 0 or greater than 1 billion, this function 
+        will return 1 and exit.
 
-    Also, please make sure you use the ADAM_ALIGNMENT macro to align <buf> 
-    before you pass it to this function.
+        Also, please make sure you use the ADAM_ALIGNMENT macro to align the
+        array underlying <buf> before you pass it to this function.
 
-    Param <multiplier> can be supplied to multiply all doubles by a certain 
-    scaling factor so they fall within the range (0, <multiplier>). If you
-    do not need a scaling factor, just pass a value of 1 or 0.
+        Param <multiplier> can be supplied to multiply all doubles by a certain 
+        scaling factor so they fall within the range (0, <multiplier>). If you
+        do not need a scaling factor, just pass a value of 1 or 0.
 
-    Returns 0 on success, 1 on error.
-  */
-  int adam_dfill(adam_data data, double *buf, const u64 multiplier, const u64 amount);
+        Returns 0 on success, 1 on error.
+    */
+    int adam_dfill(adam_data data, double *buf, const u64 multiplier, const size_t amount);
 
-  /*
-    Chooses a random item from a provided collection, where param <arr> is a 
-    pointer to this collection, and param <size> is to specify the total 
-    range of possible indices, usually the full length of the array but you
-    could pass in a smaller number than that if you want to choose from a 
-    particular range or within a specific radius.
+    /*
+        Chooses a random item from a provided collection, where param <arr> is a 
+        pointer to this collection, and param <size> is to specify the total 
+        range of possible indices, usually the full length of the array but you
+        could pass in a smaller number than that if you want to choose from a 
+        particular range or within a specific radius.
 
-    Caller must guarantee <size> is NEVER larger than the <arr>'s capacity.
+        Caller must guarantee <size> is NEVER larger than the <arr>'s capacity.
 
-    Returns a randomly picked member of <arr>.
-  */
-  void *adam_choice(adam_data data, void *arr, const u64 size);
+        Returns a randomly picked member of <arr>.
+    */
+    void *adam_choice(adam_data data, void *arr, const size_t size);
 
-  /*
-    Writes param <output> BITS (not bytes!) to a file descriptor of your choice.
+    /*
+        Writes param <amount> BITS (not bytes!) to a file descriptor of your choice.
 
-    You can pass NULL for param <file_name> if you'd like to stream to stdout,
-    rather than an actual file. If you provide a valid file name, then it will
-    be created and saved with the requested amount of binary data.
-  
-    If param <output> is less than ADAM_BUF_BITS, this function won't do anything.
+        You can pass NULL for param <file_name> if you'd like to stream to stdout,
+        rather than an actual file. If you provide a valid file name, then it will
+        be created and saved with the requested amount of binary data.
 
-    Returns the total number of bits written out, or 0 if invalid value for <output>
-  */
-  u64 adam_stream(adam_data data, const u64 output, const char *file_name);
+        If param <amount> is less than 64, this function won't do anything.
 
-  /*
-    Zeroizes adam_data members and frees any allocated memory.
+        Returns the total number of bits written out, or 0 if invalid value for <amount>.
+    */
+    size_t adam_stream(adam_data data, const size_t amount, const char *file_name);
 
-    Call this once after you are finished using the generator.
-  */
-  void adam_cleanup(adam_data data);
+    /*
+        Zeroizes adam_data members and frees any allocated memory.
+
+        Call this ONCE after you are finished using the generator.
+    */
+    void adam_cleanup(adam_data data);
 #endif
