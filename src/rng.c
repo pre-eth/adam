@@ -45,49 +45,42 @@ void initialize(const u64 *restrict seed, const u64 nonce, u64 *restrict out, u6
     mix[7] = ~out[3] ^ (nonce + 7);
 }
 
+void accumulate(u64 *restrict out, u64 *restrict mix, double *restrict chseeds)
 {
     register u8 i = 0;
 
-    work_arr[0] = out[4];
-    work_arr[1] = ~out[5];
-    work_arr[2] = out[6];
-    work_arr[3] = ~out[7];
-    work_arr[4] = out[0];
-    work_arr[5] = ~out[1];
-    work_arr[6] = out[2];
-    work_arr[7] = ~out[3];
-
     // Scramble
-    for (; i < 4; ++i) {
-        ISAAC_MIX(work_arr[0], work_arr[1], work_arr[2], work_arr[3], work_arr[4], work_arr[5], work_arr[6], work_arr[7]);
+    for (; i < ROUNDS; ++i) {
+        ISAAC_MIX(mix[0], mix[1], mix[2], mix[3], mix[4], mix[5], mix[6], mix[7]);
     }
-    
+
     i = 0;
 
 #ifdef __AARCH64_SIMD__
     const dregq range = SIMD_SETQPD(RANGE_LIMIT);
-
     dreg4q seeds;
+    
+    const reg64q4 mr = SIMD_LOAD64x4(mix); 
     reg64q4 r1 = SIMD_LOAD64x4(out);
-    reg64q4 r2 = SIMD_LOAD64x4(work_arr);
+    reg64q4 r2;
+
     do {
-        r1.val[0] = vxarq_u64(r1.val[0], r2.val[0], 8);
-        r1.val[1] = vxarq_u64(r1.val[1], r2.val[1], 8);
-        r1.val[2] = vxarq_u64(r1.val[2], r2.val[2], 8);
-        r1.val[3] = vxarq_u64(r1.val[3], r2.val[3], 8);
-        SIMD_CAST4QPD(seeds, r1);
-        SIMD_MUL4QPD(seeds, seeds, range);
-        SIMD_STORE4PD(&chseeds[i << 3], seeds);
-    } while (++i < (ROUNDS / 2));
+        SIMD_XAR64RQ(r2, r1, mr, 32);
+        SIMD_ADD4RQ64(r1, r1, r2);
+    } while (++i < ROUNDS);
 
-    SIMD_STORE64x4(work_arr, r1);
+    SIMD_CAST4QPD(seeds, r2);
+    SIMD_MUL4QPD(seeds, seeds, range);
+    SIMD_STORE4PD(chseeds, seeds);
+    
+    SIMD_STORE64x4(mix, r1);
 #else
-    const regd range = SIMD_SETPD(RANGE_LIMIT);
-
-    regd d1;
 #ifdef __AVX512F__
-    reg r1 = SIMD_LOADBITS((reg *) out);
-    reg r2 = SIMD_LOADBITS((reg *) arr);
+    const __m256d range = SIMD_SETPD(RANGE_LIMIT);
+
+    __m256d d1;
+    const __m256i r1 = SIMD_LOADBITS((__m256i *) mix);
+    __m256i r2 = SIMD_LOADBITS((__m256i *) out);
 
     do {
         r1 = SIMD_ROTR64(r1, 8);
@@ -95,11 +88,11 @@ void initialize(const u64 *restrict seed, const u64 nonce, u64 *restrict out, u6
         d1 = SIMD_CASTPD(r1);
         d1 = SIMD_MULPD(d1, range);
         SIMD_STOREPD(&chseeds[i << 3], d1);
-    } while (++i < (ROUNDS / 2));
+    } while (++i < ROUNDS);
 
     SIMD_STOREBITS((reg *) arr, r1);
 #else
-    register a,b,c,d,e,f,g,h;
+    register a, b, c, d, e, f, g, h;
 
     a = out[0];
     b = out[1];

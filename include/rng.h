@@ -29,7 +29,7 @@
     */
     #define COEFFICIENT             3.9999
     #define CHFUNCTION(x, ch)       (COEFFICIENT * ch[x & 7] * (1.0 - ch[x & 7]))
-    #define CHMANT32(x, ch)         (*((u64 *) &ch[x & 7]) & 0xFFFFFFFF) // 4503599627370495
+    #define CHMANT32(x, ch)         (*((u64 *) &ch[x & 7]) & __UINT32_MAX__) 
     
 
     // To approximate (D / (double) __UINT64_MAX__) * 0.5 for a random int casted to double D
