@@ -88,21 +88,11 @@ int adam_record(adam_data data, u64 *seed, u32 *nonce)
     return 0;
 }
 
-u64 adam_int(adam_data data, u8 width, const bool force_regen)
+u64 adam_int(adam_data data, const NumWidth width)
 {
-    if (width != 8 && width != 16 && width != 32 && width != 64) {
-        width = 64;
-    }
+    #define WIDTH_MASK(w)   ((((1ULL << ((w << 3) - 1)) - 1) << 1) | 1)
 
-    if (data->buff_idx + (width >>= 3) >= ADAM_BUF_BYTES || force_regen) {
-        adam(data);
-    }
-
-    u64 num = 0;
-    MEMCPY(&num, (((u8 *) data->out) + data->buff_idx), width);
-    data->buff_idx += width;
-
-    return num;
+    return generate(data->out, &data->buff_idx, data->chseeds) & WIDTH_MASK(width);
 }
 
 double adam_dbl(adam_data data, const u64 scale, const bool force_regen)
