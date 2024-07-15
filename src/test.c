@@ -448,9 +448,9 @@ void adam_examine(const u64 limit, adam_data data)
 {
     // General initialization
     basic_test basic = { 0 };
-    basic.sequences  = limit >> 14;
-    MEMCPY(&basic.init_values[0], data->seed, sizeof(u64) * 4);
-    basic.init_values[4] = data->nonce;
+    basic.sequences  = limit / ADAM_WORD_BITS; 
+
+    adam_record(data, basic.seed, basic.nonce);
 
     // Number range related testing
     range_test range = { 0 };
@@ -458,16 +458,15 @@ void adam_examine(const u64 limit, adam_data data)
     // Bit frequency related stuff
     mfreq_test mfreq = { 0 };
 
-    // Floating point test related stuf
+    // Floating point test related stuff
     fp_test fp = { 0 };
 
     // Topological Binary init
     tb_test topo   = { 0 };
-    topo.trials    = basic.sequences >> 6;
-    topo.total_u16 = topo.trials * TBT_SEQ_SIZE;
+    topo.total_u16 = limit >> 4;
 
     // Bitarray for representing 2^16 values
-    tbt_array = calloc(1024, sizeof(u64));
+    tbt_array = calloc(TBT_ARR_SIZE, sizeof(u64));
     if (tbt_array == NULL) {
         err("Could not allocate memory for topological binary test");
         return;
@@ -477,11 +476,13 @@ void adam_examine(const u64 limit, adam_data data)
     vn_test von = { 0 };
     von.trials  = limit / TESTING_BITS;
 
+    const u64 init_num = adam_int(data, UINT64);
+
     // ENT init values
     ent_test ent = { 0 };
-    ent.sccu0    = data->out[0] & 0xFF;
+    ent.sccu0    = init_num & 0xFF;
 
-    range.min = range.max = data->out[0];
+    range.min = range.max = init_num;
 
     // Maurer test init - calculations were pulled from the NIST STS implementation
     maurer_test mau = { 0 };
@@ -492,17 +493,18 @@ void adam_examine(const u64 limit, adam_data data)
         err("Could not allocate memory for Maurer test");
         return;
     }
-
-    MEMCPY(mau.bytes, data->out, ADAM_BUF_BYTES);
-    ++maurer_ctr;
+ 
+    MEMCPY(mau.bytes, &init_num, ADAM_WORD_SIZE);
 
     // SAC test init
-    u64 nonce            = data->nonce ^ (1ULL << (data->nonce & 63));
-    adam_data sac_runner = adam_setup(data->seed, &nonce);
+    const u32 old = basic.nonce[2];
+    basic.nonce[2] ^= (1ULL << (basic.nonce[2] & 63));
+    adam_data sac_runner = adam_setup(basic.seed, basic.nonce);
     if (sac_runner == NULL) {
         err("Could not allocate memory for strict avalanche test");
         return;
     }
+    basic.nonce[2] = old;
 
     // Walsh-Hadamard Test init
     wh_test walsh = { 0 };
@@ -522,10 +524,9 @@ void adam_examine(const u64 limit, adam_data data)
 
     // Start testing!
     register long long rate = basic.sequences;
+    
     do {
-        test_loop(&rsl, data->out, sac_runner->out);
-        run_rng(data);
-        run_rng(sac_runner);
+        run_all(&rsl, data, sac_runner);
     } while (--rate > 0);
 
     adam_results(limit, &rsl);
@@ -553,16 +554,16 @@ static void adam_results(const u64 limit, rng_test *rsl)
     // Now print all the results per test / category of stuff
 
     print_basic_results(indent, limit, rsl->basic);
-    print_mfreq_results(indent, rsl->basic->sequences << 8, rsl->mfreq);
+    print_mfreq_results(indent, rsl->basic->sequences, rsl->mfreq);
 
     rsl->basic->avg_gap /= 256.0;
     print_byte_results(indent, rsl->basic);
 
-    print_range_results(indent, rsl->basic->sequences << 8, rsl->range);
+    print_range_results(indent, rsl->basic->sequences, rsl->range);
     print_ent_results(indent, rsl->ent);
 
-    rsl->fp->avg_fp /= (rsl->basic->sequences << 8);
-    print_fp_results(indent, rsl->basic->sequences << 8, rsl->fp);
+    rsl->fp->avg_fp /= (rsl->basic->sequences);
+    print_fp_results(indent, rsl->basic->sequences, rsl->fp);
 
     print_sp_results(indent, rsl, &sat_dist[0], &sat_range[0]);
 
@@ -571,7 +572,8 @@ static void adam_results(const u64 limit, rng_test *rsl)
 
     print_tbt_results(indent, rsl->topo);
 
-    if (rsl->basic->sequences >= 489000) {
+    // Von Neumann results
+    if (rsl->basic->sequences >= ((TESTING_BITS / ADAM_WORD_BITS) * 1000)) {
         rsl->von->fisher  = vnt_fisher_gb * -2.0;
         rsl->von->p_value = cephes_igamc(rsl->von->trials / 1000, rsl->von->fisher / 2);
     } else {
@@ -580,9 +582,11 @@ static void adam_results(const u64 limit, rng_test *rsl)
     }
     print_vnt_results(indent, rsl->von);
 
+    // SAC test results
     print_avalanche_results(indent, rsl->basic, &ham_dist[0]);
 
-    if (rsl->basic->sequences >= 489000) {
+    // Walsh-Hademard test results
+    if (rsl->basic->sequences >= ((TESTING_BITS / ADAM_WORD_BITS) * 1000)) {
         rsl->walsh->fisher  = wh_fisher_gb * -2.0;
         rsl->walsh->p_value = cephes_igamc(rsl->walsh->trials / 1000, rsl->walsh->fisher / 2);
     } else {
@@ -661,7 +665,10 @@ double po_zscore(double z_score)
     return p_value;
 }
 
-/*    FOLLOWING CODE UNTIL END IS FROM THE CEPHES C MATH LIBRARY    */
+/*   
+    FOLLOWING CODE UNTIL END IS FROM THE CEPHES C MATH LIBRARY:
+    https://www.netlib.org/cephes/
+*/
 
 // 2**-53
 static double MACHEP = 1.11022302462515654042E-16;
