@@ -340,6 +340,40 @@ static u8 examine(adam_data data, const char *strlimit)
     return 0;
 }
 
+static bool rwparams(u64 *seed, u32 *nonce, const char *file_name)
+{
+    const bool op = (file_name != NULL);
+
+    FILE *file;
+    
+    if (op) {
+        file = fopen(file_name, "rb");
+        if (!file) {
+            return err("Couldn't read input file!");
+        }
+
+        fread(seed, sizeof(u8), ADAM_SEED_SIZE, file);
+        fread(nonce, sizeof(u8), ADAM_NONCE_SIZE, file);
+    } else {
+        char out_name[65];
+        printf("Output file name (max length 64): \033[1;93m");
+        while (!scanf(" %64s", &out_name[0])) {
+            err("Please enter a valid file name");
+        }
+
+        file = fopen((const char *) out_name, "wb+");
+        if (!file) {
+            return err("Couldn't create output file!");
+        }
+
+        fwrite(seed, sizeof(u8), ADAM_SEED_SIZE, file);
+        fwrite(nonce, sizeof(u8), ADAM_NONCE_SIZE, file);
+    }
+
+    fclose(file);
+
+    return op;
+}
 
 int main(int argc, char **argv)
 {
