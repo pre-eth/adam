@@ -347,17 +347,12 @@ static void tally_bitruns(const u64 num, mfreq_test *mfreq)
     } while (++i < 64);
 }
 
-static void test_loop(rng_test *rsl, u64 *restrict _ptr, const u64 *sac_run)
+static void run_all(rng_test *rsl, adam_data data, adam_data sac) 
 {
-    // Saturation Point Test
-    // Determines index where all 2^4 values have appeared at least once
-    sat_point((u8 *) _ptr);
-
     // Maurer Universal Test
     // Checks the level of compressiiblity of output, assuming 1MB of
     // bytes have been accumulated
-    MEMCPY(&rsl->mau->bytes[maurer_ctr << CTZ(ADAM_BUF_BYTES)], _ptr, ADAM_BUF_BYTES);
-    if (++maurer_ctr == TESTING_BITS / ADAM_BUF_BITS) {
+    if (++maurer_ctr == TESTING_BITS / ADAM_WORD_BITS) {
         maurer(rsl->mau);
         maurer_ctr = 0;
 
@@ -370,7 +365,7 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const u64 *sac_run)
             twice, this time per MB
         */
         wh_fisher *= -2.0;
-        double wh_pvalue = cephes_igamc(TESTING_BITS / ADAM_BUF_BITS, wh_fisher / 2);
+        register double wh_pvalue = cephes_igamc(TESTING_BITS >> 14, wh_fisher / 2);
         wh_fisher_mb += log(wh_pvalue);
         wh_fisher = 0.0;
 
@@ -392,64 +387,61 @@ static void test_loop(rng_test *rsl, u64 *restrict _ptr, const u64 *sac_run)
         }
     }
 
+    const u64 num = adam_int(data, UINT64);
+
+    // First, write to Maurer array, and record some basic info
+    MEMCPY(&rsl->mau->bytes[maurer_ctr << 3], &num, 8);
+    rsl->range->odd += (num & 1);
+    rsl->mfreq->mfreq += POPCNT(num);
+    rsl->range->min = MIN(rsl->range->min, num);
+    rsl->range->max = MAX(rsl->range->max, num);
+
+    // Record range that this number falls in
+    ++rsl->range->range_dist[(num >= __UINT32_MAX__) + (num >= (1ULL << 40)) + (num >= (1ULL << 48)) + (num >= (1ULL << 56))];
+
+    // Convert this number to float with same logic used for returning FP results
+    // Then record float for FP freq distribution in (0.0, 1.0)
+    register double d;
+    rsl->fp->avg_fp += (d = ((double) num / (double) __UINT64_MAX__));
+    ++rsl->fp->fpf_dist[(u8) (d * 10.0)];
+    ++rsl->fp->fpf_quad[(d >= 0.25) + (d >= 0.5) + (d >= 0.75)];
+
+    // 32-bit floating point max-of-T test with T = 8
+    fp_max8((u32 *) &num, &rsl->fp->fp_max_runs, &rsl->fp->fp_max_dist[0]);
+
+    // Collect this floating point value into the permutations tuple
+    // Once the tuple reaches 5 elements, the permutation is recorded
+    fp_perm(d, &rsl->fp->perms, rsl->fp->fp_perms);
+
+    // Tracks the amount of runs AND longest run, both increasing and decreasing
+    tally_runs(num, rsl->basic);
+
+    // Tracks the amount of runs AND longest runs for the bits in this number
+    tally_bitruns(num, rsl->mfreq);
+
+    // Checks gap lengths
+    gap_lengths(num);
+
+    // Saturation Point Test
+    // Determines index where all 2^4 values have appeared at least once
+    sat_point((u8 *) &num);
+
     // Topological Binary Test
     // Checks for distinct patterns in a certain collection of numbers
-    tbt((u16 *) _ptr, rsl->topo);
+    tbt((u16 *) &num, rsl->topo);
 
     // Strict Avalanche Criterion (SAC) Test
     // Records the Hamming Distance between this number and the number that
     // was in the same index in the buffer during the previous iteration
-    sac(_ptr, sac_run);
+    ++ham_dist[POPCNT(num ^ adam_int(sac, UINT64))];
 
     // Walsh-Hadamard Transform Test
-    // Related to the frequency and autocorellation test, computes a
+    // Related to the frequency and autocorrelation test, computes a
     // test statistic per u128 from a transformed binary sequence
-    walsh_test((u32 *) _ptr, rsl->walsh);
+    walsh_test((u32 *) &num, rsl->walsh);
 
-    // 32-bit floating point max-of-T test with T = 8
-    fp_max8((u32 *) _ptr, &rsl->fp->fp_max_runs, &rsl->fp->fp_max_dist[0]);
-
-    register u16 i = 0;
-    register double d;
-    u64 num;
-    do {
-        num = _ptr[i];
-        rsl->range->odd += (num & 1);
-        rsl->mfreq->mfreq += POPCNT(num);
-        rsl->range->min = MIN(rsl->range->min, num);
-        rsl->range->max = MAX(rsl->range->max, num);
-
-        // Convert this number to float with same logic used for returning FP results
-        // Then record float for FP freq distribution in (0.0, 1.0)
-        rsl->fp->avg_fp += (d = ((double) num / (double) __UINT64_MAX__));
-        ++rsl->fp->fpf_dist[(u8) (d * 10.0)];
-        ++rsl->fp->fpf_quad[(d >= 0.25) + (d >= 0.5) + (d >= 0.75)];
-
-        // Collect this floating point value into the permutations tuple
-        // Once the tuple reaches 5 elements, the permutation is recorded
-        fp_perm(d, &rsl->fp->perms, rsl->fp->fp_perms);
-
-        // Record range that this number falls in
-        ++rsl->range->range_dist[(num >= __UINT32_MAX__) + (num >= (1ULL << 40)) + (num >= (1ULL << 48)) + (num >= (1ULL << 56))];
-
-        // Tracks the amount of runs AND longest run, both increasing and decreasing
-        tally_runs(num, rsl->basic);
-
-        // Tracks the amount of runs AND longest runs for the bits in this number
-        tally_bitruns(num, rsl->mfreq);
-
-        // Checks gap lengths
-        gap_lengths(num);
-
-        // Calls into ENT framework, updating all the stuff there
-        ent_loop((const u8 *) &num);
-    } while (++i < BUF_SIZE);
-}
-
-static void run_rng(adam_data data)
-{
-    apply(data->out, data->state_maps, data->chseeds, data->work_rsl);
-    mix(data->out, data->state_maps);
+    // Calls into ENT framework, updating all the stuff there
+    ent_loop((const u8 *) &num);
 }
 
 void adam_examine(const u64 limit, adam_data data)
