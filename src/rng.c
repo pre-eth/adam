@@ -1,68 +1,8 @@
+#include "../include/simd.h"    
 #include "../include/rng.h"
 
-#if !defined(__AARCH64_SIMD__) && !defined(__AVX512F__)
-
-// Following code found on https://stackoverflow.com/a/41148578
-regd mm256_cvtpd_epi64(reg r1)
-{
-    const regd factor = SIMD_SETPD(0x0010000000000000);
-    const regd fix1   = SIMD_SETPD(19342813113834066795298816.0);
-    const regd fix2   = SIMD_SETPD(19342813118337666422669312.0);
-
-    reg xH, xL;
-    regd d1;
-
-    xH = SIMD_RSHIFT64(r1, 32);
-    xH = SIMD_ORBITS(xH, SIMD_CASTBITS(fix1));          //  2^84
-    xL = SIMD_BLEND16(r1, SIMD_CASTBITS(factor), 0xCC); //  2^52
-    d1 = SIMD_SUBPD(SIMD_CASTPD(xH), fix2);             //  2^84 + 2^52
-    d1 = SIMD_ADDPD(d1, SIMD_CASTPD(xL));
-    return d1;
-}
-
-// Remaining filler intrinsics code found on https://stackoverflow.com/a/77376595
-
-static reg double_to_int64(regd x)
-{
-    x = SIMD_ADDPD(x, SIMD_SETPD(0x0018000000000000));
-    return SIMD_SUB64(
-        SIMD_CASTBITS(x),
-        SIMD_CASTBITS(SIMD_SETPD(0x0018000000000000)));
-}
-
-// Only works for inputs in the range: [-2^51, 2^51]
-static regd int64_to_double(reg x)
-{
-    x = SIMD_ADD64(x, SIMD_CASTBITS(SIMD_SETPD(0x0018000000000000)));
-    return SIMD_SUBPD(SIMD_CASTPD(x), SIMD_SETPD(0x0018000000000000));
-}
-
-static reg mm256_cvtepi64_pd(regd d1)
-{
-    d1                      = SIMD_ROUNDPD(d1, _MM_FROUND_TO_NEG_INF | _MM_FROUND_NO_EXC);
-    const regd k2_32inv_dbl = SIMD_SETPD(1.0 / 4294967296.0); // 1 / 2^32
-    const regd k2_32_dbl    = SIMD_SETPD(4294967296.0);       // 2^32
-
-    // Multiply by inverse instead of dividing.
-    const regd v_hi_dbl = SIMD_MULPD(d1, k2_32inv_dbl);
-    // Convert to integer.
-    const reg v_hi = double_to_int64(v_hi_dbl);
-    // Convert high32 integer to double and multiply by 2^32.
-    const regd v_hi_int_dbl = SIMD_MULPD(int64_to_double(v_hi), k2_32_dbl);
-    // Subtract that from the original to get the remainder.
-    const regd v_lo_dbl = SIMD_SUBPD(d1, v_hi_int_dbl);
-    // Convert to low32 integer.
-    const reg v_lo = double_to_int64(v_lo_dbl);
-    // Reconstruct integer from shifted high32 and remainder.
-    return SIMD_ADD64(SIMD_LSHIFT64(v_hi, 32), v_lo);
-}
-
-#define SIMD_CVT64 mm256_cvtepi64_pd
-
-#endif
-
 // clang-format off
-// For diffusing the buffer - from https://burtleburtle.net/bob/c/isaac64.c
+// For diffusion - from https://burtleburtle.net/bob/c/isaac64.c
 #define ISAAC_MIX(a,b,c,d,e,f,g,h) { \
     a-=e; f^=h>>9;  h+=a; \
     b-=f; g^=a<<9;  a+=b; \
@@ -74,9 +14,6 @@ static reg mm256_cvtepi64_pd(regd d1)
     h-=d; e^=g<<14; g+=h; \
 }
 // clang-format on
-
-// For mixing in apply()
-#define XOR_ASSIGN(a,b,c,d) b[i + d] ^= a[(i + d + c[d]) & (BUF_SIZE - 1)]
 
 /*     ALGORITHM START     */
 
