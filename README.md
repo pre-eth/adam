@@ -92,7 +92,7 @@ Here's the full command summary:
 
      -h     Get command summary and all available options
      -v     Version of this software (v0.11.0)
-     -i     Get the input parameters for the last run, or provide your own.
+     -i     Get the input parameters for the last run, or provide your own using a filename.
      -u     Generate a universally unique identifier (UUID). Optionally specify a number of UUID's
             to generate (max 1000)
      -r     The amount of numbers to generate and return, written to stdout. Must be within [1,
@@ -147,7 +147,7 @@ Not too hard to mess around with. Here's some basic examples, for reference:
 
 `adam -e 1000`
 
-### Get the input parameters for the next run
+### Get the input parameters for the last run
 
 `adam -i`
 
