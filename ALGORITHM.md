@@ -136,7 +136,7 @@ The following variables are the parameters that maintain internal state in ADAM 
 
 ![INTERNAL STATE](https://github.com/user-attachments/assets/f8693769-57db-41f3-a22d-a673c6218621) <br/>
 
-Where `u8` is `uint8_t` and `u64` is `uint64_t`. The bracket notation is used to indicate an array. This is defined in [api.c](src/api.c) as:
+Where `u8` is `uint8_t`, `u64` is `uint64_t`, and `f64` is `double`. The bracket notation is used to indicate an array. This is defined in [api.c](src/api.c) as:
 
 ```c
 struct adam_data_s {
