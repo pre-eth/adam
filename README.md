@@ -119,11 +119,11 @@ Not too hard to mess around with. Here's some basic examples, for reference:
 
 ### Generate 256 unsigned 64-bit integers and dump to stdout
 
-`adam -d`
+`adam -r 256`
 
-### Generate and dump whole buffer as unsigned 32-bit integers
+### Generate and dump 500 unsigned 32-bit integers
 
-`adam -w 32 -d`
+`adam -w 32 -r 500`
 
 ### Return 327 unsigned 32-bit integers in hexadecimal form
 
@@ -239,7 +239,7 @@ Documentation will be available after compilation in `build/adam.h`.
 
 “Proving” security is a very difficult thing to do, and a good deal of cryptanalysis is needed before domain wide recognition for the strength of any cryptographic algorithm is gained. That’s why the saying [“Don’t Roll Your Own Crypto”](https://security.stackexchange.com/questions/18197/why-shouldnt-we-roll-our-own) exists.
 
-ADAM has passed the [NIST Test Suite for Random Bit Generation SP 800-22](https://csrc.nist.gov/publications/detail/sp/800-22/rev-1a/final) just like several other widely recognized CSPRNG algorithms, along with other more challenging test suites mentioned below. Up to 16TB (2⁴⁴ values) has been tested so far. However, conducting specialized cryptographic testing is required before confident security guarantees can be made. This is just a toy RNG for now, and for production use I strongly recommend using something more thoroughly vetted by the field like [ChaCha20](https://datatracker.ietf.org/doc/html/rfc7539). The next major goal for ADAM after confirming statistical quality will be pursuing detailed crytographic validation and study.
+ADAM has passed the [NIST Test Suite for Random Bit Generation SP 800-22](https://csrc.nist.gov/publications/detail/sp/800-22/rev-1a/final) just like several other widely recognized CSPRNG algorithms, along with other more challenging test suites mentioned below. Up to 16TB (2⁴⁴ values) has been tested so far. However, conducting specialized cryptographic testing is required before confident security guarantees can be made. This is just a toy RNG for now, and for production use I strongly recommend using something more thoroughly vetted by the field like [ChaCha20](https://datatracker.ietf.org/doc/html/rfc7539). The next major goal for ADAM will be pursuing detailed crytographic validation and study.
 
 While passing one or even all of these test suites doesn't guarantee that a RNG is cryptographically secure, it follows that a CSPRNG will pass these tests, so they nonetheless provide a measuring stick of sorts to reveal flaws in the design and various characteristics of the randomness of the generated numbers. If you run these tests yourself, you might see false-positives that are retried or some p-values marked as "unusual" - this is to be expected and is a consequence of running many tests over and over, because if the output is really random, then there will inevitably be some weaker (but not concerningly defective) outcomes.
 
