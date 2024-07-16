@@ -89,9 +89,6 @@
         NULL. If <amount> is 0 or greater than 1 billion, this function  
         will return 1 and exit.
 
-        Also, please make sure you use the ADAM_ALIGNMENT macro to align the
-        array underlying <buf> before you pass it to this function.
-
         Param <width> must ALWAYS be a member of the NumWidth enum. Other
         arbitrary values will probably result in undefined behavior or a
         seg fault. Your program is ill-formed if other values are passed!
@@ -107,9 +104,6 @@
         <amount> * sizeof(double) bytes in length, and that the pointer is 
         not NULL. If <amount> is 0 or greater than 1 billion, this function 
         will return 1 and exit.
-
-        Also, please make sure you use the ADAM_ALIGNMENT macro to align the
-        array underlying <buf> before you pass it to this function.
 
         Param <multiplier> can be supplied to multiply all doubles by a certain 
         scaling factor so they fall within the range (0, <multiplier>). If you
