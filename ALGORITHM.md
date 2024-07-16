@@ -134,7 +134,7 @@ If you feel comfortable moving on, let's begin by discussing ADAM's internal sta
 
 The following variables are the parameters that maintain internal state in ADAM and control the number generation process.
 
-<img src="svg/-1- INTERNAL STATE.svg"><br/>
+![INTERNAL STATE](https://github.com/user-attachments/assets/f8693769-57db-41f3-a22d-a673c6218621) <br/>
 
 Where `u8` is `uint8_t` and `u64` is `uint64_t`. The bracket notation is used to indicate an array. This is defined in [api.c](src/api.c) as:
 
@@ -202,8 +202,7 @@ If the statespace of an RNG is larger than its minimum period, it is termed **mu
 [Mix](#mix) | 
 [Generate](#gen)
 
-
-<img src="svg/-2- CHAOTIC FUNCTION.svg"><br/>
+![LOGISTIC FUNCTION](https://github.com/user-attachments/assets/74b6609a-a512-44e3-8bfe-9a3d40d664dd) <br/>
 
 This logistic function is used to produce our **chaotic buffer**, which we perform operations on to generate random bits while replacing multiple elements in the buffer as we progress. It is a function that has been referenced in several cryptographic papers regarding chaos theory, and used to create various pseudorandom number generation schemes. However, these algorithms are rarely given serious attention from most of the cryptographic community due to readily available, tried and tested standards such as AES and ChaCha. Additionally, while most of these chaotic RNG algorithms theoretically may provide good results, implementing them in software (especially the naive, "apparent" way) is a pain and often results in poor performance.
 
@@ -391,7 +390,7 @@ We do this for `ROUNDS` iterations before storing the final 8 chaotic seed value
 
 Here's a guide that explains what's done here visually.
 
-<img src="svg/-3- ACCUMULATE.svg"><br/>
+![ACCUMULATE](https://github.com/user-attachments/assets/e8ba50e3-1e15-4042-8bd5-dd5724fe2c28) <br/>
 
 ## <a id="diff"></a> Diffuse
 
@@ -511,7 +510,7 @@ We do this for 32 iterations. We use the chaotic function as another highly unpr
 
 Here's a guide that explains what's done here visually.
 
-<img src="svg/-4- APPLY.svg"><br/>
+![APPLY](https://github.com/user-attachments/assets/127b3635-03d9-4e87-86f4-30a193182d0c) <br/>
 
 ## <a id="mix"></a> Mix
 
@@ -578,7 +577,7 @@ out[i + 7] ^= mix[7] ^ h;
 
 And here's a guide that explains what's done here visually.
 
-<img src="svg/-5- MIX.svg"><br/>
+![MIX](https://github.com/user-attachments/assets/1b8a4374-3495-48af-91a4-3dab36263304) <br/>
 
 ## <a id="gen"></a> Generate
 
@@ -605,7 +604,7 @@ We need to define some more macros so we can implement `generate()`.
     CHFUNCTION is used for updating internal state using the output of the
     chaotic function
 
-    CHMANTISSA is for extracting the lower 32 bits of the chaotic value's
+    CHMANT32 is for extracting the lower 32 bits of the chaotic value's
     binary representation. 
 
     Must take the mod 7 of x because it will be the data->buff_idx member
