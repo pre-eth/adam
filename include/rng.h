@@ -20,7 +20,7 @@
         CHFUNCTION is used for updating internal state using the output of the
         chaotic function
 
-        CHMANTISSA is for extracting the lower 32 bits of the chaotic value's
+        CHMANT32 is for extracting the lower 32 bits of the chaotic value's
         binary representation. 
 
         Must take the mod 7 of x because it will be the data->buff_idx member
