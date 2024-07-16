@@ -103,7 +103,7 @@ static u8 help(void)
     const char *ARGSHELP[ARG_COUNT] = {
         "Get command summary and all available options",
         "Version of this software (v" STRINGIFY(MAJOR) "." STRINGIFY(MINOR) "." STRINGIFY(PATCH) ")",
-        "Get the input parameters for the last run, or provide your own.",
+        "Get the input parameters for the last run, or provide your own using a filename.",
         "Generate a universally unique identifier (UUID). Optionally specify a number of UUID's to generate (max 1000)",
         "The amount of numbers to generate and return, written to stdout. Must be within [1, 1000]",
         "Desired alternative size (u8, u16, u32) of returned numbers. Default width is u64",
@@ -117,7 +117,7 @@ static u8 help(void)
         "Multiplier for randomly generated doubles, such that they fall in the range (0, MULTIPLIER)"
     };
 
-    const u8 lengths[ARG_COUNT] = { 45, 33, 63, 109, 89, 81, 96, 202, 204, 55, 49, 80, 93, 91 };
+    const u8 lengths[ARG_COUNT] = { 45, 33, 80, 109, 89, 81, 96, 202, 204, 55, 49, 80, 93, 91 };
 
     register short len;
     register u16 line_width;
