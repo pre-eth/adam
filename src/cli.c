@@ -356,9 +356,13 @@ static bool rwparams(u64 *seed, u32 *nonce, const char *file_name)
         fread(nonce, sizeof(u8), ADAM_NONCE_SIZE, file);
     } else {
         char out_name[65];
-        printf("Output file name (max length 64): \033[1;93m");
-        while (!scanf(" %64s", &out_name[0])) {
-            err("Please enter a valid file name");
+        while (true) {
+            fprintf(stderr, "Output file name (max length 64): \033[1;93m");
+            if (!scanf(" %64s", &out_name[0])) {
+                err("Please enter a valid file name");
+                continue;
+            }
+            break;
         }
 
         file = fopen((const char *) out_name, "wb+");
@@ -368,6 +372,8 @@ static bool rwparams(u64 *seed, u32 *nonce, const char *file_name)
 
         fwrite(seed, sizeof(u8), ADAM_SEED_SIZE, file);
         fwrite(nonce, sizeof(u8), ADAM_NONCE_SIZE, file);
+
+        printf("\033[mSuccessfully wrote input parameters to \033[1;36m%s\033[m\n", out_name);
     }
 
     fclose(file);
@@ -428,9 +434,6 @@ int main(int argc, char **argv)
         case 'i':
             seed_ptr = &seed[0];
             nonce_ptr = &nonce[0];
-
-            // TODO ADD VERSION CHECKING AND check that all of this -i logic works!!!
-            // also add chseed set to state figma svg
 
             // If we load user provided input params, then
             // we need to call adam_reset() to rebuild state
