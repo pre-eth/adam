@@ -1,5 +1,5 @@
-#include "../include/simd.h"    
 #include "../include/rng.h"
+#include "../include/simd.h"
 
 // clang-format off
 // For diffusion - from https://burtleburtle.net/bob/c/isaac64.c
@@ -59,9 +59,9 @@ void accumulate(u64 *restrict out, u64 *restrict mix, double *restrict chseeds)
 #ifdef __AARCH64_SIMD__
     const dregq range = SIMD_SETQPD(RANGE_LIMIT);
     dreg4q seeds;
-    
-    const reg64q4 mr = SIMD_LOAD64x4(mix); 
-    reg64q4 r1 = SIMD_LOAD64x4(out);
+
+    const reg64q4 mr = SIMD_LOAD64x4(mix);
+    reg64q4 r1       = SIMD_LOAD64x4(out);
     reg64q4 r2;
 
     do {
@@ -72,7 +72,7 @@ void accumulate(u64 *restrict out, u64 *restrict mix, double *restrict chseeds)
     SIMD_CAST4QPD(seeds, r2);
     SIMD_MUL4QPD(seeds, seeds, range);
     SIMD_STORE4PD(chseeds, seeds);
-    
+
     SIMD_STORE64x4(mix, r1);
 #else
 #ifdef __AVX512F__
@@ -80,7 +80,7 @@ void accumulate(u64 *restrict out, u64 *restrict mix, double *restrict chseeds)
 
     __m256d d1;
     const __m256i r1 = SIMD_LOADBITS((__m256i *) mix);
-    __m256i r2 = SIMD_LOADBITS((__m256i *) out);
+    __m256i r2       = SIMD_LOADBITS((__m256i *) out);
 
     do {
         r1 = SIMD_ROTR64(r1, 8);
@@ -190,6 +190,7 @@ void apply(u64 *restrict out, double *restrict chseeds)
         // Add the mantissa value to r1
         SIMD_REINTERP_ADD64(r2, d1, r1);
 
+        // XOR with results and rotate by 32
         SIMD_XAR64RQ(r1, r1, r2, 32);
 
         // Store
@@ -311,14 +312,14 @@ void mix(u64 *restrict out, const u64 *restrict mix)
 u64 generate(u64 *restrict out, u8 *restrict idx, double *restrict chseeds)
 {
     chseeds[*idx & 7] = CHFUNCTION(*idx, chseeds);
-    
+
     const u64 m = (u64) CHMANT32(*idx, chseeds) << 32;
 
     chseeds[*idx & 7] = CHFUNCTION(*idx, chseeds);
-   
+
     const u64 elem = out[*idx];
-    const u8 a = *idx + 1 + (elem & 0x7F);
-    const u8 b = *idx + 128 + (elem & 0x7F);
+    const u8 a     = *idx + 1 + (elem & 0x7F);
+    const u8 b     = *idx + 128 + (elem & 0x7F);
 
     const u64 num = out[a] ^ out[b] ^ (m | CHMANT32(*idx, chseeds));
     out[*idx] ^= out[a] ^ out[b];
