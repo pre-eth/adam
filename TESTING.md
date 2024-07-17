@@ -1,4 +1,4 @@
-# TESTING
+# ADAM - TESTING
 
 Everything you need to know for testing ADAM with different popular RNG test suites.
 
