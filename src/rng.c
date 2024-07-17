@@ -169,7 +169,7 @@ void apply(u64 *restrict out, double *restrict chseeds)
 #ifdef __AARCH64_SIMD__
     const dregq one   = SIMD_SETQPD(1.0);
     const dregq coeff = SIMD_SETQPD(COEFFICIENT);
-    const dregq mask = SIMD_SETQPD(0xFFFFFFFFFFFFF); // 2^52 bits
+    const dregq mask  = SIMD_SETQPD(0xFFFFFFFFFFFFF); // 2^52 bits
 
     reg64q4 r1, r2;
 
@@ -189,6 +189,8 @@ void apply(u64 *restrict out, double *restrict chseeds)
         // Reinterpret results of d1 as binary floating point
         // Add the mantissa value to r1
         SIMD_REINTERP_ADD64(r2, d1, r1);
+
+        SIMD_XAR64RQ(r1, r1, r2, 32);
 
         // Store
         SIMD_STORE64x4(&out[i], r1);
@@ -308,19 +310,17 @@ void mix(u64 *restrict out, const u64 *restrict mix)
 
 u64 generate(u64 *restrict out, u8 *restrict idx, double *restrict chseeds)
 {
-    const u64 elem = out[*idx];
-
     chseeds[*idx & 7] = CHFUNCTION(*idx, chseeds);
     
     const u64 m = (u64) CHMANT32(*idx, chseeds) << 32;
 
     chseeds[*idx & 7] = CHFUNCTION(*idx, chseeds);
    
+    const u64 elem = out[*idx];
     const u8 a = *idx + 1 + (elem & 0x7F);
     const u8 b = *idx + 128 + (elem & 0x7F);
 
     const u64 num = out[a] ^ out[b] ^ (m | CHMANT32(*idx, chseeds));
-
     out[*idx] ^= out[a] ^ out[b];
 
     *idx += 1;
