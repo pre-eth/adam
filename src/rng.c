@@ -308,14 +308,13 @@ void mix(u64 *restrict out, const u64 *restrict mix)
 
 u64 generate(u64 *restrict out, u8 *restrict idx, double *restrict chseeds)
 {
-    const u64 elem = out[*idx];
-
     chseeds[*idx & 7] = CHFUNCTION(*idx, chseeds);
 
     const u64 m = (u64) CHMANT32(*idx, chseeds) << 32;
 
     chseeds[*idx & 7] = CHFUNCTION(*idx, chseeds);
     
+    const u64 elem = out[*idx];
     const u8 a     = *idx + 1 + (elem & 0x7F);
     const u8 b     = *idx + 128 + (elem & 0x7F);
 
