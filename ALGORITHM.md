@@ -1,4 +1,4 @@
-# THE ADAM ALGORITHM
+# ADAM - ALGORITHM
 
 This file illustrates what ADAM does visually and explains things in clear language so that even someone with no knowledge of random number generation will be able to follow along.
 
@@ -134,7 +134,7 @@ If you feel comfortable moving on, let's begin by discussing ADAM's internal sta
 
 The following variables are the parameters that maintain internal state in ADAM and control the number generation process.
 
-![INTERNAL STATE](https://github.com/user-attachments/assets/f8693769-57db-41f3-a22d-a673c6218621) <br/>
+![INTERNAL STATE](https://github.com/user-attachments/assets/4629f5a3-0110-47ed-8234-3f02e27e3fdb) <br/>
 
 Where `u8` is `uint8_t`, `u64` is `uint64_t`, and `f64` is `double`. The bracket notation is used to indicate an array. This is defined in [api.c](src/api.c) as:
 
@@ -476,41 +476,21 @@ chseeds[7] = COEFFICIENT * chseeds[7] * (1.0 - chseeds[7]);
 
 // Reinterpret chaotic seeds as binary floating point
 // Add the mantissa values to the next 8 values in the buffer
-u64 a = out[i + 0] + (*((u64 *) &chseeds[0]) & 0xFFFFFFFFFFFFF);
-u64 b = out[i + 1] + (*((u64 *) &chseeds[1]) & 0xFFFFFFFFFFFFF);
-u64 c = out[i + 2] + (*((u64 *) &chseeds[2]) & 0xFFFFFFFFFFFFF);
-u64 d = out[i + 3] + (*((u64 *) &chseeds[3]) & 0xFFFFFFFFFFFFF);
-u64 e = out[i + 4] + (*((u64 *) &chseeds[4]) & 0xFFFFFFFFFFFFF);
-u64 f = out[i + 5] + (*((u64 *) &chseeds[5]) & 0xFFFFFFFFFFFFF);
-u64 g = out[i + 6] + (*((u64 *) &chseeds[6]) & 0xFFFFFFFFFFFFF);
-u64 h = out[i + 7] + (*((u64 *) &chseeds[7]) & 0xFFFFFFFFFFFFF);
-
-// XOR current buffer contents with results from above operation
-out[i + 0] ^= a;
-out[i + 1] ^= b;
-out[i + 2] ^= c;
-out[i + 3] ^= d;
-out[i + 4] ^= e;
-out[i + 5] ^= f;
-out[i + 6] ^= g;
-out[i + 7] ^= h;
-
-// Rotate results right by 32 and store
-out[i + 0] = (out[i + 0] >> 32) | (out[i + 0] << 32);
-out[i + 1] = (out[i + 1] >> 32) | (out[i + 1] << 32);
-out[i + 2] = (out[i + 2] >> 32) | (out[i + 2] << 32);
-out[i + 3] = (out[i + 3] >> 32) | (out[i + 3] << 32);
-out[i + 4] = (out[i + 4] >> 32) | (out[i + 4] << 32);
-out[i + 5] = (out[i + 5] >> 32) | (out[i + 5] << 32);
-out[i + 6] = (out[i + 6] >> 32) | (out[i + 6] << 32);
-out[i + 7] = (out[i + 7] >> 32) | (out[i + 7] << 32);
+out[i + 0] += (*((u64 *) &chseeds[0]) & 0xFFFFFFFFFFFFF);
+out[i + 1] += (*((u64 *) &chseeds[1]) & 0xFFFFFFFFFFFFF);
+out[i + 2] += (*((u64 *) &chseeds[2]) & 0xFFFFFFFFFFFFF);
+out[i + 3] += (*((u64 *) &chseeds[3]) & 0xFFFFFFFFFFFFF);
+out[i + 4] += (*((u64 *) &chseeds[4]) & 0xFFFFFFFFFFFFF);
+out[i + 5] += (*((u64 *) &chseeds[5]) & 0xFFFFFFFFFFFFF);
+out[i + 6] += (*((u64 *) &chseeds[6]) & 0xFFFFFFFFFFFFF);
+out[i + 7] += (*((u64 *) &chseeds[7]) & 0xFFFFFFFFFFFFF);
 ```
 
 We do this for 32 iterations. We use the chaotic function as another highly unpredictable source of entropy as we continue morphing our internal buffer. By using the ISAAC_MIX macro, we have already nicely expanded our initial state into an initial buffer. So we don't need to completely *replace* the contents, moreso just carry on flipping irregular amounts of bits to reduce any correlation with the input parameters. To meet this end, we provide a delta for adding to the value using the chaotic result. This delta comes from the result of our chaotic function!
 
 Here's a guide that explains what's done here visually.
 
-![APPLY](https://github.com/user-attachments/assets/127b3635-03d9-4e87-86f4-30a193182d0c) <br/>
+![APPLY](https://github.com/user-attachments/assets/b1544d22-8ba0-477c-8457-4ae383afed93) <br/>
 
 ## <a id="mix"></a> Mix
 
@@ -577,7 +557,7 @@ out[i + 7] ^= mix[7] ^ h;
 
 And here's a guide that explains what's done here visually.
 
-![MIX](https://github.com/user-attachments/assets/1b8a4374-3495-48af-91a4-3dab36263304) <br/>
+![MIX](https://github.com/user-attachments/assets/3a7e0f33-e27e-4dff-980c-2e15017e371c) <br/>
 
 ## <a id="gen"></a> Generate
 
@@ -616,9 +596,6 @@ We need to define some more macros so we can implement `generate()`.
 Here is the simple algorithm we use to create our random integers.
 
 ```c
-// Get current element
-const u64 elem = out[*idx];
-
 // Update value with chaotic function
 chseeds[*idx & 7] = CHFUNCTION(*idx, chseeds);
 
@@ -627,6 +604,9 @@ const u64 m = (u64) CHMANT32(*idx, chseeds) << 32;
 
 // Update value again with chaotic function
 chseeds[*idx & 7] = CHFUNCTION(*idx, chseeds);
+
+// Get current element
+const u64 elem = out[*idx];
 
 // Find two random indices within the top and bottom halves
 const u8 a = *idx + 1 + (elem & 0x7F);
