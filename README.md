@@ -41,13 +41,14 @@ For information on testing, see [TESTING.md](TESTING.md).
 - Avoids brute force and differential attacks
 - Two (optional) input parameters: one 256-bit seed and one 96-bit nonce
 - Space Complexity: O(N)
+- Raw RNG Implementation Size: 8544 bytes
 - Output sequence is irreversible
 - Natively examine statistical properties of a generated sequence with the in-house test suite
 - Easy interface for bit generation in both ASCII and binary form. Output up to 100GB at a time.
 - Alternatively, stream bits directly to the `stdin` of your own programs, RNG test suites, etc.
 - Extract different widths of integers from the buffer in decimal, hexadecimal, or octal format
 - Generate RFC 4122 compliant UUIDs
-- View all generated integers at once with your width of choice
+- View generated integers with your width of choice
 - Uses SIMD acceleration where applicable (ARM NEON, AVX/AVX2, or AVX-512F)
 - User-friendly API definitions for usage as a library
 - Floating point number generation, with configurable precision for output and scaling factor support
