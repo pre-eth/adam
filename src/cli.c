@@ -138,15 +138,38 @@ static u8 help(void)
     return 0;
 }
 
+static void print_u64(const u64 i, bool prefix)
+{
+    const char *pref = prefix ? "0x" : "";
+
+    if (hex) {
+        printf("%s%llx", pref, i);
+    } else if (UNLIKELY(octal)) {
+        printf("%s%llo", pref, i);
+    } else {
+        printf("%llu", i);
+    }
+}
+
 static void print_int(adam_data data)
 {
-    const u64 num = adam_int(data, width);
-    if (hex) {
-        printf("0x%llx", num);
-    } else if (UNLIKELY(octal)) {
-        printf("0o%llo", num);
+    const u128 num = adam_int(data, width);
+
+    if (width != UINT128) {
+        print_u64((u64) num, true);
     } else {
-        printf("%llu", num);
+        const u64 ZEROSZ19 = 10000000000000000000ULL;
+
+        const u128 l1   = num / ZEROSZ19;
+        const u64 l2    = l1 / ZEROSZ19;
+        const u64 trail = num % ZEROSZ19;
+
+        if (l2) {
+            print_u64(l2, true);
+        }
+
+        print_u64(l1 % ZEROSZ19, false);
+        print_u64(trail, false);
     }
 }
 
