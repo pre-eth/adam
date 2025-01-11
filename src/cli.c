@@ -106,7 +106,7 @@ static u8 help(void)
         "Get the input parameters for the last run, or provide your own using a filename.",
         "Generate a universally unique identifier (UUID). Optionally specify a number of UUID's to generate (max 1000)",
         "The amount of numbers to generate and return, written to stdout. Must be within [1, 1000]",
-        "Desired alternative size (u8, u16, u32) of returned numbers. Default width is u64",
+        "Desired alternative size (u8, u16, u32, u128) of returned numbers. Default width is u64",
         "Just bits... literally. Pass the -f flag beforehand to stream random doubles instead of integers",
         "Write an ASCII or binary sample of bits/doubles to file for external assessment. You can choose a multiplier to output up to 100GB of bits, or 1 billion doubles (with optional scaling factor), at a time",
         "Examine a sample of 1MB with the ENT framework and some other statistical tests to reveal properties of the output sequence. You can choose a multiplier within [1, " STRINGIFY(BITS_TESTING_LIMIT) "] to examine up to 100GB at a time",
@@ -117,7 +117,7 @@ static u8 help(void)
         "Multiplier for randomly generated doubles, such that they fall in the range (0, MULTIPLIER)"
     };
 
-    const u8 lengths[ARG_COUNT] = { 45, 33, 80, 109, 89, 81, 96, 202, 204, 55, 49, 80, 93, 91 };
+    const u8 lengths[ARG_COUNT] = { 45, 33, 80, 109, 95, 81, 96, 202, 204, 55, 49, 80, 93, 91 };
 
     register short len;
     register u16 line_width;
@@ -182,7 +182,7 @@ static void print_dbl(adam_data data)
 static u8 dump_buffer(adam_data data)
 {
     void (*write_fn)(adam_data) = (!dbl_mode) ? &print_int : &print_dbl;
-    
+
     do {
         write_fn(data);
         putchar('\n');
@@ -368,7 +368,7 @@ static bool rwparams(u64 *seed, u32 *nonce, const char *file_name)
     const bool op = (file_name != NULL);
 
     FILE *file;
-    
+
     if (op) {
         file = fopen(file_name, "rb");
         if (!file) {
