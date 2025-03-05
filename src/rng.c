@@ -57,9 +57,6 @@ void accumulate(u64 *restrict out, u64 *restrict mix, double *restrict chseeds)
     i = 0;
 
 #ifdef __AARCH64_SIMD__
-    const dregq range = SIMD_SETQPD(RANGE_LIMIT);
-    dreg4q seeds;
-
     const reg64q4 mr = SIMD_LOAD64x4(mix);
     reg64q4 r1       = SIMD_LOAD64x4(out);
     reg64q4 r2;
@@ -69,69 +66,61 @@ void accumulate(u64 *restrict out, u64 *restrict mix, double *restrict chseeds)
         SIMD_ADD4RQ64(r1, r1, r2);
     } while (++i < ROUNDS);
 
+    const dregq range = SIMD_SETQPD(RANGE_LIMIT);
+    dreg4q seeds;
     SIMD_CAST4QPD(seeds, r2);
     SIMD_MUL4QPD(seeds, seeds, range);
     SIMD_STORE4PD(chseeds, seeds);
 
     SIMD_STORE64x4(mix, r1);
-#else
-#ifdef __AVX512F__
-    const __m256d range = SIMD_SETPD(RANGE_LIMIT);
-
-    __m256d d1;
-    const __m256i r1 = SIMD_LOADBITS((__m256i *) mix);
-    __m256i r2       = SIMD_LOADBITS((__m256i *) out);
+#elif __AVX512F_
+    const reg mr1 = SIMD_LOADBITS((reg *) mix)
+        reg r1
+        = SIMD_LOADBITS((reg *) out)
+            reg r2;
 
     do {
-        r1 = SIMD_ROTR64(r1, 8);
-        r1 = SIMD_XORBITS(r1, r2);
-        d1 = SIMD_CASTPD(r1);
-        d1 = SIMD_MULPD(d1, range);
-        SIMD_STOREPD(&chseeds[i << 3], d1);
+        r2 = SIMD_XORBITS(mr, r1);
+        r2 = SIMD_ROTR64(r2, 32)
+            r1
+            = SIMD_ADD64(r1, r2);
     } while (++i < ROUNDS);
 
-    SIMD_STOREBITS((reg *) arr, r1);
+    const regd range = SIMD_SETPD(RANGE_LIMIT);
+    regd seeds       = SIMD_CVTPD(r2);
+    seeds            = SIMD_MULPD(seeds, range);
+    SIMD_STOREPD(chseeds, seeds);
+    SIMD_STOREBITS((reg *) mix, r1);
 #else
-    register a, b, c, d, e, f, g, h;
+    const reg mr1 = SIMD_LOADBITS((reg *) mix);
+    const reg mr2 = SIMD_LOADBITS((reg *) &mix[4]);
 
-    a = out[0];
-    b = out[1];
-    c = out[2];
-    d = out[3];
-    e = out[4];
-    f = out[5];
-    g = out[6];
-    h = out[7];
+    reg r1 = SIMD_LOADBITS((reg *) out);
+    reg r2 = SIMD_LOADBITS((reg *) &out[4]);
+
+    reg r3, r4;
 
     do {
-        a = _rotr64(a, 8) ^ arr[0];
-        b = _rotr64(b, 8) ^ arr[1];
-        c = _rotr64(c, 8) ^ arr[2];
-        d = _rotr64(d, 8) ^ arr[3];
-        e = _rotr64(e, 8) ^ arr[4];
-        f = _rotr64(f, 8) ^ arr[5];
-        g = _rotr64(g, 8) ^ arr[6];
-        h = _rotr64(h, 8) ^ arr[7];
+        r3 = SIMD_XORBITS(mr1, r1);
+        r3 = SIMD_ORBITS(SIMD_RSHIFT64(r3, 32), SIMD_LSHIFT64(r3, 32));
+        r1 = SIMD_ADD64(r1, r3);
 
-        chseeds[i + 0] = (double) a * RANGE_LIMIT;
-        chseeds[i + 1] = (double) b * RANGE_LIMIT;
-        chseeds[i + 2] = (double) c * RANGE_LIMIT;
-        chseeds[i + 3] = (double) d * RANGE_LIMIT;
-        chseeds[i + 4] = (double) e * RANGE_LIMIT;
-        chseeds[i + 5] = (double) f * RANGE_LIMIT;
-        chseeds[i + 6] = (double) g * RANGE_LIMIT;
-        chseeds[i + 7] = (double) h * RANGE_LIMIT;
-    } while ((i += 8) < (ROUNDS << 2));
+        r4 = SIMD_XORBITS(mr2, r2);
+        r4 = SIMD_ORBITS(SIMD_RSHIFT64(r4, 32), SIMD_LSHIFT64(r4, 32));
+        r2 = SIMD_ADD64(r2, r4);
+    } while (++i < ROUNDS);
 
-    arr[0] = a;
-    arr[1] = b;
-    arr[2] = c;
-    arr[3] = d;
-    arr[4] = e;
-    arr[5] = f;
-    arr[6] = g;
-    arr[7] = h;
-#endif
+    const regd range = SIMD_SETPD(RANGE_LIMIT);
+    regd seeds       = SIMD_CVT64(r3);
+    seeds            = SIMD_MULPD(seeds, range);
+    SIMD_STOREPD(chseeds, seeds);
+
+    seeds = SIMD_CVT64(r4);
+    seeds = SIMD_MULPD(seeds, range);
+    SIMD_STOREPD(&chseeds[4], seeds);
+
+    SIMD_STOREBITS((reg *) mix, r3);
+    SIMD_STOREBITS((reg *) &mix[4], r4);
 #endif
 }
 
@@ -169,7 +158,7 @@ void apply(u64 *restrict out, double *restrict chseeds)
 #ifdef __AARCH64_SIMD__
     const dregq one   = SIMD_SETQPD(1.0);
     const dregq coeff = SIMD_SETQPD(COEFFICIENT);
-    const dregq mask = SIMD_SETQPD(0xFFFFFFFFFFFFF); // 2^52 bits
+    const reg64q mask = SIMD_SETQ64(0xFFFFFFFFFFFFF); // 2^52 bits
 
     reg64q4 r1, r2;
 
@@ -198,69 +187,59 @@ void apply(u64 *restrict out, double *restrict chseeds)
 #else
     const regd one   = SIMD_SETPD(1.0);
     const regd coeff = SIMD_SETPD(COEFFICIENT);
+    const reg mask   = SIMD_SET64(0xFFFFFFFFFFFFF);
 
     regd d1 = SIMD_LOADPD(chseeds);
-    regd d2;
     reg r1;
 
 #ifdef __AVX512F__
     do {
         // 3.9999 * X * (1 - X) for all X in the register
-        d2 = SIMD_SUBPD(one, d1);
-        d2 = SIMD_MULPD(d2, coeff);
-        d1 = SIMD_MULPD(d1, d2);
+        d1 = SIMD_SUBPD(one, d1);
+        d1 = SIMD_MULPD(d1, coeff);
+        d1 = SIMD_MULPD(d1, d1);
 
-        // Multiply result of chaotic function by beta
-        d2 = SIMD_MULPD(d1, beta);
+        // Load data at current offset
+        r1 = SIMD_LOADBITS((reg *) &out[i])
 
-        // Cast, XOR, and store
-        r1 = SIMD_CASTPD(d2);
-        SIMD_STOREBITS((reg *) &arr[0], r1);
+            // Reinterpret results of d1 as binary floating point
+            // Add the mantissa value to r1
+            r1
+            = SIMD_ADD64(r1, SIMD_ANDBITS(SIMD_CVT64(d2), mask));
 
-        XOR_ASSIGN(in, out, arr, 0);
-        XOR_ASSIGN(in, out, arr, 1);
-        XOR_ASSIGN(in, out, arr, 2);
-        XOR_ASSIGN(in, out, arr, 3);
-        XOR_ASSIGN(in, out, arr, 4);
-        XOR_ASSIGN(in, out, arr, 5);
-        XOR_ASSIGN(in, out, arr, 6);
-        XOR_ASSIGN(in, out, arr, 7);
-    } while ((i += 8) < 8);
+        // Store
+        SIMD_STOREBITS((reg *) &out[i], r1);
+    } while ((i += 8) < BUF_SIZE);
+
+    SIMD_STOREPD(chseeds, d1);
 #else
-    d2 = SIMD_LOADPD(&chseeds[4]);
-    regd d3;
+    reg r2;
+    regd d2 = SIMD_LOADPD(&chseeds[4]);
 
     do {
         // 3.9999 * X * (1 - X) for all X in the register
-        d3 = SIMD_SUBPD(one, d1);
-        d3 = SIMD_MULPD(d3, coeff);
-        d1 = SIMD_MULPD(d1, d3);
+        d1 = SIMD_SUBPD(one, d1);
+        d1 = SIMD_MULPD(d1, coeff);
+        d1 = SIMD_MULPD(d1, d1);
+        d2 = SIMD_SUBPD(one, d2);
+        d2 = SIMD_MULPD(d2, coeff);
+        d2 = SIMD_MULPD(d2, d2);
 
-        // Multiply result of chaotic function by beta
-        d3 = SIMD_MULPD(d1, beta);
+        // Load data at current offset
+        r1 = SIMD_LOADBITS((reg *) &out[i]);
+        r2 = SIMD_LOADBITS((reg *) &out[i + 4]);
 
-        // Cast, XOR, and store
-        r1 = SIMD_CVT64(d3);
-        SIMD_STOREBITS((reg *) &arr[0], r1);
+        // Reinterpret results of d1 as binary floating point
+        // Add the mantissa value to r1
+        r1 = SIMD_ADD64(r1, SIMD_ANDBITS(SIMD_CVTPD(d1), mask));
+        r2 = SIMD_ADD64(r2, SIMD_ANDBITS(SIMD_CVTPD(d2), mask));
 
-        // One more run since AVX2 can only do 4 values at a
-        // time but we need 8 per iteration
-        d3 = SIMD_SUBPD(one, d2);
-        d3 = SIMD_MULPD(d3, coeff);
-        d2 = SIMD_MULPD(d2, d3);
-        d3 = SIMD_MULPD(d2, beta);
-        r1 = SIMD_CVT64(d3);
-        SIMD_STOREBITS((reg *) &arr[4], r1);
-
-        XOR_ASSIGN(in, out, arr, 0);
-        XOR_ASSIGN(in, out, arr, 1);
-        XOR_ASSIGN(in, out, arr, 2);
-        XOR_ASSIGN(in, out, arr, 3);
-        XOR_ASSIGN(in, out, arr, 4);
-        XOR_ASSIGN(in, out, arr, 5);
-        XOR_ASSIGN(in, out, arr, 6);
-        XOR_ASSIGN(in, out, arr, 7);
+        SIMD_STOREBITS((reg *) &out[i], r1);
+        SIMD_STOREBITS((reg *) &out[i + 4], r2);
     } while ((i += 8) < BUF_SIZE);
+
+    SIMD_STOREPD(chseeds, d1);
+    SIMD_STOREPD(&chseeds[4], d2);
 #endif
 #endif
 }
@@ -313,13 +292,12 @@ u64 generate(u64 *restrict out, u8 *restrict idx, double *restrict chseeds)
     const u64 m = (u64) CHMANT32(*idx, chseeds) << 32;
 
     chseeds[*idx & 7] = CHFUNCTION(*idx, chseeds);
-    
-    const u64 elem = out[*idx];
-    const u8 a     = *idx + 1 + (elem & 0x7F);
-    const u8 b     = *idx + 128 + (elem & 0x7F);
+
+    const u8 offset = out[*idx] & 0x7F;
+    const u8 a      = *idx + 1 + offset;
+    const u8 b      = *idx + 128 + offset;
 
     const u64 num = out[a] ^ out[b] ^ (m | CHMANT32(*idx, chseeds));
-
     out[*idx] ^= out[a] ^ out[b];
 
     *idx += 1;
