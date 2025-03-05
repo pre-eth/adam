@@ -442,9 +442,9 @@ int main(int argc, char **argv)
             octal = true;
             continue;
         case 'w':
-            width = a_to_u(optarg, 8, 32);
+            width = a_to_u(optarg, 8, 128);
             if (UNLIKELY((width & (width - 1)) & !!width)) {
-                return err("Alternate width must be either 8, 16, 32");
+                return err("Alternate width must be either 8, 16, 32 or 128");
             }
             width >>= 3;
             continue;
@@ -455,7 +455,7 @@ int main(int argc, char **argv)
             }
             continue;
         case 'i':
-            seed_ptr = &seed[0];
+            seed_ptr  = &seed[0];
             nonce_ptr = &nonce[0];
 
             // If we load user provided input params, then
