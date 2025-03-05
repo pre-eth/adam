@@ -32,7 +32,7 @@ adam_data adam_setup(u64 *seed, u32 *nonce)
 
     adam_reset(data, seed, nonce);
 
-    return data;    
+    return data;
 }
 
 int adam_reset(adam_data data, u64 *seed, u32 *nonce)
@@ -60,13 +60,13 @@ int adam_reset(adam_data data, u64 *seed, u32 *nonce)
     u64 mix_arr[ROUNDS] ALIGN(ADAM_ALIGNMENT);
 
     // Create IV's and initialize chaotic mix
-    initialize(data->seed, *((u64 *)&data->nonce[0]), data->out, mix_arr);
+    initialize(data->seed, *((u64 *) &data->nonce[0]), data->out, mix_arr);
 
     // Accumulate set of chaotic seeds
     accumulate(data->out, mix_arr, data->chseeds);
 
     // Diffuse our internal work buffer
-    diffuse(data->out, mix_arr, *((u64 *)&data->nonce[1]));
+    diffuse(data->out, mix_arr, *((u64 *) &data->nonce[1]));
 
     // Apply the chaotic function to the buffer
     apply(data->out, data->chseeds);
@@ -88,11 +88,17 @@ int adam_record(adam_data data, u64 *seed, u32 *nonce)
     return 0;
 }
 
-u64 adam_int(adam_data data, const NumWidth width)
+u128 adam_int(adam_data data, const AdamNumWidth width)
 {
-    #define WIDTH_MASK(w)   ((((1ULL << ((w << 3) - 1)) - 1) << 1) | 1)
+#define WIDTH_MASK(w) ((((1ULL << ((w << 3) - 1)) - 1) << 1) | 1)
 
-    return generate(data->out, &data->buff_idx, data->chseeds) & WIDTH_MASK(width);
+    const u64 num = generate(data->out, &data->buff_idx, data->chseeds);
+
+    if (width == UINT128) {
+        return ((u128) num << 64) | generate(data->out, &data->buff_idx, data->chseeds);
+    }
+
+    return num & WIDTH_MASK(width);
 }
 
 double adam_dbl(adam_data data, const u64 scale)
@@ -100,14 +106,14 @@ double adam_dbl(adam_data data, const u64 scale)
     return (double) (scale + !scale) * ((double) adam_int(data, UINT64) / (double) __UINT64_MAX__);
 }
 
-int adam_fill(adam_data data, void *buf, const NumWidth width, const size_t amount)
+int adam_fill(adam_data data, void *buf, const AdamNumWidth width, const size_t amount)
 {
     if (!amount || amount > ADAM_FILL_MAX) {
         return 1;
     }
 
     const size_t total = amount * width;
-    
+
     register size_t written = 0;
 
     u8 *_ptr = (u8 *) buf;

@@ -14,14 +14,15 @@
     #define ADAM_NONCE_SIZE         (sizeof(u32) * 3)
     #define ADAM_FILL_MAX           1000000000
 
-    typedef struct adam_data_s  *adam_data;
+    typedef struct adam_data_s      *adam_data;
 
     typedef enum {
         UINT8  = 1,
         UINT16 = 2,
         UINT32 = 4,
-        UINT64 = 8
-    } NumWidth;
+        UINT64 = 8,
+        UINT128 = 16
+    } AdamNumWidth;
 
     /*
         Configures ADAM's initial state by allocating the adam_data
@@ -65,13 +66,21 @@
     int adam_record(adam_data data, u64 *seed, u32 *nonce);
 
     /*
-        Returns a random unsigned integer of the specified <width>.
+        Returns a random unsigned integer guaranteed to have less than or
+        equal to the number of bits specified in <width>. So despite this
+        function returning a u128, you can safely cast it to whatever
+        UNSIGNED integer type you want.
 
-        Param <width> must ALWAYS be a member of the NumWidth enum. Other
+        Param <width> must ALWAYS be a member of the AdamNumWidth enum. Other
         arbitrary values will probably result in undefined behavior or a
         seg fault. Your program is ill-formed if other values are passed!
+
+        For 128-bit output, since ADAM can natively only output 64-bits at a
+        time, this function will advance the internal state of ADAM twice,
+        meaning that it's the same as left shifting and OR-ing two 64-bit
+        results to form an output value.
     */
-    u64 adam_int(adam_data data, const NumWidth width);
+    u128 adam_int(adam_data data, const AdamNumWidth width);
 
     /*
         Returns a random double after multiplying it by param <scale>.
@@ -89,13 +98,13 @@
         NULL. If <amount> is 0 or greater than 1 billion, this function  
         will return 1 and exit.
 
-        Param <width> must ALWAYS be a member of the NumWidth enum. Other
+        Param <width> must ALWAYS be a member of the AdamNumWidth enum. Other
         arbitrary values will probably result in undefined behavior or a
         seg fault. Your program is ill-formed if other values are passed!
 
         Returns 0 on success, 1 on error.
     */
-    int adam_fill(adam_data data, void *buf, const NumWidth width, const size_t amount);
+    int adam_fill(adam_data data, void *buf, const AdamNumWidth width, const size_t amount);
 
     /*
         Fills a given buffer with random doubles.
