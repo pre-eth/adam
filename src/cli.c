@@ -16,7 +16,7 @@
 #define ARG_COUNT    14
 
 // Number of bits in results (8, 16, 32, 64)
-static NumWidth width;
+static AdamNumWidth width;
 
 // Print hex?
 static bool hex;
