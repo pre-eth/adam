@@ -118,7 +118,7 @@
       #define SIMD_SETR64      _mm512_setr_epi64 
       #define SIMD_SET64       _mm512_set1_epi64
       #define SIMD_ADD64       _mm512_add_epi64
-      #define SIMD_ROTR64      _mm512_ror_epi64 
+      #define SIMD_ROTR64      _mm512_ror_epi64
       #define SIMD_LOADBITS    _mm512_load_si512
       #define SIMD_STOREBITS   _mm512_store_si512
       #define SIMD_ANDBITS     _mm512_and_si512
@@ -168,5 +168,17 @@
 
     #define BYTE_REPEAT(n)     bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n], bytes[n]
     #define BYTE_MASKS         128, 64, 32, 16, 8, 4, 2, 1
+
+    #define SIMD_CVT64(x, y, d) {/
+      y = SIMD_ORBITS(SIMD_RSHIFT64(x, 32), SIMD_CASTBITS(SIMD_SETPD(19342813113834066795298815.0))); /          //  2^84
+      x = SIMD_BLEND16(x, SIMD_CASTBITS(SIMD_SETPD(0x0010000000000000)), 0xCC); /   //  2^52
+      d = SIMD_SUBPD(SIMD_CASTPD(y), SIMD_SETPD(19342813118337666422669312.0)); /     //  2^84 + 2^52
+      d = SIMD_ADDPD(d, SIMD_CASTPD(x)); /
+    }
+
+    #define SIMD_CVTPD(d, x) {/
+      d = SIMD_ADDPD(d, SIMD_SETPD(0x10000000000000)); /
+      x = SIMD_XOR(SIMD_CASTBITS(d), SIMD_CASTBITS(SIMD_SETPD(0x10000000000000))); /
+    }
   #endif
 #endif
